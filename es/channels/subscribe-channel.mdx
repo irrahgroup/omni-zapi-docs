@@ -1,0 +1,34 @@
+---
+title: "Suscribir canal"
+description: "Añade un canal a la suscripción existente una vez completado el pago en el panel"
+openapi: "/es/channels/openapi-subscribe.json GET /v1/channels/{channelId}/subscribe"
+---
+
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceptos
+
+Vincula un canal a la suscripción activa de Stripe de la cuenta. El canal se **añade automáticamente** a la suscripción existente y se incluye en la próxima factura un cargo proporcional al periodo que queda del ciclo.
+
+<Note>
+  El pago lo realiza previamente el usuario en el panel de {projectName}. Este endpoint debe llamarse una vez completado el checkout en el panel, para activar el canal mediante la API.
+</Note>
+
+<Warning>
+  <EnterpriseText lang="es" />
+</Warning>
+
+Ejemplo de respuesta:
+
+```json
+{
+  "type": "SUBSCRIPTION_UPDATED",
+  "message": "Canal activo. Se incluirá un cargo proporcional en la próxima factura."
+}
+```
+
+<Note>
+  El `channelId` se obtiene a través del endpoint [Crear canal](/es/channels/create-channel).
+</Note>

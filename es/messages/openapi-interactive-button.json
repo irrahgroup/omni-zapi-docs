@@ -1,0 +1,282 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Enviar texto con botones",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Enviar texto con botones",
+        "description": "Envía un mensaje de texto con botones de respuesta rápida.",
+        "operationId": "sendInteractiveButtonMessage",
+        "tags": [
+          "Mensajes"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "SU_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendInteractiveButtonRequest"
+              },
+              "examples": {
+                "text": {
+                  "summary": "Texto con botones",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_BUTTON",
+                      "body": {
+                        "message": "¿Cómo valoras nuestra atención?"
+                      },
+                      "attachments": [
+                        {
+                          "id": "1",
+                          "title": "Excelente"
+                        },
+                        {
+                          "id": "2",
+                          "title": "Bueno"
+                        },
+                        {
+                          "id": "3",
+                          "title": "Regular"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "withImage": {
+                  "summary": "Con imagen",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_BUTTON",
+                      "body": {
+                        "message": "¡Mira nuestra oferta!",
+                        "thumbnail": "https://ejemplo.com/imagen.jpg",
+                        "mimeType": "image/jpeg"
+                      },
+                      "attachments": [
+                        {
+                          "id": "1",
+                          "title": "Me interesa"
+                        },
+                        {
+                          "id": "2",
+                          "title": "No, gracias"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "withVideo": {
+                  "summary": "Con vídeo",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_BUTTON",
+                      "body": {
+                        "message": "Míralo y elige",
+                        "thumbnail": "https://ejemplo.com/video.mp4",
+                        "mimeType": "video/mp4"
+                      },
+                      "attachments": [
+                        {
+                          "id": "1",
+                          "title": "Opción A"
+                        },
+                        {
+                          "id": "2",
+                          "title": "Opción B"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Mensaje enviado correctamente",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "wamid.HBgNNTU0NDk3MDUwNzg1FQIAERgSM0"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendInteractiveButtonRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Teléfono del destinatario (código de país + prefijo + número)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Tipo de mensaje",
+                "enum": [
+                  "INTERACTIVE_BUTTON"
+                ]
+              },
+              "body": {
+                "type": "object",
+                "required": [
+                  "message"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Texto del mensaje"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "description": "URL de una imagen o un vídeo (opcional)",
+                    "nullable": true
+                  },
+                  "mimeType": {
+                    "type": "string",
+                    "description": "Tipo de archivo del thumbnail (p. ej.: image/jpeg, video/mp4)"
+                  }
+                }
+              },
+              "attachments": {
+                "type": "array",
+                "description": "Lista de botones de respuesta rápida (máximo 3)",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "title"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Identificador del botón"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Texto que se muestra en el botón"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID del mensaje enviado"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

@@ -1,0 +1,1017 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - API de webhooks",
+    "description": "API para crear y gestionar endpoints de webhook por canal. Requiere el rol ENTERPRISE.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/webhooks": {
+      "post": {
+        "summary": "Crear webhook",
+        "description": "Registra un nuevo endpoint de webhook en el canal. A partir de su creación, los eventos configurados se empiezan a entregar en la URL indicada.",
+        "operationId": "createWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookRequest"
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Básico — recibir mensajes",
+                  "value": {
+                    "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                    "events": [
+                      "MESSAGE_RECEIVED"
+                    ]
+                  }
+                },
+                "withSignature": {
+                  "summary": "Con firma HMAC",
+                  "value": {
+                    "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                    "events": [
+                      "MESSAGE_RECEIVED",
+                      "MESSAGE_STATUS"
+                    ],
+                    "signing": true
+                  }
+                },
+                "withBearerAuth": {
+                  "summary": "Con autenticación Bearer",
+                  "value": {
+                    "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                    "events": [
+                      "MESSAGE_RECEIVED",
+                      "CONNECTED",
+                      "DISCONNECTED"
+                    ],
+                    "auth": {
+                      "type": "BEARER",
+                      "token": "mi-token-secreto"
+                    }
+                  }
+                },
+                "withBasicAuth": {
+                  "summary": "Con autenticación Basic",
+                  "value": {
+                    "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                    "events": [
+                      "MESSAGE_RECEIVED"
+                    ],
+                    "auth": {
+                      "type": "BASIC",
+                      "username": "webhook-user",
+                      "password": "contrasena-secreta"
+                    }
+                  }
+                },
+                "withCustomHeader": {
+                  "summary": "Con header personalizado",
+                  "value": {
+                    "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                    "events": [
+                      "MESSAGE_RECEIVED",
+                      "MESSAGE_STATUS"
+                    ],
+                    "auth": {
+                      "type": "CUSTOM_HEADER",
+                      "headerName": "X-Api-Key",
+                      "headerValue": "mi-clave-api"
+                    }
+                  }
+                },
+                "allEvents": {
+                  "summary": "Todos los eventos con HMAC + Bearer",
+                  "value": {
+                    "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                    "description": "Webhook principal de producción",
+                    "events": [
+                      "MESSAGE_RECEIVED",
+                      "MESSAGE_DELIVERY",
+                      "MESSAGE_STATUS",
+                      "CONNECTED",
+                      "DISCONNECTED"
+                    ],
+                    "signing": true,
+                    "auth": {
+                      "type": "BEARER",
+                      "token": "mi-token-secreto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Webhook creado correctamente. El campo `secret` se devuelve **solo en esta respuesta** cuando `signing` es `true`; guárdalo de forma segura.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookCreatedResponse"
+                },
+                "examples": {
+                  "withSigning": {
+                    "summary": "Con la firma HMAC habilitada",
+                    "value": {
+                      "id": "A1B2C3D4E5F6789012345678901234AB",
+                      "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "instanceId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                      "description": null,
+                      "events": [
+                        "MESSAGE_RECEIVED",
+                        "MESSAGE_STATUS"
+                      ],
+                      "status": "ENABLED",
+                      "signing": true,
+                      "secret": "a3f1c2d4e5b6789012345678901234abcdef0123456789abcdef0123456789ab",
+                      "auth": {
+                        "type": "NONE",
+                        "configured": false
+                      },
+                      "payloadFormat": "DEFAULT",
+                      "customAttributes": {},
+                      "createdAt": "2025-01-15T10:30:00.000+0000",
+                      "updatedAt": "2025-01-15T10:30:00.000+0000"
+                    }
+                  },
+                  "withoutSigning": {
+                    "summary": "Sin firma HMAC",
+                    "value": {
+                      "id": "B2C3D4E5F6789012345678901234AB12",
+                      "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "instanceId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                      "description": "Webhook principal de producción",
+                      "events": [
+                        "MESSAGE_RECEIVED",
+                        "CONNECTED",
+                        "DISCONNECTED"
+                      ],
+                      "status": "ENABLED",
+                      "signing": false,
+                      "auth": {
+                        "type": "BEARER",
+                        "configured": true
+                      },
+                      "payloadFormat": "DEFAULT",
+                      "customAttributes": {},
+                      "createdAt": "2025-01-15T10:30:00.000+0000",
+                      "updatedAt": "2025-01-15T10:30:00.000+0000"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Petición no válida: faltan url o events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 400,
+                  "message": "url is required"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 422,
+                  "message": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar webhooks",
+        "description": "Devuelve todos los webhooks registrados en el canal. Las credenciales de autenticación y el `secret` HMAC no se devuelven por seguridad.",
+        "operationId": "listWebhooks",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de webhooks del canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebhookResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "A1B2C3D4E5F6789012345678901234AB",
+                    "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                    "instanceId": "019E4C54B1B375A28970B605CA9B03C3",
+                    "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                    "description": "Webhook principal de producción",
+                    "events": [
+                      "MESSAGE_RECEIVED",
+                      "MESSAGE_STATUS"
+                    ],
+                    "status": "ENABLED",
+                    "signing": true,
+                    "auth": {
+                      "type": "BEARER",
+                      "configured": true
+                    },
+                    "payloadFormat": "DEFAULT",
+                    "customAttributes": {},
+                    "createdAt": "2025-01-15T10:30:00.000+0000",
+                    "updatedAt": "2025-01-15T10:30:00.000+0000"
+                  },
+                  {
+                    "id": "B2C3D4E5F6789012345678901234AB12",
+                    "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                    "instanceId": "019E4C54B1B375A28970B605CA9B03C3",
+                    "url": "https://app.suempresa.com/webhooks/eventos-conexion",
+                    "description": "Eventos de conexión",
+                    "events": [
+                      "CONNECTED",
+                      "DISCONNECTED"
+                    ],
+                    "status": "ENABLED",
+                    "signing": false,
+                    "auth": {
+                      "type": "NONE",
+                      "configured": false
+                    },
+                    "payloadFormat": "DEFAULT",
+                    "customAttributes": {},
+                    "createdAt": "2025-01-16T08:00:00.000+0000",
+                    "updatedAt": "2025-01-16T08:00:00.000+0000"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 422,
+                  "message": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/webhooks/{webhookId}": {
+      "get": {
+        "summary": "Consultar webhook",
+        "description": "Devuelve los datos de un webhook concreto. Las credenciales y el `secret` no se devuelven.",
+        "operationId": "getWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          },
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "description": "ID del webhook",
+            "schema": {
+              "type": "string",
+              "example": "A1B2C3D4E5F6789012345678901234AB"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos del webhook",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                },
+                "example": {
+                  "id": "A1B2C3D4E5F6789012345678901234AB",
+                  "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                  "instanceId": "019E4C54B1B375A28970B605CA9B03C3",
+                  "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                  "description": "Webhook principal de producción",
+                  "events": [
+                    "MESSAGE_RECEIVED",
+                    "MESSAGE_STATUS"
+                  ],
+                  "status": "ENABLED",
+                  "signing": true,
+                  "auth": {
+                    "type": "BEARER",
+                    "configured": true
+                  },
+                  "payloadFormat": "DEFAULT",
+                  "customAttributes": {},
+                  "createdAt": "2025-01-15T10:30:00.000+0000",
+                  "updatedAt": "2025-01-15T10:30:00.000+0000"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Webhook no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 404,
+                  "message": "Webhook not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 422,
+                  "message": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Actualizar webhook",
+        "description": "Actualiza parcialmente la configuración del webhook. Solo se actualizan los campos que se envían.",
+        "operationId": "updateWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          },
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "description": "ID del webhook",
+            "schema": {
+              "type": "string",
+              "example": "A1B2C3D4E5F6789012345678901234AB"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookRequest"
+              },
+              "examples": {
+                "disable": {
+                  "summary": "Deshabilitar webhook",
+                  "value": {
+                    "status": "DISABLED"
+                  }
+                },
+                "reenable": {
+                  "summary": "Volver a habilitar el webhook",
+                  "value": {
+                    "status": "ENABLED"
+                  }
+                },
+                "updateUrlAndEvents": {
+                  "summary": "Actualizar la URL y los eventos",
+                  "value": {
+                    "url": "https://nova-url.suempresa.com/webhooks/omni-zapi",
+                    "events": [
+                      "MESSAGE_RECEIVED",
+                      "MESSAGE_STATUS",
+                      "CONNECTED",
+                      "DISCONNECTED"
+                    ]
+                  }
+                },
+                "enableSignature": {
+                  "summary": "Habilitar / rotar la firma HMAC",
+                  "value": {
+                    "signing": true
+                  }
+                },
+                "updateAuth": {
+                  "summary": "Cambiar la autenticación a Bearer",
+                  "value": {
+                    "auth": {
+                      "type": "BEARER",
+                      "token": "novo-token-secreto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook actualizado correctamente. El campo `secret` se devuelve **solo** cuando se ha habilitado `signing` en esta actualización.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookCreatedResponse"
+                },
+                "examples": {
+                  "afterEnableSigning": {
+                    "summary": "Después de habilitar la firma (se devuelve el secret)",
+                    "value": {
+                      "id": "A1B2C3D4E5F6789012345678901234AB",
+                      "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "instanceId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                      "description": "Webhook principal de producción",
+                      "events": [
+                        "MESSAGE_RECEIVED",
+                        "MESSAGE_STATUS"
+                      ],
+                      "status": "ENABLED",
+                      "signing": true,
+                      "secret": "d4e5f6789012345678901234abcdef0123456789abcdef0123456789ab12c3d4",
+                      "auth": {
+                        "type": "BEARER",
+                        "configured": true
+                      },
+                      "payloadFormat": "DEFAULT",
+                      "customAttributes": {},
+                      "createdAt": "2025-01-15T10:30:00.000+0000",
+                      "updatedAt": "2025-01-20T14:00:00.000+0000"
+                    }
+                  },
+                  "afterDisable": {
+                    "summary": "Después de deshabilitarla (sin secret)",
+                    "value": {
+                      "id": "A1B2C3D4E5F6789012345678901234AB",
+                      "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "instanceId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "url": "https://app.suempresa.com/webhooks/omni-zapi",
+                      "description": "Webhook principal de producción",
+                      "events": [
+                        "MESSAGE_RECEIVED",
+                        "MESSAGE_STATUS"
+                      ],
+                      "status": "DISABLED",
+                      "signing": true,
+                      "auth": {
+                        "type": "BEARER",
+                        "configured": true
+                      },
+                      "payloadFormat": "DEFAULT",
+                      "customAttributes": {},
+                      "createdAt": "2025-01-15T10:30:00.000+0000",
+                      "updatedAt": "2025-01-20T15:00:00.000+0000"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Petición no válida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 400,
+                  "message": "Validation error"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Webhook no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 404,
+                  "message": "Webhook not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 422,
+                  "message": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar webhook",
+        "description": "Elimina permanentemente el webhook. A partir del borrado, ya no se entrega ningún evento en la URL configurada.",
+        "operationId": "deleteWebhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          },
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "description": "ID del webhook",
+            "schema": {
+              "type": "string",
+              "example": "A1B2C3D4E5F6789012345678901234AB"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Webhook eliminado correctamente. No se devuelve contenido."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Webhook no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 404,
+                  "message": "Webhook not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 422,
+                  "message": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "CreateWebhookRequest": {
+        "type": "object",
+        "required": [
+          "url",
+          "events"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL de destino de los eventos (máx. 2048 caracteres)",
+            "example": "https://app.suempresa.com/webhooks/omni-zapi"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descripción opcional del webhook",
+            "example": "Webhook principal de producción"
+          },
+          "events": {
+            "type": "array",
+            "description": "Tipos de evento que se van a recibir. Es obligatorio al menos uno.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "MESSAGE_RECEIVED",
+                "MESSAGE_DELIVERY",
+                "MESSAGE_STATUS",
+                "RECEIVED_STATUS",
+                "RECEIVED_AND_DELIVERY",
+                "CONNECTED",
+                "DISCONNECTED",
+                "PRESENCE_CHAT",
+                "INITIAL_DATA",
+                "BLOCK"
+              ]
+            },
+            "example": [
+              "MESSAGE_RECEIVED",
+              "MESSAGE_STATUS"
+            ]
+          },
+          "signing": {
+            "type": "boolean",
+            "description": "Habilita la firma HMAC-SHA256. Cuando es `true`, se genera un `secret` de 64 caracteres hexadecimales que se devuelve **solo en la creación o la actualización**. Úsalo para verificar la autenticidad de las peticiones recibidas.",
+            "default": false,
+            "example": true
+          },
+          "auth": {
+            "$ref": "#/components/schemas/WebhookAuth"
+          },
+          "payloadFormat": {
+            "type": "string",
+            "enum": [
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
+            ],
+            "description": "Formato del payload entregado al webhook. `DEFAULT` es el formato de Omni Z-API; `Z_API` mantiene la estructura de Z-API para quienes migran; `CHATWOOT` lo entrega en el formato que espera Chatwoot.",
+            "default": "DEFAULT",
+            "example": "DEFAULT"
+          },
+          "customAttributes": {
+            "type": "object",
+            "description": "Atributos extra",
+            "additionalProperties": true,
+            "example": {}
+          }
+        }
+      },
+      "UpdateWebhookRequest": {
+        "type": "object",
+        "description": "Todos los campos son opcionales: solo se actualizan los campos que se envían.",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Nueva URL de destino",
+            "example": "https://nova-url.suempresa.com/webhooks/omni-zapi"
+          },
+          "description": {
+            "type": "string",
+            "description": "Nueva descripción"
+          },
+          "events": {
+            "type": "array",
+            "description": "Nueva lista de eventos: sustituye todos los eventos existentes",
+            "items": {
+              "type": "string",
+              "enum": [
+                "MESSAGE_RECEIVED",
+                "MESSAGE_DELIVERY",
+                "MESSAGE_STATUS",
+                "RECEIVED_STATUS",
+                "RECEIVED_AND_DELIVERY",
+                "CONNECTED",
+                "DISCONNECTED",
+                "PRESENCE_CHAT",
+                "INITIAL_DATA",
+                "BLOCK"
+              ]
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ],
+            "description": "`DISABLED` pausa la entrega de eventos sin eliminar el webhook"
+          },
+          "signing": {
+            "type": "boolean",
+            "description": "Habilita o rota la firma HMAC. Genera un `secret` nuevo que se devuelve en la respuesta."
+          },
+          "auth": {
+            "$ref": "#/components/schemas/WebhookAuth"
+          },
+          "payloadFormat": {
+            "type": "string",
+            "enum": [
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
+            ]
+          },
+          "customAttributes": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "WebhookAuth": {
+        "type": "object",
+        "description": "Configura cómo se autentica Omni Z-API al llamar a tu URL",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
+            "description": "Tipo de autenticación",
+            "example": "BEARER"
+          },
+          "token": {
+            "type": "string",
+            "description": "Token para la autenticación `BEARER`: se envía en el header `Authorization: Bearer <token>`",
+            "example": "mi-token-secreto"
+          },
+          "key": {
+            "type": "string",
+            "description": "Clave para la autenticación `API_KEY`"
+          },
+          "username": {
+            "type": "string",
+            "description": "Usuario para la autenticación `BASIC`"
+          },
+          "password": {
+            "type": "string",
+            "description": "Contraseña para la autenticación `BASIC`"
+          },
+          "headerName": {
+            "type": "string",
+            "description": "Nombre del header para `CUSTOM_HEADER`",
+            "example": "X-Api-Key"
+          },
+          "headerValue": {
+            "type": "string",
+            "description": "Valor del header para `CUSTOM_HEADER`"
+          }
+        }
+      },
+      "WebhookAuthInfo": {
+        "type": "object",
+        "description": "Resumen de la autenticación configurada: las credenciales no se devuelven por seguridad",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
+            "example": "BEARER"
+          },
+          "configured": {
+            "type": "boolean",
+            "description": "`true` cuando hay credenciales configuradas",
+            "example": true
+          }
+        }
+      },
+      "WebhookResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID único del webhook",
+            "example": "A1B2C3D4E5F6789012345678901234AB"
+          },
+          "channelId": {
+            "type": "string",
+            "description": "ID del canal al que pertenece el webhook",
+            "example": "019E4C54B1B375A28970B605CA9B03C3"
+          },
+          "instanceId": {
+            "type": "string",
+            "deprecated": true,
+            "description": "Obsoleto: usa `channelId`",
+            "example": "019E4C54B1B375A28970B605CA9B03C3"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL de destino de los eventos",
+            "example": "https://app.suempresa.com/webhooks/omni-zapi"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Descripción del webhook",
+            "example": "Webhook principal de producción"
+          },
+          "events": {
+            "type": "array",
+            "description": "Tipos de evento configurados",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "MESSAGE_RECEIVED",
+              "MESSAGE_STATUS"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ],
+            "description": "Estado actual del webhook",
+            "example": "ENABLED"
+          },
+          "signing": {
+            "type": "boolean",
+            "description": "Indica si la firma HMAC está habilitada",
+            "example": true
+          },
+          "auth": {
+            "$ref": "#/components/schemas/WebhookAuthInfo"
+          },
+          "payloadFormat": {
+            "type": "string",
+            "enum": [
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
+            ],
+            "description": "Formato del payload entregado",
+            "example": "DEFAULT"
+          },
+          "customAttributes": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Atributos extra configurados",
+            "example": {}
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de creación",
+            "example": "2025-01-15T10:30:00.000+0000"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de la última actualización",
+            "example": "2025-01-15T10:30:00.000+0000"
+          }
+        }
+      },
+      "WebhookCreatedResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WebhookResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "secret": {
+                "type": "string",
+                "description": "Secret HMAC de 64 caracteres hexadecimales: se devuelve **solo** cuando se habilita `signing` en el create o el update. Guárdalo de forma segura; después no se podrá recuperar.",
+                "example": "a3f1c2d4e5b6789012345678901234abcdef0123456789abcdef0123456789ab"
+              }
+            }
+          }
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

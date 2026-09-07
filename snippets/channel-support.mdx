@@ -1,0 +1,30 @@
+export const ChannelSupport = ({
+  whatsapp = 'yes',
+  web = 'yes',
+  instagram = 'yes',
+  messenger = 'yes',
+  telegram = 'yes',
+  lang = 'pt',
+}) => {
+  const L = {
+    pt: { title: 'Disponibilidade por canal', win: 'No WhatsApp Oficial exige a janela de 24 horas aberta. Nos outros canais não há janela.', names: ['WhatsApp Oficial', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'] },
+    en: { title: 'Availability per channel', win: 'On WhatsApp Official it requires the 24-hour window to be open. The other channels have no window.', names: ['WhatsApp Official', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'] },
+    es: { title: 'Disponibilidad por canal', win: 'En WhatsApp Oficial exige que la ventana de 24 horas esté abierta. Los demás canales no tienen ventana.', names: ['WhatsApp Oficial', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'] },
+  }[lang];
+  const mark = (v) => (v === 'yes' ? '✅' : v === 'partial' ? '⚠️' : '❌');
+  const vals = [whatsapp, web, instagram, messenger, telegram];
+  return (
+    <div>
+      <p><strong>{L.title}</strong></p>
+      <table>
+        <thead>
+          <tr>{L.names.map((n) => <th key={n} style={{ textAlign: 'center' }}>{n}</th>)}</tr>
+        </thead>
+        <tbody>
+          <tr>{vals.map((v, i) => <td key={i} style={{ textAlign: 'center' }}>{mark(v)}</td>)}</tr>
+        </tbody>
+      </table>
+      {whatsapp === 'yes' && <p>{L.win}</p>}
+    </div>
+  );
+};

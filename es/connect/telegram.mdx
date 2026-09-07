@@ -1,0 +1,57 @@
+---
+title: "Conectar Telegram"
+description: "Conecta un bot de Telegram con el token de BotFather"
+---
+
+Canal de tipo `BOT_TELEGRAM`. Es el más sencillo de los cinco flujos: sin OAuth, sin Meta y sin aprobación.
+
+## Requisitos
+
+- Un bot creado con el [@BotFather](https://t.me/botfather) de Telegram
+- El **token** que BotFather devuelve al crearlo
+
+## Crear el bot
+
+<Steps>
+  <Step title="Habla con BotFather">
+    Abre [@BotFather](https://t.me/botfather) en Telegram y envía `/newbot`.
+  </Step>
+  <Step title="Elige nombre y usuario">
+    El usuario debe terminar en `bot`, por ejemplo `mitienda_bot`.
+  </Step>
+  <Step title="Guarda el token">
+    BotFather devuelve algo como `123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`. Ese es el token.
+  </Step>
+</Steps>
+
+<Warning>
+  El token da control total del bot. Trátalo como una contraseña: no lo subas al repositorio ni lo expongas en el frontend.
+</Warning>
+
+## Conectar
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'SU_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'ID_DEL_CANAL' });
+// response: { success, channelId, botToken }
+```
+
+El SDK abre una ventana donde el usuario pega el token del bot. A diferencia de los canales de Meta, la respuesta trae **`botToken` en lugar de `code`**: no hay OAuth de por medio.
+
+Reenvía el objeto completo para [finalizar la conexión](/es/channels/connect-channel).
+
+## Qué cambia en Telegram
+
+Telegram es el canal **menos restringido** de los cinco:
+
+| Detalle | Valor |
+|---|---|
+| Identificador del contacto | usuario del bot (`@mi_bot`) |
+| Ventana de conversación | **no existe**: envía en cualquier momento |
+| Plantillas | no hacen falta, y no existen |
+| Encuesta | **admitida** (solo Telegram y WhatsApp Web la tienen) |
+| Ubicación y contacto | admitidos |
+
+<Note>
+  Sin ventana de 24 horas inicias conversaciones cuando quieras, siempre que el usuario haya iniciado el bot al menos una vez. Esa es la regla de Telegram: el bot no habla con quien nunca envió `/start`.
+</Note>

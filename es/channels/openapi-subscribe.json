@@ -1,0 +1,163 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Suscribir canal",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/subscribe": {
+      "get": {
+        "summary": "Suscribir canal (ENTERPRISE)",
+        "description": "Vincula el canal a la suscripción activa de Stripe de la cuenta. El canal se añade automáticamente a la suscripción existente y en la próxima factura se incluye un cargo proporcional al periodo restante. El usuario debe haber completado el pago previamente en el panel de Omni Z-API. Requiere el rol **ENTERPRISE**.",
+        "operationId": "subscribeChannel",
+        "tags": [
+          "Canales"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal (obtenido con Crear canal)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Canal vinculado a la suscripción correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscribeResponse"
+                },
+                "example": {
+                  "type": "SUBSCRIPTION_UPDATED",
+                  "message": "Canal activo. Se incluirá un cargo proporcional en la próxima factura."
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Canal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 404,
+                  "message": "Channel not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regla de negocio incumplida. Posibles causas:\n\n- `ENTERPRISE role required`: la cuenta no tiene el rol ENTERPRISE\n- `CREDIT_LIMIT_EXCEEDED`: se ha alcanzado el límite de crédito de la cuenta\n- `SUBSCRIPTION_TERMINATED`: la suscripción ha finalizado y no se pueden añadir canales",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "enterpriseRequired": {
+                    "summary": "Cuenta sin el rol ENTERPRISE",
+                    "value": {
+                      "error": 422,
+                      "message": "This action requires ENTERPRISE role"
+                    }
+                  },
+                  "creditLimit": {
+                    "summary": "Límite de crédito alcanzado",
+                    "value": {
+                      "error": 422,
+                      "message": "CREDIT_LIMIT_EXCEEDED"
+                    }
+                  },
+                  "terminated": {
+                    "summary": "Suscripción finalizada",
+                    "value": {
+                      "error": 422,
+                      "message": "SUBSCRIPTION_TERMINATED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SubscribeResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SUBSCRIPTION_UPDATED"
+            ],
+            "description": "Indica que el canal se añadió correctamente a la suscripción",
+            "example": "SUBSCRIPTION_UPDATED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensaje informativo para mostrar al usuario",
+            "example": "Canal activo. Se incluirá un cargo proporcional en la próxima factura."
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

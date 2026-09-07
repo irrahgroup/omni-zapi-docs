@@ -1,0 +1,66 @@
+---
+title: "Origens do SDK"
+description: "Libere os domínios que podem chamar o SDK de conexão e diagnostique falhas silenciosas"
+openapi: "/pt/channels/openapi-sdk-info.json GET /instances/{channelId}/sdk-info"
+---
+
+## Conceituação
+
+O SDK de conexão resolve `{ success: false }` **sem dizer o motivo**. Na prática ele falha por dois caminhos muito diferentes, e este endpoint resolve o primeiro.
+
+## Falha 1 — origem não liberada
+
+O SDK só funciona a partir de domínios cadastrados em `allowOrigins`. Se a origem do navegador não estiver na lista, ele aborta com:
+
+```
+[Omni Z-API SDK] Origin "https://app.suaempresa.com" is not in the allowed origins list.
+```
+
+Use este endpoint **antes** de chamar o SDK para saber se a origem atual está liberada:
+
+```javascript
+const info = await fetch(
+  `https://api.omni.z-api.io/instances/${channelId}/sdk-info`,
+  { headers: { Authorization: SUA_PUBLIC_KEY } },
+).then((r) => r.json());
+
+const liberado = info.allowOrigins.includes(window.location.origin);
+```
+
+<Note>
+  O domínio do painel do Omni Z-API é sempre aceito, mesmo sem constar em `allowOrigins`. Você só precisa cadastrar os **seus** domínios — inclusive `http://localhost:3000` para desenvolvimento.
+</Note>
+
+<Warning>
+  Cadastrar origens é feito no painel, em **Segurança**. Não há endpoint público para isso.
+</Warning>
+
+## Falha 2 — popup bloqueado
+
+O SDK abre uma janela com `window.open`. Se você chamar `client.connect()` **depois de um `await`**, o gesto do usuário já se perdeu e o navegador bloqueia o popup — o SDK também devolve `{ success: false }`.
+
+```javascript
+// Errado: o await consome o gesto do clique
+async function onClick() {
+  const dados = await carregarAlgo();
+  await client.connect({ channelId });   // popup bloqueado
+}
+
+// Certo: connect() é a primeira coisa após o clique
+async function onClick() {
+  const promessa = client.connect({ channelId });
+  const dados = await carregarAlgo();
+  await promessa;
+}
+```
+
+## Autenticação
+
+Este é o **único** endpoint que aceita a Public Key, e ela vai crua no header — sem `Bearer`:
+
+```bash
+curl https://api.omni.z-api.io/instances/ID_DO_CANAL/sdk-info \
+  -H "Authorization: SUA_PUBLIC_KEY"
+```
+
+Isso é intencional: o endpoint é chamado do frontend, onde a [Public Key pode ser exposta](/authentication).

@@ -1,0 +1,239 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - SDK info",
+    "description": "Query the origins allowed for the channel connection SDK",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "paths": {
+    "/instances/{channelId}/sdk-info": {
+      "get": {
+        "summary": "Get SDK origins",
+        "description": "Returns the origins allowed for that channel's connection SDK.\n\nAuthenticated with the **Public Key** in the `Authorization` header — with no `Bearer` prefix. It is the only endpoint that accepts the Public Key, precisely so it can be called from the frontend.",
+        "operationId": "getSdkInfo",
+        "tags": [
+          "Channels"
+        ],
+        "security": [
+          {
+            "publicKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Channel origins",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkInfo"
+                },
+                "example": {
+                  "allowOrigins": [
+                    "https://app.yourcompany.com",
+                    "http://localhost:3000"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing Public Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/list-messenger-pages": {
+      "post": {
+        "summary": "List Messenger pages",
+        "description": "Returns the Facebook pages the user authorized, so they can pick which one to link to the channel.\n\nThis step is **Messenger only**: Meta's OAuth returns a `code` that grants access to several pages, and the channel needs exactly one. Authenticated with the **Public Key**.",
+        "operationId": "listMessengerPages",
+        "tags": [
+          "Channels"
+        ],
+        "security": [
+          {
+            "publicKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListMessengerPagesRequest"
+              },
+              "example": {
+                "code": "AQD8h2...",
+                "redirectUri": "https://app.omni.z-api.io/oauth/proxy-messenger"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Available pages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessengerPages"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "102938475601234",
+                      "name": "My Store",
+                      "accessToken": "EAAG..."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing Public Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid or expired `code`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SdkInfo": {
+        "type": "object",
+        "properties": {
+          "allowOrigins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Origins allowed for the SDK"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ListMessengerPagesRequest": {
+        "type": "object",
+        "required": [
+          "code",
+          "redirectUri"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "`code` returned by Meta's OAuth"
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "The same `redirectUri` used in the OAuth"
+          }
+        }
+      },
+      "MessengerPages": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Authorized pages",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Page ID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Page name"
+                },
+                "accessToken": {
+                  "type": "string",
+                  "description": "Page access token"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "publicKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization"
+      }
+    }
+  }
+}

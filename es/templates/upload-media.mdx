@@ -1,0 +1,58 @@
+---
+title: "Subir multimedia"
+description: "Obtén el header_handle para plantillas con HEADER de imagen, vídeo o documento"
+openapi: "/es/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates/media"
+---
+
+## Conceptos
+
+Meta **no acepta el archivo directamente** al crear la plantilla. Exige un `header_handle` producido por la Resumable Upload API, que depende del token de la aplicación; por eso la subida pasa por aquí y no por tu frontend.
+
+Este endpoint recibe el archivo y devuelve el handle listo para usar.
+
+## Cuándo lo necesitas
+
+Solo cuando la plantilla tiene un componente `HEADER` de tipo `IMAGE`, `VIDEO` o `DOCUMENT`. Las plantillas con header de texto, o sin header, no necesitan subida.
+
+## Flujo
+
+<Steps>
+  <Step title="Sube el archivo">
+    `POST /whatsapp/businesses/{wabaId}/templates/media` con `multipart/form-data`, campos `file` y `type`.
+  </Step>
+  <Step title="Guarda el handle">
+    La respuesta trae el handle en el campo `h`.
+  </Step>
+  <Step title="Úsalo en el componente HEADER">
+    Pasa el handle como `example` del HEADER en [Crear plantilla](/es/templates/create-template):
+
+    ```json
+    {
+      "type": "HEADER",
+      "format": "IMAGE",
+      "example": { "header_handle": ["4::aW1hZ2UvanBlZw==:ARZ..."] }
+    }
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  El handle caduca. Sube el archivo y crea la plantilla en la misma sesión: no guardes el handle para usarlo días después.
+</Warning>
+
+<Note>
+  Además de `h`, la API acepta el handle en las claves `handle`, `header_handle`, `headerHandle` y `mediaHandle`. Usa `h`, que es la forma canónica.
+</Note>
+
+## Requisito de configuración
+
+La subida depende del **App ID** y el **App Secret** de Meta registrados en la cuenta. Sin ellos, la llamada devuelve `422` con `MISSING_APP_CREDENTIALS`.
+
+Esto se configura en el panel, en **Seguridad**: no hay endpoint público para registrar las credenciales del app. Consulta también [Orígenes del SDK](/es/channels/sdk-info), que cubre el otro requisito del flujo con SDK.
+
+## Límites
+
+| Elemento | Valor |
+|---|---|
+| Tamaño máximo | 100 MB |
+| Campos obligatorios | `file`, `type` |

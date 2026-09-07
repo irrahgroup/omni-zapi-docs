@@ -1,0 +1,105 @@
+---
+title: "Conectar canal Meta WhatsApp"
+description: "Flujo completo para conectar un canal META_WHATSAPP a la API Oficial de WhatsApp"
+openapi: "/es/channels/openapi-connect.json POST /v1/channels/{channelId}/connect"
+---
+
+import { projectName, frontendUrl } from '/snippets/variables.mdx';
+
+
+## Visión general
+
+Después de [crear un canal](/es/channels/create-channel) del tipo `META_WHATSAPP`, tienes que **conectarlo** a un número de WhatsApp Business. Hay dos formas de hacerlo:
+
+- **Desde el panel** — Flujo guiado directamente en el [Panel]({frontendUrl})
+- **Con el SDK + API** — Integra el flujo de conexión en tu sistema
+
+## Conexión desde el panel
+
+Es la forma más sencilla. Entra en el [Panel]({frontendUrl}), selecciona el canal que creaste y sigue el flujo de conexión guiado.
+
+## Conexión con el SDK + API
+
+Usa este flujo cuando quieras que **tu usuario** conecte el canal desde **tu propio sistema**, sin necesidad de entrar al panel de {projectName}.
+
+El flujo consta de 3 etapas:
+
+<Steps>
+  <Step title="Frontend — Iniciar la conexión con el SDK">
+    En el **frontend** de tu aplicación, usa el SDK para iniciar el flujo de conexión. El SDK abrirá el proceso de autenticación con WhatsApp y devolverá la información necesaria.
+
+    ```javascript
+    import OmniZapi from '@omni-zapi/connect';
+
+    const client = OmniZapi.newClient({
+      publicKey: 'SU_PUBLIC_KEY'
+    });
+
+    const response = await client.connect({
+      channelId: 'ID_DEL_CANAL'
+    });
+
+    // Envía el response a tu backend
+    ```
+
+    <Tip>
+      La `publicKey` se puede exponer en el frontend. Más información en [Autenticación](/es/authentication).
+    </Tip>
+  </Step>
+  <Step title="Frontend → Backend — Enviar los datos">
+    El SDK devuelve un objeto con la información de la conexión. Envía esos datos al **backend** de tu aplicación:
+
+    ```json
+    {
+      "wabaId": "428083093730937",
+      "phoneId": "123456789012345",
+      "code": "ABC123DEF456",
+      "coexistence": false
+    }
+    ```
+
+    | Campo | Tipo | Descripción |
+    |---|---|---|
+    | `wabaId` | string | ID de la cuenta de WhatsApp Business seleccionada |
+    | `phoneId` | string | ID del número de teléfono seleccionado |
+    | `code` | string | Código de autorización generado por WhatsApp |
+    | `coexistence` | boolean | Indica si el número está en modo de coexistencia |
+  </Step>
+  <Step title="Backend — Finalizar la conexión mediante la API">
+    En el **backend**, llama a la API de conexión enviando los datos recibidos del frontend:
+
+    `POST /v1/channels/{channelId}/connect`
+
+    ```bash
+    curl -X POST https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/connect \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer SU_SECRET_KEY" \
+      -d '{
+        "wabaId": "428083093730937",
+        "phoneId": "123456789012345",
+        "code": "ABC123DEF456",
+        "coexistence": false
+      }'
+    ```
+
+    <Warning>
+      Esta llamada debe hacerse en el **backend**, ya que utiliza la Secret Key, que nunca debe exponerse en el frontend.
+    </Warning>
+  </Step>
+</Steps>
+
+## Flujo resumido
+
+```
+Frontend (SDK)              →  Backend (API)
+
+1. client.connect()
+2. El usuario se autentica
+3. El SDK devuelve datos -→  4. POST /v1/channels/{id}/connect
+                               con wabaId, phoneId, code, coexistence
+                            5. Canal conectado ✓
+```
+
+<Note>
+  Una vez establecida la conexión, el canal está listo para enviar y recibir mensajes. Usa el `channelId` en los endpoints de [mensajes libres](/es/messages/introduction) y [plantillas](/es/templates/introduction).
+</Note>

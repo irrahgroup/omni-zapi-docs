@@ -1,0 +1,168 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Partner: crear canal",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels": {
+      "post": {
+        "summary": "Crear canal (Partner)",
+        "description": "Crea un canal nuevo en el workspace autenticado. Requiere el rol ENTERPRISE.",
+        "operationId": "partnerCreateChannel",
+        "tags": [
+          "Partners"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChannelRequest"
+              },
+              "examples": {
+                "whatsappMeta": {
+                  "summary": "WhatsApp Oficial (Meta)",
+                  "value": {
+                    "name": "Canal de Vendas",
+                    "type": "META_WHATSAPP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Canal creado correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateChannelResponse"
+                },
+                "example": {
+                  "id": "019E4C54B1B375A28970B605CA9B03C3"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Petición no válida: falta un campo obligatorio o el tipo no es válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 400,
+                  "message": "Validation error"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 422,
+                  "message": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "CreateChannelRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre del canal",
+            "example": "Canal de Vendas"
+          },
+          "type": {
+            "type": "string",
+            "description": "Tipo de canal (plataforma)",
+            "enum": [
+              "META_WHATSAPP",
+              "Z_API_WHATSAPP",
+              "META_INSTAGRAM",
+              "META_MESSENGER",
+              "BOT_TELEGRAM"
+            ],
+            "example": "META_WHATSAPP"
+          }
+        }
+      },
+      "CreateChannelResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID único del canal creado. Úsalo como `channelId` en todos los demás endpoints.",
+            "example": "019E4C54B1B375A28970B605CA9B03C3"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

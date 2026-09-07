@@ -1,0 +1,57 @@
+---
+title: "Connect Telegram"
+description: "Connect a Telegram bot with the BotFather token"
+---
+
+Channel of type `BOT_TELEGRAM`. It is the simplest of the five flows: no OAuth, no Meta, no approval.
+
+## Requirements
+
+- A bot created through Telegram's [@BotFather](https://t.me/botfather)
+- The **token** BotFather returns on creation
+
+## Creating the bot
+
+<Steps>
+  <Step title="Talk to BotFather">
+    Open [@BotFather](https://t.me/botfather) on Telegram and send `/newbot`.
+  </Step>
+  <Step title="Pick a name and username">
+    The username must end in `bot` — for example `mystore_bot`.
+  </Step>
+  <Step title="Keep the token">
+    BotFather returns something like `123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`. That is the token.
+  </Step>
+</Steps>
+
+<Warning>
+  The token grants full control of the bot. Treat it as a password — do not commit it and do not expose it in the frontend.
+</Warning>
+
+## Connecting
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'YOUR_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'CHANNEL_ID' });
+// response: { success, channelId, botToken }
+```
+
+The SDK opens a window where the user pastes the bot token. Unlike the Meta channels, the response carries **`botToken` instead of `code`** — no OAuth is involved.
+
+Forward the whole object to [finish the connection](/en/channels/connect-channel).
+
+## What is different on Telegram
+
+Telegram is the **least restricted** of the five channels:
+
+| Detail | Value |
+|---|---|
+| Contact identifier | bot username (`@my_bot`) |
+| Conversation window | **does not exist** — send at any time |
+| Templates | not needed, and do not exist |
+| Poll | **supported** (only Telegram and WhatsApp Web have it) |
+| Location and contact | supported |
+
+<Note>
+  With no 24-hour window you start conversations whenever you want — as long as the user has started the bot at least once. That is Telegram's rule: a bot does not talk to someone who never sent `/start`.
+</Note>

@@ -1,0 +1,120 @@
+---
+title: "Channels overview"
+description: "What each channel supports and how to connect each one"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## One `channelId`, five platforms
+
+In {projectName} you connect the channel once and use **the same endpoints** for all of them: [send message](/en/messages/introduction), [webhooks](/en/webhooks/introduction), all identical. What changes is the **connection flow** and what each platform accepts.
+
+<CardGroup cols={3}>
+  <Card title="Meta" icon="meta" href="/en/channels/connect-channel">
+    WhatsApp Official, Instagram and Messenger connect through Meta OAuth.
+  </Card>
+  <Card title="QR Code" icon="qrcode" href="/en/channels/introduction">
+    WhatsApp Web connects by scanning the QR Code.
+  </Card>
+  <Card title="Telegram" icon="telegram" href="/en/channels/introduction">
+    Telegram connects with the bot token.
+  </Card>
+</CardGroup>
+
+## Capability matrix
+
+Not everything works on every channel — the limit comes from the platform, not from our API.
+
+| Feature | WhatsApp Official | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Text | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Image | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Audio | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Video | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Document | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Sticker | ✅ | ✅ | ⚠️ | ✅ | ✅ |
+| Location | ✅ | ✅ | ❌ | ❌ | ✅ |
+| Contact | ✅ | ✅ | ❌ | ❌ | ✅ |
+| Quick reply buttons | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Action buttons | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Pre-approved template | ✅ WABA | ❌ | ❌ ¹ | ✅ Utility | ❌ |
+| Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Reaction (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
+| Poll | ❌ | ✅ | ❌ | ❌ | ✅ |
+
+### The `content.type` for each feature
+
+| Feature | `content.type` | Endpoint |
+|---|---|---|
+| Text | `TEXT` | [Send text](/en/messages/send-text) |
+| Image | `IMAGE` | [Send image](/en/messages/send-image) |
+| Audio | `AUDIO` | [Send audio](/en/messages/send-audio) |
+| Video | `VIDEO` | [Send video](/en/messages/send-video) |
+| Sticker | `STICKER` | [Send sticker](/en/messages/send-sticker) |
+| Location | `LOCATION` | [Send location](/en/messages/send-location) |
+| Contact | `CONTACT` | [Send contact](/en/messages/send-contact) |
+| Quick reply buttons | `INTERACTIVE_BUTTON` | [Send text with buttons](/en/messages/send-interactive-button) |
+| Action buttons | `INTERACTIVE_ACTION` | [Send action buttons](/en/messages/send-interactive-action) |
+| Template | `TEMPLATE` | [Send template](/en/messages/send-template) |
+
+<Note>
+  ⚠️ **Instagram and stickers**: the platform only accepts the heart sticker (`like_heart`), not arbitrary stickers.
+
+  ¹ **Instagram and pre-approved templates**: the Graph API `message_templates` edge exists only on the `Page` node. Omni Z-API connects Instagram through **Instagram Login** (the `IGUserForIGOnlyAPI` node), which does not expose that edge. Details in [Connect Instagram](/en/connect/instagram).
+
+  🔍 Cell not confirmed in the platform's official documentation.
+</Note>
+
+## Conversation window: only WhatsApp Official has one
+
+<Warning>
+  The [24-hour window](/en/conversation-window) rule is **exclusive to WhatsApp Official**. On the other channels you send messages at any time, with no window and no templates.
+</Warning>
+
+| Channel | Window | How to start a conversation outside it |
+|---|---|---|
+| **Meta WhatsApp** | 24 h, restarted by every customer message | [Approved template](/en/messages/send-template) |
+| **WhatsApp Web** | none | send directly |
+| **Instagram** | 24 h (7 days with the *human agent tag*) | Utility Template or Marketing Messages |
+| **Messenger** | 24 h (7 days with the *human agent tag*) | Utility Template or Marketing Messages |
+| **Telegram** | none | send directly |
+
+## How we identify the contact
+
+The `recipient.identifier` field changes format depending on the channel:
+
+| Channel | Identifier | Example |
+|---|---|---|
+| Meta WhatsApp | phone with country code | `5511999999999` |
+| WhatsApp Web | phone with country code | `5511999999999` |
+| Instagram | username | `@your_store` |
+| Messenger | Facebook page | page ID |
+| Telegram | bot username | `@your_bot` |
+
+## Pre-approved templates: WhatsApp and Messenger
+
+Two channels have templates that go through Meta approval, with different scopes:
+
+| Channel | Feature | Scope | Categories |
+|---|---|---|---|
+| WhatsApp Official | message template | **WABA** | `UTILITY`, `MARKETING`, `AUTHENTICATION` |
+| Messenger | **Utility Template** | **page** | `UTILITY` only |
+
+Instagram, WhatsApp Web and Telegram have none. On Instagram that follows from the login model we use — see [Connect Instagram](/en/connect/instagram).
+
+[Flows](/en/flows/introduction) are **WhatsApp Official only**.
+
+<Note>
+  Omni Z-API's [Templates](/en/templates/introduction) endpoints currently cover WhatsApp Official only. The Messenger Utility Template is **being implemented**.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Channel lifecycle" icon="arrows-spin" href="/en/channels/introduction">
+    Create, connect, subscribe, disconnect and delete.
+  </Card>
+  <Card title="Send your first message" icon="paper-plane" href="/en/messages/introduction">
+    The endpoint is the same for every channel.
+  </Card>
+</CardGroup>

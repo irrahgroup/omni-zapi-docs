@@ -1,0 +1,67 @@
+---
+title: "Authentication"
+description: "How to generate and use your API credentials in Omni Z-API"
+---
+
+import { projectName, frontendUrl } from '/snippets/variables.mdx';
+
+## API Credentials
+
+{projectName} uses a key pair: **Public Key** and **Secret Key**. Both are generated in the **Security** menu of the dashboard: [Security]({frontendUrl}/app/security).
+
+---
+
+## Public Key
+
+The Public Key is used by the channel connection SDK ([`@omni-zapi/connect`](https://www.npmjs.com/package/@omni-zapi/connect)). With it, you can [connect channels](/en/channels/connect-channel) directly within your system, without needing to access the dashboard.
+
+<Note>
+  The Public Key can be exposed in your application's frontend, as it has limited permissions for channel connection only.
+</Note>
+
+Example usage:
+
+```javascript
+import OmniZapi from '@omni-zapi/connect';
+
+const client = OmniZapi.newClient({
+  publicKey: 'YOUR_PUBLIC_KEY'
+});
+```
+
+---
+
+## Secret Key
+
+The Secret Key is used for authentication in all {projectName} APIs. It must be sent in the `Authorization` header as a Bearer token in every request.
+
+<Warning>
+  The Secret Key must **never** be exposed in the frontend. Use it only in your application's backend.
+</Warning>
+
+Example usage:
+
+```bash
+curl -X GET https://api.omni.z-api.io/whatsapp/businesses \
+  -H "Authorization: Bearer YOUR_SECRET_KEY"
+```
+
+---
+
+## Summary
+
+| Key | Usage | Where to use | Can expose in frontend? |
+|---|---|---|---|
+| **Public Key** | [Channel connection SDK](/en/channels/connect-channel) | Frontend or backend | Yes |
+| **Secret Key** | All API calls ([channels](/en/channels/introduction), [templates](/en/templates/introduction), [messages](/en/messages/introduction)) | Backend only | No |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Create a channel" icon="plug" href="/en/channels/create-channel">
+    Create your first channel to start sending messages.
+  </Card>
+  <Card title="Connect channel via SDK" icon="code" href="/en/channels/connect-channel">
+    Integrate the connection flow into your system.
+  </Card>
+</CardGroup>

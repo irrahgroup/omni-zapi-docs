@@ -1,0 +1,57 @@
+---
+title: "Conectar Telegram"
+description: "Conecte um bot do Telegram com o token do BotFather"
+---
+
+Canal do tipo `BOT_TELEGRAM`. É o fluxo mais simples dos cinco: não tem OAuth, não tem Meta, não tem aprovação.
+
+## Requisitos
+
+- Um bot criado no [@BotFather](https://t.me/botfather) do Telegram
+- O **token** que o BotFather devolve na criação
+
+## Criando o bot
+
+<Steps>
+  <Step title="Fale com o BotFather">
+    Abra [@BotFather](https://t.me/botfather) no Telegram e envie `/newbot`.
+  </Step>
+  <Step title="Escolha nome e usuário">
+    O usuário precisa terminar em `bot` — por exemplo `minhaloja_bot`.
+  </Step>
+  <Step title="Guarde o token">
+    O BotFather devolve algo como `123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`. É esse o token.
+  </Step>
+</Steps>
+
+<Warning>
+  O token dá controle total do bot. Trate como senha — não versione e não exponha no frontend.
+</Warning>
+
+## Conectando
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'SUA_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'ID_DO_CANAL' });
+// response: { success, channelId, botToken }
+```
+
+O SDK abre uma janela onde o usuário cola o token do bot. Diferente dos canais Meta, o retorno traz **`botToken` em vez de `code`** — não há OAuth envolvido.
+
+Repasse o objeto inteiro para [finalizar a conexão](/channels/connect-channel).
+
+## O que muda no Telegram
+
+O Telegram é o canal **menos restrito** dos cinco:
+
+| Detalhe | Valor |
+|---|---|
+| Identificador do contato | usuário do bot (`@meu_bot`) |
+| Janela de conversa | **não existe** — envie a qualquer momento |
+| Templates | não precisa, e não existem |
+| Enquete | **suportada** (só Telegram e WhatsApp Web têm) |
+| Localização e contato | suportados |
+
+<Note>
+  Sem janela de 24 horas, você inicia conversa quando quiser — desde que o usuário tenha iniciado o bot pelo menos uma vez. Essa é a regra do Telegram: o bot não fala com quem nunca deu `/start`.
+</Note>

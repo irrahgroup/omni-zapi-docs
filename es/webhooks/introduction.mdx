@@ -1,0 +1,72 @@
+---
+title: "Introducción"
+description: "Recibe eventos en tiempo real de Omni Z-API en tu sistema mediante webhooks"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## ¿Qué son los webhooks?
+
+Los webhooks son notificaciones HTTP que {projectName} envía a tu servidor cuando ocurre un evento, como la recepción de un mensaje, un estado de entrega o la actualización de una plantilla.
+
+En lugar de que tu sistema consulte la API periódicamente (polling), {projectName} **te envía los eventos** en el momento en que ocurren.
+
+```
+Ocurre un evento → Omni Z-API → POST a tu URL → Tu sistema lo procesa
+```
+
+<Note>
+  Los webhooks requieren el rol **ENTERPRISE** en tu cuenta. Si tu cuenta no tiene ese rol, las llamadas de CRUD de webhooks devuelven `422`. Ponte en contacto con soporte para habilitarlo.
+</Note>
+
+## Tipos de webhook
+
+{projectName} tiene dos tipos de webhook. Lo que **cambia** entre ellos son los eventos admitidos y la forma de asociarlos; cada sección detalla sus particularidades. El resto de esta página aplica a **los dos tipos**.
+
+<CardGroup cols={2}>
+  <Card title="Webhooks de canal" icon="hashtag" href="/es/webhooks/channel-webhooks">
+    Reciben los eventos de un canal concreto (mensajes, entrega, conexión).
+  </Card>
+  <Card title="Webhooks de plantilla" icon="brackets-curly" href="/es/webhooks/template-webhooks">
+    Reciben los eventos de plantilla de WhatsApp, con independencia de la instancia.
+  </Card>
+</CardGroup>
+
+## Formatos de payload
+
+{projectName} admite tres formatos de payload:
+
+| Formato | Descripción |
+|---|---|
+| `DEFAULT` | Formato estándar de Omni Z-API |
+| `Z_API` | Formato compatible con Z-API: mantiene la estructura que tus integraciones ya procesan, ideal si estás migrando |
+| `CHATWOOT` | El formato que espera Chatwoot, para conectar el canal directamente a su bandeja de entrada |
+
+<Note>
+  `payloadFormat` solo aplica a los **webhooks de canal**. En los [webhooks de plantilla](/es/webhooks/template-webhooks) el formato es siempre `DEFAULT` y el campo se descarta.
+</Note>
+
+## Autenticación del webhook
+
+Puedes configurar cómo se autentica {projectName} al llamar a tu URL:
+
+| Tipo | Cómo funciona |
+|---|---|
+| `NONE` | Sin autenticación (no recomendado en producción) |
+| `BEARER` | Envía `Authorization: Bearer <token>` |
+| `API_KEY` | Envía una clave de API configurada |
+| `BASIC` | HTTP Basic Authentication (`username:password`) |
+| `CUSTOM_HEADER` | Envía un header personalizado con el nombre y el valor que definas |
+
+## Firma HMAC
+
+Para asegurarte de que las peticiones que recibes provienen realmente de {projectName} y no han sido manipuladas, habilita la firma HMAC indicando `signing: true` al crear el webhook.
+
+Cuando está habilitada:
+- Se genera un `secret` de 64 caracteres hexadecimales, que se devuelve **una sola vez**, en la creación o la actualización.
+- Cada petición enviada a tu webhook incluye un header con la firma HMAC-SHA256 calculada sobre el payload.
+- Verificas la firma en tu servidor usando el `secret` que has almacenado.
+
+<Warning>
+  El `secret` se muestra **únicamente** en la respuesta de creación o de actualización con `signing: true`. Guárdalo de forma segura: no se puede recuperar después.
+</Warning>

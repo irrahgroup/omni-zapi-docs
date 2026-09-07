@@ -1,0 +1,51 @@
+---
+title: "Connect Meta WhatsApp"
+description: "Connect a number to the Official API through Meta's Embedded Signup"
+---
+
+Channel of type `META_WHATSAPP`. It is the only channel with [templates](/en/templates/introduction), [Flows](/en/flows/introduction) and the [24-hour window](/en/conversation-window).
+
+## Requirements
+
+- A [Business Portfolio](/en/whatsapp-official/portfolio/introduction) set up on Meta
+- Admin profile on the business account
+- A number that can receive SMS or a call
+- A [payment method](/en/whatsapp-official/payment) configured, in order to send templates
+
+## Connecting
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'YOUR_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'CHANNEL_ID' });
+// response: { success, channelId, code, wabaId, phoneId, coexistence }
+```
+
+The SDK opens Meta's **Embedded Signup**, where the user picks the WABA and the number. It is the only channel whose response carries `wabaId`, `phoneId` and `coexistence`.
+
+Forward the whole object to [finish the connection](/en/channels/connect-channel).
+
+## Two connection modes
+
+| Mode | When to use it | Guide |
+|---|---|---|
+| **Cloud API** | a new number, or one you can remove from the app | [Cloud API](/en/whatsapp-official/connection/cloud-api) |
+| **Coexistence** | a number already in use in the WhatsApp Business app | [Coexistence](/en/whatsapp-official/connection/coexistence) |
+
+The `coexistence` field in the response tells you which of the two the user chose — Meta returns `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING` in the coexistence case.
+
+## What is different on WhatsApp Official
+
+It is the **most capable and most restricted** of the five channels:
+
+| Detail | Value |
+|---|---|
+| Contact identifier | phone with country code |
+| Conversation window | **24 hours**, restarted by every customer message |
+| Outside the window | only with an [approved template](/en/messages/send-template) |
+| Templates and Flows | **exclusive to this channel** |
+| Location and contact | supported |
+| Cost | Meta charges for templates — see [Billing](/en/whatsapp-official/billing) |
+
+<Note>
+  Already have the number with another provider? See [Number migration](/en/whatsapp-official/migrate-number) before connecting.
+</Note>

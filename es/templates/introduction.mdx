@@ -1,0 +1,131 @@
+---
+title: "Introducción"
+description: "Entiende cómo funcionan las plantillas de mensaje en Omni Z-API"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+<Warning>
+  **Los tres canales de Meta tienen plantilla preaprobada**: WhatsApp Oficial, Instagram y Messenger. Lo que cambia es el alcance, el endpoint y la categoría.
+
+  Hoy los endpoints de esta sección cubren **solo WhatsApp Oficial** (alcance WABA). La compatibilidad con Instagram y Messenger está **en implementación**.
+</Warning>
+
+## Tres cosas se llaman «plantilla»
+
+Meta usa la misma palabra para tres recursos distintos. Confundirlos es la causa más habitual de error en la integración:
+
+| | 1. Plantilla de WhatsApp | 2. Utility Template | 3. Mensaje estructurado |
+|---|---|---|---|
+| Canales | WhatsApp Oficial | **Messenger** | Instagram, Messenger, WhatsApp |
+| Alcance | **WABA** | **página de Facebook** | ninguno: es inline |
+| Endpoint de Meta | `/{waba-id}/message_templates` | `/{page-id}/message_templates` | `/{page-id}/messages` |
+| Aprobación | **obligatoria** | **obligatoria** (en segundos) | **ninguna** |
+| Categorías | `UTILITY`, `MARKETING`, `AUTHENTICATION` | **solo `UTILITY`** | — |
+| Estados | 3 | **10** | — |
+| En Omni Z-API | esta sección | *en implementación* | [botones](/es/messages/send-interactive-button) |
+
+### 1 y 2 — plantillas preaprobadas
+
+Sirven al mismo propósito: hablar con el cliente **fuera de la ventana de conversación**. Las dos exigen registro previo y aprobación de Meta.
+
+La diferencia práctica es el alcance. La plantilla de WhatsApp pertenece a una **WABA**; la Utility Template pertenece a una **página de Facebook**.
+
+<Warning>
+  **Instagram no entra aquí.** La edge `message_templates` del Graph API existe solo en el node `Page`. Ningún node de Instagram la expone: ni `IGUser` (login por Facebook) ni `IGUserForIGOnlyAPI` (login por Instagram, que es el flujo de Omni Z-API).
+
+  En Instagram tienes la ventana de 24 h, ampliada a 7 días con la *human agent tag*. Más detalles en [Conectar Instagram](/es/connect/instagram).
+</Warning>
+
+La Utility Template tiene un ciclo de vida bastante más rico que la de WhatsApp: **10 estados** frente a 3:
+
+`PENDING` · `APPROVED` · `REJECTED` · `IN_APPEAL` · `PAUSED` · `DISABLED` · `LIMIT_EXCEEDED` · `ARCHIVED` · `PENDING_DELETION` · `DELETED`
+
+También acepta `parameter_format` (`NAMED` o `POSITIONAL`) y permite clonar de la biblioteca preaprobada de Meta con `library_template_name`.
+
+<Note>
+  En Messenger, la Utility Template **sustituyó a las Message Tags**. Las etiquetas `CONFIRMED_EVENT_UPDATE`, `ACCOUNT_UPDATE` y `POST_PURCHASE_UPDATE` se descontinuaron el **27 de abril de 2026** y ahora devuelven el error `100`. Si tu integración todavía usa etiquetas, ya está rota.
+</Note>
+
+Para marketing fuera de la ventana en Instagram y Messenger existe además la **Marketing Messages API**, que funciona por opt-in: pides permiso al cliente para enviarle mensajes promocionales recurrentes.
+
+### 3 — mensaje estructurado (sin aprobación)
+
+Es lo que Meta también llama *generic template* y *button template*. **No** es una plantilla preaprobada: es un formato de payload enviado inline, para poner botones y tarjetas en un mensaje que ya puedes enviar.
+
+En Omni Z-API son los endpoints interactivos, disponibles en los cinco canales sin registro:
+
+<CardGroup cols={2}>
+  <Card title="Enviar texto con botones" icon="hand-pointer" href="/es/messages/send-interactive-button">
+    Botones de respuesta rápida: el *button template* de Meta.
+  </Card>
+  <Card title="Enviar botones de acción" icon="up-right-from-square" href="/es/messages/send-interactive-action">
+    Botones de URL y de llamada: el *generic template* de Meta.
+  </Card>
+</CardGroup>
+
+<Note>
+  Consulta la [matriz de capacidades](/es/channels/overview) para ver qué admite cada canal.
+</Note>
+
+## ¿Qué son las plantillas de WhatsApp?
+
+En la API oficial de WhatsApp solo puedes enviar mensajes con total libertad mientras la **ventana de conversación de 24 horas** esté abierta (es decir, cuando el cliente te ha escrito recientemente).
+
+Fuera de esa ventana, la única forma de iniciar una conversación es mediante **plantillas**: mensajes predefinidos que Meta debe aprobar antes de que puedas enviarlos.
+
+{/* <Note>
+  Si vienes de Z-API, esta es una de las mayores diferencias. En Z-API (conexión no oficial) podías enviar cualquier mensaje en cualquier momento. En la API oficial, fuera de la ventana de 24 h solo funcionan las plantillas aprobadas.
+</Note> */}
+
+## Categorías
+
+Cada plantilla necesita una categoría que define el tipo de comunicación. Elegir la categoría equivocada puede hacer que Meta rechace tu plantilla.
+
+| Categoría | Cuándo usarla | Ejemplo |
+|---|---|---|
+| **UTILITY** | Comunicación transaccional y operativa | Confirmación de pedido, estado del envío, actualización de la cuenta |
+| **MARKETING** | Comunicación promocional | Campaña, oferta, cupón, lanzamiento de producto |
+| **AUTHENTICATION** | Seguridad y validación de identidad | Código OTP, confirmación de inicio de sesión, verificación en dos pasos |
+
+## Estructura de una plantilla
+
+Toda plantilla se compone de **components**. Cada componente cumple una función:
+
+| Componente | Obligatorio | Para qué sirve |
+|---|---|---|
+| **HEADER** | No | Contexto inicial: puede ser texto, imagen, vídeo o documento |
+| **BODY** | Sí | Contenido principal del mensaje |
+| **FOOTER** | No | Texto breve complementario (p. ej.: «No responda a este mensaje») |
+| **BUTTONS** | No | Acciones para el usuario (abrir URL, llamar, respuesta rápida) |
+
+### Placeholders
+
+Puedes usar variables dinámicas en el texto con `{{1}}`, `{{2}}`, etc. Al crear la plantilla es obligatorio enviar ejemplos reales para cada placeholder: Meta los utiliza durante la revisión.
+
+## Flujo de una plantilla
+
+La API organiza las plantillas por **business** (WABA, o cuenta de WhatsApp Business). Cada business tiene sus propias plantillas, su historial de aprobación y sus límites.
+
+<Steps>
+  <Step title="Identifica tu WABA">
+    Usa el endpoint de listar WABAs para obtener el `businessId` que corresponde a tu token.
+  </Step>
+  <Step title="Crea la plantilla">
+    Elige la categoría, arma los components con sus placeholders y ejemplos, y envíala a aprobación.
+  </Step>
+  <Step title="Espera la aprobación">
+    Meta revisa la plantilla y devuelve un estado: `PENDING`, `APPROVED` o `REJECTED`.
+  </Step>
+  <Step title="Envía mensajes">
+    Con la plantilla aprobada ya puedes usarla para iniciar conversaciones con clientes fuera de la ventana de 24 h.
+  </Step>
+</Steps>
+
+## Estados de la plantilla
+
+| Estado | Significado |
+|---|---|
+| `PENDING` | Enviada a revisión, pendiente de la aprobación de Meta |
+| `APPROVED` | Aprobada y lista para usar |
+| `REJECTED` | Rechazada: revisa el contenido y la categoría antes de reenviarla |

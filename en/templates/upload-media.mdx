@@ -1,0 +1,58 @@
+---
+title: "Upload media"
+description: "Get the header_handle for templates with an image, video or document HEADER"
+openapi: "/en/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates/media"
+---
+
+## Concepts
+
+Meta **does not accept the file directly** when creating the template. It requires a `header_handle` produced by the Resumable Upload API, which depends on the application token — that is why the upload goes through here and not through your frontend.
+
+This endpoint takes the file and returns the handle, ready to use.
+
+## When you need this
+
+Only when the template has a `HEADER` component of type `IMAGE`, `VIDEO` or `DOCUMENT`. Templates with a text header, or with no header, need no upload.
+
+## Flow
+
+<Steps>
+  <Step title="Upload the file">
+    `POST /whatsapp/businesses/{wabaId}/templates/media` with `multipart/form-data`, fields `file` and `type`.
+  </Step>
+  <Step title="Keep the handle">
+    The response returns the handle in the `h` field.
+  </Step>
+  <Step title="Use it on the HEADER component">
+    Pass the handle as the HEADER `example` in [Create template](/en/templates/create-template):
+
+    ```json
+    {
+      "type": "HEADER",
+      "format": "IMAGE",
+      "example": { "header_handle": ["4::aW1hZ2UvanBlZw==:ARZ..."] }
+    }
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  The handle expires. Upload the file and create the template in the same session — do not store the handle to use days later.
+</Warning>
+
+<Note>
+  Besides `h`, the API accepts the handle under the keys `handle`, `header_handle`, `headerHandle` and `mediaHandle`. Use `h`, which is the canonical form.
+</Note>
+
+## Configuration prerequisite
+
+The upload depends on the Meta **App ID** and **App Secret** registered on the account. Without them the call returns `422` with `MISSING_APP_CREDENTIALS`.
+
+This is configured in the dashboard, under **Security** — there is no public endpoint to register the app credentials. See also [SDK origins](/en/channels/sdk-info), which covers the other prerequisite of the SDK flow.
+
+## Limits
+
+| Item | Value |
+|---|---|
+| Maximum size | 100 MB |
+| Required fields | `file`, `type` |

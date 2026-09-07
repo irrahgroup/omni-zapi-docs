@@ -1,0 +1,143 @@
+---
+title: "Introduction"
+description: "Build native in-conversation forms on WhatsApp with WhatsApp Flows"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## What are Flows?
+
+**Flows** are forms that open inside the WhatsApp conversation itself. The customer fills them in without leaving the chat and without opening a browser — and you get structured answers back.
+
+They fit appointment booking, sign-up, satisfaction surveys, lead generation, support and login.
+
+<Note>
+  Flows belong to the WABA, not to the channel. Use the `wabaId` from [List WABAs](/en/templates/list-businesses) on the endpoints in this section.
+</Note>
+
+## Categories
+
+Meta uses the category when reviewing the flow. Picking the wrong one can get it rejected.
+
+| Category | What it is for |
+|---|---|
+| `APPOINTMENT_BOOKING` | Booking a time slot |
+| `LEAD_GENERATION` | Capturing a lead |
+| `SIGN_UP` | Account sign-up |
+| `SIGN_IN` | Login / authentication |
+| `CONTACT_US` | Contact us |
+| `CUSTOMER_SUPPORT` | Service and support |
+| `SURVEY` | Survey and satisfaction |
+| `OTHER` | When none of the above applies |
+
+## Lifecycle
+
+| Status | Meaning |
+|---|---|
+| `DRAFT` | Being edited. The only status where `flow_json` can change and the flow can be deleted |
+| `PUBLISHED` | Published and available for use in messages. `flow_json` is frozen |
+| `DEPRECATED` | Accepts no new openings; sessions already running continue |
+| `BLOCKED` | Blocked by Meta for a policy violation |
+| `THROTTLED` | Throttled by Meta due to excessive errors from your endpoint |
+
+<Steps>
+  <Step title="Build the flow_json">
+    Define the screens, the components and the `routing_model`. It is JSON, sent as a **string** in the `flow_json` field.
+  </Step>
+  <Step title="Create it in DRAFT">
+    Use [Create flow](/en/flows/create-flow) without `publish`. That way you can still iterate.
+  </Step>
+  <Step title="Fix the issues">
+    [Get flow](/en/flows/get-flow) returns `validation_errors` with whatever Meta flagged.
+  </Step>
+  <Step title="Publish">
+    [Publish flow](/en/flows/publish-flow). From then on `flow_json` no longer changes.
+  </Step>
+</Steps>
+
+## `flow_json` structure
+
+```json
+{
+  "version": "7.0",
+  "routing_model": { "WELCOME": ["DONE"], "DONE": [] },
+  "screens": [
+    {
+      "id": "WELCOME",
+      "title": "Booking",
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          { "type": "TextHeading", "text": "Pick a time" },
+          {
+            "type": "Form",
+            "name": "form",
+            "children": [
+              { "type": "TextInput", "name": "name", "label": "Your name", "input-type": "text", "required": true },
+              { "type": "DatePicker", "name": "date", "label": "Date" },
+              {
+                "type": "Footer",
+                "label": "Continue",
+                "on-click-action": { "name": "navigate", "next": { "type": "screen", "name": "DONE" }, "payload": {} }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+### Available components
+
+| Group | Components |
+|---|---|
+| Text | `TextHeading`, `TextSubheading`, `TextBody`, `TextCaption` |
+| Media | `Image` |
+| Input | `TextInput`, `TextArea`, `DatePicker` |
+| Selection | `Dropdown`, `RadioButtonsGroup`, `CheckboxGroup` |
+| Consent | `OptIn` |
+
+On `TextInput`, `input-type` accepts `text`, `number`, `email`, `password`, `passcode` and `phone`.
+
+### Actions
+
+| Action | What it does |
+|---|---|
+| `navigate` | Goes to the next screen, declared in `next.name` |
+| `complete` | Ends the flow and returns the answers |
+| `data_exchange` | Calls your `endpoint_uri` mid-flow to decide the next step |
+
+<Warning>
+  `data_exchange` requires `endpoint_uri` to be configured. If your endpoint fails too often, Meta puts the flow in `THROTTLED`.
+</Warning>
+
+## Endpoints
+
+<CardGroup cols={2}>
+  <Card title="List flows" icon="list" href="/en/flows/list-flows">
+    See the WABA flows with status and categories.
+  </Card>
+  <Card title="Create flow" icon="plus" href="/en/flows/create-flow">
+    Create a flow from its `flow_json`.
+  </Card>
+  <Card title="Get flow" icon="magnifying-glass" href="/en/flows/get-flow">
+    Fetch a flow and its validation issues.
+  </Card>
+  <Card title="Update flow" icon="pen" href="/en/flows/update-flow">
+    Change the name, the categories or the `flow_json`.
+  </Card>
+  <Card title="Publish flow" icon="rocket" href="/en/flows/publish-flow">
+    Make the flow available for use.
+  </Card>
+  <Card title="Deprecate flow" icon="ban" href="/en/flows/deprecate-flow">
+    Stop accepting new openings.
+  </Card>
+  <Card title="Delete flow" icon="trash" href="/en/flows/delete-flow">
+    Delete a flow in `DRAFT`.
+  </Card>
+  <Card title="Sync flows" icon="arrows-rotate" href="/en/flows/sync-flows">
+    Force a status refresh with Meta.
+  </Card>
+</CardGroup>

@@ -1,0 +1,171 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Partner: cancelar suscripción",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/cancel": {
+      "delete": {
+        "summary": "Cancelar suscripción (Partner)",
+        "description": "Solicita la cancelación de la suscripción del canal. El canal pasa a `CANCELLATION_PROCESS` y sigue activo hasta el final del periodo pagado. Requiere el rol ENTERPRISE.",
+        "operationId": "partnerCancelSubscription",
+        "tags": [
+          "Partners"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal (obtenido con Crear canal)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          },
+          {
+            "name": "cancel",
+            "in": "query",
+            "required": true,
+            "description": "Debe ser `true` para confirmar la cancelación",
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelRequest"
+              },
+              "examples": {
+                "withReason": {
+                  "summary": "Con motivo de cancelación",
+                  "value": {
+                    "cancelReason": "El cliente cerró la empresa"
+                  }
+                },
+                "withoutReason": {
+                  "summary": "Sin motivo (body omitido)",
+                  "value": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Cancelación solicitada correctamente. No se devuelve contenido."
+          },
+          "400": {
+            "description": "Petición no válida: falta el parámetro `cancel=true`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 400,
+                  "message": "cancel query param is required"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Canal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 404,
+                  "message": "Channel not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 422,
+                  "message": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "CancelRequest": {
+        "type": "object",
+        "properties": {
+          "cancelReason": {
+            "type": "string",
+            "description": "Motivo de la cancelación (opcional, pero recomendado con fines de auditoría)",
+            "example": "El cliente cerró la empresa"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+---
+title: "Compatibilidad con Z-API"
+description: "Migra de Z-API a Omni Z-API sin romper tus integraciones"
+---
+
+import { projectName, zapiBaseUrl, zapiOriginalUrl, frontendUrl, supportEmail } from '/snippets/variables.mdx';
+
+## ¿Qué es la versión Compatibilidad con Z-API?
+
+La versión **Compatibilidad con Z-API** se creó para facilitar la migración de los clientes que hoy usan Z-API y quieren pasarse a {projectName} como su solución oficial de API para WhatsApp y el resto de canales de mensajería.
+
+Sabemos que cambiar de proveedor de API puede ser un proceso laborioso, sobre todo cuando ya tienes integraciones funcionando en producción. Por eso hemos desarrollado esta capa de compatibilidad, que mantiene la misma estructura que ya conoces.
+
+## ¿Qué cambia en la práctica?
+
+<Note>
+  Los únicos cambios necesarios en tu aplicación son la **base URL** y el **header de autenticación**. Además, al utilizar la API oficial de WhatsApp, algunas funcionalidades de Z-API no están disponibles. Consulta la página de [Limitaciones de la API Oficial](/es/z-api/limitations) para más detalles.
+</Note>
+
+|  | Z-API | Omni Z-API |
+|---|---|---|
+| **Base URL** | `https://api.z-api.io` | `https://api.omni.z-api.io` |
+| **Autenticación** | `Client-Token` | `Authorization: Bearer {secret}` |
+| **Nomenclatura** | `instance_id` | `channel_id` |
+| **Path** | `/instances/` | `/instances/` o `/channels/` |
+| **Payloads** | — | La misma estructura |
+| **Webhooks** | — | La misma estructura |
+
+### Sobre la nomenclatura
+
+En {projectName}, lo que antes se llamaba **instancia** (`instance_id`) ahora se trata como **canal** (`channel_id`). El concepto es el mismo —representa la conexión con un número de WhatsApp—, pero hemos adoptado el término «canal» porque es más amplio, ya que {projectName} admite varios canales de mensajería además de WhatsApp.
+
+<Note>
+  Por compatibilidad, la API acepta tanto `/instances/` como `/channels/` en el path. Si estás migrando desde Z-API, puedes mantener `/instances/` sin problema: tus integraciones seguirán funcionando. Para integraciones nuevas recomendamos usar `/channels/`.
+</Note>
+
+Es decir, si hoy tu aplicación hace una llamada como esta:
+
+```bash
+curl -X POST https://api.z-api.io/instances/SU_INSTANCIA/token/SU_TOKEN/send-text \
+  -H "Content-Type: application/json" \
+  -H "Client-Token: SU_CLIENT_TOKEN" \
+  -d '{"phone": "5511999999999", "message": "¡Hola!"}'
+```
+
+Solo tienes que cambiarla por esta:
+
+```bash
+curl -X POST https://api.omni.z-api.io/channels/SU_CANAL/token/SU_TOKEN/send-text \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SU_SECRET" \
+  -d '{"phone": "5511999999999", "message": "¡Hola!"}'
+```
+
+Fíjate en que **solo han cambiado la base URL y el header de autenticación**: el path y el body son idénticos.
+
+El secret del header `Authorization` se genera en el panel de Omni Z-API al crear tu instancia. Los payloads de envío y los bodies de los webhooks mantienen exactamente la misma estructura, lo que garantiza que tus integraciones sigan funcionando sin roturas.
+
+## ¿Por qué migrar?
+
+<CardGroup cols={2}>
+  <Card title="API Oficial de WhatsApp" icon="whatsapp">
+    Usa la API oficial de WhatsApp Business, con toda la seguridad y estabilidad que eso aporta.
+  </Card>
+  <Card title="Menor riesgo de bloqueo" icon="shield-check">
+    Al utilizar la API oficial de WhatsApp, el riesgo de baneo es bastante menor que con las soluciones no oficiales.
+  </Card>
+  <Card title="Migración sencilla" icon="arrow-right-arrow-left">
+    Cambia solo la base URL y listo: tus integraciones seguirán funcionando.
+  </Card>
+  <Card title="Soporte dedicado" icon="headset">
+    Cuenta con el apoyo del equipo de {projectName} durante todo el proceso de migración.
+  </Card>
+</CardGroup>
+
+## Cómo migrar
+
+<Steps>
+  <Step title="Crea tu cuenta en Omni Z-API">
+    Entra en el [Panel]({frontendUrl}) y crea tu cuenta.
+  </Step>
+  <Step title="Configura tu instancia">
+    Crea una instancia nueva y conecta tu número de WhatsApp.
+  </Step>
+  <Step title="Actualiza la base URL y la autenticación">
+    Sustituye `https://api.z-api.io` por `https://api.omni.z-api.io` y cambia el header `Client-Token` por `Authorization: Bearer SU_SECRET`.
+  </Step>
+  <Step title="Configura los webhooks">
+    Actualiza la URL de callback de los webhooks en el panel para que apunte a tu servidor. Los eventos que recibas tendrán la misma estructura que antes.
+  </Step>
+  <Step title="Prueba y valida">
+    Haz pruebas de envío y de recepción para asegurarte de que todo funciona correctamente.
+  </Step>
+</Steps>
+
+<Info>
+  ¿Necesitas ayuda con la migración? Escríbenos al correo [{supportEmail}](mailto:{supportEmail}).
+</Info>

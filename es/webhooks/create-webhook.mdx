@@ -1,0 +1,29 @@
+---
+title: "Crear webhook"
+description: "Registra un endpoint de webhook en un canal"
+openapi: "/es/webhooks/openapi.json POST /v1/channels/{channelId}/webhooks"
+---
+
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceptos
+
+Registra un nuevo endpoint de webhook en el canal. A partir de su creación, {projectName} empieza a enviar los eventos configurados a la URL indicada.
+
+Un canal puede tener varios webhooks, algo útil para enviar eventos distintos a sistemas distintos o para mantener webhooks con formatos diferentes.
+
+### Firma HMAC
+
+Si `signing: true`, el campo `secret` se genera automáticamente y se devuelve **solo en esta respuesta**. Guárdalo de forma segura: no volverá a mostrarse en ninguna otra llamada.
+
+Usa el `secret` para verificar en tu servidor la autenticidad de las peticiones recibidas. Calcula el HMAC-SHA256 sobre el body recibido usando el `secret` y compáralo con el header de firma que envía {projectName}.
+
+<Warning>
+  <EnterpriseText lang="es" />
+</Warning>
+
+<Note>
+  El `channelId` se obtiene a través del endpoint [Crear canal](/es/channels/create-channel).
+</Note>

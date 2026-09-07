@@ -1,0 +1,131 @@
+---
+title: "Introdução"
+description: "Entenda como funcionam os templates de mensagem no Omni Z-API"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+<Warning>
+  Os **três canais da Meta têm template pré-aprovado**: WhatsApp Oficial, Instagram e Messenger. O que muda é o escopo, o endpoint e a categoria.
+
+  Hoje os endpoints desta seção cobrem **apenas o WhatsApp Oficial** (escopo WABA). O suporte a Instagram e Messenger está **em implementação**.
+</Warning>
+
+## Três coisas se chamam "template"
+
+A Meta usa a mesma palavra para três recursos diferentes. Confundi-los é a causa mais comum de erro na integração:
+
+| | 1. Template do WhatsApp | 2. Utility Template | 3. Mensagem estruturada |
+|---|---|---|---|
+| Canais | WhatsApp Oficial | **Messenger** | Instagram, Messenger, WhatsApp |
+| Escopo | **WABA** | **página do Facebook** | nenhum — é inline |
+| Endpoint da Meta | `/{waba-id}/message_templates` | `/{page-id}/message_templates` | `/{page-id}/messages` |
+| Aprovação | **obrigatória** | **obrigatória** (em segundos) | **nenhuma** |
+| Categorias | `UTILITY`, `MARKETING`, `AUTHENTICATION` | **só `UTILITY`** | — |
+| Status | 3 | **10** | — |
+| No Omni Z-API | esta seção | *em implementação* | [botões](/messages/send-interactive-button) |
+
+### 1 e 2 — templates pré-aprovados
+
+Servem ao mesmo propósito: falar com o cliente **fora da janela de conversa**. Os dois exigem cadastro prévio e aprovação da Meta.
+
+A diferença prática é o escopo. O template do WhatsApp pertence a uma **WABA**; o Utility Template pertence a uma **página do Facebook**.
+
+<Warning>
+  **O Instagram não entra aqui.** A edge `message_templates` do Graph API existe apenas no node `Page`. Nenhum node do Instagram a expõe — nem o `IGUser` (login pelo Facebook) nem o `IGUserForIGOnlyAPI` (login pelo Instagram, que é o fluxo do Omni Z-API).
+
+  No Instagram você tem a janela de 24 h, estendida a 7 dias com a *human agent tag*. Detalhes em [Conectar Instagram](/connect/instagram).
+</Warning>
+
+O Utility Template tem um ciclo de vida bem mais rico que o do WhatsApp — **10 status** contra 3:
+
+`PENDING` · `APPROVED` · `REJECTED` · `IN_APPEAL` · `PAUSED` · `DISABLED` · `LIMIT_EXCEEDED` · `ARCHIVED` · `PENDING_DELETION` · `DELETED`
+
+Também aceita `parameter_format` (`NAMED` ou `POSITIONAL`) e permite clonar da biblioteca pré-aprovada da Meta via `library_template_name`.
+
+<Note>
+  No Messenger, o Utility Template **substituiu as Message Tags**. As tags `CONFIRMED_EVENT_UPDATE`, `ACCOUNT_UPDATE` e `POST_PURCHASE_UPDATE` foram descontinuadas em **27 de abril de 2026** e agora retornam erro `100`. Se a sua integração ainda usa tags, ela já está quebrada.
+</Note>
+
+Para marketing fora da janela no Instagram e Messenger existe ainda a **Marketing Messages API**, que funciona por opt-in: você pede permissão ao cliente para enviar mensagens promocionais recorrentes.
+
+### 3 — mensagem estruturada (sem aprovação)
+
+É o que a Meta também chama de *generic template* e *button template*. **Não** é template pré-aprovado: é um formato de payload enviado inline, para pôr botões e cards numa mensagem que você já pode enviar.
+
+No Omni Z-API isso são os endpoints interativos, disponíveis nos cinco canais sem cadastro:
+
+<CardGroup cols={2}>
+  <Card title="Enviar texto com botões" icon="hand-pointer" href="/messages/send-interactive-button">
+    Botões de resposta rápida — o *button template* da Meta.
+  </Card>
+  <Card title="Enviar botões de ação" icon="up-right-from-square" href="/messages/send-interactive-action">
+    Botões de URL e de ligação — o *generic template* da Meta.
+  </Card>
+</CardGroup>
+
+<Note>
+  Veja a [matriz de capacidades](/channels/overview) para o que cada canal aceita.
+</Note>
+
+## O que são templates do WhatsApp?
+
+Na API oficial do WhatsApp, você só pode enviar mensagens livremente enquanto a **janela de conversa de 24 horas** estiver aberta (ou seja, quando o cliente enviou uma mensagem para você recentemente).
+
+Fora dessa janela, a única forma de iniciar uma conversa é através de **templates** — mensagens pré-definidas que passam por aprovação da Meta antes de poderem ser enviadas.
+
+{/* <Note>
+  Se você vem da Z-API, essa é uma das maiores diferenças. Na Z-API (conexão não oficial) você podia enviar qualquer mensagem a qualquer momento. Na API oficial, fora da janela de 24h, só templates aprovados funcionam.
+</Note> */}
+
+## Categorias
+
+Cada template precisa de uma categoria que define o tipo de comunicação. Escolher a categoria errada pode fazer seu template ser reprovado pela Meta.
+
+| Categoria | Quando usar | Exemplo |
+|---|---|---|
+| **UTILITY** | Comunicação transacional e operacional | Confirmação de pedido, status de entrega, atualização de conta |
+| **MARKETING** | Comunicação promocional | Campanha, oferta, cupom, lançamento de produto |
+| **AUTHENTICATION** | Segurança e validação de identidade | Código OTP, confirmação de login, verificação em duas etapas |
+
+## Estrutura de um template
+
+Todo template é composto por **components**. Cada componente tem um papel:
+
+| Componente | Obrigatório | O que faz |
+|---|---|---|
+| **HEADER** | Não | Contexto inicial — pode ser texto, imagem, vídeo ou documento |
+| **BODY** | Sim | Conteúdo principal da mensagem |
+| **FOOTER** | Não | Texto curto complementar (ex: "Não responda esta mensagem") |
+| **BUTTONS** | Não | Ações para o usuário (abrir URL, ligar, resposta rápida) |
+
+### Placeholders
+
+Você pode usar variáveis dinâmicas no texto com `{{1}}`, `{{2}}`, etc. Ao criar o template, é obrigatório enviar exemplos reais para cada placeholder — a Meta usa esses exemplos na revisão.
+
+## Fluxo de template
+
+A API organiza templates por **business** (WABA — WhatsApp Business Account). Cada business tem seus próprios templates, histórico de aprovação e limites.
+
+<Steps>
+  <Step title="Identifique seu WABA">
+    Use o endpoint de listar WABAs para obter o `businessId` correto para o seu token.
+  </Step>
+  <Step title="Crie o template">
+    Escolha a categoria, monte os components com placeholders e exemplos, e envie para aprovação.
+  </Step>
+  <Step title="Aguarde a aprovação">
+    A Meta revisa o template e retorna um status: `PENDING`, `APPROVED` ou `REJECTED`.
+  </Step>
+  <Step title="Envie mensagens">
+    Com o template aprovado, você pode usá-lo para iniciar conversas com clientes fora da janela de 24h.
+  </Step>
+</Steps>
+
+## Status do template
+
+| Status | Significado |
+|---|---|
+| `PENDING` | Enviado para revisão, aguardando aprovação da Meta |
+| `APPROVED` | Aprovado e pronto para uso |
+| `REJECTED` | Reprovado — revise o conteúdo e a categoria antes de reenviar |

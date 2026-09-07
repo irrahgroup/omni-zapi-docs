@@ -1,0 +1,29 @@
+---
+title: "Crear webhook de plantilla"
+description: "Registra un webhook de plantilla (independiente de la instancia)"
+openapi: "/es/webhooks/openapi-template.json POST /v1/webhooks"
+---
+
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+## Conceptos
+
+Crea un webhook de plantilla. No depende de ninguna instancia —el `instanceId` se guarda como `null` automáticamente— y recibe únicamente los eventos de plantilla de WhatsApp.
+
+El campo `events` admite **solo** `UPDATE_TEMPLATE_STATUS` y `UPDATE_TEMPLATE_CATEGORY`. Cualquier evento que no sea de plantilla devuelve `422`.
+
+### `payloadFormat` se ignora
+
+En los webhooks de plantilla el formato es siempre `DEFAULT`. Puedes omitir el campo; si lo envías (con cualquier valor), se descarta de forma silenciosa y se persiste como `DEFAULT`.
+
+### Firma HMAC
+
+Si `signing: true`, el campo `secret` se genera y se devuelve **solo en esta respuesta**. Guárdalo de forma segura: no volverá a mostrarse.
+
+<Warning>
+  <EnterpriseText lang="es" />
+</Warning>
+
+<Note>
+  Tras la creación, el enrutamiento puede tardar hasta unos 5 min en reflejar el cambio (TTL de la caché).
+</Note>

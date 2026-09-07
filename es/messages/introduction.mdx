@@ -1,0 +1,55 @@
+---
+title: "Introducción"
+description: "Entiende cómo funcionan los mensajes libres en Omni Z-API"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## ¿Qué son los mensajes libres?
+
+Los mensajes libres son mensajes que envías **sin necesidad de una plantilla aprobada**. Puedes enviar texto, imagen, audio, vídeo o documento —cualquier formato compatible— con total libertad de contenido.
+
+La única condición es que la [ventana de conversación](/es/conversation-window) de **24 horas** esté abierta.
+
+## ¿Cuándo puedo usarlos?
+
+La ventana se abre cuando el **cliente te envía un mensaje**. A partir de ese momento tienes 24 horas para enviar mensajes libres. Cada mensaje nuevo del cliente reinicia el contador.
+
+```
+El cliente envía un mensaje → La ventana se abre (24 h) → Envías mensajes libres
+```
+
+## ¿Y si la ventana está cerrada?
+
+Si el cliente no ha enviado ningún mensaje en las últimas 24 horas, la ventana está cerrada. En ese caso, la única opción es enviar una **plantilla aprobada por Meta** mediante el endpoint [Enviar plantilla](/es/messages/send-template).
+
+Cuando el cliente **responda** a la plantilla, la ventana se reabre y vuelves a poder usar mensajes libres.
+
+```
+Ventana cerrada → Enviar plantilla → El cliente responde → La ventana se reabre (24 h)
+```
+
+<Info>
+  ¿Necesitas enviar una plantilla? Descubre cómo en la página [Enviar plantilla](/es/messages/send-template). Para crear y gestionar tus plantillas, consulta la sección [Plantillas](/es/templates/introduction).
+</Info>
+
+## Tipos disponibles
+
+Todos los endpoints de esta sección utilizan la misma ruta:
+
+`POST /v1/channels/{channelId}/messages`
+
+Lo que cambia es el campo `content.type`:
+
+| Tipo | Descripción |
+|---|---|
+| `TEXT` | Mensaje de texto simple |
+| `IMAGE` | Mensaje con imagen |
+| `AUDIO` | Mensaje de audio |
+| `VIDEO` | Mensaje con vídeo |
+| `CONTACT` | Envío de un contacto |
+| `STICKER` | Sticker |
+| `LOCATION` | Mensaje de ubicación |
+| `INTERACTIVE_ACTION` | Mensaje con botones de acción (abrir URL y llamar) |
+| `INTERACTIVE_BUTTON` | Mensaje con botones de respuesta rápida |
+| `TEMPLATE` | Plantilla aprobada por Meta (fuera de la ventana de 24 h) |

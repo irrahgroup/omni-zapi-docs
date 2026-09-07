@@ -1,0 +1,70 @@
+---
+title: "Introduction"
+description: "Basic concepts about sending messages in the Omni Z-API API"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Overview
+
+The message endpoints in this section allow you to send messages **only when the WhatsApp conversation window is open** (within the 24-hour period). This is a rule from the official WhatsApp Business API.
+
+<Warning>
+  The 24-hour conversation window opens when the **customer sends a message to you**. Outside this window, you can only send messages using **Meta-approved templates**. The messages in this section **do not work** outside the conversation window.
+</Warning>
+
+### Inside the window (24h)
+
+Did the customer send you a message? Great, the window is open. You can use any endpoint in this section to reply with text, image, audio, video, document, etc.
+
+### Outside the window (after 24h)
+
+If the customer has **not** sent a message in the last 24 hours, the only way to start a conversation is by sending a **message template** previously approved by Meta. Templates are pre-defined messages that you create and submit for approval in the Meta dashboard.
+
+<Info>
+  In Z-API (unofficial connection) this limitation didn't exist — you could send messages at any time. In the official API, this rule is mandatory and cannot be bypassed.
+</Info>
+
+---
+
+To send a message, you need the recipient's **phone number**, including the country code.
+
+| Format | Example |
+|---|---|
+| Country code + area code + number | `5511999999999` |
+
+## API Response
+
+When you send a message, the API returns the same response structure you already know from Z-API. This means **no changes are needed** in your code that processes the returns — the fields, types, and formats are identical.
+
+Example response when sending a message:
+
+```json
+{
+  "zaapId": "3999984263738042930CD6ECDE9VDWSA",
+  "messageId": "D241XXXX732339502B68"
+}
+```
+
+<Note>
+  We maintain full compatibility with the Z-API response structure. If your application already handles these fields, it will continue working without changes.
+</Note>
+
+### Store the messageId
+
+It's very important that you **store the `messageId`** returned, as it's needed for future operations like replying, marking as read, or deleting messages.
+
+<Warning>
+  Without the `messageId`, you won't be able to reference the message later to reply, react, or delete.
+</Warning>
+
+## Text formatting
+
+You can format message text using WhatsApp special characters:
+
+| Formatting | Syntax | Result |
+|---|---|---|
+| **Bold** | `*text*` | **text** |
+| _Italic_ | `_text_` | _text_ |
+| ~~Strikethrough~~ | `~text~` | ~~text~~ |
+| `Monospace` | `` ```text``` `` | `text` |

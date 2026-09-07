@@ -1,0 +1,51 @@
+---
+title: "Conectar Meta WhatsApp"
+description: "Conecta un número a la API Oficial mediante el Embedded Signup de Meta"
+---
+
+Canal de tipo `META_WHATSAPP`. Es el único canal con [plantillas](/es/templates/introduction), [Flows](/es/flows/introduction) y la [ventana de 24 horas](/es/conversation-window).
+
+## Requisitos
+
+- [Portafolio Empresarial](/es/whatsapp-official/portfolio/introduction) configurado en Meta
+- Perfil de administrador en la cuenta comercial
+- Un número que pueda recibir SMS o llamadas
+- [Método de pago](/es/whatsapp-official/payment) configurado, para poder enviar plantillas
+
+## Conectar
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'SU_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'ID_DEL_CANAL' });
+// response: { success, channelId, code, wabaId, phoneId, coexistence }
+```
+
+El SDK abre el **Embedded Signup** de Meta, donde el usuario elige la WABA y el número. Es el único canal cuya respuesta trae `wabaId`, `phoneId` y `coexistence`.
+
+Reenvía el objeto completo para [finalizar la conexión](/es/channels/connect-channel).
+
+## Dos formas de conexión
+
+| Forma | Cuándo usarla | Guía |
+|---|---|---|
+| **Cloud API** | un número nuevo, o uno que puedas sacar de la app | [Cloud API](/es/whatsapp-official/connection/cloud-api) |
+| **Coexistencia** | un número que ya se usa en la app de WhatsApp Business | [Coexistencia](/es/whatsapp-official/connection/coexistence) |
+
+El campo `coexistence` de la respuesta indica cuál de las dos eligió el usuario: Meta devuelve `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING` en el caso de coexistencia.
+
+## Qué cambia en WhatsApp Oficial
+
+Es el canal **más capaz y más restringido** de los cinco:
+
+| Detalle | Valor |
+|---|---|
+| Identificador del contacto | teléfono con código de país |
+| Ventana de conversación | **24 horas**, reiniciada con cada mensaje del cliente |
+| Fuera de la ventana | solo con una [plantilla aprobada](/es/messages/send-template) |
+| Plantillas y Flows | **exclusivos de este canal** |
+| Ubicación y contacto | admitidos |
+| Coste | Meta cobra por las plantillas: consulta [Facturación](/es/whatsapp-official/billing) |
+
+<Note>
+  ¿Ya tienes el número con otro proveedor? Consulta [Migración de número](/es/whatsapp-official/migrate-number) antes de conectar.
+</Note>

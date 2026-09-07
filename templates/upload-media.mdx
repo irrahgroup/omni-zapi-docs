@@ -1,0 +1,58 @@
+---
+title: "Upload de mídia"
+description: "Obtenha o header_handle para templates com HEADER de imagem, vídeo ou documento"
+openapi: "/pt/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates/media"
+---
+
+## Conceituação
+
+A Meta **não aceita o arquivo direto** na criação do template. Ela exige um `header_handle` produzido pela Resumable Upload API, que depende do token da aplicação — por isso o upload passa por aqui, e não pelo seu frontend.
+
+Este endpoint recebe o arquivo e devolve o handle pronto para usar.
+
+## Quando você precisa disso
+
+Somente quando o template tem um componente `HEADER` do tipo `IMAGE`, `VIDEO` ou `DOCUMENT`. Templates com header de texto, ou sem header, não precisam de upload.
+
+## Fluxo
+
+<Steps>
+  <Step title="Suba o arquivo">
+    `POST /whatsapp/businesses/{wabaId}/templates/media` com `multipart/form-data`, campos `file` e `type`.
+  </Step>
+  <Step title="Guarde o handle">
+    A resposta traz o handle no campo `h`.
+  </Step>
+  <Step title="Use no componente HEADER">
+    Passe o handle como `example` do HEADER em [Criar template](/templates/create-template):
+
+    ```json
+    {
+      "type": "HEADER",
+      "format": "IMAGE",
+      "example": { "header_handle": ["4::aW1hZ2UvanBlZw==:ARZ..."] }
+    }
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  O handle tem validade. Suba o arquivo e crie o template na mesma sessão — não guarde o handle para usar dias depois.
+</Warning>
+
+<Note>
+  Além de `h`, a API aceita o handle nas chaves `handle`, `header_handle`, `headerHandle` e `mediaHandle`. Use `h`, que é a forma canônica.
+</Note>
+
+## Pré-requisito de configuração
+
+O upload depende do **App ID** e do **App Secret** da Meta cadastrados na conta. Sem isso a chamada retorna `422` com `MISSING_APP_CREDENTIALS`.
+
+Isso é configurado no painel, em **Segurança** — não há endpoint público para cadastrar as credenciais do app. Veja também [Origens do SDK](/channels/sdk-info), que trata do outro pré-requisito do fluxo via SDK.
+
+## Limites
+
+| Item | Valor |
+|---|---|
+| Tamanho máximo | 100 MB |
+| Campos obrigatórios | `file`, `type` |

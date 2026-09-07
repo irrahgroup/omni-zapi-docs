@@ -1,0 +1,74 @@
+---
+title: "Webhooks de plantilla"
+description: "Recibe los eventos de plantilla de WhatsApp con independencia de la instancia"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## ¿Qué son los webhooks de plantilla?
+
+A diferencia de los webhooks **de canal**, {projectName} ofrece **webhooks de plantilla**: endpoints que reciben exclusivamente los eventos de plantilla de WhatsApp y que **no** dependen de una instancia (`instanceId = null`).
+
+Conviven con las rutas de webhook por canal, que se mantienen sin cambios. El enrutamiento de los eventos de plantilla lo realiza el servicio interno con independencia de la instancia.
+
+<Note>
+  Los conceptos comunes a los dos tipos de webhook (rol **ENTERPRISE**, autenticación, firma HMAC y formatos de payload) están en la [Introducción](/es/webhooks/introduction).
+</Note>
+
+## Autenticación
+
+Todas las rutas exigen el header:
+
+```
+Authorization: Bearer <secret-key>
+```
+
+## Eventos de plantilla admitidos
+
+Un webhook de plantilla admite **únicamente** eventos de plantilla. Enviar cualquier evento que no sea de plantilla devuelve `422`.
+
+| Valor (exacto, SNAKE_CASE) | Significado |
+|---|---|
+| `UPDATE_TEMPLATE_STATUS` | Actualización del estado de una plantilla (aprobada, rechazada, etc.) |
+| `UPDATE_TEMPLATE_CATEGORY` | Actualización de la categoría de una plantilla |
+
+## Reglas de negocio
+
+1. **Alcance de los eventos (obligatorio).**
+   - Webhook **de plantilla** → solo admite eventos de plantilla. Cualquier otro evento → `422`.
+   - Webhook **de canal** → **no** puede suscribirse a eventos de plantilla → `422`.
+2. **`payloadFormat` se ignora.** En los webhooks de plantilla el formato es siempre `DEFAULT`. El campo se puede omitir; si se envía (con cualquier valor, incluido `CHATWOOT`), se descarta de forma silenciosa y se persiste como `DEFAULT`.
+3. **`instanceId` se guarda como `null`** automáticamente: en estas rutas no hay campo de instancia. `channelId` también llega como `null`.
+
+## Observaciones importantes
+
+<Note>
+  **Alcance por tenant.** Las operaciones de lectura, edición y eliminación están limitadas al `tenant` resuelto a partir del `Authorization`: no hay acceso cross-tenant por id.
+</Note>
+
+<Note>
+  **Caché del enrutador.** Tras crear o modificar un webhook de plantilla, el enrutamiento puede tardar hasta unos 5 min en reflejar el cambio (TTL de la caché).
+</Note>
+
+## Gestión
+
+<CardGroup cols={2}>
+  <Card title="Crear webhook de plantilla" icon="plus" href="/es/webhooks/create-template-webhook">
+    Registra un nuevo endpoint de plantilla.
+  </Card>
+  <Card title="Listar webhooks de plantilla" icon="list" href="/es/webhooks/list-template-webhooks">
+    Consulta todos los webhooks de plantilla del tenant.
+  </Card>
+  <Card title="Consultar webhook de plantilla" icon="magnifying-glass" href="/es/webhooks/get-template-webhook">
+    Busca un webhook de plantilla concreto.
+  </Card>
+  <Card title="Actualizar webhook de plantilla" icon="pen" href="/es/webhooks/update-template-webhook">
+    Actualiza la URL, los eventos, la autenticación o el estado.
+  </Card>
+  <Card title="Eliminar webhook de plantilla" icon="trash" href="/es/webhooks/delete-template-webhook">
+    Elimina permanentemente un webhook de plantilla.
+  </Card>
+  <Card title="Estructura de los payloads" icon="brackets-curly" href="/es/webhooks/template-payloads">
+    Ejemplos reales de los payloads que se reciben para cada evento de plantilla.
+  </Card>
+</CardGroup>

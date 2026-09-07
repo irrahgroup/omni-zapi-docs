@@ -1,0 +1,239 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Información del SDK",
+    "description": "Consulta los orígenes permitidos para el SDK de conexión de canales",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "paths": {
+    "/instances/{channelId}/sdk-info": {
+      "get": {
+        "summary": "Consultar orígenes del SDK",
+        "description": "Devuelve los orígenes permitidos para el SDK de conexión de ese canal.\n\nSe autentica con la **Public Key** en el header `Authorization`, sin el prefijo `Bearer`. Es el único endpoint que acepta la Public Key, precisamente para poder llamarse desde el frontend.",
+        "operationId": "getSdkInfo",
+        "tags": [
+          "Canales"
+        ],
+        "security": [
+          {
+            "publicKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orígenes del canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkInfo"
+                },
+                "example": {
+                  "allowOrigins": [
+                    "https://app.suempresa.com",
+                    "http://localhost:3000"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Public Key no válida o ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/list-messenger-pages": {
+      "post": {
+        "summary": "Listar páginas de Messenger",
+        "description": "Devuelve las páginas de Facebook que el usuario autorizó, para que elija cuál vincular al canal.\n\nEs un paso **exclusivo de Messenger**: el OAuth de Meta devuelve un `code` que da acceso a varias páginas, y el canal necesita solo una. Se autentica con la **Public Key**.",
+        "operationId": "listMessengerPages",
+        "tags": [
+          "Canales"
+        ],
+        "security": [
+          {
+            "publicKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListMessengerPagesRequest"
+              },
+              "example": {
+                "code": "AQD8h2...",
+                "redirectUri": "https://app.omni.z-api.io/oauth/proxy-messenger"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Páginas disponibles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessengerPages"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "102938475601234",
+                      "name": "Mi Tienda",
+                      "accessToken": "EAAG..."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Public Key no válida o ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`code` no válido o caducado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SdkInfo": {
+        "type": "object",
+        "properties": {
+          "allowOrigins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Orígenes permitidos para el SDK"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ListMessengerPagesRequest": {
+        "type": "object",
+        "required": [
+          "code",
+          "redirectUri"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "`code` devuelto por el OAuth de Meta"
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "La misma `redirectUri` usada en el OAuth"
+          }
+        }
+      },
+      "MessengerPages": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Páginas autorizadas",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "ID de la página"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Nombre de la página"
+                },
+                "accessToken": {
+                  "type": "string",
+                  "description": "Token de acceso de la página"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "publicKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization"
+      }
+    }
+  }
+}

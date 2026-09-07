@@ -1,0 +1,64 @@
+---
+title: "Autenticación"
+description: "Cómo generar y utilizar tus credenciales de API en Omni Z-API"
+---
+
+import { projectName, frontendUrl } from '/snippets/variables.mdx';
+
+## API Credentials
+
+A diferencia de Z-API, que usa el header `Client-Token`, {projectName} funciona con un par de claves: **Public Key** y **Secret Key**.
+
+Para generar tus credenciales, entra en el menú **Seguridad** del panel: [Seguridad]({frontendUrl}/app/security).
+
+---
+
+## Public Key
+
+La Public Key la utiliza **exclusivamente** el SDK de conexión de canales. Con ella puedes conectar canales (WhatsApp, Telegram, etc.) directamente desde tu sistema, sin necesidad de entrar al panel de {projectName}.
+
+<Note>
+  La Public Key se puede exponer en el frontend de tu aplicación, ya que sus permisos se limitan únicamente a la conexión de canales.
+</Note>
+
+Ejemplo de uso con el SDK:
+
+```javascript
+import { OmniZapi } from '@omni-zapi/connect';
+
+const omni = new OmniZapi({
+  publicKey: 'SU_PUBLIC_KEY'
+});
+```
+
+<Tip>
+  Instala el SDK con npm: [`@omni-zapi/connect`](https://www.npmjs.com/package/@omni-zapi/connect)
+</Tip>
+
+---
+
+## Secret Key
+
+La Secret Key se utiliza para autenticarse en las APIs de {projectName}. Debe enviarse en el header `Authorization` como Bearer token.
+
+<Warning>
+  La Secret Key **nunca** debe exponerse en el frontend. Úsala únicamente en el backend de tu aplicación.
+</Warning>
+
+Ejemplo de uso en las llamadas a la API:
+
+```bash
+curl -X POST https://api.omni.z-api.io/channels/SU_CANAL/token/SU_TOKEN/send-text \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SU_SECRET_KEY" \
+  -d '{"phone": "5511999999999", "message": "¡Hola!"}'
+```
+
+---
+
+## Resumen
+
+| Clave | Uso | ¿Se puede exponer en el frontend? |
+|---|---|---|
+| **Public Key** | SDK de conexión de canales | Sí |
+| **Secret Key** | Llamadas a la API (header `Authorization`) | No, solo en el backend |

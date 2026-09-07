@@ -1,0 +1,51 @@
+---
+title: "Conectar Meta WhatsApp"
+description: "Conecte um número à API Oficial pelo Embedded Signup da Meta"
+---
+
+Canal do tipo `META_WHATSAPP`. É o único canal com [templates](/templates/introduction), [Flows](/flows/introduction) e a [janela de 24 horas](/conversation-window).
+
+## Requisitos
+
+- [Portfólio Empresarial](/whatsapp-official/portfolio/introduction) configurado na Meta
+- Perfil administrador na conta comercial
+- Um número que possa receber SMS ou ligação
+- [Método de pagamento](/whatsapp-official/payment) configurado, para enviar templates
+
+## Conectando
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'SUA_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'ID_DO_CANAL' });
+// response: { success, channelId, code, wabaId, phoneId, coexistence }
+```
+
+O SDK abre o **Embedded Signup** da Meta, onde o usuário escolhe a WABA e o número. É o único canal cujo retorno traz `wabaId`, `phoneId` e `coexistence`.
+
+Repasse o objeto inteiro para [finalizar a conexão](/channels/connect-channel).
+
+## Duas formas de conexão
+
+| Forma | Quando usar | Guia |
+|---|---|---|
+| **Cloud API** | número novo, ou número que você pode tirar do app | [Cloud API](/whatsapp-official/connection/cloud-api) |
+| **Coexistência** | número que já está em uso no app do WhatsApp Business | [Coexistência](/whatsapp-official/connection/coexistence) |
+
+O campo `coexistence` no retorno indica qual das duas o usuário escolheu — a Meta devolve `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING` no caso de coexistência.
+
+## O que muda no WhatsApp Oficial
+
+É o canal **mais capaz e mais restrito** dos cinco:
+
+| Detalhe | Valor |
+|---|---|
+| Identificador do contato | telefone com DDI |
+| Janela de conversa | **24 horas**, reiniciada a cada mensagem do cliente |
+| Fora da janela | só com [template aprovado](/messages/send-template) |
+| Templates e Flows | **exclusivos deste canal** |
+| Localização e contato | suportados |
+| Custo | templates são cobrados pela Meta — veja [Cobrança](/whatsapp-official/billing) |
+
+<Note>
+  Já tem o número em outro provedor? Veja [Migração de número](/whatsapp-official/migrate-number) antes de conectar.
+</Note>

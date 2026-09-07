@@ -1,0 +1,57 @@
+---
+title: "Connect WhatsApp Web"
+description: "Connect a number by scanning the QR Code, without going through Meta"
+---
+
+Channel of type `Z_API_WHATSAPP`. It connects through the **QR Code**, the way WhatsApp Web does — no Meta, no approval, no templates.
+
+<Note>
+  It is the highest-volume channel on the platform. If you come from Z-API, this is the model you already use.
+</Note>
+
+## Requirements
+
+- A WhatsApp number with the app installed on a phone
+- Access to the phone to scan the QR Code
+
+## Connecting
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'YOUR_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'CHANNEL_ID' });
+```
+
+The SDK opens a window with the QR Code. The user scans it from WhatsApp on the phone, under **Linked devices**.
+
+### QR Code in your own interface
+
+If you would rather render the QR Code inside your product instead of using the SDK window, pass a `getQRCode`:
+
+```javascript
+const response = await client.connect({
+  channelId: 'CHANNEL_ID',
+  getQRCode: async () => {
+    // return { value } with the QR content, or { connected: true } once connected
+    return await myBackend.fetchQrCode();
+  },
+});
+```
+
+## What is different on WhatsApp Web
+
+| Detail | Value |
+|---|---|
+| Contact identifier | phone with country code |
+| Conversation window | **does not exist** — send at any time |
+| Templates and Flows | do not exist, and are not needed |
+| Poll | **supported** |
+| Location and contact | supported |
+| Meta approval | not required |
+
+<Warning>
+  This is an **unofficial** connection, based on WhatsApp Web. The risk of the number being blocked is higher than on the [Official API](/en/connect/meta-whatsapp), and the phone must keep an active session.
+</Warning>
+
+<Note>
+  Need features only the Official API has — templates, Flows, the 24-hour window, lower blocking risk? See [Meta WhatsApp](/en/connect/meta-whatsapp).
+</Note>

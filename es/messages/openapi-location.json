@@ -1,0 +1,264 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Enviar ubicación",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Enviar ubicación",
+        "description": "Envía un mensaje de ubicación. Solo funciona cuando la ventana de conversación de 24 horas está abierta.",
+        "operationId": "sendLocationMessage",
+        "tags": [
+          "Mensajes"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "SU_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendLocationRequest"
+              },
+              "example": {
+                "recipient": {
+                  "identifier": "5544936181064",
+                  "name": "Nombre del Destinatario",
+                  "subject": "Título",
+                  "picture": ""
+                },
+                "sender": {
+                  "identifier": "5544936181064",
+                  "name": "Nombre del Remitente",
+                  "picture": ""
+                },
+                "content": {
+                  "type": "LOCATION",
+                  "attachments": [
+                    {
+                      "name": "Google Brasil",
+                      "address": "Av. Brg. Faria Lima, 3477 - Itaim Bibi, São Paulo - SP, 04538-133",
+                      "latitude": "-23.0696347",
+                      "longitude": "-50.4357913"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/WindowClosed"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Mensaje enviado correctamente",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "wamid.HBgNNTU0NDk3MDUwNzg1FQIAERgSM0"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      },
+      "WindowClosed": {
+        "description": "La ventana de conversación de 24 horas está cerrada.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 422,
+              "message": "Conversation window is closed"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendLocationRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "description": "Datos del destinatario",
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Teléfono del destinatario (código de país + prefijo + número)",
+                "example": "5544936181064"
+              },
+              "name": {
+                "type": "string",
+                "description": "Nombre del destinatario (opcional)",
+                "example": "Nombre del Destinatario"
+              },
+              "subject": {
+                "type": "string",
+                "description": "Título o asunto (opcional)",
+                "example": "Título"
+              },
+              "picture": {
+                "type": "string",
+                "description": "URL de la foto del destinatario (opcional)",
+                "example": ""
+              }
+            }
+          },
+          "sender": {
+            "type": "object",
+            "description": "Datos del remitente (opcional)",
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Teléfono del remitente",
+                "example": "5544936181064"
+              },
+              "name": {
+                "type": "string",
+                "description": "Nombre del remitente",
+                "example": "Nombre del Remitente"
+              },
+              "picture": {
+                "type": "string",
+                "description": "URL de la foto del remitente",
+                "example": ""
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Tipo de mensaje",
+                "enum": [
+                  "LOCATION"
+                ]
+              },
+              "attachments": {
+                "type": "array",
+                "description": "Lista con los datos de la ubicación",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "latitude": {
+                      "type": "string",
+                      "description": "Latitud de la ubicación. La API no lo valida, pero es necesario para que el pin se muestre correctamente en WhatsApp.",
+                      "example": "-23.0696347"
+                    },
+                    "longitude": {
+                      "type": "string",
+                      "description": "Longitud de la ubicación. La API no lo valida, pero es necesario para que el pin se muestre correctamente en WhatsApp.",
+                      "example": "-50.4357913"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Nombre del lugar (opcional)",
+                      "example": "Google Brasil"
+                    },
+                    "address": {
+                      "type": "string",
+                      "description": "Dirección del lugar (opcional)",
+                      "example": "Av. Brg. Faria Lima, 3477 - Itaim Bibi, São Paulo - SP, 04538-133"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID del mensaje enviado"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

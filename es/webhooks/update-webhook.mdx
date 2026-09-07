@@ -1,0 +1,51 @@
+---
+title: "Actualizar webhook"
+description: "Actualiza la configuración de un webhook existente"
+openapi: "/es/webhooks/openapi.json PATCH /v1/channels/{channelId}/webhooks/{webhookId}"
+---
+
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+## Conceptos
+
+Actualiza parcialmente la configuración de un webhook. Solo se actualizan los campos que envías en el body; el resto se mantiene sin cambios.
+
+### Actualizar los eventos
+
+Al enviar el campo `events`, la lista sustituye **todos** los eventos existentes:
+
+```json
+{ "events": ["MESSAGE_RECEIVED", "MESSAGE_STATUS", "CONNECTED"] }
+```
+
+### Habilitar o rotar la firma HMAC
+
+Si envías `signing: true`, se genera un `secret` nuevo y se devuelve en esa respuesta. Úsalo también para **rotar** el secret sin necesidad de recrear el webhook.
+
+```json
+{ "signing": true }
+```
+
+<Warning>
+  El nuevo `secret` se devuelve **solo en esa respuesta**. Guárdalo antes de salir de la página o de cerrar la sesión.
+</Warning>
+
+### Deshabilitar temporalmente
+
+```json
+{ "status": "DISABLED" }
+```
+
+Mientras esté `DISABLED`, el webhook deja de recibir eventos. Para reactivarlo:
+
+```json
+{ "status": "ENABLED" }
+```
+
+<Note>
+  <EnterpriseText lang="es" />
+</Note>
+
+<Note>
+  El `webhookId` se obtiene en la respuesta del endpoint [Crear webhook](/es/webhooks/create-webhook) o [Listar webhooks](/es/webhooks/list-webhooks).
+</Note>

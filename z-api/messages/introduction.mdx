@@ -1,0 +1,70 @@
+---
+title: "Introdução"
+description: "Conceitos básicos sobre envio de mensagens na API do Omni Z-API"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceituação
+
+Os endpoints de mensagens desta seção permitem enviar mensagens **somente quando a janela de conversa do WhatsApp estiver aberta** (dentro do período de 24 horas). Isso é uma regra da API oficial do WhatsApp Business.
+
+<Warning>
+  A janela de conversa de 24 horas é aberta quando o **cliente envia uma mensagem para você**. Fora dessa janela, só é possível enviar mensagens utilizando **templates aprovados pela Meta**. As mensagens desta seção **não funcionam** fora da janela de conversa.
+</Warning>
+
+### Dentro da janela (24h)
+
+O cliente enviou uma mensagem para você? Ótimo, a janela está aberta. Você pode usar qualquer endpoint desta seção para responder com texto, imagem, áudio, vídeo, documento, etc.
+
+### Fora da janela (após 24h)
+
+Se o cliente **não** enviou uma mensagem nas últimas 24 horas, a única forma de iniciar uma conversa é enviando um **template de mensagem** previamente aprovado pela Meta. Templates são mensagens pré-definidas que você cria e submete para aprovação no painel da Meta.
+
+<Info>
+  Na Z-API (conexão não oficial) essa limitação não existia — você podia enviar mensagens a qualquer momento. Na API oficial, essa regra é obrigatória e não pode ser contornada.
+</Info>
+
+---
+
+Para enviar uma mensagem, você precisa do **número do telefone** do contato destinatário, incluindo o código do país.
+
+| Formato | Exemplo |
+|---|---|
+| Código do país + DDD + número | `5511999999999` |
+
+## Resposta da API
+
+Ao enviar uma mensagem, a API retorna a mesma estrutura de resposta que você já conhece da Z-API. Isso significa que **nenhuma adaptação é necessária** no seu código que processa os retornos — os campos, tipos e formatos são idênticos.
+
+Exemplo de resposta ao enviar uma mensagem:
+
+```json
+{
+  "zaapId": "3999984263738042930CD6ECDE9VDWSA",
+  "messageId": "D241XXXX732339502B68"
+}
+```
+
+<Note>
+  Mantemos a compatibilidade total com a estrutura de resposta da Z-API. Se a sua aplicação já trata esses campos, ela continuará funcionando sem alterações.
+</Note>
+
+### Armazene o messageId
+
+É muito importante que você **armazene o `messageId`** retornado, pois ele é necessário para operações futuras como responder, marcar como lida ou deletar mensagens.
+
+<Warning>
+  Sem o `messageId`, você não conseguirá referenciar a mensagem posteriormente para responder, reagir ou deletar.
+</Warning>
+
+## Formatação de texto
+
+Você pode formatar o texto das mensagens utilizando caracteres especiais do WhatsApp:
+
+| Formatação | Sintaxe | Resultado |
+|---|---|---|
+| **Negrito** | `*texto*` | **texto** |
+| _Itálico_ | `_texto_` | _texto_ |
+| ~~Tachado~~ | `~texto~` | ~~texto~~ |
+| `Monoespaçado` | `` ```texto``` `` | `texto` |

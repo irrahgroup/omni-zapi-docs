@@ -1,0 +1,67 @@
+---
+title: "Autenticação"
+description: "Como gerar e utilizar suas credenciais de API no Omni Z-API"
+---
+
+import { projectName, frontendUrl } from '/snippets/variables.mdx';
+
+## Credenciais da API
+
+O {projectName} trabalha com um par de chaves: **Public Key** e **Secret Key**. Ambas são geradas no menu **Segurança** do painel: [Segurança]({frontendUrl}/app/security).
+
+---
+
+## Public Key
+
+A Public Key é utilizada pelo SDK de conexão de canais ([`@omni-zapi/connect`](https://www.npmjs.com/package/@omni-zapi/connect)). Com ela, você pode [conectar canais](/channels/connect-channel) diretamente dentro do seu sistema, sem precisar acessar o painel.
+
+<Note>
+  A Public Key pode ser exposta no frontend da sua aplicação, pois ela tem permissões limitadas apenas à conexão de canais.
+</Note>
+
+Exemplo de uso:
+
+```javascript
+import OmniZapi from '@omni-zapi/connect';
+
+const client = OmniZapi.newClient({
+  publicKey: 'SUA_PUBLIC_KEY'
+});
+```
+
+---
+
+## Secret Key
+
+A Secret Key é utilizada para autenticação em todas as APIs do {projectName}. Ela deve ser enviada no header `Authorization` como Bearer token em toda requisição.
+
+<Warning>
+  A Secret Key **nunca** deve ser exposta no frontend. Utilize-a apenas no backend da sua aplicação.
+</Warning>
+
+Exemplo de uso:
+
+```bash
+curl -X GET https://api.omni.z-api.io/whatsapp/businesses \
+  -H "Authorization: Bearer SUA_SECRET_KEY"
+```
+
+---
+
+## Resumo
+
+| Chave | Uso | Onde usar | Pode expor no frontend? |
+|---|---|---|---|
+| **Public Key** | [SDK de conexão de canais](/channels/connect-channel) | Frontend ou backend | Sim |
+| **Secret Key** | Todas as chamadas de API ([canais](/channels/introduction), [templates](/templates/introduction), [mensagens](/messages/introduction)) | Apenas backend | Não |
+
+## Próximos passos
+
+<CardGroup cols={2}>
+  <Card title="Criar um canal" icon="plug" href="/channels/create-channel">
+    Crie seu primeiro canal para começar a enviar mensagens.
+  </Card>
+  <Card title="Conectar canal via SDK" icon="code" href="/channels/connect-channel">
+    Integre o fluxo de conexão no seu sistema.
+  </Card>
+</CardGroup>

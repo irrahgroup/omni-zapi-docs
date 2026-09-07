@@ -1,0 +1,47 @@
+---
+title: "Actualizar webhook de plantilla"
+description: "Actualiza la configuración de un webhook de plantilla existente"
+openapi: "/es/webhooks/openapi-template.json PATCH /v1/webhooks/{webhookId}"
+---
+
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+## Conceptos
+
+Actualiza parcialmente la configuración de un webhook de plantilla. Solo se actualizan los campos que envías en el body; el resto se mantiene sin cambios.
+
+### Actualizar los eventos
+
+Si envías el campo `events`, la lista sustituye los eventos existentes y debe contener **solo** eventos de plantilla (en caso contrario → `422`):
+
+```json
+{ "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"] }
+```
+
+### Firma HMAC
+
+`signing: true` genera un `secret` nuevo (que se devuelve solo en esa respuesta); `signing: false` elimina la firma.
+
+<Warning>
+  El nuevo `secret` se devuelve **solo en esa respuesta**. Guárdalo antes de cerrar la sesión.
+</Warning>
+
+### Deshabilitar temporalmente
+
+```json
+{ "status": "DISABLED" }
+```
+
+Para reactivarlo, envía `{ "status": "ENABLED" }`.
+
+### `payloadFormat` se sigue ignorando
+
+En los webhooks de plantilla el formato es siempre `DEFAULT`, aunque lo envíes en la actualización.
+
+<Note>
+  <EnterpriseText lang="es" />
+</Note>
+
+<Note>
+  Tras el cambio, el enrutamiento puede tardar hasta unos 5 min en reflejarlo (TTL de la caché).
+</Note>

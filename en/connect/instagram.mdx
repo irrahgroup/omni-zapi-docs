@@ -1,0 +1,70 @@
+---
+title: "Connect Instagram"
+description: "Connect an Instagram professional account via OAuth"
+---
+
+Channel of type `META_INSTAGRAM`. Authorization goes through **Instagram OAuth**, not Facebook.
+
+## Requirements
+
+- An Instagram **professional** account (Business or Creator) — a personal account will not work
+- The account must be linked to a Meta [Business Portfolio](/en/whatsapp-official/portfolio/introduction)
+- Professional account messaging enabled in the Instagram settings
+
+## Connecting
+
+The code is the same as for any channel:
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'YOUR_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'CHANNEL_ID' });
+// response: { success, channelId, code, accessToken }
+```
+
+The SDK opens a window at `instagram.com/oauth/authorize` with these scopes:
+
+| Scope | What it is for |
+|---|---|
+| `instagram_business_basic` | Read basic professional account data |
+| `instagram_business_manage_messages` | Send and receive direct messages |
+
+Once the user authorizes, the SDK returns `code` and `accessToken`. Forward the whole object to [finish the connection](/en/channels/connect-channel).
+
+## What is different on Instagram
+
+<Warning>
+  **Location and contact do not exist** on Instagram. The platform has no such message types — the call will not work. See the [capability matrix](/en/channels/overview).
+</Warning>
+
+| Detail | Value |
+|---|---|
+| Contact identifier | username (`@store`) |
+| Text limit | 1000 bytes |
+| Media | image, audio, video and PDF up to 25 MB |
+| Images per message | up to 10 |
+| Sticker | **heart only** (`like_heart`) |
+| Pre-approved template | **does not exist** in this flow |
+| Flows | do not exist |
+| Conversation window | **24 hours**, or 7 days with the *human agent tag* |
+
+## Talking outside the window
+
+Instagram **does** have a conversation window: 24 hours from the customer's message, extended to 7 days if you tag the reply with the *human agent tag*.
+
+To talk after that there are two paths, both from Meta:
+
+<Warning>
+  **Instagram has no pre-approved templates.** The Graph API `message_templates` edge exists only on the `Page` node; no Instagram node exposes it.
+
+  Omni Z-API connects Instagram through **Instagram Login** (scopes `instagram_business_basic` and `instagram_business_manage_messages`), which maps to the `IGUserForIGOnlyAPI` node — no templates and no marketing tokens.
+</Warning>
+
+What you do have for talking after the window:
+
+| Feature | How it works |
+|---|---|
+| ***Human agent tag*** | extends the 24-hour window to **7 days**, for human support |
+
+<Note>
+  If your use case requires templates or recurring marketing messages on Instagram, the path would be connecting through **Facebook Login** with the account linked to a page — a different integration model, which Omni Z-API does not use today.
+</Note>

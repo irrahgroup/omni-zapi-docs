@@ -1,0 +1,286 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Enviar plantilla",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Enviar plantilla",
+        "description": "Envía una plantilla de mensaje aprobada por Meta.",
+        "operationId": "sendTemplateMessage",
+        "tags": [
+          "Mensajes"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "SU_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTemplateRequest"
+              },
+              "examples": {
+                "withoutParams": {
+                  "summary": "Sin parámetros",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "TEMPLATE",
+                      "attachments": [
+                        {
+                          "template": {
+                            "name": "boas_vindas_v2",
+                            "language": {
+                              "policy": "deterministic",
+                              "code": "es_ES"
+                            },
+                            "components": [
+                              {
+                                "type": "body",
+                                "parameters": []
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "withParams": {
+                  "summary": "Con parámetros",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "TEMPLATE",
+                      "attachments": [
+                        {
+                          "template": {
+                            "name": "actualizacion_pedido_v1",
+                            "language": {
+                              "policy": "deterministic",
+                              "code": "es_ES"
+                            },
+                            "components": [
+                              {
+                                "type": "body",
+                                "parameters": [
+                                  {
+                                    "type": "text",
+                                    "text": "Ana"
+                                  },
+                                  {
+                                    "type": "text",
+                                    "text": "PED-1024"
+                                  },
+                                  {
+                                    "type": "text",
+                                    "text": "em transporte"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mensaje enviado correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "example": {
+                  "messageId": "wamid.HBgNNTU0NDk3MDUwNzg1FQIAERgSM0"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token no válido o ausente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 401,
+                  "message": "Unauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SendTemplateRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Teléfono del destinatario (código de país + prefijo + número)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Tipo de mensaje",
+                "enum": [
+                  "TEMPLATE"
+                ]
+              },
+              "attachments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "template": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "language",
+                        "components"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Nombre de la plantilla aprobada"
+                        },
+                        "language": {
+                          "type": "object",
+                          "properties": {
+                            "policy": {
+                              "type": "string",
+                              "description": "Política de idioma",
+                              "enum": [
+                                "deterministic"
+                              ]
+                            },
+                            "code": {
+                              "type": "string",
+                              "description": "Código del idioma (p. ej.: es_ES, en_US)"
+                            }
+                          }
+                        },
+                        "components": {
+                          "type": "array",
+                          "description": "Componentes con parámetros dinámicos",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "description": "Tipo de componente (body, header, button)"
+                              },
+                              "parameters": {
+                                "type": "array",
+                                "description": "Valores de los placeholders",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID del mensaje enviado"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

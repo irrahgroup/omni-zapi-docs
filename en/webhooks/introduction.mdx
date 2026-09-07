@@ -1,0 +1,72 @@
+---
+title: "Introduction"
+description: "Receive real-time events from Omni Z-API in your system via webhooks"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## What are webhooks?
+
+Webhooks are HTTP notifications that {projectName} sends to your server when events happen — such as a message received, delivery status, or a template update.
+
+Instead of your system periodically polling the API, {projectName} **pushes events to you** as they happen.
+
+```
+Event happens → Omni Z-API → POST to your URL → Your system processes it
+```
+
+<Note>
+  Webhooks require the **ENTERPRISE** role on your account. If your account does not have this role, webhook CRUD calls return `422`. Contact support to enable it.
+</Note>
+
+## Webhook types
+
+{projectName} has two webhook types. What **differs** between them is the accepted events and how they are associated — each section covers its own specifics. The rest of this page applies to **both types**.
+
+<CardGroup cols={2}>
+  <Card title="Channel webhooks" icon="hashtag" href="/en/webhooks/channel-webhooks">
+    Receive the events of a specific channel (messages, delivery, connection).
+  </Card>
+  <Card title="Template webhooks" icon="brackets-curly" href="/en/webhooks/template-webhooks">
+    Receive WhatsApp template events, independent of any instance.
+  </Card>
+</CardGroup>
+
+## Payload formats
+
+{projectName} supports three payload formats:
+
+| Format | Description |
+|---|---|
+| `DEFAULT` | Standard Omni Z-API format |
+| `Z_API` | Z-API compatible format — keeps the structure your integrations already handle, ideal when migrating |
+| `CHATWOOT` | The format Chatwoot expects, to plug the channel straight into its inbox |
+
+<Note>
+  `payloadFormat` applies to **channel webhooks** only. On [template webhooks](/en/webhooks/template-webhooks) the format is always `DEFAULT` and the field is discarded.
+</Note>
+
+## Webhook authentication
+
+You can configure how {projectName} authenticates when calling your URL:
+
+| Type | How it works |
+|---|---|
+| `NONE` | No authentication (not recommended in production) |
+| `BEARER` | Sends `Authorization: Bearer <token>` |
+| `API_KEY` | Sends a configured API key |
+| `BASIC` | HTTP Basic Authentication (`username:password`) |
+| `CUSTOM_HEADER` | Sends a custom header with a name and value you define |
+
+## HMAC signing
+
+To ensure requests received are genuinely from {projectName} and have not been tampered with, enable HMAC signing by setting `signing: true` when creating the webhook.
+
+When enabled:
+- A 64-character hexadecimal `secret` is generated and returned **only once** on create/update.
+- Each request sent to your webhook includes a header with an HMAC-SHA256 signature computed over the payload.
+- You verify the signature on your server using the stored `secret`.
+
+<Warning>
+  The `secret` is shown **only** in the create response or in an update with `signing: true`. Store it securely — it cannot be retrieved afterwards.
+</Warning>

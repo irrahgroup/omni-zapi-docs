@@ -1,0 +1,289 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Enviar botones de acción",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Enviar botones de acción",
+        "description": "Envía un mensaje con botones de acción (URL o llamada).",
+        "operationId": "sendInteractiveActionMessage",
+        "tags": [
+          "Mensajes"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "SU_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendInteractiveActionRequest"
+              },
+              "examples": {
+                "urlAndCall": {
+                  "summary": "URL + Llamar",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_ACTION",
+                      "body": {
+                        "message": "Como podemos ajudar?"
+                      },
+                      "header": {
+                        "message": "Omni Z-API"
+                      },
+                      "footer": {
+                        "message": "Elige una opción"
+                      },
+                      "attachments": [
+                        {
+                          "id": "1",
+                          "title": "Visita nuestro sitio web",
+                          "name": "URL",
+                          "url": "https://www.omni.z-api.io"
+                        },
+                        {
+                          "id": "2",
+                          "title": "Llámanos",
+                          "name": "CALL",
+                          "phones": [
+                            "5511999999999"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "urlOnly": {
+                  "summary": "Solo URL",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_ACTION",
+                      "body": {
+                        "message": "Visita nuestro sitio web"
+                      },
+                      "attachments": [
+                        {
+                          "id": "1",
+                          "title": "Ir al sitio web",
+                          "name": "URL",
+                          "url": "https://www.omni.z-api.io"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Mensaje enviado correctamente",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "wamid.HBgNNTU0NDk3MDUwNzg1FQIAERgSM0"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendInteractiveActionRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Teléfono del destinatario (código de país + prefijo + número)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Tipo de mensaje",
+                "enum": [
+                  "INTERACTIVE_ACTION"
+                ]
+              },
+              "body": {
+                "type": "object",
+                "required": [
+                  "message"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Texto principal del mensaje"
+                  }
+                }
+              },
+              "header": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Título del mensaje"
+                  }
+                }
+              },
+              "footer": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Pie del mensaje"
+                  }
+                }
+              },
+              "attachments": {
+                "type": "array",
+                "description": "Lista de botones de acción",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "title",
+                    "name"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Identificador del botón"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Texto que se muestra en el botón"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Tipo de botón",
+                      "enum": [
+                        "URL",
+                        "CALL"
+                      ]
+                    },
+                    "url": {
+                      "type": "string",
+                      "description": "URL para los botones de tipo URL"
+                    },
+                    "phones": {
+                      "type": "array",
+                      "description": "Teléfono para los botones de tipo CALL",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID del mensaje enviado"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

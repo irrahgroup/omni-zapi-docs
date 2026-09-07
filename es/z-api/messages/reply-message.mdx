@@ -1,0 +1,36 @@
+---
+title: "Responder a un mensaje"
+description: "Responde a mensajes existentes por WhatsApp"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+
+## Conceptos
+
+Para responder a un mensaje existente basta con incluir el atributo `messageId` en el body de cualquier endpoint de envío (texto, imagen, audio, etc.). El `messageId` es el ID del mensaje original al que quieres responder.
+
+El `messageId` se obtiene de dos formas:
+- **Mensajes enviados** — se devuelve en la respuesta de la API al enviarlos
+- **Mensajes recibidos** — se recibe a través del webhook
+
+### Ejemplo
+
+Responder a un mensaje con texto usando el endpoint `/send-text`:
+
+```json
+{
+  "phone": "5511999999999",
+  "message": "¡Gracias por escribirnos!",
+  "messageId": "3999984263738042930CD6ECDE9VDWSA"
+}
+```
+
+Lo mismo funciona para `/send-image`, `/send-audio`, `/send-video`, `/send-document`, `/send-sticker` y `/send-contact`: solo hay que añadir el campo `messageId`.
+
+<Note>
+  <ZapiResponseText lang="es" />
+</Note>
+
+<Warning>
+  El atributo `privateAnswer` de Z-API (respuesta privada en grupos) **no es compatible** con la API oficial y no está disponible en esta versión.
+</Warning>

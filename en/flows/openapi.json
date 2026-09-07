@@ -1,0 +1,844 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - WhatsApp Flows",
+    "description": "API to create and manage WhatsApp Flows (native in-conversation forms)",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/whatsapp/businesses/{wabaId}/flows": {
+      "get": {
+        "summary": "List flows",
+        "description": "Returns the WABA flows, with name, categories and publication status.",
+        "operationId": "listFlows",
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Number of flows per page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "example": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of flows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowListResponse"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "1122334455667788",
+                      "name": "agendamento_consulta",
+                      "categories": [
+                        "APPOINTMENT_BOOKING"
+                      ],
+                      "status": "PUBLISHED",
+                      "endpoint_uri": null,
+                      "validation_errors": []
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create flow",
+        "description": "Creates a flow. `flow_json` is the screen definition in JSON, sent as a string. With `publish: true` the flow is born published; otherwise it stays in `DRAFT`.",
+        "operationId": "createFlow",
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFlowRequest"
+              },
+              "example": {
+                "name": "agendamento_consulta",
+                "categories": [
+                  "APPOINTMENT_BOOKING"
+                ],
+                "flow_json": "{\"version\": \"7.0\", \"routing_model\": {\"WELCOME\": [\"DONE\"], \"DONE\": []}, \"screens\": [{\"id\": \"WELCOME\", \"title\": \"Agendamento\", \"layout\": {\"type\": \"SingleColumnLayout\", \"children\": [{\"type\": \"TextHeading\", \"text\": \"Escolha um horario\"}, {\"type\": \"Form\", \"name\": \"form\", \"children\": [{\"type\": \"TextInput\", \"name\": \"nome\", \"label\": \"Seu nome\", \"input-type\": \"text\", \"required\": true}, {\"type\": \"DatePicker\", \"name\": \"data\", \"label\": \"Data\"}, {\"type\": \"Footer\", \"label\": \"Continuar\", \"on-click-action\": {\"name\": \"navigate\", \"next\": {\"type\": \"screen\", \"name\": \"DONE\"}, \"payload\": {}}}]}]}}, {\"id\": \"DONE\", \"title\": \"Pronto\", \"terminal\": true, \"success\": true, \"layout\": {\"type\": \"SingleColumnLayout\", \"children\": [{\"type\": \"TextBody\", \"text\": \"Agendamento confirmado.\"}, {\"type\": \"Footer\", \"label\": \"Fechar\", \"on-click-action\": {\"name\": \"complete\", \"payload\": {}}}]}}]}",
+                "publish": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Flow created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                },
+                "example": {
+                  "id": "1122334455667788",
+                  "name": "agendamento_consulta",
+                  "categories": [
+                    "APPOINTMENT_BOOKING"
+                  ],
+                  "status": "PUBLISHED",
+                  "endpoint_uri": null,
+                  "validation_errors": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request — malformed `flow_json` or unknown category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/flows/sync": {
+      "post": {
+        "summary": "Sync flows",
+        "description": "Forces flow synchronization with Meta, updating status and validation issues.",
+        "operationId": "syncFlows",
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowListResponse"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "1122334455667788",
+                      "name": "agendamento_consulta",
+                      "categories": [
+                        "APPOINTMENT_BOOKING"
+                      ],
+                      "status": "PUBLISHED",
+                      "endpoint_uri": null,
+                      "validation_errors": []
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/flows/{flowId}": {
+      "get": {
+        "summary": "Get flow",
+        "description": "Returns a specific flow, including its `flow_json` and Meta's validation issues.",
+        "operationId": "getFlow",
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "flowId",
+            "in": "path",
+            "required": true,
+            "description": "Flow ID (obtained via List flows)",
+            "schema": {
+              "type": "string",
+              "example": "1122334455667788"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "description": "When `true`, fetches the flow state straight from Meta before responding",
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                },
+                "example": {
+                  "id": "1122334455667788",
+                  "name": "agendamento_consulta",
+                  "categories": [
+                    "APPOINTMENT_BOOKING"
+                  ],
+                  "status": "PUBLISHED",
+                  "endpoint_uri": null,
+                  "validation_errors": [],
+                  "flow_json": "{\"version\": \"7.0\", \"routing_model\": {\"WELCOME\": [\"DONE\"], \"DONE\": []}, \"screens\": [{\"id\": \"WELCOME\", \"title\": \"Agendamento\", \"layout\": {\"type\": \"SingleColumnLayout\", \"children\": [{\"type\": \"TextHeading\", \"text\": \"Escolha um horario\"}, {\"type\": \"Form\", \"name\": \"form\", \"children\": [{\"type\": \"TextInput\", \"name\": \"nome\", \"label\": \"Seu nome\", \"input-type\": \"text\", \"required\": true}, {\"type\": \"DatePicker\", \"name\": \"data\", \"label\": \"Data\"}, {\"type\": \"Footer\", \"label\": \"Continuar\", \"on-click-action\": {\"name\": \"navigate\", \"next\": {\"type\": \"screen\", \"name\": \"DONE\"}, \"payload\": {}}}]}]}}, {\"id\": \"DONE\", \"title\": \"Pronto\", \"terminal\": true, \"success\": true, \"layout\": {\"type\": \"SingleColumnLayout\", \"children\": [{\"type\": \"TextBody\", \"text\": \"Agendamento confirmado.\"}, {\"type\": \"Footer\", \"label\": \"Fechar\", \"on-click-action\": {\"name\": \"complete\", \"payload\": {}}}]}}]}"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update flow",
+        "description": "Updates an existing flow. Every field is optional — only the ones you send change. A `PUBLISHED` flow does not accept `flow_json` changes.",
+        "operationId": "updateFlow",
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "flowId",
+            "in": "path",
+            "required": true,
+            "description": "Flow ID (obtained via List flows)",
+            "schema": {
+              "type": "string",
+              "example": "1122334455667788"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFlowRequest"
+              },
+              "example": {
+                "name": "agendamento_consulta_v2"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Flow updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                },
+                "example": {
+                  "id": "1122334455667788",
+                  "name": "agendamento_consulta",
+                  "categories": [
+                    "APPOINTMENT_BOOKING"
+                  ],
+                  "status": "PUBLISHED",
+                  "endpoint_uri": null,
+                  "validation_errors": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request — malformed `flow_json` or unknown category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete flow",
+        "description": "Permanently deletes a flow. Only flows in `DRAFT` can be deleted.",
+        "operationId": "deleteFlow",
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "flowId",
+            "in": "path",
+            "required": true,
+            "description": "Flow ID (obtained via List flows)",
+            "schema": {
+              "type": "string",
+              "example": "1122334455667788"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Flow deleted. No content returned."
+          },
+          "401": {
+            "description": "Invalid or missing token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/flows/{flowId}/publish": {
+      "post": {
+        "summary": "Publish flow",
+        "description": "Publishes the flow, making it available for use in messages. Once published, `flow_json` can no longer be changed.",
+        "operationId": "publishFlow",
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "flowId",
+            "in": "path",
+            "required": true,
+            "description": "Flow ID (obtained via List flows)",
+            "schema": {
+              "type": "string",
+              "example": "1122334455667788"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                },
+                "example": {
+                  "id": "1122334455667788",
+                  "name": "agendamento_consulta",
+                  "categories": [
+                    "APPOINTMENT_BOOKING"
+                  ],
+                  "status": "PUBLISHED",
+                  "endpoint_uri": null,
+                  "validation_errors": []
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/flows/{flowId}/deprecate": {
+      "post": {
+        "summary": "Deprecate flow",
+        "description": "Marks the flow as `DEPRECATED`. It stops accepting new openings, but sessions already running continue.",
+        "operationId": "deprecateFlow",
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "flowId",
+            "in": "path",
+            "required": true,
+            "description": "Flow ID (obtained via List flows)",
+            "schema": {
+              "type": "string",
+              "example": "1122334455667788"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                },
+                "example": {
+                  "id": "1122334455667788",
+                  "name": "agendamento_consulta",
+                  "categories": [
+                    "APPOINTMENT_BOOKING"
+                  ],
+                  "status": "DEPRECATED",
+                  "endpoint_uri": null,
+                  "validation_errors": []
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flow not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateFlowRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "categories",
+          "flow_json"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Flow name",
+            "example": "agendamento_consulta"
+          },
+          "categories": {
+            "type": "array",
+            "description": "Flow categories (Meta uses them during review)",
+            "items": {
+              "type": "string",
+              "enum": [
+                "SIGN_UP",
+                "SIGN_IN",
+                "APPOINTMENT_BOOKING",
+                "LEAD_GENERATION",
+                "CONTACT_US",
+                "CUSTOMER_SUPPORT",
+                "SURVEY",
+                "OTHER"
+              ]
+            },
+            "example": [
+              "APPOINTMENT_BOOKING"
+            ]
+          },
+          "flow_json": {
+            "type": "string",
+            "description": "Screen definition in JSON, sent as a **string**"
+          },
+          "endpoint_uri": {
+            "type": "string",
+            "description": "Your endpoint URL, required only for flows using `data_exchange`",
+            "example": "https://app.yourcompany.com/flows/callback"
+          },
+          "publish": {
+            "type": "boolean",
+            "description": "When `true`, publishes the flow right at creation",
+            "default": false
+          }
+        }
+      },
+      "UpdateFlowRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Flow name"
+          },
+          "categories": {
+            "type": "array",
+            "description": "Flow categories (Meta uses them during review)",
+            "items": {
+              "type": "string",
+              "enum": [
+                "SIGN_UP",
+                "SIGN_IN",
+                "APPOINTMENT_BOOKING",
+                "LEAD_GENERATION",
+                "CONTACT_US",
+                "CUSTOMER_SUPPORT",
+                "SURVEY",
+                "OTHER"
+              ]
+            }
+          },
+          "flow_json": {
+            "type": "string",
+            "description": "Screen definition in JSON, sent as a **string**"
+          },
+          "endpoint_uri": {
+            "type": "string",
+            "description": "Your endpoint URL, required only for flows using `data_exchange`"
+          }
+        }
+      },
+      "Flow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Flow ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Flow name"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "SIGN_UP",
+                "SIGN_IN",
+                "APPOINTMENT_BOOKING",
+                "LEAD_GENERATION",
+                "CONTACT_US",
+                "CUSTOMER_SUPPORT",
+                "SURVEY",
+                "OTHER"
+              ]
+            },
+            "description": "Flow categories (Meta uses them during review)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "DEPRECATED",
+              "BLOCKED",
+              "THROTTLED"
+            ],
+            "description": "Publication status"
+          },
+          "endpoint_uri": {
+            "type": "string",
+            "nullable": true,
+            "description": "Your endpoint URL, required only for flows using `data_exchange`"
+          },
+          "flow_json": {
+            "type": "string",
+            "description": "Screen definition in JSON, sent as a **string**"
+          },
+          "validation_errors": {
+            "type": "array",
+            "description": "Validation issues returned by Meta",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "Issue key"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "Issue detail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FlowListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "List of flows",
+            "items": {
+              "$ref": "#/components/schemas/Flow"
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

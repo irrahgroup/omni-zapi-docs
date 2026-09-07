@@ -1,0 +1,80 @@
+---
+title: "Introducción"
+description: "Crea, conecta y gestiona canales de mensajería en Omni Z-API"
+---
+
+import { projectName, frontendUrl } from '/snippets/variables.mdx';
+
+## ¿Qué es un canal?
+
+En {projectName}, un **canal** representa una conexión con WhatsApp a través de la API Oficial de Meta.
+
+Cada canal está vinculado a un número de teléfono de WhatsApp Business. Por ejemplo, al conectar el número `+55 11 99999-9999` se crea un canal con un `channelId` único que se usa en todas las llamadas a la API.
+
+El `channelId` es el identificador único del canal y se utiliza en todas las llamadas a la API para enviar [mensajes libres](/es/messages/introduction), [plantillas](/es/messages/send-template), webhooks, etc.
+
+## Plataformas compatibles
+
+| Plataforma | Tipo | Conexión |
+|---|---|---|
+| **WhatsApp** (API Oficial de Meta) | `META_WHATSAPP` | [Cloud API o Coexistencia](/es/whatsapp-official/connection/introduction) |
+| **WhatsApp Web** | `Z_API_WHATSAPP` | Código QR |
+| **Instagram** | `META_INSTAGRAM` | OAuth de Meta |
+| **Messenger** | `META_MESSENGER` | OAuth de Meta |
+| **Telegram** | `BOT_TELEGRAM` | Token del bot |
+
+<Note>
+  El `channelId` y los endpoints de [mensajes](/es/messages/introduction) y [webhooks](/es/webhooks/introduction) funcionan igual para todos los tipos. Lo que cambia es el flujo de conexión y, en el caso de WhatsApp Oficial, la [ventana de 24 horas](/es/conversation-window).
+</Note>
+
+## Flujo para empezar
+
+<Steps>
+  <Step title="Genera tus credenciales">
+    Si aún no lo has hecho, genera tu **Public Key** y tu **Secret Key** en [Autenticación](/es/authentication).
+  </Step>
+  <Step title="Crea el canal">
+    Crea un canal nuevo desde el [Panel]({frontendUrl}) o mediante la API con el endpoint [Crear canal](/es/channels/create-channel).
+  </Step>
+  <Step title="Conecta el canal">
+    Utiliza el [flujo de conexión con SDK + API](/es/channels/connect-channel), que se integra con la autenticación oficial de Meta.
+  </Step>
+  <Step title="Activa la suscripción (cuentas ENTERPRISE)">
+    Los partners y revendedores con rol ENTERPRISE deben activar la suscripción del canal mediante [Suscribir canal](/es/channels/subscribe-channel) antes de empezar a usarlo.
+  </Step>
+  <Step title="Envía mensajes">
+    Con el canal conectado, usa el `channelId` para enviar [mensajes libres](/es/messages/introduction) (dentro de la ventana de 24 h) o [plantillas](/es/messages/send-template) (fuera de la ventana).
+  </Step>
+</Steps>
+
+## Endpoints de canales
+
+<CardGroup cols={2}>
+  <Card title="Crear canal" icon="plus" href="/es/channels/create-channel">
+    Crea un canal nuevo mediante la API.
+  </Card>
+  <Card title="Conectar canal" icon="link" href="/es/channels/connect-channel">
+    Conecta un canal con el SDK y la API de Meta.
+  </Card>
+  <Card title="Desconectar canal" icon="link-slash" href="/es/channels/disconnect">
+    Desconecta definitivamente un canal.
+  </Card>
+</CardGroup>
+
+## Gestión de la suscripción (ENTERPRISE)
+
+<Note>
+  Los endpoints de suscripción que aparecen a continuación requieren el rol **ENTERPRISE** en tu cuenta. Ponte en contacto con soporte para habilitarlo.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Suscribir canal" icon="credit-card" href="/es/channels/subscribe-channel">
+    Activa la suscripción de un canal o añádelo a una suscripción existente.
+  </Card>
+  <Card title="Cancelar suscripción" icon="xmark" href="/es/channels/cancel-subscription">
+    Cancela la suscripción de un canal de forma programática.
+  </Card>
+  <Card title="Eliminar canal" icon="trash" href="/es/channels/delete-channel">
+    Elimina permanentemente un canal mediante la API.
+  </Card>
+</CardGroup>

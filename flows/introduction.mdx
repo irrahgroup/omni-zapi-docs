@@ -1,0 +1,143 @@
+---
+title: "Introdução"
+description: "Crie formulários nativos dentro da conversa do WhatsApp com o WhatsApp Flows"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## O que são Flows?
+
+**Flows** são formulários que abrem dentro da própria conversa do WhatsApp. O cliente preenche sem sair do chat e sem abrir navegador — e você recebe as respostas estruturadas.
+
+Servem para agendamento, cadastro, pesquisa de satisfação, geração de lead, atendimento e login.
+
+<Note>
+  Flows pertencem ao WABA, não ao canal. Use o `wabaId` de [Listar WABAs](/templates/list-businesses) nos endpoints desta seção.
+</Note>
+
+## Categorias
+
+A Meta usa a categoria na revisão do flow. Escolher errado pode causar reprovação.
+
+| Categoria | Para que serve |
+|---|---|
+| `APPOINTMENT_BOOKING` | Agendamento de horário |
+| `LEAD_GENERATION` | Captação de lead |
+| `SIGN_UP` | Cadastro de conta |
+| `SIGN_IN` | Login / autenticação |
+| `CONTACT_US` | Fale conosco |
+| `CUSTOMER_SUPPORT` | Atendimento e suporte |
+| `SURVEY` | Pesquisa e satisfação |
+| `OTHER` | Quando nenhuma acima se aplica |
+
+## Ciclo de vida
+
+| Status | Significado |
+|---|---|
+| `DRAFT` | Em edição. É o único status em que o `flow_json` pode mudar e o flow pode ser removido |
+| `PUBLISHED` | Publicado e disponível para uso em mensagens. O `flow_json` fica congelado |
+| `DEPRECATED` | Não aceita novas aberturas; sessões em andamento continuam |
+| `BLOCKED` | Bloqueado pela Meta por violação de política |
+| `THROTTLED` | Limitado pela Meta por excesso de erros no seu endpoint |
+
+<Steps>
+  <Step title="Monte o flow_json">
+    Defina as telas, os componentes e o `routing_model`. É um JSON, enviado como **string** no campo `flow_json`.
+  </Step>
+  <Step title="Crie em DRAFT">
+    Use [Criar flow](/flows/create-flow) sem `publish`. Assim você ainda pode iterar.
+  </Step>
+  <Step title="Corrija as pendências">
+    [Detalhar flow](/flows/get-flow) devolve `validation_errors` com o que a Meta apontou.
+  </Step>
+  <Step title="Publique">
+    [Publicar flow](/flows/publish-flow). A partir daí o `flow_json` não muda mais.
+  </Step>
+</Steps>
+
+## Estrutura do `flow_json`
+
+```json
+{
+  "version": "7.0",
+  "routing_model": { "WELCOME": ["DONE"], "DONE": [] },
+  "screens": [
+    {
+      "id": "WELCOME",
+      "title": "Agendamento",
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          { "type": "TextHeading", "text": "Escolha um horário" },
+          {
+            "type": "Form",
+            "name": "form",
+            "children": [
+              { "type": "TextInput", "name": "nome", "label": "Seu nome", "input-type": "text", "required": true },
+              { "type": "DatePicker", "name": "data", "label": "Data" },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": { "name": "navigate", "next": { "type": "screen", "name": "DONE" }, "payload": {} }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+### Componentes disponíveis
+
+| Grupo | Componentes |
+|---|---|
+| Texto | `TextHeading`, `TextSubheading`, `TextBody`, `TextCaption` |
+| Mídia | `Image` |
+| Entrada | `TextInput`, `TextArea`, `DatePicker` |
+| Seleção | `Dropdown`, `RadioButtonsGroup`, `CheckboxGroup` |
+| Consentimento | `OptIn` |
+
+Em `TextInput`, o `input-type` aceita `text`, `number`, `email`, `password`, `passcode` e `phone`.
+
+### Ações
+
+| Ação | O que faz |
+|---|---|
+| `navigate` | Vai para a próxima tela, declarada em `next.name` |
+| `complete` | Encerra o flow e devolve as respostas |
+| `data_exchange` | Chama o seu `endpoint_uri` no meio do flow para decidir o próximo passo |
+
+<Warning>
+  `data_exchange` exige `endpoint_uri` configurado. Se o seu endpoint falhar muito, a Meta coloca o flow em `THROTTLED`.
+</Warning>
+
+## Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Listar flows" icon="list" href="/flows/list-flows">
+    Veja os flows do WABA com status e categorias.
+  </Card>
+  <Card title="Criar flow" icon="plus" href="/flows/create-flow">
+    Crie um flow a partir do `flow_json`.
+  </Card>
+  <Card title="Detalhar flow" icon="magnifying-glass" href="/flows/get-flow">
+    Busque um flow e as pendências de validação.
+  </Card>
+  <Card title="Atualizar flow" icon="pen" href="/flows/update-flow">
+    Altere nome, categorias ou o `flow_json`.
+  </Card>
+  <Card title="Publicar flow" icon="rocket" href="/flows/publish-flow">
+    Deixe o flow disponível para uso.
+  </Card>
+  <Card title="Descontinuar flow" icon="ban" href="/flows/deprecate-flow">
+    Pare de aceitar novas aberturas.
+  </Card>
+  <Card title="Remover flow" icon="trash" href="/flows/delete-flow">
+    Exclua um flow em `DRAFT`.
+  </Card>
+  <Card title="Sincronizar flows" icon="arrows-rotate" href="/flows/sync-flows">
+    Force a atualização de status com a Meta.
+  </Card>
+</CardGroup>

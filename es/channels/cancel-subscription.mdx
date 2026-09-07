@@ -1,0 +1,34 @@
+---
+title: "Cancelar suscripción"
+description: "Cancela la suscripción de un canal de forma programática"
+openapi: "/es/channels/openapi-cancel.json DELETE /v1/channels/{channelId}/cancel"
+---
+
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+## Conceptos
+
+Solicita la cancelación de la suscripción de un canal. La cancelación no es inmediata: el canal pasa al estado `CANCELLATION_PROCESS` y sigue activo hasta el final del periodo ya pagado. Transcurrido ese periodo, el estado cambia a `CANCELED`.
+
+El parámetro de query `cancel=true` es obligatorio, como confirmación explícita de la cancelación.
+
+El campo `cancelReason` del body es opcional, pero se recomienda incluirlo con fines de auditoría.
+
+<Warning>
+  <EnterpriseText lang="es" />
+</Warning>
+
+### Estados después de la cancelación
+
+| Estado | Descripción |
+|---|---|
+| `CANCELLATION_PROCESS` | Cancelación solicitada; el canal sigue activo hasta el final del periodo |
+| `CANCELED` | Canal cancelado y desactivado de forma efectiva |
+
+<Warning>
+  La cancelación no se puede deshacer mediante la API. Para reactivar el canal hay que iniciar una nueva suscripción con [Suscribir canal](/es/channels/subscribe-channel).
+</Warning>
+
+<Note>
+  El `channelId` se obtiene a través del endpoint [Crear canal](/es/channels/create-channel).
+</Note>

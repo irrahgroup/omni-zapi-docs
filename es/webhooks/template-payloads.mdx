@@ -1,0 +1,80 @@
+---
+title: "Estructura de los payloads"
+description: "Ejemplos reales de los payloads que recibes en tu webhook para cada evento de plantilla"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+Los eventos de plantilla llegan a tu endpoint como un **array** de objetos, en el mismo formato en que los envía Meta (WhatsApp Business).
+
+## `UPDATE_TEMPLATE_STATUS` — Actualización de estado
+
+Se dispara cuando cambia el estado de una plantilla (aprobada, rechazada, etc.). El campo `field` llega como `message_template_status_update`.
+
+```json
+[
+  {
+    "field": "message_template_status_update",
+    "identifier": "019F950F34A47C38AFDEB99726CA308D",
+    "type": "TEMPLATE_STATUS",
+    "value": {
+      "event": "APPROVED",
+      "message_template_id": "1027341066623944",
+      "message_template_name": "prueba_visualizacion_plantilla",
+      "message_template_language": "es_ES",
+      "reason": null
+    },
+    "waba_id": "1554659762413879"
+  }
+]
+```
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `field` | string | Tipo de evento en Meta: `message_template_status_update` |
+| `identifier` | string | Identificador del evento |
+| `type` | string | Tipo interno: `TEMPLATE_STATUS` |
+| `value.event` | string | Nuevo estado de la plantilla (p. ej.: `APPROVED`, `REJECTED`) |
+| `value.message_template_id` | string | ID de la plantilla |
+| `value.message_template_name` | string | Nombre de la plantilla |
+| `value.message_template_language` | string | Idioma de la plantilla (p. ej.: `es_ES`) |
+| `value.reason` | string \| null | Motivo (se rellena en los rechazos; en caso contrario, `null`) |
+| `waba_id` | string | ID de la cuenta de WhatsApp Business (WABA) |
+
+## `UPDATE_TEMPLATE_CATEGORY` — Actualización de categoría
+
+Se dispara cuando Meta cambia la categoría de una plantilla. El campo `field` llega como `template_category_update`.
+
+```json
+[
+  {
+    "field": "template_category_update",
+    "identifier": "019F950F34A47C38AFDEB99726CA308D",
+    "type": "TEMPLATE_CATEGORY_UPDATE",
+    "value": {
+      "category_update_timestamp": 1693478400,
+      "correct_category": "MARKETING",
+      "message_template_id": "1027341066623944",
+      "message_template_language": "es_ES",
+      "message_template_name": "prueba_visualizacion_plantilla",
+      "new_category": "AUTHENTICATION",
+      "previous_category": "UTILITY"
+    },
+    "waba_id": "1554659762413879"
+  }
+]
+```
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `field` | string | Tipo de evento en Meta: `template_category_update` |
+| `identifier` | string | Identificador del evento |
+| `type` | string | Tipo interno: `TEMPLATE_CATEGORY_UPDATE` |
+| `value.category_update_timestamp` | number | Timestamp (epoch en segundos) de la actualización |
+| `value.correct_category` | string | Categoría correcta definida por Meta |
+| `value.message_template_id` | string | ID de la plantilla |
+| `value.message_template_language` | string | Idioma de la plantilla (p. ej.: `es_ES`) |
+| `value.message_template_name` | string | Nombre de la plantilla |
+| `value.new_category` | string | Nueva categoría aplicada |
+| `value.previous_category` | string | Categoría anterior |
+| `waba_id` | string | ID de la cuenta de WhatsApp Business (WABA) |

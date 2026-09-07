@@ -1,0 +1,149 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Conectar canal",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/connect": {
+      "post": {
+        "summary": "Conectar canal Meta WhatsApp",
+        "description": "Finaliza la conexión de un canal **META_WHATSAPP** con los datos devueltos por el SDK `@omni-zapi/connect`. Exclusivo para canales de la API Oficial de WhatsApp (Meta).",
+        "operationId": "connectMetaChannel",
+        "tags": [
+          "Canales"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal (obtenido con Crear canal)",
+            "schema": {
+              "type": "string",
+              "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectChannelRequest"
+              },
+              "example": {
+                "wabaId": "428083093730937",
+                "phoneId": "123456789012345",
+                "code": "ABC123DEF456",
+                "coexistence": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Canal conectado correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ConnectChannelRequest": {
+        "type": "object",
+        "required": [
+          "wabaId",
+          "phoneId",
+          "code",
+          "coexistence"
+        ],
+        "properties": {
+          "wabaId": {
+            "type": "string",
+            "description": "ID de la cuenta de WhatsApp Business"
+          },
+          "phoneId": {
+            "type": "string",
+            "description": "ID del número de teléfono"
+          },
+          "code": {
+            "type": "string",
+            "description": "Código de autorización generado por WhatsApp"
+          },
+          "coexistence": {
+            "type": "boolean",
+            "description": "Indica si el número está en modo de coexistencia"
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indica si la operación se realizó correctamente"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

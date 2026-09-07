@@ -1,0 +1,77 @@
+---
+title: "Conectar Messenger"
+description: "Conecta una página de Facebook, con el paso extra de elegir la página"
+---
+
+Canal de tipo `META_MESSENGER`. Es el único flujo con **dos etapas de autorización**: el OAuth de Facebook da acceso a varias páginas, y el canal necesita solo una.
+
+## Requisitos
+
+- Una **página de Facebook** (no un perfil personal)
+- Ser administrador de la página
+- La página vinculada a un [Portafolio Empresarial](/es/whatsapp-official/portfolio/introduction)
+
+## Conectar
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'SU_PUBLIC_KEY' });
+const response = await client.connect({ channelId: 'ID_DEL_CANAL' });
+// response: { success, channelId, code, pageId, accessToken }
+```
+
+El SDK abre `facebook.com/dialog/oauth` con estos scopes:
+
+| Scope | Para qué sirve |
+|---|---|
+| `public_profile` | Datos básicos del usuario |
+| `business_management` | Acceso al portafolio empresarial |
+| `pages_messaging` | Enviar y recibir mensajes desde la página |
+| `pages_show_list` | Listar las páginas que administra el usuario |
+| `pages_manage_metadata` | Suscribirse a los webhooks de la página |
+| `pages_read_engagement` | Leer las conversaciones de la página |
+
+## El paso extra: elegir la página
+
+Después del OAuth, si el usuario administra más de una página, tienes que preguntarle cuál vincular:
+
+```javascript
+const pages = await client.getListMessengerPages(channelId, response.code);
+// { data: [{ id, name, accessToken }, ...] }
+```
+
+Ese método llama a [`POST /v1/channels/{channelId}/list-messenger-pages`](/es/channels/sdk-info), autenticado con la **Public Key**. Muestra la lista, deja que el usuario elija y envía el `pageId` elegido al [endpoint de conexión](/es/channels/connect-channel).
+
+<Note>
+  Si el usuario administra solo una página, el SDK ya devuelve el `pageId` rellenado y puedes saltarte este paso.
+</Note>
+
+## Qué cambia en Messenger
+
+<Warning>
+  **La ubicación y el contacto no existen** en Messenger. Meta descontinuó el botón de ubicación en octubre de 2019. Consulta la [matriz de capacidades](/es/channels/overview).
+</Warning>
+
+| Detalle | Valor |
+|---|---|
+| Identificador del contacto | ID de la página de Facebook |
+| Plantilla preaprobada | **Utility Template**, con alcance de página |
+| Flows | no existen |
+| Ventana de conversación | **24 horas**, o 7 días con la *human agent tag* |
+| Ubicación y contacto | **no admitidos** |
+
+## Hablar fuera de la ventana
+
+<Warning>
+  Las Message Tags `CONFIRMED_EVENT_UPDATE`, `ACCOUNT_UPDATE` y `POST_PURCHASE_UPDATE` se **descontinuaron el 27 de abril de 2026** y devuelven el error `100`. Las integraciones que aún dependen de ellas ya están rotas.
+</Warning>
+
+El sustituto son las plantillas preaprobadas de Meta:
+
+| Camino | Para qué sirve | ¿Requiere aprobación? |
+|---|---|---|
+| **Utility Template** | pedido, cuenta, cita | sí, registro por página en `POST /{page-id}/message_templates` — categoría **solo `UTILITY`**, aprobación en segundos |
+| **Marketing Messages API** | promoción recurrente | no, pero exige el **opt-in** del cliente |
+
+<Note>
+  La compatibilidad con Utility Template en Omni Z-API está **en implementación**. Consulta la [comparación de los tres tipos de plantilla](/es/templates/introduction).
+</Note>

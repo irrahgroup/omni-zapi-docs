@@ -1,0 +1,35 @@
+---
+title: "Eliminar canal"
+description: "Elimina permanentemente un canal mediante la API"
+openapi: "/es/channels/openapi-delete.json DELETE /v1/channels/{channelId}"
+---
+
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+## Conceptos
+
+Elimina permanentemente un canal y todos sus datos. El borrado es irreversible: el canal se elimina físicamente del sistema.
+
+<Warning>
+  <EnterpriseText lang="es" />
+</Warning>
+
+### Condiciones para eliminar
+
+Solo se permite eliminar el canal cuando no tiene una suscripción activa. La siguiente tabla describe el comportamiento según el estado:
+
+| Estado | ¿Se permite eliminar? | Observación |
+|---|---|---|
+| Prueba | Sí | — |
+| Pendiente | Sí | Si hay una factura abierta, se cancelará automáticamente |
+| Pagado | No | El canal debe cancelarse antes de eliminarlo |
+| En proceso de cancelación | No | El canal debe cancelarse antes de eliminarlo |
+| Cancelado | Sí | — |
+
+<Warning>
+  El borrado es permanente e irreversible. Para eliminar un canal con suscripción activa, primero cancela la suscripción con [Cancelar suscripción](/es/channels/cancel-subscription) y espera a que el estado sea `CANCELED`.
+</Warning>
+
+<Note>
+  El `channelId` se obtiene a través del endpoint [Crear canal](/es/channels/create-channel).
+</Note>

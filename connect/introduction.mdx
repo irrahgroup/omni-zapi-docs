@@ -1,0 +1,82 @@
+---
+title: "Conectar um canal"
+description: "O mesmo código conecta os cinco canais — o SDK descobre o tipo e cuida do resto"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Um código, cinco canais
+
+Você **não** escreve um fluxo por canal. O SDK lê o tipo do canal e despacha o fluxo certo sozinho:
+
+```javascript
+import OmniZapi from '@omni-zapi/connect';
+
+const client = OmniZapi.newClient({ publicKey: 'SUA_PUBLIC_KEY' });
+
+// Igual para WhatsApp, WhatsApp Web, Instagram, Messenger e Telegram
+const response = await client.connect({ channelId: 'ID_DO_CANAL' });
+
+if (response.success) {
+  await fetch('/meu-backend/conectar-canal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(response),
+  });
+}
+```
+
+O tipo vem do canal, não da chamada. Você define o tipo em [Criar canal](/channels/create-channel) e o SDK resolve o resto.
+
+## O que acontece por dentro
+
+<Steps>
+  <Step title="O SDK consulta o canal">
+    Ele chama [`GET /instances/{channelId}/sdk-info`](/channels/sdk-info) para descobrir o tipo do canal, o app da Meta correspondente e as [origens liberadas](/channels/sdk-info).
+  </Step>
+  <Step title="Despacha o fluxo do tipo">
+    Cada tipo tem um caminho próprio de autorização — OAuth da Meta, QR Code ou token de bot.
+  </Step>
+  <Step title="Devolve os dados da conexão">
+    O objeto de retorno muda conforme o canal. Veja a tabela abaixo.
+  </Step>
+  <Step title="Você finaliza no backend">
+    Envie o retorno para [`POST /v1/channels/{channelId}/connect`](/channels/connect-channel) usando a Secret Key.
+  </Step>
+</Steps>
+
+## Fluxo de autorização por canal
+
+| Canal | Como autoriza | Página |
+|---|---|---|
+| **WhatsApp Oficial** | Embedded Signup da Meta | [Meta WhatsApp](/connect/meta-whatsapp) |
+| **WhatsApp Web** | QR Code | [WhatsApp Web](/connect/whatsapp-web) |
+| **Instagram** | OAuth do Instagram | [Instagram](/connect/instagram) |
+| **Messenger** | OAuth do Facebook + escolha da página | [Messenger](/connect/messenger) |
+| **Telegram** | Token do bot | [Telegram](/connect/telegram) |
+
+## O retorno muda por canal
+
+Todos devolvem `success` e `channelId`. O resto depende do tipo:
+
+| Campo | WhatsApp Oficial | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| `code` | ✅ | — | ✅ | ✅ | — |
+| `wabaId` | ✅ | — | — | — | — |
+| `phoneId` | ✅ | — | — | — | — |
+| `coexistence` | ✅ | — | — | — | — |
+| `accessToken` | — | — | ✅ | ✅ | — |
+| `pageId` | — | — | — | ✅ | — |
+| `botToken` | — | — | — | — | ✅ |
+
+<Note>
+  Não trate esses campos manualmente. Mande o objeto inteiro para o seu backend e repasse como veio ao endpoint de conexão — ele sabe o que fazer com cada tipo.
+</Note>
+
+<Warning>
+  A conexão só funciona a partir de domínios liberados, e o SDK falha em silêncio quando a origem não está na lista. Leia [Origens do SDK](/channels/sdk-info) antes de integrar.
+</Warning>
+
+## Sem o SDK
+
+O SDK existe porque cada canal tem um fluxo de autorização diferente na plataforma de origem, e todos exigem uma janela do navegador. Se você precisar montar isso na mão, cada página de canal descreve a URL de autorização, os escopos e os parâmetros usados.

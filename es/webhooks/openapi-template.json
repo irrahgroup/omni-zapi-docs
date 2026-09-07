@@ -1,0 +1,817 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Webhooks de plantilla",
+    "description": "API para crear y gestionar webhooks de plantilla: endpoints que reciben los eventos de plantilla de WhatsApp y no dependen de una instancia (`instanceId` se guarda como `null`). Requiere el rol ENTERPRISE. Conviven con las rutas de webhook por instancia o canal, que se mantienen sin cambios.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/webhooks": {
+      "post": {
+        "summary": "Crear webhook de plantilla",
+        "description": "Crea un webhook de plantilla. No depende de ninguna instancia (`instanceId` se guarda como `null`) y admite **solo** eventos de plantilla. El campo `payloadFormat` se ignora: el formato es siempre `DEFAULT`.",
+        "operationId": "createTemplateWebhook",
+        "tags": [
+          "Webhooks de plantilla"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateWebhookRequest"
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Básico — eventos de plantilla",
+                  "value": {
+                    "url": "https://destino/webhook",
+                    "description": "Webhook de plantilla",
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS",
+                      "UPDATE_TEMPLATE_CATEGORY"
+                    ],
+                    "signing": false,
+                    "authType": "NONE"
+                  }
+                },
+                "withSignature": {
+                  "summary": "Con firma HMAC",
+                  "value": {
+                    "url": "https://destino/webhook",
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS"
+                    ],
+                    "signing": true
+                  }
+                },
+                "withBearerAuth": {
+                  "summary": "Con autenticación Bearer",
+                  "value": {
+                    "url": "https://destino/webhook",
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS",
+                      "UPDATE_TEMPLATE_CATEGORY"
+                    ],
+                    "auth": {
+                      "type": "BEARER",
+                      "token": "mi-token-secreto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Webhook de plantilla creado correctamente. `channelId` e `instanceId` llegan como `null`. El campo `secret` se devuelve **solo en esta respuesta** cuando `signing` es `true`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateWebhookCreatedResponse"
+                },
+                "example": {
+                  "id": "8F2C00000000000000000000000000A1",
+                  "channelId": null,
+                  "instanceId": null,
+                  "url": "https://destino/webhook",
+                  "description": "Webhook de plantilla",
+                  "events": [
+                    "UPDATE_TEMPLATE_STATUS",
+                    "UPDATE_TEMPLATE_CATEGORY"
+                  ],
+                  "status": "ENABLED",
+                  "signing": false,
+                  "secret": null,
+                  "auth": {
+                    "type": "NONE",
+                    "configured": false
+                  },
+                  "payloadFormat": "DEFAULT",
+                  "customAttributes": {},
+                  "createdAt": "2026-07-15T19:00:00.000+00:00",
+                  "updatedAt": "2026-07-15T19:00:00.000+00:00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Falta el header `Authorization` o la entrada es estructuralmente no válida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Authorization header is required"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El rol no es ENTERPRISE, o el alcance de los eventos no es válido (evento que no es de plantilla)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "notEnterprise": {
+                    "summary": "Cuenta sin el rol ENTERPRISE",
+                    "value": {
+                      "error": "This action requires ENTERPRISE role"
+                    }
+                  },
+                  "invalidScope": {
+                    "summary": "Evento que no es de plantilla",
+                    "value": {
+                      "error": "Global webhooks (without instance) accept only template events"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar webhooks de plantilla",
+        "description": "Devuelve los webhooks de plantilla habilitados del tenant. Las credenciales de autenticación y el `secret` HMAC **no** se devuelven por seguridad.",
+        "operationId": "listTemplateWebhooks",
+        "tags": [
+          "Webhooks de plantilla"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de webhooks de plantilla del tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateWebhookResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "8F2C00000000000000000000000000A1",
+                    "channelId": null,
+                    "instanceId": null,
+                    "url": "https://destino/webhook",
+                    "description": "Webhook de plantilla",
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS",
+                      "UPDATE_TEMPLATE_CATEGORY"
+                    ],
+                    "status": "ENABLED",
+                    "signing": false,
+                    "auth": {
+                      "type": "NONE",
+                      "configured": false
+                    },
+                    "payloadFormat": "DEFAULT",
+                    "customAttributes": {},
+                    "createdAt": "2026-07-15T19:00:00.000+00:00",
+                    "updatedAt": "2026-07-15T19:00:00.000+00:00"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Falta el header `Authorization`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Authorization header is required"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/{webhookId}": {
+      "get": {
+        "summary": "Consultar webhook de plantilla",
+        "description": "Devuelve los datos de un webhook de plantilla concreto del tenant. Las credenciales y el `secret` no se devuelven.",
+        "operationId": "getTemplateWebhook",
+        "tags": [
+          "Webhooks de plantilla"
+        ],
+        "parameters": [
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "description": "ID del webhook de plantilla",
+            "schema": {
+              "type": "string",
+              "example": "8F2C00000000000000000000000000A1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos del webhook de plantilla",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateWebhookResponse"
+                },
+                "example": {
+                  "id": "8F2C00000000000000000000000000A1",
+                  "channelId": null,
+                  "instanceId": null,
+                  "url": "https://destino/webhook",
+                  "description": "Webhook de plantilla",
+                  "events": [
+                    "UPDATE_TEMPLATE_STATUS"
+                  ],
+                  "status": "ENABLED",
+                  "signing": false,
+                  "auth": {
+                    "type": "NONE",
+                    "configured": false
+                  },
+                  "payloadFormat": "DEFAULT",
+                  "customAttributes": {},
+                  "createdAt": "2026-07-15T19:00:00.000+00:00",
+                  "updatedAt": "2026-07-15T19:00:00.000+00:00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook no encontrado para el tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Actualizar webhook de plantilla",
+        "description": "Actualiza parcialmente el webhook de plantilla. Solo se modifican los campos que se envían; los que se omiten se mantienen sin cambios. Si se envía `events`, debe contener **solo** eventos de plantilla. El campo `payloadFormat` se sigue ignorando.",
+        "operationId": "updateTemplateWebhook",
+        "tags": [
+          "Webhooks de plantilla"
+        ],
+        "parameters": [
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "description": "ID del webhook de plantilla",
+            "schema": {
+              "type": "string",
+              "example": "8F2C00000000000000000000000000A1"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTemplateWebhookRequest"
+              },
+              "examples": {
+                "updateUrlAndStatus": {
+                  "summary": "Actualizar la URL y deshabilitarlo",
+                  "value": {
+                    "url": "https://novo-destino/webhook",
+                    "status": "DISABLED"
+                  }
+                },
+                "updateEvents": {
+                  "summary": "Actualizar los eventos de plantilla",
+                  "value": {
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS",
+                      "UPDATE_TEMPLATE_CATEGORY"
+                    ]
+                  }
+                },
+                "enableSignature": {
+                  "summary": "Habilitar / rotar la firma HMAC",
+                  "value": {
+                    "signing": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook de plantilla actualizado. El campo `secret` se devuelve **solo** cuando `signing = true` en esta actualización.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateWebhookCreatedResponse"
+                },
+                "example": {
+                  "id": "8F2C00000000000000000000000000A1",
+                  "channelId": null,
+                  "instanceId": null,
+                  "url": "https://novo-destino/webhook",
+                  "description": "Webhook de plantilla",
+                  "events": [
+                    "UPDATE_TEMPLATE_STATUS",
+                    "UPDATE_TEMPLATE_CATEGORY"
+                  ],
+                  "status": "DISABLED",
+                  "signing": false,
+                  "auth": {
+                    "type": "NONE",
+                    "configured": false
+                  },
+                  "payloadFormat": "DEFAULT",
+                  "customAttributes": {},
+                  "createdAt": "2026-07-15T19:00:00.000+00:00",
+                  "updatedAt": "2026-07-15T19:30:00.000+00:00"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada estructuralmente no válida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Validation error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook no encontrado para el tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El rol no es ENTERPRISE, o el alcance de los eventos no es válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Global webhooks (without instance) accept only template events"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar webhook de plantilla",
+        "description": "Elimina permanentemente el webhook de plantilla. Tras el borrado, ya no se entrega ningún evento de plantilla en la URL configurada.",
+        "operationId": "deleteTemplateWebhook",
+        "tags": [
+          "Webhooks de plantilla"
+        ],
+        "parameters": [
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "description": "ID del webhook de plantilla",
+            "schema": {
+              "type": "string",
+              "example": "8F2C00000000000000000000000000A1"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Webhook eliminado correctamente. No se devuelve contenido."
+          },
+          "404": {
+            "description": "Webhook no encontrado para el tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "This action requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateTemplateWebhookRequest": {
+        "type": "object",
+        "required": [
+          "url",
+          "events"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL de destino de los eventos",
+            "example": "https://destino/webhook"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descripción opcional del webhook",
+            "example": "Webhook de plantilla"
+          },
+          "events": {
+            "type": "array",
+            "description": "Solo eventos de plantilla. Es obligatorio al menos uno. Cualquier evento que no sea de plantilla devuelve `422`.",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/TemplateEvent"
+            },
+            "example": [
+              "UPDATE_TEMPLATE_STATUS",
+              "UPDATE_TEMPLATE_CATEGORY"
+            ]
+          },
+          "signing": {
+            "type": "boolean",
+            "description": "Habilita la firma HMAC-SHA256. Cuando es `true`, genera y devuelve un `secret` de 64 caracteres hexadecimales **solo en la creación o la actualización**.",
+            "default": false,
+            "example": false
+          },
+          "authType": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
+            "description": "Tipo de autenticación (forma plana). Alternativa al objeto `auth`.",
+            "default": "NONE",
+            "example": "NONE"
+          },
+          "token": {
+            "type": "string",
+            "description": "Credencial para `BEARER` (forma plana)"
+          },
+          "key": {
+            "type": "string",
+            "description": "Credencial para `API_KEY` (forma plana)"
+          },
+          "auth": {
+            "$ref": "#/components/schemas/WebhookAuth"
+          },
+          "payloadFormat": {
+            "type": "string",
+            "enum": [
+              "DEFAULT"
+            ],
+            "description": "**Ignorado** en los webhooks de plantilla: el formato es siempre `DEFAULT`. Se puede omitir; si se envía (con cualquier valor), se descarta y se persiste como `DEFAULT`.",
+            "default": "DEFAULT",
+            "example": "DEFAULT"
+          },
+          "customAttributes": {
+            "type": "object",
+            "description": "Mapa libre de atributos extra",
+            "additionalProperties": true,
+            "example": {}
+          }
+        }
+      },
+      "UpdateTemplateWebhookRequest": {
+        "type": "object",
+        "description": "Todos los campos son opcionales: solo se actualizan los campos que se envían.",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Nueva URL de destino",
+            "example": "https://novo-destino/webhook"
+          },
+          "description": {
+            "type": "string",
+            "description": "Nueva descripción"
+          },
+          "events": {
+            "type": "array",
+            "description": "Si se envía, sustituye la lista de eventos: solo eventos de plantilla (en caso contrario → `422`).",
+            "items": {
+              "$ref": "#/components/schemas/TemplateEvent"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ],
+            "description": "`DISABLED` pausa la entrega de eventos sin eliminar el webhook"
+          },
+          "signing": {
+            "type": "boolean",
+            "description": "`true` genera un `secret` nuevo; `false` elimina la firma"
+          },
+          "authType": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
+            "description": "`NONE` borra la autenticación; el resto la reconfiguran"
+          },
+          "token": {
+            "type": "string",
+            "description": "Credencial para `BEARER`"
+          },
+          "key": {
+            "type": "string",
+            "description": "Credencial para `API_KEY`"
+          },
+          "auth": {
+            "$ref": "#/components/schemas/WebhookAuth"
+          },
+          "payloadFormat": {
+            "type": "string",
+            "enum": [
+              "DEFAULT"
+            ],
+            "description": "**Ignorado** en los webhooks de plantilla"
+          },
+          "customAttributes": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "WebhookAuth": {
+        "type": "object",
+        "description": "Forma anidada de la autenticación. Para `BASIC` usa `username`+`password`; para `CUSTOM_HEADER` usa `headerName`+`headerValue`.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
+            "example": "BEARER"
+          },
+          "token": {
+            "type": "string",
+            "description": "Token para `BEARER`",
+            "example": "mi-token-secreto"
+          },
+          "key": {
+            "type": "string",
+            "description": "Clave para `API_KEY`"
+          },
+          "username": {
+            "type": "string",
+            "description": "Usuario para `BASIC`"
+          },
+          "password": {
+            "type": "string",
+            "description": "Contraseña para `BASIC`"
+          },
+          "headerName": {
+            "type": "string",
+            "description": "Nombre del header para `CUSTOM_HEADER`",
+            "example": "X-Api-Key"
+          },
+          "headerValue": {
+            "type": "string",
+            "description": "Valor del header para `CUSTOM_HEADER`"
+          }
+        }
+      },
+      "WebhookAuthInfo": {
+        "type": "object",
+        "description": "Resumen de la autenticación configurada: las credenciales no se devuelven por seguridad",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
+            "example": "NONE"
+          },
+          "configured": {
+            "type": "boolean",
+            "description": "`true` cuando hay credenciales configuradas",
+            "example": false
+          }
+        }
+      },
+      "TemplateEvent": {
+        "type": "string",
+        "enum": [
+          "UPDATE_TEMPLATE_STATUS",
+          "UPDATE_TEMPLATE_CATEGORY"
+        ],
+        "description": "Eventos de plantilla admitidos: `UPDATE_TEMPLATE_STATUS` (actualización del estado de la plantilla: aprobada, rechazada, etc.) y `UPDATE_TEMPLATE_CATEGORY` (actualización de la categoría de la plantilla)."
+      },
+      "TemplateWebhookResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID único del webhook de plantilla",
+            "example": "8F2C00000000000000000000000000A1"
+          },
+          "channelId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Siempre `null` en los webhooks de plantilla",
+            "example": null
+          },
+          "instanceId": {
+            "type": "string",
+            "nullable": true,
+            "deprecated": true,
+            "description": "Obsoleto y siempre `null` en los webhooks de plantilla",
+            "example": null
+          },
+          "url": {
+            "type": "string",
+            "description": "URL de destino de los eventos",
+            "example": "https://destino/webhook"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Descripción del webhook",
+            "example": "Webhook de plantilla"
+          },
+          "events": {
+            "type": "array",
+            "description": "Eventos de plantilla configurados",
+            "items": {
+              "$ref": "#/components/schemas/TemplateEvent"
+            },
+            "example": [
+              "UPDATE_TEMPLATE_STATUS",
+              "UPDATE_TEMPLATE_CATEGORY"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ],
+            "description": "Estado actual del webhook",
+            "example": "ENABLED"
+          },
+          "signing": {
+            "type": "boolean",
+            "description": "Indica si la firma HMAC está habilitada",
+            "example": false
+          },
+          "auth": {
+            "$ref": "#/components/schemas/WebhookAuthInfo"
+          },
+          "payloadFormat": {
+            "type": "string",
+            "enum": [
+              "DEFAULT"
+            ],
+            "description": "Siempre `DEFAULT` en los webhooks de plantilla",
+            "example": "DEFAULT"
+          },
+          "customAttributes": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {}
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-07-15T19:00:00.000+00:00"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-07-15T19:00:00.000+00:00"
+          }
+        }
+      },
+      "TemplateWebhookCreatedResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateWebhookResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "secret": {
+                "type": "string",
+                "nullable": true,
+                "description": "Secret HMAC de 64 caracteres hexadecimales: se devuelve **solo** cuando `signing = true` en el create o el update. Es `null` cuando la firma está deshabilitada. Después no se podrá recuperar.",
+                "example": null
+              }
+            }
+          }
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

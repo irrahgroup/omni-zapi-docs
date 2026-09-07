@@ -1,0 +1,1107 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - API de plantillas",
+    "description": "API para gestionar las plantillas de mensaje de WhatsApp Business",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/whatsapp/businesses": {
+      "get": {
+        "summary": "Listar WABAs",
+        "description": "Devuelve la lista de WABAs (cuentas de WhatsApp Business) disponibles para el token autenticado.",
+        "operationId": "listBusinesses",
+        "tags": [
+          "Plantillas"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de WABAs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Business"
+                  }
+                },
+                "example": [
+                  {
+                    "businessId": "428083093730937",
+                    "name": "Demostración",
+                    "channelsCount": 1,
+                    "connectedCount": 1,
+                    "disconnectedCount": 0
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/templates": {
+      "get": {
+        "summary": "Listar plantillas",
+        "description": "Devuelve la lista de plantillas de una WABA. La estructura de los `components` varía según la categoría y la configuración de cada plantilla.",
+        "operationId": "listTemplates",
+        "tags": [
+          "Plantillas"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Cantidad de plantillas por página (paginación por cursor de Meta)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "example": 25
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filtra por estado de aprobación",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED"
+              ],
+              "example": "APPROVED"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "description": "Cursor de la página anterior, devuelto en `paging.cursors.before`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "Cursor de la página siguiente, devuelto en `paging.cursors.after`",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de plantillas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Template"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "1900296177408890",
+                      "name": "confirm_account",
+                      "status": "APPROVED",
+                      "category": "AUTHENTICATION",
+                      "language": "es_ES",
+                      "parameter_format": "POSITIONAL",
+                      "message_send_ttl_seconds": 600,
+                      "components": [
+                        {
+                          "type": "BODY",
+                          "text": "Tu código de verificación es *{{1}}*. Por tu seguridad, no lo compartas.",
+                          "add_security_recommendation": true,
+                          "example": {
+                            "body_text": [
+                              [
+                                "123456"
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "type": "BUTTONS",
+                          "buttons": [
+                            {
+                              "type": "URL",
+                              "text": "Copiar código",
+                              "url": "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp{{1}}",
+                              "example": [
+                                "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp123456"
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear plantilla",
+        "description": "Crea una plantilla de mensaje nueva y la envía a la aprobación de Meta.",
+        "operationId": "createTemplate",
+        "tags": [
+          "Plantillas"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateRequest"
+              },
+              "examples": {
+                "utility": {
+                  "summary": "Utility - Actualización de pedido",
+                  "value": {
+                    "name": "actualizacion_pedido_v1",
+                    "category": "UTILITY",
+                    "language": "es_ES",
+                    "components": [
+                      {
+                        "type": "BODY",
+                        "text": "Hola {{1}}, tu pedido {{2}} se ha actualizado a {{3}}. ¡Hasta pronto!",
+                        "example": {
+                          "body_text": [
+                            [
+                              "Ana",
+                              "PED-1024",
+                              "em transporte"
+                            ]
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "marketing": {
+                  "summary": "Marketing - Campaña de descuento",
+                  "value": {
+                    "name": "campana_descuento_v1",
+                    "category": "MARKETING",
+                    "language": "es_ES",
+                    "components": [
+                      {
+                        "type": "BODY",
+                        "text": "Aprovecha un {{1}} de descuento en el plan {{2}} hasta el {{3}}.",
+                        "example": {
+                          "body_text": [
+                            [
+                              "20%",
+                              "Premium",
+                              "30/04"
+                            ]
+                          ]
+                        }
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "URL",
+                            "text": "Ver oferta",
+                            "url": "https://sitio.ejemplo.com/oferta"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "authentication": {
+                  "summary": "Authentication - Código OTP",
+                  "value": {
+                    "name": "otp_login_v1",
+                    "category": "AUTHENTICATION",
+                    "language": "es_ES",
+                    "components": [
+                      {
+                        "type": "BODY",
+                        "text": "Tu código de verificación es *{{1}}*. Por tu seguridad, no lo compartas.",
+                        "add_security_recommendation": true,
+                        "example": {
+                          "body_text": [
+                            [
+                              "123456"
+                            ]
+                          ]
+                        }
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "URL",
+                            "text": "Copiar código",
+                            "url": "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp{{1}}",
+                            "example": [
+                              "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp123456"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plantilla creada y enviada a aprobación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTemplateResponse"
+                },
+                "example": {
+                  "id": "1613165359891625",
+                  "status": "PENDING",
+                  "category": "UTILITY"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/MetaError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/templates/{templateId}": {
+      "put": {
+        "summary": "Editar plantilla",
+        "description": "Edita una plantilla existente y la reenvía a la aprobación de Meta.",
+        "operationId": "updateTemplate",
+        "tags": [
+          "Plantillas"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la plantilla (obtenido con Listar plantillas)",
+            "schema": {
+              "type": "string",
+              "example": "1900296177408890"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateRequest"
+              },
+              "example": {
+                "name": "actualizacion_pedido_v1",
+                "category": "UTILITY",
+                "language": "es_ES",
+                "components": [
+                  {
+                    "type": "BODY",
+                    "text": "Hola {{1}}, tu pedido {{2}} se ha actualizado a {{3}}.",
+                    "example": {
+                      "body_text": [
+                        [
+                          "Ana",
+                          "PED-1024",
+                          "em transporte"
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plantilla editada correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/MetaError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar plantilla",
+        "description": "Elimina una plantilla existente de la WABA.",
+        "operationId": "deleteTemplate",
+        "tags": [
+          "Plantillas"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la plantilla (obtenido con Listar plantillas)",
+            "schema": {
+              "type": "string",
+              "example": "1900296177408890"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "description": "Nombre de la plantilla. Meta exige el nombre junto con el ID para eliminar todas las traducciones de la plantilla",
+            "schema": {
+              "type": "string",
+              "example": "actualizacion_pedido_v1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantilla eliminada correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/templates/sync": {
+      "post": {
+        "summary": "Sincronizar plantillas",
+        "description": "Fuerza la sincronización de las plantillas con Meta, actualizando los estados (PENDING, APPROVED, REJECTED) y el resto de la información.",
+        "operationId": "syncTemplates",
+        "tags": [
+          "Plantillas"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sincronización realizada correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResponse"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "1900296177408890",
+                      "name": "confirm_account",
+                      "status": "APPROVED",
+                      "category": "AUTHENTICATION",
+                      "language": "es_ES",
+                      "parameter_format": "POSITIONAL",
+                      "message_send_ttl_seconds": 600,
+                      "components": [
+                        {
+                          "type": "BODY",
+                          "text": "Tu código de verificación es *{{1}}*. Por tu seguridad, no lo compartas.",
+                          "add_security_recommendation": true,
+                          "example": {
+                            "body_text": [
+                              [
+                                "123456"
+                              ]
+                            ]
+                          }
+                        },
+                        {
+                          "type": "BUTTONS",
+                          "buttons": [
+                            {
+                              "type": "URL",
+                              "text": "Copiar código",
+                              "url": "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp{{1}}",
+                              "example": [
+                                "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp123456"
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "syncedCount": 2,
+                  "synced": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/templates/media": {
+      "post": {
+        "summary": "Subir multimedia para plantilla",
+        "description": "Sube el archivo del HEADER multimedia y devuelve el `header_handle` que exige Meta.\n\nMeta no acepta el archivo directamente al crear la plantilla: exige el handle de la Resumable Upload API, que depende del token de la aplicación. Este endpoint hace ese puente.",
+        "operationId": "uploadTemplateMedia",
+        "tags": [
+          "Plantillas"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "type"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Archivo del header (imagen, vídeo o documento). Límite de 100 MB"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "MIME type del archivo (p. ej.: `image/jpeg`, `video/mp4`, `application/pdf`)",
+                    "example": "image/jpeg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subida completada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateMediaResponse"
+                },
+                "example": {
+                  "h": "4::aW1hZ2UvanBlZw==:ARZ...:e:1770000000:..."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Petición no válida: archivo vacío o falta `type`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token no válido o ausente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Archivo de más de 100 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "La cuenta no tiene App ID ni App Secret de Meta configurados (`MISSING_APP_CREDENTIALS`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Meta rechazó la subida (`META_REFUSED`) o no se pudo leer la configuración del app (`CONFIG_UNREACHABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/whatsapp/businesses/{wabaId}/template-library": {
+      "get": {
+        "summary": "Listar biblioteca de plantillas",
+        "description": "Devuelve las plantillas ya hechas de la biblioteca de Meta, que se pueden crear sin pasar por revisión.",
+        "operationId": "listTemplateLibrary",
+        "tags": [
+          "Plantillas"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantillas de la biblioteca",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateLibraryResponse"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "name": "order_confirmation_1",
+                      "category": "UTILITY",
+                      "languages": [
+                        "pt_BR",
+                        "en_US",
+                        "es_ES"
+                      ],
+                      "body": "Ola {{1}}, seu pedido {{2}} foi confirmado."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token no válido o ausente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MethodNotAllowed": {
+        "description": "Método no permitido.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 405,
+              "message": "Method not allowed"
+            }
+          }
+        }
+      },
+      "MetaError": {
+        "description": "Error devuelto por Meta al procesar la petición.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MetaError"
+            },
+            "example": {
+              "error": "Newport request failed",
+              "value": {
+                "errors": [
+                  {
+                    "description": "",
+                    "name": "META_WHATSAPP_ERROR",
+                    "message": "Tu mensaje no se puede enviar porque incluye contenido que otras personas en Facebook denunciaron como abusivo.",
+                    "code": "368"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Token no válido o ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "La petición no se pudo procesar debido a un error de validación.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UnprocessableEntity"
+            },
+            "example": {
+              "error": {
+                "errors": [
+                  {
+                    "code": "100",
+                    "name": "META_WHATSAPP_ERROR",
+                    "subCode": "2388024",
+                    "message": "Invalid parameter",
+                    "description": "There is already Portuguese (BR) content for this template. You can create a new template and try again."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Business": {
+        "type": "object",
+        "properties": {
+          "businessId": {
+            "type": "string",
+            "description": "ID de la WABA (cuenta de WhatsApp Business)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la WABA"
+          },
+          "channelsCount": {
+            "type": "integer",
+            "description": "Total de canales vinculados"
+          },
+          "connectedCount": {
+            "type": "integer",
+            "description": "Canales conectados"
+          },
+          "disconnectedCount": {
+            "type": "integer",
+            "description": "Canales desconectados"
+          }
+        }
+      },
+      "CreateTemplateRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "language",
+          "components"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre de la plantilla (snake_case, sin espacios)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Categoría de la plantilla",
+            "enum": [
+              "UTILITY",
+              "MARKETING",
+              "AUTHENTICATION"
+            ]
+          },
+          "language": {
+            "type": "string",
+            "description": "Idioma de la plantilla (p. ej.: es_ES, en_US)"
+          },
+          "components": {
+            "type": "array",
+            "description": "Componentes de la plantilla (HEADER, BODY, FOOTER, BUTTONS)",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "CreateTemplateResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID de la plantilla creada"
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado inicial (normalmente PENDING)",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "description": "Categoría de la plantilla creada",
+            "enum": [
+              "UTILITY",
+              "MARKETING",
+              "AUTHENTICATION"
+            ]
+          }
+        }
+      },
+      "SyncResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Lista de plantillas sincronizadas",
+            "items": {
+              "$ref": "#/components/schemas/Template"
+            }
+          },
+          "syncedCount": {
+            "type": "integer",
+            "description": "Cantidad de plantillas sincronizadas"
+          },
+          "synced": {
+            "type": "boolean",
+            "description": "Indica si la sincronización se realizó correctamente"
+          }
+        }
+      },
+      "Template": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID de la plantilla"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la plantilla"
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado de aprobación",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "description": "Categoría de la plantilla",
+            "enum": [
+              "UTILITY",
+              "MARKETING",
+              "AUTHENTICATION"
+            ]
+          },
+          "language": {
+            "type": "string",
+            "description": "Idioma de la plantilla (p. ej.: es_ES, en_US)"
+          },
+          "parameter_format": {
+            "type": "string",
+            "description": "Formato de los parámetros"
+          },
+          "message_send_ttl_seconds": {
+            "type": "integer",
+            "description": "Tiempo de vida del mensaje en segundos"
+          },
+          "components": {
+            "type": "array",
+            "description": "Componentes de la plantilla (HEADER, BODY, FOOTER, BUTTONS)",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indica si la operación se realizó correctamente"
+          }
+        }
+      },
+      "MetaError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Descripción general del error"
+          },
+          "value": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Tipo de error (p. ej.: META_WHATSAPP_ERROR)"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Mensaje de error de Meta"
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Código de error de Meta"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer",
+            "description": "Código del error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Descripción del error"
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "subCode": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TemplateMediaResponse": {
+        "type": "object",
+        "properties": {
+          "h": {
+            "type": "string",
+            "description": "Handle que se usa como `example` del componente HEADER al crear la plantilla"
+          }
+        }
+      },
+      "TemplateLibraryResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Nombre de la plantilla en la biblioteca"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "UTILITY",
+                    "MARKETING",
+                    "AUTHENTICATION"
+                  ],
+                  "description": "Categoría"
+                },
+                "languages": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Idiomas disponibles"
+                },
+                "body": {
+                  "type": "string",
+                  "description": "Vista previa del cuerpo de la plantilla"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}
