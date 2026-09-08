@@ -1,0 +1,232 @@
+---
+title: "Tipos de plantilla"
+description: "Los 13 tipos que acepta Meta, qué hace cada uno y cómo lo ve el cliente"
+---
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+El tipo define **qué campos existen** en la plantilla y qué exige Meta en cada uno. Elegir el tipo es la primera decisión, y no cambia después: para cambiarlo, creas otra plantilla.
+
+<Note>
+  Las vistas previas de abajo son aproximaciones de cómo lo ve el cliente en WhatsApp. Lo que aparece entre `{{llaves}}` es una variable, que se rellena en el envío.
+</Note>
+
+## Aprobación y envío: dos cosas distintas
+
+Varios tipos se **aprueban una vez y se alimentan en el envío**. La plantilla guarda la estructura; los datos van al disparar.
+
+| Aprobado en la creación | Enviado en cada disparo |
+|---|---|
+| texto, botones, estructura de las tarjetas | valores de las variables |
+| categoría e idioma | productos, artículos del pedido, multimedia de las tarjetas |
+| la muestra multimedia que Meta revisa | el archivo real de cada envío |
+
+Eso es lo que permite usar **la misma plantilla aprobada en campañas distintas**.
+
+## Límites de texto
+
+| Campo | Límite |
+|---|---|
+| Encabezado | 60 caracteres, como máximo **una** variable |
+| Mensaje | 1024 caracteres |
+| Pie | 60 caracteres, **sin** variables |
+| Texto de botón | 25 caracteres |
+| Texto de tarjeta del carrusel | 160 caracteres |
+| Texto de oferta | 16 caracteres |
+| Código de cupón | 20 caracteres |
+
+## Mensaje
+
+### Mensaje personalizado
+
+`custom`
+
+Texto libre con variables, encabezado y botones. Es el tipo más usado y el único totalmente abierto.
+
+**En el envío:** Nada. Solo los valores de las variables.
+
+<TemplatePreview
+  header="Pedido {{numero_de_pedido}} confirmado"
+  body="Hola {{nombre_del_cliente}}, tu pedido {{numero_de_pedido}} está confirmado y sale hoy antes de las 18h."
+  footer="Responde BAJA para no recibir más"
+  buttons={['Seguir pedido', 'Ver detalles']}
+/>
+
+## Autenticación
+
+### Código de acceso
+
+`authentication`
+
+Envío de OTP. **Meta define el texto**: tú no escribes el cuerpo, solo configuras el botón de copiar.
+
+**En el envío:** El código.
+
+<TemplatePreview
+  body="<tu código> es tu código de verificación. Por seguridad, no lo compartas."
+  buttons={['Copiar código']}
+  caption="El texto es fijo de Meta. La categoría también: siempre AUTHENTICATION." 
+/>
+
+## Comercio
+
+### Catálogo
+
+`catalog`
+
+Abre el catálogo completo de la tienda en WhatsApp.
+
+**En el envío:** La imagen de arriba viene del catálogo. Si no eliges el producto, Meta usa el primero de la cuenta.
+
+<TemplatePreview
+  headerKind="imagen del catálogo"
+  body="Llegaron novedades a la tienda. Toca el botón de abajo para ver el catálogo completo."
+  footer="Precios válidos hasta agotar existencias"
+  buttons={['Ver catálogo']}
+/>
+
+### Multiproducto
+
+`mpm`
+
+Escaparate con secciones y varios productos.
+
+**En el envío:** Los productos (**hasta 30, en hasta 10 secciones**) y la foto de arriba. El mismo escaparate sirve para campañas distintas.
+
+<TemplatePreview
+  header="Selección de la semana"
+  body="Seleccionamos algunos productos que combinan con lo que compraste. Mira la lista completa."
+  buttons={['Ver artículos']}
+/>
+
+### Producto único
+
+`spm`
+
+Un producto del catálogo con foto, nombre y precio, más el botón «Ver producto».
+
+**En el envío:** El producto, con foto, nombre y precio, viene del catálogo.
+
+<TemplatePreview
+  headerKind="foto del producto"
+  body="Este es el producto por el que preguntaste. Toca para ver los detalles y comprar."
+  footer="Stock limitado"
+  buttons={['Ver producto']}
+  caption="El texto del botón es fijo de Meta." 
+/>
+
+### Botón de pago
+
+`checkout_button`
+
+Lleva al cliente directo al pago.
+
+**En el envío:** El pedido: artículos, subtotal, total y la forma de pago. Cambia en cada compra.
+
+<TemplatePreview
+  body="Tu carrito está listo: {{cantidad_de_articulos}} artículos, total {{importe_total}}. Revisa y finaliza aquí."
+  buttons={['Finalizar compra', 'Necesito ayuda']}
+/>
+
+### Detalles del pedido
+
+`order_details`
+
+La factura del pedido con artículos y total, más el botón que abre el pago por Pix o enlace.
+
+**En el envío:** Los artículos, el subtotal, el total y el código Pix. Cambian en cada pedido.
+
+<TemplatePreview
+  header="Pedido {{numero_de_pedido}}"
+  body="¡Tu pedido está listo! Revisa los detalles de abajo y completa el pago."
+  footer="Pago procesado por WhatsApp"
+  buttons={['Pagar ahora']}
+/>
+
+## Promoción
+
+### Cupón
+
+`coupon_code`
+
+Mensaje con código de descuento copiable. El código admite hasta **20 caracteres**.
+
+**En el envío:** Nada más allá de las variables.
+
+<TemplatePreview
+  body="{{nombre_del_cliente}}, tienes un cupón del 10% para tu próxima compra. Toca para copiar el código."
+  coupon="VUELVE10"
+  buttons={['Copiar código', 'Usar cupón']}
+/>
+
+### Oferta por tiempo limitado
+
+`limited_time_offer`
+
+Promoción con contador de expiración. El texto de la oferta admite hasta **16 caracteres**.
+
+**En el envío:** El plazo de expiración de la oferta.
+
+<TemplatePreview
+  offer="20% de descuento"
+  body="{{nombre_del_cliente}}, tu oferta acaba en pocas horas. Usa el cupón antes de que caduque."
+  buttons={['Aprovechar ahora']}
+  caption="WhatsApp muestra un contador en vivo hasta la expiración." 
+/>
+
+## Carrusel
+
+### Carrusel de multimedia
+
+`media_card_carousel`
+
+Hasta **10 tarjetas** con imagen o vídeo. El texto de cada tarjeta admite hasta 160 caracteres.
+
+**En el envío:** El archivo que pones al crear es solo la **muestra que Meta revisa**. En el envío, la imagen o el vídeo de cada tarjeta va como parámetro y puede ser otro: el mismo carrusel aprobado sirve para campañas distintas.
+
+<TemplatePreview
+  body="Llegó la nueva colección. Desliza para ver los destacados."
+  cards={[{ text: 'Vestido midi floral', button: 'Quiero este' }, { text: 'Blazer de sastrería', button: 'Quiero este' }]}
+/>
+
+### Carrusel de productos
+
+`product_card_carousel`
+
+Tarjetas traídas de tu catálogo.
+
+**En el envío:** La foto, el nombre y el precio de cada tarjeta vienen del catálogo.
+
+<TemplatePreview
+  body="Elegimos algunos productos para ti. Desliza para verlos."
+  cards={[{ media: 'producto del catálogo', text: 'Camiseta básica', button: 'Ver producto' }, { media: 'producto del catálogo', text: 'Pantalón chino', button: 'Ver producto' }]}
+  caption="Creado con exactamente 2 tarjetas, pero puede enviar hasta 10." 
+/>
+
+## Otros
+
+### Permiso de llamada
+
+`call_permission_request`
+
+Pide autorización para llamar por WhatsApp.
+
+**En el envío:** Nada más allá de las variables.
+
+<TemplatePreview
+  body="¿Podemos llamarte para hablar de tu pedido {{numero_de_pedido}}?"
+  buttons={['Permitir', 'No, gracias']}
+/>
+
+### Template Library
+
+`library`
+
+Modelo ya hecho de la biblioteca de Meta. **No pasa por revisión**: nace aprobado.
+
+**En el envío:** Depende del modelo elegido.
+
+<TemplatePreview
+  body="Hola {{nombre_del_cliente}}, tu pedido {{numero_de_pedido}} se ha enviado y llega en {{plazo}}."
+  buttons={['Rastrear']}
+  caption="El contenido viene de la biblioteca de Meta y no editas el texto." 
+/>

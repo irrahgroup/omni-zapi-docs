@@ -1,0 +1,232 @@
+---
+title: "Template types"
+description: "The 13 types Meta accepts, what each one does and how the customer sees it"
+---
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+The type defines **which fields exist** in the template and what Meta requires for each. Picking the type is the first decision, and it does not change later: to switch, you create another template.
+
+<Note>
+  The previews below approximate how the customer sees it in WhatsApp. Anything in `{{braces}}` is a variable, filled in at send time.
+</Note>
+
+## Approval and sending: two different things
+
+Several types are **approved once and fed at send time**. The template holds the structure; the data goes in when you fire it.
+
+| Approved at creation | Sent on every dispatch |
+|---|---|
+| text, buttons, card structure | variable values |
+| category and language | products, order items, card media |
+| the media sample Meta reviews | the real media of each send |
+
+That is what lets you use **the same approved template across different campaigns**.
+
+## Text limits
+
+| Field | Limit |
+|---|---|
+| Header | 60 characters, at most **one** variable |
+| Body | 1024 characters |
+| Footer | 60 characters, **no** variables |
+| Button text | 25 characters |
+| Carousel card text | 160 characters |
+| Offer text | 16 characters |
+| Coupon code | 20 characters |
+
+## Message
+
+### Custom message
+
+`custom`
+
+Free text with variables, a header and buttons. It is the most used type and the only fully open one.
+
+**At send time:** Nothing. Only the variable values.
+
+<TemplatePreview
+  header="Order {{order_number}} confirmed"
+  body="Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today by 6pm."
+  footer="Reply STOP to opt out"
+  buttons={['Track order', 'See details']}
+/>
+
+## Authentication
+
+### Access code
+
+`authentication`
+
+OTP delivery. **Meta defines the text** — you do not write the body, you only configure the copy button.
+
+**At send time:** The code.
+
+<TemplatePreview
+  body="<your code> is your verification code. For your security, do not share it."
+  buttons={['Copy code']}
+  caption="The text is fixed by Meta. So is the category: always AUTHENTICATION." 
+/>
+
+## Commerce
+
+### Catalog
+
+`catalog`
+
+Opens the full store catalog inside WhatsApp.
+
+**At send time:** The top image comes from the catalog. If you do not pick a product, Meta uses the first one in the account.
+
+<TemplatePreview
+  headerKind="catalog image"
+  body="New arrivals in the store. Tap the button below to see the full catalog."
+  footer="Prices valid while stock lasts"
+  buttons={['View catalog']}
+/>
+
+### Multi-product
+
+`mpm`
+
+A showcase with sections and several products.
+
+**At send time:** The products (**up to 30, across up to 10 sections**) and the top image. The same showcase serves different campaigns.
+
+<TemplatePreview
+  header="This week's picks"
+  body="We picked a few products that go with what you bought. See the full list."
+  buttons={['View items']}
+/>
+
+### Single product
+
+`spm`
+
+One catalog product with photo, name and price, plus the "View product" button.
+
+**At send time:** The product, with photo, name and price, comes from the catalog.
+
+<TemplatePreview
+  headerKind="product photo"
+  body="This is the product you asked about. Tap to see the details and buy."
+  footer="Limited stock"
+  buttons={['View product']}
+  caption="The button text is fixed by Meta." 
+/>
+
+### Checkout button
+
+`checkout_button`
+
+Takes the customer straight to payment.
+
+**At send time:** The order: items, subtotal, total and the payment method. It changes on every purchase.
+
+<TemplatePreview
+  body="Your cart is ready: {{item_count}} items, total {{total_amount}}. Review and check out here."
+  buttons={['Check out', 'I need help']}
+/>
+
+### Order details
+
+`order_details`
+
+The order invoice with items and total, plus the button that opens payment by Pix or link.
+
+**At send time:** The items, the subtotal, the total and the Pix code. They change on every order.
+
+<TemplatePreview
+  header="Order {{order_number}}"
+  body="Your order is ready! Check the details below and complete the payment."
+  footer="Payment processed by WhatsApp"
+  buttons={['Pay now']}
+/>
+
+## Promotion
+
+### Coupon
+
+`coupon_code`
+
+A message with a copyable discount code. The code is up to **20 characters**.
+
+**At send time:** Nothing beyond the variables.
+
+<TemplatePreview
+  body="{{customer_name}}, you got a 10% coupon for your next purchase. Tap to copy the code."
+  coupon="COMEBACK10"
+  buttons={['Copy code', 'Use coupon']}
+/>
+
+### Limited time offer
+
+`limited_time_offer`
+
+A promotion with an expiration counter. The offer text is up to **16 characters**.
+
+**At send time:** The offer expiration time.
+
+<TemplatePreview
+  offer="20% off"
+  body="{{customer_name}}, your offer ends in a few hours. Use the coupon before it expires."
+  buttons={['Grab it now']}
+  caption="WhatsApp shows a live counter until expiration." 
+/>
+
+## Carousel
+
+### Media carousel
+
+`media_card_carousel`
+
+Up to **10 cards** with an image or a video. Each card body is up to 160 characters.
+
+**At send time:** The media you set at creation is only the **sample Meta reviews**. At send time, each card image or video goes as a parameter and can be a different one: the same approved carousel serves different campaigns.
+
+<TemplatePreview
+  body="The new collection is here. Swipe to see the highlights."
+  cards={[{ text: 'Floral midi dress', button: 'I want this' }, { text: 'Tailored blazer', button: 'I want this' }]}
+/>
+
+### Product carousel
+
+`product_card_carousel`
+
+Cards pulled from your catalog.
+
+**At send time:** The photo, the name and the price of each card come from the catalog.
+
+<TemplatePreview
+  body="We picked a few products for you. Swipe to see them."
+  cards={[{ media: 'catalog product', text: 'Basic tee', button: 'View product' }, { media: 'catalog product', text: 'Chino trousers', button: 'View product' }]}
+  caption="Created with exactly 2 cards, but can send up to 10." 
+/>
+
+## Other
+
+### Call permission
+
+`call_permission_request`
+
+Asks for permission to call through WhatsApp.
+
+**At send time:** Nothing beyond the variables.
+
+<TemplatePreview
+  body="Can we call you about your order {{order_number}}?"
+  buttons={['Allow', 'No, thanks']}
+/>
+
+### Template Library
+
+`library`
+
+A ready-made model from Meta's library. **It skips review** — approved from the start.
+
+**At send time:** Depends on the chosen model.
+
+<TemplatePreview
+  body="Hi {{customer_name}}, your order {{order_number}} has shipped and arrives in {{eta}}."
+  buttons={['Track']}
+  caption="The content comes from Meta's library and you do not edit the text." 
+/>

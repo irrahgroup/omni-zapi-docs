@@ -1,0 +1,71 @@
+export const TemplatePreview = ({
+  header,
+  headerKind = 'text',
+  body,
+  footer,
+  buttons = [],
+  cards = [],
+  offer,
+  coupon,
+  caption,
+}) => {
+  const S = {
+    stage: { background: 'var(--zp-page, #eff0ed)', border: '1px solid var(--zp-border, #e4e7e1)',
+             borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column',
+             gap: 8, alignItems: 'flex-start', margin: '12px 0' },
+    bubble: { background: 'var(--zp-surface, #fff)', borderRadius: 10, maxWidth: 330, width: '100%',
+              boxShadow: '0 1px 2px rgba(0,0,0,.08)', overflow: 'hidden', fontSize: 13.5, lineHeight: 1.45 },
+    pad: { padding: '9px 11px' },
+    media: { height: 92, background: 'var(--zp-field, #f4f5f3)', display: 'flex',
+             alignItems: 'center', justifyContent: 'center', fontSize: 11,
+             color: 'var(--zp-ink-tertiary, #8a9183)', letterSpacing: '.04em', textTransform: 'uppercase' },
+    head: { fontWeight: 700, marginBottom: 5 },
+    foot: { fontSize: 11.5, color: 'var(--zp-ink-tertiary, #8a9183)', marginTop: 6 },
+    btn: { borderTop: '1px solid var(--zp-border, #e4e7e1)', padding: '8px 10px',
+           textAlign: 'center', color: '#027eb5', fontSize: 13, fontWeight: 500 },
+    chip: { display: 'inline-block', background: 'var(--zp-brand-wash, #e3eed9)',
+            color: 'var(--zp-brand-ink, #477722)', borderRadius: 5, padding: '2px 7px',
+            fontSize: 11.5, fontWeight: 700, marginBottom: 6 },
+    row: { display: 'flex', gap: 8, maxWidth: 330, width: '100%' },
+    card: { background: 'var(--zp-surface, #fff)', borderRadius: 10, flex: 1, overflow: 'hidden',
+            boxShadow: '0 1px 2px rgba(0,0,0,.08)', fontSize: 12.5 },
+    cap: { fontSize: 11.5, color: 'var(--zp-ink-tertiary, #8a9183)', marginTop: 2 },
+  };
+
+  const withVars = (text) =>
+    String(text || '').split(/(\{\{[^}]+\}\})/g).map((part, i) =>
+      part.startsWith('{{')
+        ? <span key={i} style={{ background: 'var(--zp-brand-wash, #e3eed9)',
+            color: 'var(--zp-brand-ink, #477722)', borderRadius: 3, padding: '0 3px' }}>{part}</span>
+        : <span key={i}>{part}</span>);
+
+  return (
+    <div style={S.stage}>
+      <div style={S.bubble}>
+        {headerKind !== 'text' && headerKind !== 'none' && <div style={S.media}>{headerKind}</div>}
+        <div style={S.pad}>
+          {offer && <div style={S.chip}>{offer}</div>}
+          {header && headerKind === 'text' && <div style={S.head}>{withVars(header)}</div>}
+          {body && <div>{withVars(body)}</div>}
+          {coupon && <div style={{ ...S.chip, marginTop: 8, marginBottom: 0 }}>{coupon}</div>}
+          {footer && <div style={S.foot}>{footer}</div>}
+        </div>
+        {buttons.map((b, i) => <div key={i} style={S.btn}>{b}</div>)}
+      </div>
+
+      {cards.length > 0 && (
+        <div style={S.row}>
+          {cards.map((c, i) => (
+            <div key={i} style={S.card}>
+              <div style={{ ...S.media, height: 70 }}>{c.media || 'imagem'}</div>
+              <div style={{ padding: '7px 9px' }}>{c.text}</div>
+              {c.button && <div style={{ ...S.btn, padding: '6px 8px', fontSize: 12 }}>{c.button}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {caption && <div style={S.cap}>{caption}</div>}
+    </div>
+  );
+};
