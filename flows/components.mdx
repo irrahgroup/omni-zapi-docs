@@ -1,0 +1,115 @@
+---
+title: "Componentes e regras"
+description: "Os tipos de pergunta, o que cada um gera no flow_json e as regras que a Meta valida"
+---
+
+## Tipos de pergunta
+
+Cada pergunta do seu formulário vira um componente no `flow_json`. Esta é a tradução:
+
+| Pergunta | Componente da Meta | `input-type` | Quando usar |
+|---|---|---|---|
+| Resposta curta | `TextInput` | `text` | Uma linha de texto, como nome ou cidade |
+| Resposta longa | `TextArea` | — | Várias linhas, para observações e mensagens |
+| E-mail | `TextInput` | `email` | Campo de e-mail, com teclado próprio no celular |
+| Telefone | `TextInput` | `phone` | Campo de telefone, com teclado numérico |
+| Número | `TextInput` | `number` | Só números, como quantidade ou idade |
+| Data | `DatePicker` | — | Seletor de data |
+| Escolher uma opção | `RadioButtonsGroup` | — | Lista em que o cliente escolhe uma |
+| Escolher várias opções | `CheckboxGroup` | — | Lista em que ele pode marcar várias |
+| Lista suspensa | `Dropdown` | — | Boa quando há muitas opções |
+| Aceite de termos | `OptIn` | — | Caixa de aceite, para termos e autorizações |
+| Texto explicativo | `TextBody` | — | Texto sem resposta do cliente |
+
+<Note>
+  `TextHeading`, `TextSubheading`, `TextCaption` e `Image` também são aceitos no `flow_json`. Eles não coletam resposta: servem para compor a tela.
+</Note>
+
+## Regras que a Meta valida
+
+Estas são as regras que derrubam a publicação. Vale conferir antes de enviar.
+
+### ID da tela
+
+| Regra | |
+|---|---|
+| Formato | apenas **letras maiúsculas e underline**, sem números |
+| Reservado | `SUCCESS` é reservado pelo WhatsApp e não pode ser usado |
+| Unicidade | dois screens não podem ter o mesmo ID |
+
+```
+WELCOME · DADOS_CONTATO · CONFIRMACAO     ✅
+Welcome  · TELA_2 · SUCCESS               ❌
+```
+
+### Nome do campo
+
+| Regra | |
+|---|---|
+| Formato | apenas **letras minúsculas, números e underline** |
+| Unicidade | dois campos não podem ter o mesmo nome **na mesma tela** |
+
+```
+nome_completo · email · data_2            ✅
+NomeCompleto · nome-completo              ❌
+```
+
+O nome do campo é a chave com que a resposta chega para você. Escolha algo que o seu sistema entenda.
+
+### Opções de escolha
+
+Para `RadioButtonsGroup`, `CheckboxGroup` e `Dropdown`:
+
+- Pelo menos **uma** opção
+- Cada opção precisa de **ID e texto**
+- Os IDs das opções não podem repetir dentro do campo
+
+### Navegação e tela final
+
+| Regra | |
+|---|---|
+| Toda tela precisa de rodapé | o rodapé é o botão que avança, e toda tela tem um |
+| `navigate` | a próxima tela precisa existir, e uma tela **não pode navegar para ela mesma** |
+| `complete` | só em tela marcada como **final** |
+| Tela final | precisa usar a ação `complete` |
+| O flow inteiro | precisa de **ao menos uma tela final** |
+| `data_exchange` | exige `endpoint_uri` preenchido |
+
+<Warning>
+  Marcar uma tela como final sem usar `complete`, ou usar `complete` numa tela que não é final, reprova o flow. Os dois andam juntos.
+</Warning>
+
+### Nome do flow
+
+Serve para você achar e disparar o flow. **O cliente nunca vê.** Precisa ser único na conta.
+
+## Versões do `flow_json`
+
+| Aceitas | Padrão |
+|---|---|
+| `6.0` `6.1` `6.2` `6.3` `7.0` `7.1` | **`7.0`** |
+
+## Categorias
+
+A categoria é obrigatória: pelo menos uma. **Ela não altera o preço**, só a classificação do flow. Pode escolher mais de uma.
+
+A lista completa está na [Introdução](/flows/introduction).
+
+## Por dentro: as duas chamadas da Meta
+
+O endpoint de [Criar flow](/flows/create-flow) do Omni Z-API embrulha duas chamadas do Graph API:
+
+| Chamada | O que faz |
+|---|---|
+| `POST /{waba-id}/flows` | cria o flow com nome, finalidades e o `flow_json` em texto |
+| `PUT /{flow-id}/assets` | campo `flow_json`, é esta estrutura que o WhatsApp desenha na conversa |
+
+Você não precisa chamar as duas: o Omni Z-API faz isso a partir de um único `POST`.
+
+## Depois de publicar
+
+<Warning>
+  **Flow publicado não pode ser editado.** Para mudar as telas, duplique o flow, ajuste a cópia e publique a nova versão. Depois [descontinue](/flows/deprecate-flow) a antiga.
+</Warning>
+
+Só rascunhos podem ser [removidos](/flows/delete-flow).

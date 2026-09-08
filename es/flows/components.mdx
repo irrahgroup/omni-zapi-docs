@@ -1,0 +1,115 @@
+---
+title: "Componentes y reglas"
+description: "Los tipos de pregunta, qué genera cada uno en el flow_json y las reglas que Meta valida"
+---
+
+## Tipos de pregunta
+
+Cada pregunta de tu formulario se convierte en un componente del `flow_json`. Esta es la traducción:
+
+| Pregunta | Componente de Meta | `input-type` | Cuándo usarlo |
+|---|---|---|---|
+| Respuesta corta | `TextInput` | `text` | Una línea de texto, como un nombre o una ciudad |
+| Respuesta larga | `TextArea` | — | Varias líneas, para notas y mensajes |
+| Correo electrónico | `TextInput` | `email` | Campo de correo, con teclado propio en el móvil |
+| Teléfono | `TextInput` | `phone` | Campo de teléfono, con teclado numérico |
+| Número | `TextInput` | `number` | Solo números, como cantidad o edad |
+| Fecha | `DatePicker` | — | Selector de fecha |
+| Elegir una opción | `RadioButtonsGroup` | — | Lista en la que el cliente elige una |
+| Elegir varias opciones | `CheckboxGroup` | — | Lista en la que puede marcar varias |
+| Lista desplegable | `Dropdown` | — | Útil cuando hay muchas opciones |
+| Aceptación de términos | `OptIn` | — | Casilla de aceptación, para términos y permisos |
+| Texto explicativo | `TextBody` | — | Texto sin respuesta del cliente |
+
+<Note>
+  `TextHeading`, `TextSubheading`, `TextCaption` e `Image` también se aceptan en el `flow_json`. No recogen respuesta: sirven para componer la pantalla.
+</Note>
+
+## Reglas que Meta valida
+
+Estas son las reglas que tumban la publicación. Conviene revisarlas antes de enviar.
+
+### ID de la pantalla
+
+| Regla | |
+|---|---|
+| Formato | solo **letras mayúsculas y guion bajo**, sin números |
+| Reservado | `SUCCESS` está reservado por WhatsApp y no se puede usar |
+| Unicidad | dos pantallas no pueden tener el mismo ID |
+
+```
+WELCOME · DATOS_CONTACTO · CONFIRMACION    ✅
+Welcome  · PANTALLA_2 · SUCCESS            ❌
+```
+
+### Nombre del campo
+
+| Regla | |
+|---|---|
+| Formato | solo **letras minúsculas, números y guion bajo** |
+| Unicidad | dos campos no pueden tener el mismo nombre **en la misma pantalla** |
+
+```
+nombre_completo · email · fecha_2          ✅
+NombreCompleto · nombre-completo           ❌
+```
+
+El nombre del campo es la clave con la que te llega la respuesta. Elige algo que tu sistema entienda.
+
+### Opciones de elección
+
+Para `RadioButtonsGroup`, `CheckboxGroup` y `Dropdown`:
+
+- Al menos **una** opción
+- Cada opción necesita **ID y texto**
+- Los ID de las opciones no pueden repetirse dentro del campo
+
+### Navegación y pantalla final
+
+| Regla | |
+|---|---|
+| Toda pantalla necesita pie | el pie es el botón que avanza, y toda pantalla tiene uno |
+| `navigate` | la pantalla siguiente debe existir, y una pantalla **no puede navegar a sí misma** |
+| `complete` | solo en una pantalla marcada como **final** |
+| Pantalla final | debe usar la acción `complete` |
+| El flow completo | necesita **al menos una pantalla final** |
+| `data_exchange` | exige tener `endpoint_uri` definido |
+
+<Warning>
+  Marcar una pantalla como final sin usar `complete`, o usar `complete` en una pantalla que no es final, hace que el flow sea rechazado. Los dos van juntos.
+</Warning>
+
+### Nombre del flow
+
+Es como encuentras y disparas el flow. **El cliente nunca lo ve.** Debe ser único en la cuenta.
+
+## Versiones del `flow_json`
+
+| Aceptadas | Por defecto |
+|---|---|
+| `6.0` `6.1` `6.2` `6.3` `7.0` `7.1` | **`7.0`** |
+
+## Categorías
+
+La categoría es obligatoria: al menos una. **No cambia el precio**, solo la clasificación del flow. Puedes elegir más de una.
+
+La lista completa está en la [Introducción](/es/flows/introduction).
+
+## Por dentro: las dos llamadas de Meta
+
+El endpoint de [Crear flow](/es/flows/create-flow) de Omni Z-API envuelve dos llamadas del Graph API:
+
+| Llamada | Qué hace |
+|---|---|
+| `POST /{waba-id}/flows` | crea el flow con su nombre, categorías y el `flow_json` como texto |
+| `PUT /{flow-id}/assets` | el campo `flow_json`; es esta estructura la que WhatsApp dibuja en la conversación |
+
+No tienes que llamar a las dos: Omni Z-API lo hace desde un único `POST`.
+
+## Después de publicar
+
+<Warning>
+  **Un flow publicado no se puede editar.** Para cambiar las pantallas, duplica el flow, ajusta el contenido y publica la nueva versión. Luego [descontinúa](/es/flows/deprecate-flow) la anterior.
+</Warning>
+
+Solo los borradores se pueden [eliminar](/es/flows/delete-flow).

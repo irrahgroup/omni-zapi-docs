@@ -1,0 +1,115 @@
+---
+title: "Components and rules"
+description: "The question types, what each one produces in flow_json, and the rules Meta validates"
+---
+
+## Question types
+
+Every question in your form becomes a component in the `flow_json`. This is the translation:
+
+| Question | Meta component | `input-type` | When to use it |
+|---|---|---|---|
+| Short answer | `TextInput` | `text` | A single line of text, such as a name or a city |
+| Long answer | `TextArea` | — | Several lines, for notes and messages |
+| Email | `TextInput` | `email` | Email field, with its own keyboard on mobile |
+| Phone | `TextInput` | `phone` | Phone field, with a numeric keyboard |
+| Number | `TextInput` | `number` | Numbers only, such as quantity or age |
+| Date | `DatePicker` | — | Date picker |
+| Pick one option | `RadioButtonsGroup` | — | A list where the customer picks one |
+| Pick several options | `CheckboxGroup` | — | A list where they can tick several |
+| Dropdown | `Dropdown` | — | Good when there are many options |
+| Terms consent | `OptIn` | — | A consent checkbox, for terms and permissions |
+| Explanatory text | `TextBody` | — | Text with no answer from the customer |
+
+<Note>
+  `TextHeading`, `TextSubheading`, `TextCaption` and `Image` are also accepted in the `flow_json`. They collect no answer: they are there to compose the screen.
+</Note>
+
+## Rules Meta validates
+
+These are the rules that block publication. Worth checking before you submit.
+
+### Screen ID
+
+| Rule | |
+|---|---|
+| Format | **uppercase letters and underscore only**, no numbers |
+| Reserved | `SUCCESS` is reserved by WhatsApp and cannot be used |
+| Uniqueness | two screens cannot share the same ID |
+
+```
+WELCOME · CONTACT_DETAILS · CONFIRMATION   ✅
+Welcome  · SCREEN_2 · SUCCESS              ❌
+```
+
+### Field name
+
+| Rule | |
+|---|---|
+| Format | **lowercase letters, numbers and underscore only** |
+| Uniqueness | two fields cannot share a name **on the same screen** |
+
+```
+full_name · email · date_2                 ✅
+FullName · full-name                       ❌
+```
+
+The field name is the key the answer reaches you under. Pick something your system understands.
+
+### Choice options
+
+For `RadioButtonsGroup`, `CheckboxGroup` and `Dropdown`:
+
+- At least **one** option
+- Every option needs an **ID and a label**
+- Option IDs cannot repeat within the field
+
+### Navigation and the final screen
+
+| Rule | |
+|---|---|
+| Every screen needs a footer | the footer is the button that moves forward, and every screen has one |
+| `navigate` | the next screen must exist, and a screen **cannot navigate to itself** |
+| `complete` | only on a screen marked as **terminal** |
+| Terminal screen | must use the `complete` action |
+| The whole flow | needs **at least one terminal screen** |
+| `data_exchange` | requires `endpoint_uri` to be set |
+
+<Warning>
+  Marking a screen as terminal without using `complete`, or using `complete` on a screen that is not terminal, fails the flow. The two go together.
+</Warning>
+
+### Flow name
+
+It is how you find and trigger the flow. **The customer never sees it.** It must be unique within the account.
+
+## `flow_json` versions
+
+| Accepted | Default |
+|---|---|
+| `6.0` `6.1` `6.2` `6.3` `7.0` `7.1` | **`7.0`** |
+
+## Categories
+
+The category is required: at least one. **It does not change the price**, only the flow's classification. You can pick more than one.
+
+The full list is in the [Introduction](/en/flows/introduction).
+
+## Under the hood: Meta's two calls
+
+The Omni Z-API [Create flow](/en/flows/create-flow) endpoint wraps two Graph API calls:
+
+| Call | What it does |
+|---|---|
+| `POST /{waba-id}/flows` | creates the flow with its name, categories and the `flow_json` as text |
+| `PUT /{flow-id}/assets` | the `flow_json` field; this is the structure WhatsApp draws in the conversation |
+
+You do not have to call both: Omni Z-API does it from a single `POST`.
+
+## After publishing
+
+<Warning>
+  **A published flow cannot be edited.** To change the screens, duplicate the flow, adjust the copy and publish the new version. Then [deprecate](/en/flows/deprecate-flow) the old one.
+</Warning>
+
+Only drafts can be [deleted](/en/flows/delete-flow).
