@@ -1492,21 +1492,26 @@
               "type": "object",
               "properties": {
                 "add_contact_number": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "description": "Agrega la frase que ofrece el teléfono de contacto."
                 },
                 "add_learn_more_link": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "description": "Agrega la frase que invita a saber más."
                 },
                 "add_security_recommendation": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "description": "Agrega la recomendación de seguridad de Meta."
                 },
                 "add_track_package_link": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "description": "Agrega la frase que invita a seguir la entrega."
                 },
                 "code_expiration_minutes": {
                   "type": "integer",
                   "minimum": 1,
-                  "maximum": 90
+                  "maximum": 90,
+                  "description": "Validez del código en el modelo, de 1 a 90 minutos."
                 }
               }
             }
@@ -1526,29 +1531,34 @@
                     "URL",
                     "PHONE_NUMBER",
                     "VOICE_CALL"
-                  ]
+                  ],
+                  "description": "Tipo de botón que pide el modelo."
                 },
                 "url": {
                   "type": "object",
+                  "description": "Dirección del botón de enlace del modelo.",
                   "properties": {
                     "base_url": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Dirección fija, con la variable al final cuando haya."
                     },
                     "url_suffix_example": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "La misma dirección con la variable rellenada."
                     }
                   }
                 },
                 "phone_number": {
                   "type": "string",
-                  "pattern": "^\\+[1-9]\\d{7,14}$"
+                  "pattern": "^\\+[1-9]\\d{7,14}$",
+                  "description": "Número del botón de teléfono, en formato internacional."
                 }
               }
             }
           },
           "components": {
             "type": "array",
-            "description": "Componentes de la plantilla. Lo que cabe aquí depende del tipo: ver \"Tipos de plantilla\" y \"Validaciones\".",
+            "description": "Cada ítem es un componente, identificado por el campo `type`. Los campos de abajo pertenecen a un `type` específico, y lo que acepta cada tipo de plantilla está en \"Tipos de plantilla\".",
             "items": {
               "$ref": "#/components/schemas/TemplateComponent"
             }
@@ -1796,7 +1806,8 @@
               "items": {
                 "type": "string"
               }
-            }
+            },
+            "description": "Ejemplos del mensaje en formato posicional: una lista, en el orden de {{1}}, {{2}} y así."
           },
           "body_text_named_params": {
             "type": "array",
@@ -1808,23 +1819,28 @@
               ],
               "properties": {
                 "param_name": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Nombre de la variable, igual al que está escrito entre llaves en el texto."
                 },
                 "example": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Valor de ejemplo que Meta lee en la revisión."
                 }
               }
-            }
+            },
+            "description": "Ejemplos del mensaje en formato nombrado, uno por variable."
           },
           "header_text": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "maxItems": 1
+            "maxItems": 1,
+            "description": "Ejemplo del encabezado en formato posicional. El encabezado acepta una variable."
           },
           "header_text_named_params": {
             "type": "array",
+            "maxItems": 1,
             "items": {
               "type": "object",
               "required": [
@@ -1833,14 +1849,16 @@
               ],
               "properties": {
                 "param_name": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Nombre de la variable, igual al que está escrito entre llaves en el texto."
                 },
                 "example": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Valor de ejemplo que Meta lee en la revisión."
                 }
               }
             },
-            "maxItems": 1
+            "description": "Ejemplo del encabezado en formato nombrado."
           },
           "header_handle": {
             "type": "array",
@@ -1848,21 +1866,148 @@
               "type": "string"
             },
             "maxItems": 1,
-            "description": "Identificador del archivo, obtenido en \"Enviar medios\", o el enlace público del archivo."
+            "description": "En encabezado de medios: el identificador del archivo, obtenido en \"Enviar medios\", o su enlace público."
           }
         }
       },
-      "HeaderComponent": {
-        "title": "HEADER",
+      "CarouselCard": {
         "type": "object",
         "required": [
-          "type",
-          "format"
+          "components"
+        ],
+        "properties": {
+          "components": {
+            "type": "array",
+            "description": "Los componentes de esta tarjeta: el encabezado con los medios, el texto (opcional, y si una tarjeta lo tiene, todas deben tenerlo) y los botones.",
+            "items": {
+              "$ref": "#/components/schemas/TemplateComponent"
+            }
+          }
+        }
+      },
+      "TemplateButton": {
+        "type": "object",
+        "required": [
+          "type"
         ],
         "properties": {
           "type": {
             "type": "string",
-            "const": "HEADER"
+            "enum": [
+              "QUICK_REPLY",
+              "URL",
+              "PHONE_NUMBER",
+              "COPY_CODE",
+              "OTP",
+              "FLOW",
+              "CATALOG",
+              "MPM",
+              "SPM",
+              "PAYMENT_REQUEST",
+              "ORDER_DETAILS",
+              "VOICE_CALL"
+            ],
+            "description": "Qué hace el botón. QUICK_REPLY devuelve el texto del botón como mensaje; URL abre una dirección; PHONE_NUMBER llama; COPY_CODE copia un código; OTP es el botón del código de autenticación; FLOW abre un formulario publicado. CATALOG, MPM, SPM, PAYMENT_REQUEST, ORDER_DETAILS y VOICE_CALL tienen etiqueta fija de Meta."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 25,
+            "description": "Hasta 25 caracteres. En OTP y en los tipos de etiqueta fija, Meta escribe y traduce el texto: lo que se envíe se sobrescribe."
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^https?://",
+            "description": "En URL: acepta una variable, y solo al final de la dirección."
+          },
+          "phone_number": {
+            "type": "string",
+            "maxLength": 20,
+            "pattern": "^\\+[1-9]\\d{7,14}$",
+            "description": "En PHONE_NUMBER: formato internacional, con el código del país."
+          },
+          "example": {
+            "description": "En URL con variable, la misma dirección rellenada. En COPY_CODE, el código de ejemplo que Meta usa en la revisión: letras, números, guion y guion bajo, hasta 20 caracteres."
+          },
+          "otp_type": {
+            "type": "string",
+            "enum": [
+              "COPY_CODE",
+              "ONE_TAP",
+              "ZERO_TAP"
+            ],
+            "description": "En OTP: cómo recibe el código el cliente. ONE_TAP y ZERO_TAP exigen los datos de la app."
+          },
+          "supported_apps": {
+            "type": "array",
+            "maxItems": 5,
+            "description": "En OTP de un toque o zero tap: las aplicaciones que reciben el código.",
+            "items": {
+              "type": "object",
+              "required": [
+                "package_name",
+                "signature_hash"
+              ],
+              "properties": {
+                "package_name": {
+                  "type": "string",
+                  "description": "Identificador de la app Android, como com.empresa.app."
+                },
+                "signature_hash": {
+                  "type": "string",
+                  "description": "Hash de firma de la app, generado en el build."
+                }
+              }
+            }
+          },
+          "zero_tap_terms_accepted": {
+            "type": "boolean",
+            "description": "En OTP de zero tap: aceptación de los términos. Sin eso Meta rechaza la plantilla."
+          },
+          "flow_id": {
+            "type": "string",
+            "description": "En FLOW: identificador del formulario publicado. Usa este o el nombre, nunca los dos."
+          },
+          "flow_name": {
+            "type": "string",
+            "description": "En FLOW: nombre del formulario publicado, como alternativa al identificador."
+          },
+          "flow_json": {
+            "type": "string",
+            "description": "En FLOW: definición del formulario en JSON, para crear y vincular de una vez."
+          },
+          "flow_action": {
+            "type": "string",
+            "enum": [
+              "navigate",
+              "data_exchange"
+            ],
+            "description": "En FLOW: cómo abre, navegando a una pantalla o intercambiando datos."
+          },
+          "navigate_screen": {
+            "type": "string",
+            "description": "En FLOW con navegación: la pantalla inicial."
+          }
+        }
+      },
+      "TemplateComponent": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "HEADER",
+              "BODY",
+              "FOOTER",
+              "BUTTONS",
+              "CAROUSEL",
+              "LIMITED_TIME_OFFER",
+              "CALL_PERMISSION_REQUEST"
+            ],
+            "description": "Qué componente es este. HEADER es la franja sobre el mensaje; BODY es el texto principal, y el único que acepta saltos de línea; FOOTER es la línea discreta de abajo; BUTTONS son los botones; CAROUSEL son las tarjetas que el cliente desliza; LIMITED_TIME_OFFER es el sello de oferta con cuenta regresiva; CALL_PERMISSION_REQUEST pide permiso para llamar, y no tiene ningún otro campo."
           },
           "format": {
             "type": "string",
@@ -1873,466 +2018,58 @@
               "DOCUMENT",
               "LOCATION",
               "PRODUCT"
-            ]
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 60,
-            "description": "Texto del encabezado. Acepta como máximo una variable."
-          },
-          "example": {
-            "$ref": "#/components/schemas/TemplateVariableExample"
-          }
-        }
-      },
-      "BodyComponent": {
-        "title": "BODY",
-        "type": "object",
-        "required": [
-          "type"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "BODY"
+            ],
+            "description": "Solo en HEADER: lo que muestra. PRODUCT existe únicamente en la tarjeta del carrusel de producto, donde el encabezado es el propio artículo del catálogo."
           },
           "text": {
             "type": "string",
             "maxLength": 1024,
-            "description": "Texto del mensaje. Acepta saltos de línea y variables."
+            "description": "En HEADER, hasta 60 caracteres y como máximo una variable. En BODY, hasta 1024, con saltos de línea. En FOOTER, hasta 60 y sin variables. En la tarjeta del carrusel, hasta 160."
           },
           "example": {
             "$ref": "#/components/schemas/TemplateVariableExample"
           },
           "add_security_recommendation": {
-            "type": "boolean"
-          }
-        }
-      },
-      "FooterComponent": {
-        "title": "FOOTER",
-        "type": "object",
-        "required": [
-          "type"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "FOOTER"
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 60,
-            "description": "Texto del pie. No acepta variables."
+            "type": "boolean",
+            "description": "Solo en BODY de autenticación: agrega la frase de seguridad que Meta escribe (\"no compartas este código\")."
           },
           "code_expiration_minutes": {
             "type": "integer",
             "minimum": 1,
             "maximum": 90,
-            "description": "Validez del código, de 1 a 90 minutos. Solo en plantillas de autenticación."
-          }
-        }
-      },
-      "ButtonsComponent": {
-        "title": "BUTTONS",
-        "type": "object",
-        "required": [
-          "type",
-          "buttons"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "BUTTONS"
+            "description": "Solo en FOOTER de autenticación: validez del código, de 1 a 90 minutos. Meta escribe la frase."
           },
           "buttons": {
             "type": "array",
             "maxItems": 10,
-            "description": "Respuestas rápidas primero, después el resto: Meta rechaza cuando el orden mezcla los dos grupos.",
+            "description": "Solo en BUTTONS: respuestas rápidas primero, después el resto. Meta rechaza cuando el orden mezcla los dos grupos.",
             "items": {
               "$ref": "#/components/schemas/TemplateButton"
             }
-          }
-        }
-      },
-      "CarouselCard": {
-        "title": "Tarjeta",
-        "type": "object",
-        "required": [
-          "components"
-        ],
-        "properties": {
-          "components": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/HeaderComponent"
-                },
-                {
-                  "$ref": "#/components/schemas/CarouselCardBody"
-                },
-                {
-                  "$ref": "#/components/schemas/ButtonsComponent"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "CarouselCardBody": {
-        "title": "BODY de la tarjeta",
-        "type": "object",
-        "required": [
-          "type",
-          "text"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "BODY"
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 160
-          },
-          "example": {
-            "$ref": "#/components/schemas/TemplateVariableExample"
-          }
-        }
-      },
-      "CarouselComponent": {
-        "title": "CAROUSEL",
-        "type": "object",
-        "required": [
-          "type",
-          "cards"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "CAROUSEL"
           },
           "cards": {
             "type": "array",
             "minItems": 2,
             "maxItems": 10,
-            "description": "Tarjetas del carrusel. Todas deben tener los mismos componentes.",
+            "description": "Solo en CAROUSEL: de 2 a 10 tarjetas, y todas deben tener los mismos componentes. Cada tarjeta lleva sus propios componentes, con los medios, el texto y los botones.",
             "items": {
               "$ref": "#/components/schemas/CarouselCard"
             }
-          }
-        }
-      },
-      "LimitedTimeOfferComponent": {
-        "title": "LIMITED_TIME_OFFER",
-        "type": "object",
-        "required": [
-          "type",
-          "limited_time_offer"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "LIMITED_TIME_OFFER"
           },
           "limited_time_offer": {
             "type": "object",
-            "description": "Sello de la oferta. El plazo va en el envío, no en la creación.",
-            "required": [
-              "text"
-            ],
+            "description": "Solo en LIMITED_TIME_OFFER. El plazo va en el envío, no en la creación.",
             "properties": {
               "text": {
                 "type": "string",
-                "maxLength": 16
+                "maxLength": 16,
+                "description": "Texto que aparece en el sello, como \"20% de descuento\"."
               },
               "has_expiration": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Muestra la cuenta regresiva. El instante final va en el envío."
               }
             }
-          }
-        }
-      },
-      "TemplateButton": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/QuickReplyButton"
-          },
-          {
-            "$ref": "#/components/schemas/UrlButton"
-          },
-          {
-            "$ref": "#/components/schemas/PhoneButton"
-          },
-          {
-            "$ref": "#/components/schemas/CopyCodeButton"
-          },
-          {
-            "$ref": "#/components/schemas/OtpButton"
-          },
-          {
-            "$ref": "#/components/schemas/FlowButton"
-          },
-          {
-            "$ref": "#/components/schemas/FixedLabelButton"
-          }
-        ]
-      },
-      "TemplateComponent": {
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "HEADER": "#/components/schemas/HeaderComponent",
-            "BODY": "#/components/schemas/BodyComponent",
-            "FOOTER": "#/components/schemas/FooterComponent",
-            "BUTTONS": "#/components/schemas/ButtonsComponent",
-            "CAROUSEL": "#/components/schemas/CarouselComponent",
-            "LIMITED_TIME_OFFER": "#/components/schemas/LimitedTimeOfferComponent",
-            "CALL_PERMISSION_REQUEST": "#/components/schemas/CallPermissionRequestComponent"
-          }
-        },
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/HeaderComponent"
-          },
-          {
-            "$ref": "#/components/schemas/BodyComponent"
-          },
-          {
-            "$ref": "#/components/schemas/FooterComponent"
-          },
-          {
-            "$ref": "#/components/schemas/ButtonsComponent"
-          },
-          {
-            "$ref": "#/components/schemas/CarouselComponent"
-          },
-          {
-            "$ref": "#/components/schemas/LimitedTimeOfferComponent"
-          },
-          {
-            "$ref": "#/components/schemas/CallPermissionRequestComponent"
-          }
-        ]
-      },
-      "QuickReplyButton": {
-        "title": "QUICK_REPLY",
-        "type": "object",
-        "required": [
-          "type",
-          "text"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "QUICK_REPLY"
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 25,
-            "description": "Texto del botón. En los tipos de etiqueta fija, Meta sobrescribe lo que se envíe."
-          }
-        }
-      },
-      "UrlButton": {
-        "title": "URL",
-        "type": "object",
-        "required": [
-          "type",
-          "text",
-          "url"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "URL"
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 25,
-            "description": "Texto del botón. En los tipos de etiqueta fija, Meta sobrescribe lo que se envíe."
-          },
-          "url": {
-            "type": "string",
-            "maxLength": 2000,
-            "pattern": "^https?://",
-            "description": "Acepta una variable, y solo al final de la dirección."
-          },
-          "example": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 1
-          }
-        }
-      },
-      "PhoneButton": {
-        "title": "PHONE_NUMBER",
-        "type": "object",
-        "required": [
-          "type",
-          "text",
-          "phone_number"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "PHONE_NUMBER"
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 25,
-            "description": "Texto del botón. En los tipos de etiqueta fija, Meta sobrescribe lo que se envíe."
-          },
-          "phone_number": {
-            "type": "string",
-            "maxLength": 20,
-            "pattern": "^\\+[1-9]\\d{7,14}$",
-            "description": "Formato internacional, con el código del país."
-          }
-        }
-      },
-      "CopyCodeButton": {
-        "title": "COPY_CODE",
-        "type": "object",
-        "required": [
-          "type",
-          "example"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "COPY_CODE"
-          },
-          "example": {
-            "type": "string",
-            "maxLength": 20,
-            "pattern": "^[a-zA-Z0-9_-]+$",
-            "description": "Código de ejemplo que Meta usa en la revisión. Letras, números, guion y guion bajo."
-          }
-        }
-      },
-      "OtpButton": {
-        "title": "OTP",
-        "type": "object",
-        "required": [
-          "type",
-          "otp_type"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "OTP"
-          },
-          "otp_type": {
-            "type": "string",
-            "enum": [
-              "COPY_CODE",
-              "ONE_TAP",
-              "ZERO_TAP"
-            ],
-            "description": "Cómo recibe el código el cliente. ONE_TAP y ZERO_TAP exigen los datos de la app."
-          },
-          "supported_apps": {
-            "type": "array",
-            "maxItems": 5,
-            "items": {
-              "type": "object",
-              "required": [
-                "package_name",
-                "signature_hash"
-              ],
-              "properties": {
-                "package_name": {
-                  "type": "string"
-                },
-                "signature_hash": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "zero_tap_terms_accepted": {
-            "type": "boolean"
-          }
-        }
-      },
-      "FlowButton": {
-        "title": "FLOW",
-        "type": "object",
-        "required": [
-          "type",
-          "text"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "FLOW"
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 25,
-            "description": "Texto del botón. En los tipos de etiqueta fija, Meta sobrescribe lo que se envíe."
-          },
-          "flow_id": {
-            "type": "string"
-          },
-          "flow_name": {
-            "type": "string"
-          },
-          "flow_json": {
-            "type": "string"
-          },
-          "flow_action": {
-            "type": "string",
-            "enum": [
-              "navigate",
-              "data_exchange"
-            ]
-          },
-          "navigate_screen": {
-            "type": "string"
-          }
-        }
-      },
-      "FixedLabelButton": {
-        "title": "Etiqueta fija de Meta",
-        "type": "object",
-        "required": [
-          "type"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "CATALOG",
-              "MPM",
-              "SPM",
-              "PAYMENT_REQUEST",
-              "ORDER_DETAILS",
-              "VOICE_CALL"
-            ]
-          },
-          "text": {
-            "type": "string",
-            "maxLength": 25,
-            "description": "Texto del botón. En los tipos de etiqueta fija, Meta sobrescribe lo que se envíe."
-          }
-        }
-      },
-      "CallPermissionRequestComponent": {
-        "title": "CALL_PERMISSION_REQUEST",
-        "type": "object",
-        "required": [
-          "type"
-        ],
-        "description": "Pide permiso al cliente para recibir una llamada de voz. Este componente no tiene campos.",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "CALL_PERMISSION_REQUEST"
           }
         }
       }
