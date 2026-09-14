@@ -209,56 +209,75 @@
                 "$ref": "#/components/schemas/CreateTemplateRequest"
               },
               "examples": {
-                "utility": {
-                  "summary": "Utility - Order update",
+                "custom": {
+                  "summary": "Custom message (Custom)",
                   "value": {
-                    "name": "order_update_v1",
+                    "name": "exemplo_custom",
                     "category": "UTILITY",
                     "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
                     "components": [
                       {
-                        "type": "BODY",
-                        "text": "Hello {{1}}, your order {{2}} has been updated to {{3}}, see you soon.",
+                        "type": "HEADER",
+                        "format": "TEXT",
+                        "text": "Order {{order_number}}",
                         "example": {
-                          "body_text": [
-                            [
-                              "Ana",
-                              "ORD-1024",
-                              "in transit"
-                            ]
+                          "header_text_named_params": [
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
                           ]
                         }
-                      }
-                    ]
-                  }
-                },
-                "marketing": {
-                  "summary": "Marketing - Discount campaign",
-                  "value": {
-                    "name": "discount_campaign_v1",
-                    "category": "MARKETING",
-                    "language": "en_US",
-                    "components": [
+                      },
                       {
                         "type": "BODY",
-                        "text": "Enjoy {{1}} off on the {{2}} plan until {{3}}.",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
                         "example": {
-                          "body_text": [
-                            [
-                              "20%",
-                              "Premium",
-                              "04/30"
-                            ]
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
                           ]
                         }
+                      },
+                      {
+                        "type": "FOOTER",
+                        "text": "Reply STOP to opt out"
                       },
                       {
                         "type": "BUTTONS",
                         "buttons": [
                           {
+                            "type": "QUICK_REPLY",
+                            "text": "Track order"
+                          },
+                          {
                             "type": "URL",
-                            "text": "View offer",
-                            "url": "https://example.com/offer"
+                            "text": "See details",
+                            "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+                            "example": [
+                              "https://z-api.io/pedido/1042"
+                            ]
+                          },
+                          {
+                            "type": "PHONE_NUMBER",
+                            "text": "Call the store",
+                            "phone_number": "+5511988881234"
+                          },
+                          {
+                            "type": "COPY_CODE",
+                            "example": "PROMO10"
+                          },
+                          {
+                            "type": "VOICE_CALL",
+                            "text": "Talk by voice"
                           }
                         ]
                       }
@@ -266,21 +285,394 @@
                   }
                 },
                 "authentication": {
-                  "summary": "Authentication - OTP code",
+                  "summary": "Access code (Authentication)",
                   "value": {
-                    "name": "otp_login_v1",
+                    "name": "exemplo_authentication",
                     "category": "AUTHENTICATION",
                     "language": "en_US",
+                    "allow_category_change": true,
                     "components": [
                       {
                         "type": "BODY",
-                        "text": "Your verification code is *{{1}}*. For your security, do not share it.",
-                        "add_security_recommendation": true,
+                        "add_security_recommendation": true
+                      },
+                      {
+                        "type": "FOOTER",
+                        "code_expiration_minutes": 10
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "OTP",
+                            "otp_type": "COPY_CODE"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "catalog": {
+                  "summary": "Catalog",
+                  "value": {
+                    "name": "exemplo_catalog",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
                         "example": {
-                          "body_text": [
-                            [
-                              "123456"
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "FOOTER",
+                        "text": "Reply STOP to opt out"
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "CATALOG",
+                            "text": "View catalog"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "single_product": {
+                  "summary": "Single product (Single-product message)",
+                  "value": {
+                    "name": "exemplo_spm",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "HEADER",
+                        "format": "PRODUCT"
+                      },
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "FOOTER",
+                        "text": "Reply STOP to opt out"
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "SPM",
+                            "text": "View"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "multi_product": {
+                  "summary": "Multi-product (Multi-product message)",
+                  "value": {
+                    "name": "exemplo_mpm",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "HEADER",
+                        "format": "TEXT",
+                        "text": "Order {{order_number}}",
+                        "example": {
+                          "header_text_named_params": [
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "FOOTER",
+                        "text": "Reply STOP to opt out"
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "MPM",
+                            "text": "View items"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "checkout_button": {
+                  "summary": "Checkout button",
+                  "value": {
+                    "name": "exemplo_checkout_button",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "HEADER",
+                        "format": "TEXT",
+                        "text": "Order {{order_number}}",
+                        "example": {
+                          "header_text_named_params": [
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "FOOTER",
+                        "text": "Reply STOP to opt out"
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "PAYMENT_REQUEST",
+                            "text": "Review and Pay"
+                          },
+                          {
+                            "type": "QUICK_REPLY",
+                            "text": "Track order"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "order_details": {
+                  "summary": "Order details",
+                  "value": {
+                    "name": "exemplo_order_details",
+                    "category": "UTILITY",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "HEADER",
+                        "format": "TEXT",
+                        "text": "Order {{order_number}}",
+                        "example": {
+                          "header_text_named_params": [
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "FOOTER",
+                        "text": "Reply STOP to opt out"
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "ORDER_DETAILS",
+                            "text": "Copy Pix code"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "coupon_code": {
+                  "summary": "Coupon (Coupon code)",
+                  "value": {
+                    "name": "exemplo_coupon_code",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "HEADER",
+                        "format": "TEXT",
+                        "text": "Order {{order_number}}",
+                        "example": {
+                          "header_text_named_params": [
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "FOOTER",
+                        "text": "Reply STOP to opt out"
+                      },
+                      {
+                        "type": "BUTTONS",
+                        "buttons": [
+                          {
+                            "type": "COPY_CODE",
+                            "example": "PROMO10"
+                          },
+                          {
+                            "type": "QUICK_REPLY",
+                            "text": "Track order"
+                          },
+                          {
+                            "type": "URL",
+                            "text": "See details",
+                            "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+                            "example": [
+                              "https://z-api.io/pedido/1042"
                             ]
+                          },
+                          {
+                            "type": "PHONE_NUMBER",
+                            "text": "Call the store",
+                            "phone_number": "+5511988881234"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "limited_time_offer": {
+                  "summary": "Limited time offer (Limited-time offer)",
+                  "value": {
+                    "name": "exemplo_limited_time_offer",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "HEADER",
+                        "format": "IMAGE",
+                        "example": {
+                          "header_handle": [
+                            "4::aW1hZ2UvcG5n"
+                          ]
+                        }
+                      },
+                      {
+                        "type": "LIMITED_TIME_OFFER",
+                        "limited_time_offer": {
+                          "text": "20% off",
+                          "has_expiration": true
+                        }
+                      },
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
                           ]
                         }
                       },
@@ -288,14 +680,230 @@
                         "type": "BUTTONS",
                         "buttons": [
                           {
+                            "type": "COPY_CODE",
+                            "example": "PROMO10"
+                          },
+                          {
                             "type": "URL",
-                            "text": "Copy code",
-                            "url": "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp{{1}}",
+                            "text": "See details",
+                            "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
                             "example": [
-                              "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp123456"
+                              "https://z-api.io/pedido/1042"
                             ]
                           }
                         ]
+                      }
+                    ]
+                  }
+                },
+                "media_card_carousel": {
+                  "summary": "Media carousel (Media card carousel)",
+                  "value": {
+                    "name": "exemplo_media_card_carousel",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "CAROUSEL",
+                        "cards": [
+                          {
+                            "components": [
+                              {
+                                "type": "HEADER",
+                                "format": "IMAGE",
+                                "example": {
+                                  "header_handle": [
+                                    "4::aW1hZ2UvcG5n"
+                                  ]
+                                }
+                              },
+                              {
+                                "type": "BODY",
+                                "text": "Item from the new collection"
+                              },
+                              {
+                                "type": "BUTTONS",
+                                "buttons": [
+                                  {
+                                    "type": "QUICK_REPLY",
+                                    "text": "Track order"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "components": [
+                              {
+                                "type": "HEADER",
+                                "format": "IMAGE",
+                                "example": {
+                                  "header_handle": [
+                                    "4::aW1hZ2UvcG5n"
+                                  ]
+                                }
+                              },
+                              {
+                                "type": "BODY",
+                                "text": "Item from the new collection"
+                              },
+                              {
+                                "type": "BUTTONS",
+                                "buttons": [
+                                  {
+                                    "type": "QUICK_REPLY",
+                                    "text": "Track order"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "product_card_carousel": {
+                  "summary": "Product carousel (Product card carousel)",
+                  "value": {
+                    "name": "exemplo_product_card_carousel",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "CAROUSEL",
+                        "cards": [
+                          {
+                            "components": [
+                              {
+                                "type": "HEADER",
+                                "format": "PRODUCT"
+                              },
+                              {
+                                "type": "BUTTONS",
+                                "buttons": [
+                                  {
+                                    "type": "SPM",
+                                    "text": "View"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "components": [
+                              {
+                                "type": "HEADER",
+                                "format": "PRODUCT"
+                              },
+                              {
+                                "type": "BUTTONS",
+                                "buttons": [
+                                  {
+                                    "type": "SPM",
+                                    "text": "View"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "template_library": {
+                  "summary": "Template Library",
+                  "value": {
+                    "name": "exemplo_library",
+                    "category": "MARKETING",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "library_template_name": "delivery_update_1",
+                    "library_template_body_inputs": [
+                      {
+                        "add_contact_number": true,
+                        "add_track_package_link": true
+                      }
+                    ],
+                    "library_template_button_inputs": [
+                      {
+                        "type": "URL",
+                        "url": {
+                          "base_url": "https://sualoja.com/pedido/{{numero_do_pedido}}",
+                          "url_suffix_example": "https://sualoja.com/pedido/1042"
+                        }
+                      },
+                      {
+                        "type": "PHONE_NUMBER",
+                        "phone_number": "+5511988881234"
+                      }
+                    ]
+                  }
+                },
+                "call_permission": {
+                  "summary": "Call permission (Call permission request)",
+                  "value": {
+                    "name": "exemplo_call_permission_request",
+                    "category": "UTILITY",
+                    "language": "en_US",
+                    "allow_category_change": true,
+                    "parameter_format": "NAMED",
+                    "components": [
+                      {
+                        "type": "BODY",
+                        "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+                        "example": {
+                          "body_text_named_params": [
+                            {
+                              "param_name": "customer_name",
+                              "example": "Marina"
+                            },
+                            {
+                              "param_name": "order_number",
+                              "example": "1042"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "CALL_PERMISSION_REQUEST"
                       }
                     ]
                   }
@@ -822,32 +1430,114 @@
         "required": [
           "name",
           "category",
-          "language",
-          "components"
+          "language"
         ],
         "properties": {
           "name": {
             "type": "string",
-            "description": "Template name (snake_case, no spaces)"
+            "maxLength": 512,
+            "pattern": "^[a-z0-9_]+$",
+            "description": "Template name: lowercase letters, digits and underscore. It cannot be changed after creation."
           },
           "category": {
             "type": "string",
-            "description": "Template category",
             "enum": [
               "UTILITY",
               "MARKETING",
               "AUTHENTICATION"
-            ]
+            ],
+            "description": "Several types have a fixed category. See \"Template types\"."
           },
           "language": {
             "type": "string",
-            "description": "Template language (e.g. en_US, pt_BR)"
+            "description": "Language in Meta's format, such as pt_BR or en_US."
+          },
+          "parameter_format": {
+            "type": "string",
+            "enum": [
+              "NAMED",
+              "POSITIONAL"
+            ],
+            "description": "Variable syntax. Named is Meta's current format."
+          },
+          "message_send_ttl_seconds": {
+            "type": "integer",
+            "description": "Delivery window in seconds. Range by category: authentication 30 to 900, marketing 43200 to 2592000, utility 30 to 43200. The value -1 is a shortcut for 30 days."
+          },
+          "allow_category_change": {
+            "type": "boolean",
+            "description": "Lets Meta recategorize the template during review."
+          },
+          "library_template_name": {
+            "type": "string",
+            "description": "Model name in Meta's template library. See \"Template Library\"."
+          },
+          "library_template_body_inputs": {
+            "type": "array",
+            "description": "Body options the library model accepts.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "add_contact_number": {
+                  "type": "boolean"
+                },
+                "add_learn_more_link": {
+                  "type": "boolean"
+                },
+                "add_security_recommendation": {
+                  "type": "boolean"
+                },
+                "add_track_package_link": {
+                  "type": "boolean"
+                },
+                "code_expiration_minutes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 90
+                }
+              }
+            }
+          },
+          "library_template_button_inputs": {
+            "type": "array",
+            "description": "Button data for the library model.",
+            "items": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "URL",
+                    "PHONE_NUMBER",
+                    "VOICE_CALL"
+                  ]
+                },
+                "url": {
+                  "type": "object",
+                  "properties": {
+                    "base_url": {
+                      "type": "string"
+                    },
+                    "url_suffix_example": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "phone_number": {
+                  "type": "string",
+                  "pattern": "^\\+[1-9]\\d{7,14}$"
+                }
+              }
+            }
           },
           "components": {
             "type": "array",
-            "description": "Template components (HEADER, BODY, FOOTER, BUTTONS)",
+            "description": "Template components. What fits here depends on the type: see \"Template types\" and \"Validation\".",
             "items": {
-              "type": "object"
+              "$ref": "#/components/schemas/TemplateComponent"
             }
           }
         }
@@ -1079,6 +1769,529 @@
                 }
               }
             }
+          }
+        }
+      },
+      "TemplateVariableExample": {
+        "type": "object",
+        "description": "An example for each variable, in the order they appear. Meta rejects the template without it.",
+        "properties": {
+          "body_text": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "body_text_named_params": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "param_name",
+                "example"
+              ],
+              "properties": {
+                "param_name": {
+                  "type": "string"
+                },
+                "example": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "header_text": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1
+          },
+          "header_text_named_params": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "param_name",
+                "example"
+              ],
+              "properties": {
+                "param_name": {
+                  "type": "string"
+                },
+                "example": {
+                  "type": "string"
+                }
+              }
+            },
+            "maxItems": 1
+          },
+          "header_handle": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1,
+            "description": "Media handle, obtained in \"Upload media\", or the public file link."
+          }
+        }
+      },
+      "HeaderComponent": {
+        "type": "object",
+        "required": [
+          "type",
+          "format"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "HEADER"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "TEXT",
+              "IMAGE",
+              "VIDEO",
+              "DOCUMENT",
+              "LOCATION",
+              "PRODUCT"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 60,
+            "description": "Header text. Accepts at most one variable."
+          },
+          "example": {
+            "$ref": "#/components/schemas/TemplateVariableExample"
+          }
+        }
+      },
+      "BodyComponent": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "BODY"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 1024,
+            "description": "Message text. Accepts line breaks and variables."
+          },
+          "example": {
+            "$ref": "#/components/schemas/TemplateVariableExample"
+          },
+          "add_security_recommendation": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FooterComponent": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "FOOTER"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 60,
+            "description": "Footer text. Variables are not accepted."
+          },
+          "code_expiration_minutes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 90,
+            "description": "Code validity, from 1 to 90 minutes. Authentication templates only."
+          }
+        }
+      },
+      "ButtonsComponent": {
+        "type": "object",
+        "required": [
+          "type",
+          "buttons"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "BUTTONS"
+          },
+          "buttons": {
+            "type": "array",
+            "maxItems": 10,
+            "description": "Quick replies first, then the rest: Meta rejects the template when the order mixes the two groups.",
+            "items": {
+              "$ref": "#/components/schemas/TemplateButton"
+            }
+          }
+        }
+      },
+      "CarouselCard": {
+        "type": "object",
+        "required": [
+          "components"
+        ],
+        "properties": {
+          "components": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/HeaderComponent"
+                },
+                {
+                  "$ref": "#/components/schemas/CarouselCardBody"
+                },
+                {
+                  "$ref": "#/components/schemas/ButtonsComponent"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "CarouselCardBody": {
+        "type": "object",
+        "required": [
+          "type",
+          "text"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "BODY"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "example": {
+            "$ref": "#/components/schemas/TemplateVariableExample"
+          }
+        }
+      },
+      "CarouselComponent": {
+        "type": "object",
+        "required": [
+          "type",
+          "cards"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "CAROUSEL"
+          },
+          "cards": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 10,
+            "description": "Carousel cards. All of them must have the same components.",
+            "items": {
+              "$ref": "#/components/schemas/CarouselCard"
+            }
+          }
+        }
+      },
+      "LimitedTimeOfferComponent": {
+        "type": "object",
+        "required": [
+          "type",
+          "limited_time_offer"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "LIMITED_TIME_OFFER"
+          },
+          "limited_time_offer": {
+            "type": "object",
+            "description": "Offer badge. The deadline itself goes in the send, not in the creation.",
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "maxLength": 16
+              },
+              "has_expiration": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "TemplateButton": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/QuickReplyButton"
+          },
+          {
+            "$ref": "#/components/schemas/UrlButton"
+          },
+          {
+            "$ref": "#/components/schemas/PhoneButton"
+          },
+          {
+            "$ref": "#/components/schemas/CopyCodeButton"
+          },
+          {
+            "$ref": "#/components/schemas/OtpButton"
+          },
+          {
+            "$ref": "#/components/schemas/FlowButton"
+          },
+          {
+            "$ref": "#/components/schemas/FixedLabelButton"
+          }
+        ]
+      },
+      "TemplateComponent": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/HeaderComponent"
+          },
+          {
+            "$ref": "#/components/schemas/BodyComponent"
+          },
+          {
+            "$ref": "#/components/schemas/FooterComponent"
+          },
+          {
+            "$ref": "#/components/schemas/ButtonsComponent"
+          },
+          {
+            "$ref": "#/components/schemas/CarouselComponent"
+          },
+          {
+            "$ref": "#/components/schemas/LimitedTimeOfferComponent"
+          },
+          {
+            "$ref": "#/components/schemas/CallPermissionRequestComponent"
+          }
+        ]
+      },
+      "QuickReplyButton": {
+        "type": "object",
+        "required": [
+          "type",
+          "text"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "QUICK_REPLY"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 25,
+            "description": "Button text. On fixed-label types, Meta overwrites whatever is sent."
+          }
+        }
+      },
+      "UrlButton": {
+        "type": "object",
+        "required": [
+          "type",
+          "text",
+          "url"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "URL"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 25,
+            "description": "Button text. On fixed-label types, Meta overwrites whatever is sent."
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^https?://",
+            "description": "Accepts one variable, and only at the end of the URL."
+          },
+          "example": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1
+          }
+        }
+      },
+      "PhoneButton": {
+        "type": "object",
+        "required": [
+          "type",
+          "text",
+          "phone_number"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "PHONE_NUMBER"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 25,
+            "description": "Button text. On fixed-label types, Meta overwrites whatever is sent."
+          },
+          "phone_number": {
+            "type": "string",
+            "maxLength": 20,
+            "pattern": "^\\+[1-9]\\d{7,14}$",
+            "description": "International format, with the country code."
+          }
+        }
+      },
+      "CopyCodeButton": {
+        "type": "object",
+        "required": [
+          "type",
+          "example"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "COPY_CODE"
+          },
+          "example": {
+            "type": "string",
+            "maxLength": 20,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "description": "Sample code Meta uses during review. Letters, digits, hyphen and underscore."
+          }
+        }
+      },
+      "OtpButton": {
+        "type": "object",
+        "required": [
+          "type",
+          "otp_type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "OTP"
+          },
+          "otp_type": {
+            "type": "string",
+            "enum": [
+              "COPY_CODE",
+              "ONE_TAP",
+              "ZERO_TAP"
+            ],
+            "description": "How the customer gets the code. ONE_TAP and ZERO_TAP require the app details."
+          },
+          "supported_apps": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "object",
+              "required": [
+                "package_name",
+                "signature_hash"
+              ],
+              "properties": {
+                "package_name": {
+                  "type": "string"
+                },
+                "signature_hash": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "zero_tap_terms_accepted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FlowButton": {
+        "type": "object",
+        "required": [
+          "type",
+          "text"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "FLOW"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 25,
+            "description": "Button text. On fixed-label types, Meta overwrites whatever is sent."
+          },
+          "flow_id": {
+            "type": "string"
+          },
+          "flow_name": {
+            "type": "string"
+          },
+          "flow_json": {
+            "type": "string"
+          },
+          "flow_action": {
+            "type": "string",
+            "enum": [
+              "navigate",
+              "data_exchange"
+            ]
+          },
+          "navigate_screen": {
+            "type": "string"
+          }
+        }
+      },
+      "FixedLabelButton": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "CATALOG",
+              "MPM",
+              "SPM",
+              "PAYMENT_REQUEST",
+              "ORDER_DETAILS",
+              "VOICE_CALL"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 25,
+            "description": "Button text. On fixed-label types, Meta overwrites whatever is sent."
+          }
+        }
+      },
+      "CallPermissionRequestComponent": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "description": "Asks the customer for permission to receive a voice call. This component has no fields.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "CALL_PERMISSION_REQUEST"
           }
         }
       }
