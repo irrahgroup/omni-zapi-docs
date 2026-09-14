@@ -1,0 +1,253 @@
+---
+title: "Validation"
+description: "What Meta requires in each field, and what it rejects"
+---
+
+Meta reviews the template after it is created, but **rejects right away**
+anything that is out of shape. The rules below are the ones that show up most,
+with the error code each one produces.
+
+<Note>
+  Whatever the payload structure already states (character limits, accepted
+  types, counts) is declared in the [Create template](/en/templates/create-template)
+  schema: the playground shows it field by field. This page is for the rules the
+  schema cannot express.
+</Note>
+
+## Character limits
+
+| Field | Limit |
+|---|---|
+| Text header | 60 |
+| Message | 1024 |
+| Footer | 60 |
+| Button text | 25 |
+| Button URL | 2000 |
+| Button phone number | 20 |
+| Coupon code | 20 |
+| Offer text | 16 |
+| Carousel card text | 160 |
+| Template name | 512 |
+
+The name accepts **lowercase letters, digits and underscore**, and it does not
+change after creation.
+
+## Line breaks
+
+Only the **message** accepts line breaks. Header, footer and button text are
+single-line: `\n`, `\r` and tabs there are grounds for rejection, and so is more
+than four spaces in a row.
+
+In the message, avoid a blank line at the end and more than two breaks in a row.
+
+## Variables
+
+By far the biggest source of rejections.
+
+### A variable cannot open or close the text
+
+<CodeGroup>
+```json Rejected
+{ "type": "BODY", "text": "{{name}}, your order is on the way" }
+```
+
+```json Accepted
+{ "type": "BODY", "text": "Hi {{name}}, your order is on the way" }
+```
+</CodeGroup>
+
+This applies to the header and to the message. Meta calls it a *dangling
+parameter*, and the code is `2388299`.
+
+### Every variable needs an example
+
+Without `example`, Meta rejects with `missing expected field(s) (example)`,
+code `2388043`. The example is what the reviewer reads to understand the
+template.
+
+<CodeGroup>
+```json Named
+{
+  "type": "BODY",
+  "text": "Hi {{name}}, order {{number}} is on the way",
+  "example": {
+    "body_text_named_params": [
+      { "param_name": "name", "example": "Marina" },
+      { "param_name": "number", "example": "1042" }
+    ]
+  }
+}
+```
+
+```json Positional
+{
+  "type": "BODY",
+  "text": "Hi {{1}}, order {{2}} is on the way",
+  "example": { "body_text": [["Marina", "1042"]] }
+}
+```
+</CodeGroup>
+
+### In positional format, numbering is sequential and starts at 1
+
+The example travels as a **list**, and Meta matches each item by position. With
+`{{1}}` and `{{3}}`, the third one ends up without an example, and the rejection
+talks about a missing field without mentioning numbering.
+
+<Warning>
+  `{{1}}` with `{{3}}` is rejected. Use `{{1}}` and `{{2}}`.
+</Warning>
+
+### The header accepts one variable
+
+Just one. The second comes back as *"The Header field can only have up to 1
+variable(s)"*, code `2388029`.
+
+### The footer accepts no variables
+
+Meta treats the footer as plain text: a variable there is not replaced and goes
+literally to the customer.
+
+### Short text with many variables is rejected
+
+Meta compares how many variables there are against the length of the text, and
+rejects what is out of proportion, with code `2388293`. It does not publish the
+formula. From our measurements, with two variables or more, count **three words
+of text per variable, plus one**.
+
+<CodeGroup>
+```json Rejected
+{ "text": "text {{a}}{{b}}{{c}}{{d}}. end" }
+```
+
+```json Accepted
+{ "text": "Hi {{name}}, your order {{number}} goes out for delivery today" }
+```
+</CodeGroup>
+
+Two variables glued together, with no text between them, are usually rejected
+as well.
+
+## Buttons
+
+| Rule | Limit |
+|---|---|
+| Buttons in total | 10 |
+| URL buttons | 2 |
+| Phone buttons | 1 |
+| Buttons per carousel card | 2, or 1 on the product card |
+
+### Order matters
+
+Quick replies come **all first**, and the remaining buttons after them. Meta
+rejects the template when the order mixes the two groups.
+
+### URL and phone format
+
+The URL needs `http` or `https`. `www.yourstore.com` without the protocol is
+rejected, and the error cites the button index in the payload.
+
+The phone number goes in international format, with the country code:
+`+5511988881234`. Without the `+` and the country, the rejection is
+`(#192) ... is not a valid phone number`.
+
+### Variables in buttons
+
+The URL button accepts **one** variable, and only at the end of the address:
+
+<CodeGroup>
+```json Accepted
+{ "type": "URL", "text": "Track", "url": "https://yourstore.com/order/{{1}}" }
+```
+
+```json Rejected
+{ "type": "URL", "text": "Track", "url": "https://yourstore.com/{{1}}/order" }
+```
+</CodeGroup>
+
+Phone numbers and coupon codes accept no variables.
+
+## Carousel
+
+- **2 to 10 cards** on the media carousel. On the product one, **exactly 2** at
+  creation, and up to 10 at send time.
+- **Every card with the same components.** As a consequence: if one card has
+  text, all of them need text; the set of buttons (type and order) is the same
+  across cards. What changes from one card to the next is the button text and
+  the destination.
+- On the media carousel, **every card needs media**.
+- The product card has a `{"format": "PRODUCT"}` header and **a single button**,
+  with no card text. Sending two buttons or a body comes back as
+  `component of type BODY is required`, code `2388045`, which does not describe
+  the cause.
+
+## Media
+
+| Format | Types | Size |
+|---|---|---|
+| Image | JPEG, PNG | 5 MB |
+| Video | MP4, 3GPP | 16 MB |
+| Document | PDF | 100 MB |
+
+In the header and in the cards, the media reference is the **handle** obtained
+in [Upload media](/en/templates/upload-media), or the **public link** to the
+file, which we convert to a handle before creating the template.
+
+<Warning>
+  The link Meta returns when you read a template (domains `whatsapp.net`,
+  `fbcdn.net`, `fbsbx.com`) **is not valid** as a sample going back: resent, it
+  is rejected with `invalid media sample`, code `2388215`. This happens in every
+  flow that reads a template and resends what it read.
+</Warning>
+
+The link has to open for a server, not only in a browser. Stores and blogs
+often block automated downloads, and then Meta answers
+`media download failed`, code `380`.
+
+## Delivery window
+
+`message_send_ttl_seconds` has a range per category:
+
+| Category | Range |
+|---|---|
+| Authentication | 30 to 900 seconds |
+| Utility | 30 to 43200 seconds |
+| Marketing | 43200 to 2592000 seconds |
+
+The value `-1` is a shortcut for 30 days. On authentication, the delivery window
+cannot be shorter than the code validity: if the message stops being delivered
+first, the customer loses both.
+
+## Editing and deleting
+
+- An **approved** template accepts up to **10 edits in 30 days**, and **one
+  every 24 hours**. Rejected and paused have no such cap.
+- Only **approved, rejected and paused** templates can be edited.
+- **Name and language do not change.** Neither does the category of an approved
+  template.
+- An edit **replaces all components**: send the complete set, because whatever is
+  left out is erased.
+- After an edit, the template goes back into the review queue on its own.
+- Deleting an approved template **reserves its name for 30 days**.
+
+## Meta errors, and what each one means
+
+| Code | Message | What to fix |
+|---|---|---|
+| `2388029` | The Header field can only have up to 1 variable(s) | two variables in the header |
+| `2388043` | missing expected field(s) (example) | variable without an example, or positional numbering out of sequence |
+| `2388045` | component of type BODY is required | body or second button on the product card |
+| `2388153` | Text for button type 'X' cannot be modified | fixed label changed |
+| `2388158` | number of buttons exceeded the limit | third button on the limited-time offer |
+| `2388191` | URL is required at index 1 | offer without the URL button |
+| `2388193` | Header type TEXT is not allowed | text header on the offer |
+| `2388215` | invalid media sample | Meta CDN link sent back |
+| `2388293` | Parameters words ratio exceeds limit | short text with many variables |
+| `2388299` | Leading or trailing parameters not allowed | variable at the start or at the end |
+| `#192` | is not a valid phone number | phone number without the country code |
+| `380` | media download failed | a link Meta's server cannot download |
+
+<Note>
+  When the rejection comes from Meta, we return her original message along with
+  the `traceId`. Keep both: they are what support uses to identify the case.
+</Note>

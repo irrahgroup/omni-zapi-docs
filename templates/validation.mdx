@@ -1,0 +1,254 @@
+---
+title: "Validações"
+description: "O que a Meta cobra em cada campo, e o que ela recusa"
+---
+
+A Meta revisa o template depois de criado, mas **recusa na hora** o que estiver
+fora de forma. As regras abaixo são as que mais aparecem, com o código de erro
+que cada uma gera.
+
+<Note>
+  O que a estrutura do payload já diz (limite de caractere, tipos aceitos,
+  quantidade) está declarado no schema de [Criar template](/templates/create-template):
+  o playground mostra campo por campo. Esta página é para as regras que o
+  schema não expressa.
+</Note>
+
+## Limites de caractere
+
+| Campo | Limite |
+|---|---|
+| Cabeçalho de texto | 60 |
+| Mensagem | 1024 |
+| Rodapé | 60 |
+| Texto de botão | 25 |
+| Endereço de botão | 2000 |
+| Telefone de botão | 20 |
+| Código de cupom | 20 |
+| Texto de oferta | 16 |
+| Texto de cartão do carrossel | 160 |
+| Nome do template | 512 |
+
+O nome aceita **minúsculas, números e sublinhado**, e não muda depois de criado.
+
+## Quebra de linha
+
+Só a **mensagem** aceita quebra de linha. Cabeçalho, rodapé e texto de botão
+são de uma linha: `\n`, `\r` e tabulação ali são motivo de recusa, e o mesmo
+vale para mais de quatro espaços seguidos.
+
+Na mensagem, evite linha em branco no fim e mais de duas quebras seguidas.
+
+## Variáveis
+
+É de longe o que mais gera recusa.
+
+### A variável não pode abrir nem fechar o texto
+
+<CodeGroup>
+```json Recusado
+{ "type": "BODY", "text": "{{nome}}, seu pedido saiu" }
+```
+
+```json Aceito
+{ "type": "BODY", "text": "Olá {{nome}}, seu pedido saiu" }
+```
+</CodeGroup>
+
+Vale para o cabeçalho e para a mensagem. A Meta chama isso de *dangling
+parameter*, e o código é `2388299`.
+
+### Toda variável precisa de exemplo
+
+Sem o `example`, a Meta recusa com `missing expected field(s) (example)`,
+código `2388043`. O exemplo é o que o revisor lê para entender o template.
+
+<CodeGroup>
+```json Nomeado
+{
+  "type": "BODY",
+  "text": "Olá {{nome}}, o pedido {{numero}} saiu",
+  "example": {
+    "body_text_named_params": [
+      { "param_name": "nome", "example": "Marina" },
+      { "param_name": "numero", "example": "1042" }
+    ]
+  }
+}
+```
+
+```json Posicional
+{
+  "type": "BODY",
+  "text": "Olá {{1}}, o pedido {{2}} saiu",
+  "example": { "body_text": [["Marina", "1042"]] }
+}
+```
+</CodeGroup>
+
+### No posicional, a numeração é sequência e começa em 1
+
+O exemplo viaja como **lista**, e a Meta casa cada item pela posição. Com
+`{{1}}` e `{{3}}`, o terceiro fica sem exemplo, e a recusa fala de campo
+faltando sem citar numeração.
+
+<Warning>
+  `{{1}}` e `{{3}}` é recusado. Use `{{1}}` e `{{2}}`.
+</Warning>
+
+### O cabeçalho aceita uma variável
+
+Uma só. A segunda volta como *"The Header field can only have up to 1
+variable(s)"*, código `2388029`.
+
+### O rodapé não aceita variável
+
+A Meta trata o rodapé como texto puro: a variável ali não é substituída e vai
+literal para o cliente.
+
+### Texto curto com muitas variáveis é recusado
+
+A Meta compara a quantidade de variáveis com o tamanho do texto e recusa o que
+for desproporcional, com o código `2388293`. Ela não publica a fórmula. Pela
+nossa medição, com duas variáveis ou mais, conte **três palavras de texto para
+cada variável, mais uma**.
+
+<CodeGroup>
+```json Recusado
+{ "text": "texto {{a}}{{b}}{{c}}{{d}}. fim" }
+```
+
+```json Aceito
+{ "text": "Olá {{nome}}, o seu pedido {{numero}} saiu para entrega hoje" }
+```
+</CodeGroup>
+
+Duas variáveis coladas, sem texto entre elas, também costumam ser recusadas.
+
+## Botões
+
+| Regra | Limite |
+|---|---|
+| Botões no total | 10 |
+| Botões de link | 2 |
+| Botões de telefone | 1 |
+| Botões por cartão de carrossel | 2, ou 1 no de produto |
+
+### A ordem importa
+
+As respostas rápidas vêm **todas primeiro**, e os demais botões depois. A Meta
+recusa quando a ordem mistura os dois grupos.
+
+### Formato do endereço e do telefone
+
+O endereço precisa de `http` ou `https`. `www.sualoja.com` sem protocolo é
+recusado, e o erro cita o índice do botão no payload.
+
+O telefone vai em formato internacional, com o código do país:
+`+5511988881234`. Sem o `+` e sem o país, a recusa é
+`(#192) ... is not a valid phone number`.
+
+### Variável em botão
+
+O botão de link aceita **uma** variável, e só no fim do endereço:
+
+<CodeGroup>
+```json Aceito
+{ "type": "URL", "text": "Acompanhar", "url": "https://sualoja.com/pedido/{{1}}" }
+```
+
+```json Recusado
+{ "type": "URL", "text": "Acompanhar", "url": "https://sualoja.com/{{1}}/pedido" }
+```
+</CodeGroup>
+
+Telefone e código de cupom não aceitam variável.
+
+### Rótulos que a Meta escreve
+
+Em catálogo, multi-produto, produto único, checkout, pedido e no código de
+autenticação, **o texto do botão é da Meta**. Se você mandar outro, ela recusa
+dizendo qual é o certo (código `2388153`), então mande o dela ou omita o campo.
+
+## Carrossel
+
+- **De 2 a 10 cartões** no de mídia. No de produto, **exatamente 2** na criação,
+  e até 10 no envio.
+- **Todos os cartões com os mesmos componentes.** Em consequência: se um cartão
+  tem texto, todos precisam ter; o conjunto de botões (tipo e ordem) é igual em
+  todos. O que muda de um cartão para o outro é o texto do botão e o destino.
+- No de mídia, **todo cartão precisa de mídia**.
+- O cartão de produto tem cabeçalho `{"format": "PRODUCT"}` e **um único
+  botão**, sem texto de cartão. Mandar dois botões ou um corpo volta como
+  `component of type BODY is required`, código `2388045`, que não descreve a
+  causa.
+
+## Mídia
+
+| Formato | Tipos | Tamanho |
+|---|---|---|
+| Imagem | JPEG, PNG | 5 MB |
+| Vídeo | MP4, 3GPP | 16 MB |
+| Documento | PDF | 100 MB |
+
+No cabeçalho e nos cartões, a referência da mídia é o **identificador** obtido
+em [Enviar mídia](/templates/upload-media), ou o **link público** do arquivo,
+que convertemos para identificador antes de criar o template.
+
+<Warning>
+  O link que a Meta devolve quando você lê um template (domínios
+  `whatsapp.net`, `fbcdn.net`, `fbsbx.com`) **não vale** como amostra de volta:
+  reenviado, ele é recusado com `invalid media sample`, código `2388215`. Isso
+  acontece em todo fluxo que lê um template e reenvia o que leu.
+</Warning>
+
+O link precisa abrir para um servidor, e não só no navegador. Loja e blog
+costumam bloquear download automático, e aí a Meta responde
+`media download failed`, código `380`.
+
+## Validade do envio
+
+`message_send_ttl_seconds` tem faixa por categoria:
+
+| Categoria | Faixa |
+|---|---|
+| Autenticação | 30 a 900 segundos |
+| Utility | 30 a 43200 segundos |
+| Marketing | 43200 a 2592000 segundos |
+
+O valor `-1` é atalho de 30 dias. Em autenticação, a validade do envio não pode
+ser menor que a do código: se a mensagem para de ser entregue antes, o cliente
+perde as duas coisas.
+
+## Editar e excluir
+
+- Template **aprovado** aceita até **10 edições em 30 dias**, e **uma a cada 24
+  horas**. Recusado e pausado não têm esse teto.
+- Só **aprovado, recusado e pausado** podem ser editados.
+- **Nome e idioma não mudam.** Categoria de template aprovado também não.
+- A edição **substitui todos os componentes**: mande o conjunto completo, porque
+  o que ficar de fora é apagado.
+- Depois de editar, o template volta para a fila de revisão sozinho.
+- Excluir um template aprovado **reserva o nome dele por 30 dias**.
+
+## Erros da Meta, e o que cada um quer dizer
+
+| Código | Mensagem | O que corrigir |
+|---|---|---|
+| `2388029` | The Header field can only have up to 1 variable(s) | duas variáveis no cabeçalho |
+| `2388043` | missing expected field(s) (example) | variável sem exemplo, ou numeração posicional fora de sequência |
+| `2388045` | component of type BODY is required | corpo ou segundo botão no cartão de produto |
+| `2388153` | Text for button type 'X' cannot be modified | rótulo fixo alterado |
+| `2388158` | number of buttons exceeded the limit | terceiro botão na oferta por tempo limitado |
+| `2388191` | URL is required at index 1 | oferta sem o botão de link |
+| `2388193` | Header type TEXT is not allowed | cabeçalho de texto na oferta |
+| `2388215` | invalid media sample | link do CDN da Meta reenviado |
+| `2388293` | Parameters words ratio exceeds limit | texto curto com muitas variáveis |
+| `2388299` | Leading or trailing parameters not allowed | variável no início ou no fim |
+| `#192` | is not a valid phone number | telefone sem código do país |
+| `380` | media download failed | link que o servidor da Meta não consegue baixar |
+
+<Note>
+  Quando a recusa vem da Meta, devolvemos a mensagem original dela junto do
+  `traceId`. Guarde os dois: é com eles que o suporte identifica o caso.
+</Note>
