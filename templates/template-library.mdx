@@ -15,3 +15,76 @@ Este endpoint lista o que está disponível para o seu WABA.
 </Note>
 
 Para criar um template comum, que passa por revisão, use [Criar template](/templates/create-template).
+
+## Como descobrir quais modelos existem
+
+A lista é da Meta e muda com o tempo, então ela se consulta, não se decora. O
+endpoint acima devolve os modelos disponíveis para o seu WABA, e cada um vem
+com o tema e o caso de uso dele.
+
+<Note>
+  Na Graph API da Meta, a busca (`GET /message_template_library`) aceita os
+  filtros `topic`, `usecase`, `industry` e `language`, mais `search` e `name`.
+  **A nossa rota hoje não repassa esses filtros**: ela devolve a lista, e a
+  filtragem é sua. Os valores abaixo servem para você reconhecer o tema e o
+  caso de uso de cada modelo que vier na resposta.
+</Note>
+
+### Temas e casos de uso
+
+| Filtro | Valores |
+|---|---|
+| Tema | `ACCOUNT_UPDATE`, `CUSTOMER_FEEDBACK`, `ORDER_MANAGEMENT`, `PAYMENTS` |
+| Setor | `E_COMMERCE`, `FINANCIAL_SERVICES` |
+
+Os casos de uso que a Meta publica, por tema:
+
+| Tema | Casos de uso |
+|---|---|
+| `ORDER_MANAGEMENT` | `ORDER_CONFIRMATION`, `ORDER_ACTION_NEEDED`, `ORDER_DELAY`, `ORDER_PICK_UP`, `ORDER_OR_TRANSACTION_CANCEL`, `DELIVERY_CONFIRMATION`, `DELIVERY_UPDATE`, `DELIVERY_FAILED`, `SHIPMENT_CONFIRMATION`, `RETURN_CONFIRMATION` |
+| `PAYMENTS` | `PAYMENT_CONFIRMATION`, `PAYMENT_DUE_REMINDER`, `PAYMENT_OVERDUE`, `PAYMENT_ACTION_REQUIRED`, `PAYMENT_SCHEDULED`, `PAYMENT_REJECT_FAIL`, `AUTO_PAY_REMINDER`, `LOW_BALANCE_WARNING`, `RECEIPT_ATTACHMENT`, `STATEMENT_ATTACHMENT`, `STATEMENT_AVAILABLE`, `TRANSACTION_ALERT` |
+| `ACCOUNT_UPDATE` | `ACCOUNT_CREATION_CONFIRMATION`, `FRAUD_ALERT` |
+| `CUSTOMER_FEEDBACK` | `FEEDBACK_SURVEY` |
+
+O nome do modelo costuma terminar em número, como `delivery_update_1` ou
+`low_balance_warning_1`: é ele que vai em `library_template_name`.
+
+## Criar a partir de um modelo
+
+A criação usa o mesmo endpoint de [Criar template](/templates/create-template),
+mas o corpo é outro: em vez de `components`, vão o nome do modelo e as entradas
+que ele aceita.
+
+```json
+{
+  "name": "aviso_de_entrega",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "library_template_name": "delivery_update_1",
+  "library_template_body_inputs": [
+    { "add_contact_number": true, "add_track_package_link": true }
+  ],
+  "library_template_button_inputs": [
+    {
+      "type": "URL",
+      "url": {
+        "base_url": "https://sualoja.com/pedido/{{1}}",
+        "url_suffix_example": "https://sualoja.com/pedido/1042"
+      }
+    },
+    { "type": "PHONE_NUMBER", "phone_number": "+5511988881234" }
+  ]
+}
+```
+
+O texto do corpo é da Meta: você não escreve a mensagem, só liga ou desliga as
+frases que o modelo oferece (`add_contact_number`, `add_learn_more_link`,
+`add_security_recommendation`, `add_track_package_link`) e informa os dados dos
+botões que ele pede.
+
+<Note>
+  Modelo usado **como está** já nasce aprovado. A doc da Meta diz que
+  personalizar muda isso: *"If you choose Customize template, your template
+  will have to go through review before you are able to send messages."* Se
+  você mudar o conteúdo, ele volta para a fila normal de revisão.
+</Note>
