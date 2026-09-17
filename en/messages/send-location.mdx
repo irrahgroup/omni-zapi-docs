@@ -6,6 +6,14 @@ openapi: "/en/messages/openapi-location.json POST /v1/channels/{channelId}/messa
 
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
+<Warning>
+  **Being implemented.** Location messages do not reach the recipient yet.
+
+  With `latitude` and `longitude` as text — the shape in the example below, and the one [Meta documents](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/location-messages) — the API answers `json: cannot unmarshal string into Go struct field SendMessageInput.latitude of type float64`. With numbers, the request is accepted, but the message is not delivered.
+
+  The fix is in progress. Until then, there is no working path on this endpoint.
+</Warning>
+
 ## Overview
 
 Sends a location message to a contact. The `content.type` field must be `LOCATION` and the coordinates are provided in the `attachments` array using `latitude` and `longitude`.
@@ -16,8 +24,8 @@ The `name` and `address` fields are optional and allow displaying the place name
   The API does not validate the `latitude` and `longitude` fields. Requests without these values will be accepted, but the message will not display the location correctly on WhatsApp. Always provide both fields.
 </Warning>
 
-<ChannelSupport lang="en" instagram="no" messenger="no" />
+<ChannelSupport type="LOCATION" lang="en" />
 
 <Note>
-  Details of the WhatsApp Official rule in [conversation window](/en/conversation-window). See the [capability matrix](/en/channels/overview) for every channel.
+  Details of the Meta Cloud API rule in [conversation window](/en/conversation-window). See [what each channel accepts](/en/channels/message-support) for every channel.
 </Note>

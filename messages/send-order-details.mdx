@@ -1,0 +1,58 @@
+---
+title: "Enviar detalhes do pedido"
+description: "Mande a fatura com itens, total e o botão de pagar"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
+  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
+</Warning>
+
+## Conceituação
+
+Envia a fatura do pedido com itens, subtotal e total, e o botão que abre o pagamento por Pix ou link.
+
+O campo `content.type` será `ORDER_DETAILS`.
+
+<WindowRule lang="pt" template="de detalhes do pedido" href="/templates/models/order-details" />
+
+<ChannelSupport type="ORDER_DETAILS" lang="pt" />
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "ORDER_DETAILS",
+    "message": "Seu pedido está pronto. Confira e finalize o pagamento.",
+    "footer": "Pagamento processado pelo WhatsApp",
+    "referenceId": "PED-1042",
+    "goodsType": "physical-goods",
+    "currency": "BRL",
+    "totalAmount": { "value": 50000, "offset": 100 },
+    "payment": {
+      "type": "pix_dynamic_code",
+      "code": "00020126580014br.gov.bcb.pix...",
+      "merchantName": "Loja do João LTDA",
+      "keyType": "CNPJ",
+      "key": "39580525000189"
+    },
+    "items": [
+      { "retailerId": "SKU-1042", "name": "Camiseta básica", "amount": { "value": 25000, "offset": 100 }, "quantity": 2 }
+    ]
+  }
+}
+```
+
+## Regras
+
+| Regra | Valor |
+|---|---|
+| Valores | **em centavos**, com `offset: 100` — R$ 500,00 é `50000` |
+| `referenceId` | único por pedido; é por ele que o status volta no webhook |
+| Forma de pagamento | Pix com código dinâmico, ou link de pagamento |
+| Conta | precisa estar habilitada para pagamentos no Brasil |

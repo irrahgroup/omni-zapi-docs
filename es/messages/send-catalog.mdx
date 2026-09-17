@@ -1,0 +1,45 @@
+---
+title: "Enviar catálogo"
+description: "Abre el catálogo completo de la cuenta en la conversación"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
+  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
+</Warning>
+
+## Conceptos
+
+Manda un mensaje que abre el catálogo conectado a tu cuenta en Commerce Manager.
+
+El campo `content.type` será `CATALOG`.
+
+<WindowRule lang="es" template="de catálogo" href="/es/templates/models/catalog" />
+
+<ChannelSupport type="CATALOG" lang="es" />
+
+## Cuerpo de la petición
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "CATALOG",
+    "message": "Llegaron novedades a la tienda. Toca para ver el catálogo completo.",
+    "footer": "Precios válidos mientras dure el stock",
+    "thumbnailProductRetailerId": "SKU-1042"
+  }
+}
+```
+
+## Reglas
+
+| Regla | Valor |
+|---|---|
+| Mensaje | obligatorio, hasta 1024 caracteres |
+| Pie | opcional, hasta 60 caracteres |
+| Producto de portada | opcional; sin él Meta usa el primer ítem de la cuenta |
+| Catálogo | tiene que estar conectado en Commerce Manager |

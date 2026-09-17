@@ -1,0 +1,246 @@
+---
+title: "Qué acepta cada canal"
+description: "El mapa de lo que puedes enviar en cada canal, con todas las reservas explicadas"
+---
+
+La promesa de Omni Z-API es una sola: **una llamada, cualquier canal**. El cuerpo de la solicitud es el
+mismo para WhatsApp, Instagram, Messenger y Telegram. Cambias el canal en la URL, y listo.
+
+Lo que no se puede prometer es que toda plataforma acepte todo. Instagram no tiene mensaje de
+ubicación. Telegram no tiene botón de llamar. El catálogo de productos solo existe donde hay catálogo.
+**Esos límites son de las plataformas, no de nuestra API** — y esta página es el mapa de ellos, para que
+lo descubras ahora y no en medio de una prueba.
+
+## Los cinco canales, en dos líneas cada uno
+
+<CardGroup cols={2}>
+  <Card title="Meta Cloud API (Oficial)" icon="whatsapp">
+    La API de Meta, con número verificado y cuenta de empresa. Es el canal que acepta más cosas: el
+    único con formularios, catálogo y plantillas. A cambio, tiene la [ventana de 24
+    horas](/es/conversation-window).
+  </Card>
+  <Card title="WhatsApp Web" icon="qrcode">
+    La conexión por código QR, con el teléfono emparejado. Sin ventana y sin plantilla: escribes a
+    cualquier hora. Algunas funciones de tienda exigen que el número sea una cuenta WhatsApp Business
+    con productos registrados.
+  </Card>
+  <Card title="Instagram y Messenger" icon="instagram">
+    Conversación de mensajes directos. Aceptan texto, multimedia y botones, y ahí paran: sin ubicación,
+    sin contacto, sin lista de opciones. Los dos tienen ventana de 24 horas.
+  </Card>
+  <Card title="Telegram" icon="telegram">
+    Un bot. Acepta casi todo y no tiene ventana, pero habla otro idioma: lo que en WhatsApp es un tipo
+    de mensaje, allí a veces es un botón de teclado.
+  </Card>
+</CardGroup>
+
+## Cómo leer la tabla
+
+| Marca | Qué quiere decir | Qué hacer |
+|:---:|---|---|
+| ✅ | Funciona. El cuerpo publicado en la página del endpoint vale tal cual. | Enviar. |
+| ⚠️ | Funciona **con una condición**, o funciona parecido en vez de igual. | Leer la reserva antes de prometerlo al cliente. |
+| ❌ | La plataforma no tiene esa función. No es algo que falte de nuestro lado. | Ver qué enviar en su lugar, más abajo. |
+| 🔍 | No encontramos la confirmación en la documentación de la plataforma. | Tratarlo como "quizá" y probar antes de depender de ello. |
+
+<Note>
+  ⚠️ nunca significa "quizá funcione". Significa que **funciona y sabemos bajo qué condición** — y la
+  condición está explicada aquí abajo, y también en la página de cada endpoint, debajo de su tabla.
+</Note>
+
+## El día a día de la conversación
+
+| Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Texto | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Imagen | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Audio | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Video | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Documento | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Sticker | ✅ | ✅ | ⚠️ | ⚠️ | ✅ |
+| Ubicación | ✅ | ✅ | ❌ | ❌ | ✅ |
+| Contacto | ✅ | ✅ | ❌ | ❌ | ✅ |
+| Reacción (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
+| Encuesta | ❌ | ✅ | ❌ | ❌ | ✅ |
+
+Texto y multimedia son el terreno común: funcionan en los cinco, con el mismo cuerpo. Es de ahí para
+arriba que los canales empiezan a discrepar.
+
+## Cuando el cliente responde con un toque
+
+| Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Botones rápidos | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Botones de acción | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
+| Lista de opciones | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Pedir ubicación | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
+
+El botón rápido es el que vuelve como respuesta del cliente, y existe en todos los canales. El botón de
+acción es el que ejecuta el dispositivo: abrir un enlace o llamar. El enlace funciona en todos;
+**llamar, solo donde la plataforma tiene botón de teléfono**.
+
+## Tienda y pedidos
+
+| Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Catálogo | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Producto | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Multiproducto | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Detalles del pedido | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ |
+| Estado del pedido | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+
+El mensaje de tienda depende de que exista una tienda. En WhatsApp el catálogo vive en la cuenta de
+empresa; en Instagram y Messenger la API de mensajes no alcanza el catálogo; en Telegram no hay
+catálogo, y lo que existe es el cobro puntual.
+
+## Plantilla preaprobada
+
+| Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Plantilla preaprobada | ✅ WABA | ❌ | ❌ | ✅ Utility | ❌ |
+
+La plantilla es el mensaje que Meta aprueba antes para que puedas escribir primero, fuera de la
+ventana. Solo existe donde hay ventana: Meta Cloud API y Messenger. En los otros canales escribes
+cuando quieras, así que no haría falta.
+
+## Las reservas, una por una
+
+### Sticker en Instagram y Messenger
+
+En los dos no envías tu archivo. Instagram acepta **solo el sticker de corazón**; Messenger acepta
+**solo los stickers públicos del catálogo de Meta**, elegidos por identificador, y el pulgar arriba. Un
+`.webp` hecho por tu equipo pasa en WhatsApp y en Telegram, y es rechazado en esos dos.
+
+**Qué hacer**: en esos canales, envía la misma imagen como foto. El cliente ve la figura; solo que no
+viene con fondo transparente.
+
+Fuente: [Sticker API de Messenger](https://developers.facebook.com/documentation/business-messaging/messenger-platform/send-messages/sticker-api).
+
+### Botón de acción en Instagram y Telegram
+
+El botón de acción es el par "abrir enlace" y "llamar". En esos dos, **solo funciona el enlace**: la
+[plantilla de botones de Instagram](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/button-template/)
+acepta solo enlace y respuesta, y el teclado de Telegram no tiene botón de teléfono.
+
+**Qué hacer**: cambia el botón de llamar por un botón de enlace con `tel:` como destino cuando el canal
+lo permita, o escribe el teléfono en el texto del mensaje.
+
+### Catálogo, producto y pedido en WhatsApp Web
+
+Funcionan, pero por otro camino: pasan por la **compatibilidad con Z-API** y solo salen si el número
+conectado es una cuenta **WhatsApp Business con productos registrados**. Un número personal no tiene
+catálogo, así que no hay nada que enviar.
+
+**Qué hacer**: si la tienda es la parte importante de tu integración, usa Meta Cloud API. En Web,
+trata el catálogo como un extra que depende de cómo el cliente configuró su número.
+
+Fuentes: [producto](https://developer.z-api.io/message/send-message-product),
+[catálogo](https://developer.z-api.io/message/send-message-catalog) y
+[pedido](https://developer.z-api.io/message/send-message-order) en Z-API.
+
+### Multiproducto solo en la plataforma oficial
+
+Enviar varios productos en un mensaje solo existe en Meta Cloud API. En la conexión no oficial puedes
+enviar **un producto por vez**, y en los otros canales no hay equivalente.
+
+### Detalles del pedido en Messenger y Telegram
+
+Los dos tienen algo parecido, y la diferencia importa:
+
+- **Messenger**: el [comprobante de pedido](https://developers.facebook.com/docs/messenger-platform/send-messages/template/receipt/)
+  muestra artículos, total y forma de pago, pero es el registro de una compra **ya hecha**. No tiene
+  botón de pagar.
+- **Telegram**: la [factura](https://core.telegram.org/bots/api#sendinvoice) cobra dentro de la app, y
+  para eso exige un proveedor de pago configurado en el bot.
+
+**Qué hacer**: en Meta Cloud API el pedido llega con botón de pagar. En los otros dos, decide si
+quieres avisar (Messenger) o cobrar con tu propio proveedor (Telegram).
+
+### Pedir ubicación en Telegram
+
+Funciona, solo que no es un tipo de mensaje: es un **botón de teclado** que pide la ubicación
+([`request_location`](https://core.telegram.org/bots/api#replykeyboardmarkup)). Para el cliente da
+igual, toca y la ubicación llega. Lo marcamos ✅ porque el resultado es el mismo.
+
+### Reacción en Messenger
+
+Aquí la respuesta honesta es: **no lo sabemos**. La reacción que manda el cliente sí te llega por el
+webhook, pero no encontramos en la documentación de Meta la confirmación de que la empresa pueda
+reaccionar a un mensaje. El changelog lo menciona, la referencia del endpoint no describe el campo. En
+Instagram, la reacción está documentada y funciona.
+
+**Qué hacer**: no construyas un flujo que dependa de reaccionar en Messenger sin probarlo antes. Cuando
+lo confirmemos, esta página cambia.
+
+### Plantilla en Instagram
+
+No es una decisión de Meta, es consecuencia de cómo conectamos: la edge `message_templates` del Graph
+API existe solo en el node `Page`, y Omni Z-API conecta Instagram mediante **Instagram Login**, que no
+expone esa edge. Más detalles en [Conectar Instagram](/es/connect/instagram).
+
+## Cuando el canal no lo acepta: qué enviar en su lugar
+
+| Lo que querías enviar | En el canal que no lo acepta, envía |
+|---|---|
+| Ubicación | un enlace de mapa en el texto, o un botón de enlace a la dirección |
+| Contacto | el teléfono escrito en el texto |
+| Lista de opciones | los mismos elementos como botones rápidos, en grupos de tres |
+| Catálogo o producto | el enlace de tu tienda en un botón de acción |
+| Formulario (Flow) | tu propio formulario web, abierto con un botón de enlace |
+| Sticker | la misma imagen como foto |
+
+## La ventana de 24 horas, en una frase
+
+<Warning>
+  La [ventana de 24 horas](/es/conversation-window) es de **Meta Cloud API** y de
+  **Instagram/Messenger**: pasado ese tiempo desde el último mensaje del cliente, solo la reabres con
+  plantilla. En WhatsApp Web y en Telegram no hay ventana.
+</Warning>
+
+## El `content.type` de cada recurso
+
+| Recurso | `content.type` | Endpoint |
+|---|---|---|
+| Texto | `TEXT` | [Enviar texto](/es/messages/send-text) |
+| Imagen | `IMAGE` | [Enviar imagen](/es/messages/send-image) |
+| Audio | `AUDIO` | [Enviar audio](/es/messages/send-audio) |
+| Video | `VIDEO` | [Enviar video](/es/messages/send-video) |
+| Documento | `DOCUMENT` | [Enviar documento](/es/messages/send-document) |
+| Sticker | `STICKER` | [Enviar sticker](/es/messages/send-sticker) |
+| Ubicación | `LOCATION` | [Enviar ubicación](/es/messages/send-location) |
+| Pedir ubicación | `LOCATION_REQUEST` | [Pedir ubicación](/es/messages/send-location-request) |
+| Contacto | `CONTACT` | [Enviar contacto](/es/messages/send-contact) |
+| Reacción | `REACTION` | [Reaccionar a un mensaje](/es/messages/send-reaction) |
+| Botones rápidos | `INTERACTIVE_BUTTON` | [Enviar texto con botones](/es/messages/send-interactive-button) |
+| Botones de acción | `INTERACTIVE_ACTION` | [Enviar botones de acción](/es/messages/send-interactive-action) |
+| Lista de opciones | `INTERACTIVE_LIST` | [Enviar lista de opciones](/es/messages/send-interactive-list) |
+| Flow | `FLOW` | [Enviar formulario](/es/messages/send-flow) |
+| Catálogo | `CATALOG` | [Enviar catálogo](/es/messages/send-catalog) |
+| Producto | `PRODUCT` | [Enviar producto](/es/messages/send-product) |
+| Multiproducto | `PRODUCT_LIST` | [Enviar multiproducto](/es/messages/send-product-list) |
+| Detalles del pedido | `ORDER_DETAILS` | [Detalles del pedido](/es/messages/send-order-details) |
+| Estado del pedido | `ORDER_STATUS` | [Estado del pedido](/es/messages/send-order-status) |
+| Plantilla | `TEMPLATE` | [Enviar plantilla](/es/messages/send-template) |
+
+<Note>
+  Algunos de estos endpoints todavía están en desarrollo. La página de cada uno avisa arriba, y el
+  [playground](/es/messages/introduction) muestra cuáles ya responden de verdad.
+</Note>
+
+## Próximos pasos
+
+<CardGroup cols={2}>
+  <Card title="Enviar el primer mensaje" icon="paper-plane" href="/es/messages/send-text">
+    El cuerpo mínimo, y lo que vuelve.
+  </Card>
+  <Card title="Ventana de conversación" icon="clock" href="/es/conversation-window">
+    Cuándo puedes escribir primero, y cuándo necesitas plantilla.
+  </Card>
+  <Card title="Ciclo de vida del canal" icon="arrows-spin" href="/es/channels/introduction">
+    Crear, conectar, suscribir, desconectar y eliminar.
+  </Card>
+  <Card title="Limitaciones de la API Oficial" icon="triangle-exclamation" href="/es/z-api/limitations">
+    Lo que tiene la Z-API clásica y la oficial no.
+  </Card>
+</CardGroup>

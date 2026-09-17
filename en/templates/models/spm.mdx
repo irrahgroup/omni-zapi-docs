@@ -1,0 +1,164 @@
+---
+title: "Single product"
+description: "One catalog product, with photo, name and price coming from send time"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`spm`
+
+One catalog product with photo, name and price, plus the button that opens it.
+
+<TemplatePreview
+  lang="en"
+  headerKind="product image, comes from the catalog"
+  headerIcon="product"
+  productLine={true}
+  body="This is the product you asked about. Tap to see the details and buy."
+  footer="Limited stock"
+  buttons={['View']}
+  caption="Image, name and price come from the catalog at send time. The button text is fixed by Meta."
+/>
+
+## How it works
+
+The template is approved once, with no product at all: the header goes with `format: PRODUCT`, which is a placeholder. The product — photo, name and price — comes from the catalog **at send time**, identified by `catalog_id` and `product_retailer_id`.
+
+It is the model for answering about a specific item: the same approved template serves any product in the account.
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The message and footer text | The product, with photo, name and price |
+| The `PRODUCT` header, empty | |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | Fixed | Always `MARKETING` |
+| `HEADER` | The product slot | `format: PRODUCT`, nothing else |
+| `BODY` | The text next to the product | Up to 160 characters |
+| `FOOTER` | Optional | Up to 60 characters |
+| `SPM` button | Opens the product in the catalog | Fixed label: `Ver` on a `pt_BR` template, `View` elsewhere |
+
+<Warning>
+  The `SPM` label is the most confusing case: on the **same** `pt_BR` template, Meta demands `Ver` for `SPM` and `View items`, in English, for `MPM`. There is no language rule; both were measured in rejections.
+</Warning>
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:spm */}
+```json
+{
+  "name": "exemplo_spm",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "PRODUCT"
+    },
+    {
+      "type": "BODY",
+      "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "customer_name",
+            "example": "Marina"
+          },
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Reply STOP to opt out"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "SPM",
+          "text": "View"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:spm */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:spm */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_spm",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{customer_name}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "product",
+                  "product": {
+                    "catalog_id": "{{catalog_id}}",
+                    "product_retailer_id": "{{product_retailer_id}}"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:spm */}
+
+## What Meta rejects here
+
+- A label other than the required one, with code `2388153`.
+- A body over 160 characters.
+- A text or media header in place of `PRODUCT`.

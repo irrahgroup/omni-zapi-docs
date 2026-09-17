@@ -1,0 +1,250 @@
+---
+title: "Carrusel de multimedia"
+description: "De 2 a 10 tarjetas con imagen o video, y el archivo real cambiado en el envío"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`media_card_carousel`
+
+Hasta **10 tarjetas** con imagen o video, que el cliente desliza debajo del mensaje.
+
+<TemplatePreview
+  lang="es"
+  body="Llegó la nueva colección. Desliza para ver los destacados."
+  cards={[{ media: 'imagen o video', text: 'Vestido midi floral', buttons: ['Quiero este', 'Llamar a la tienda'] }, { media: 'imagen o video', text: 'Blazer de sastrería', buttons: ['Quiero este', 'Llamar a la tienda'] }]}
+  caption="Cada tarjeta tiene archivo, texto de hasta 160 caracteres y hasta 2 botones — los mismos tipos, en el mismo orden, en todas."
+/>
+
+## Cómo funciona
+
+El mensaje viene primero, y debajo las tarjetas. Cada tarjeta tiene su propio archivo, su propio texto y sus propios botones.
+
+El archivo que pones en la creación es solo la **muestra que Meta revisa**. En el envío, la imagen o el video de cada tarjeta va como parámetro, por identificador o enlace, y puede ser otro: el mismo carrusel aprobado sirve para campañas distintas.
+
+<Warning>
+  **Todas las tarjetas necesitan los mismos componentes.** Si una tiene texto, todas lo tienen. El conjunto de botones, tipo y orden, es igual en todas; lo que cambia de una tarjeta a otra es la etiqueta y el destino.
+</Warning>
+
+## En la creación y en el envío
+
+| En la creación | En el envío |
+|---|---|
+| El mensaje arriba de las tarjetas | El valor de las variables del mensaje |
+| El texto y los botones de cada tarjeta | La imagen o el video de cada tarjeta |
+| La muestra de archivo que Meta revisa | El destino de cada botón, cuando tiene variable |
+
+## Campos de este modelo
+
+| Campo | Para qué sirve | Regla |
+|---|---|---|
+| `category` | Fija | Siempre `MARKETING` |
+| `BODY` | El mensaje arriba de las tarjetas | Hasta 1024 caracteres |
+| `CAROUSEL.cards` | Las tarjetas | **De 2 a 10**, todas con los mismos componentes |
+| `HEADER` de la tarjeta | El archivo de la tarjeta | `IMAGE` o `VIDEO`, y **toda tarjeta necesita archivo** |
+| `BODY` de la tarjeta | El texto de la tarjeta | Hasta 160 caracteres |
+| `BUTTONS` de la tarjeta | Los botones de la tarjeta | Hasta 2 por tarjeta |
+
+## JSON completo
+
+Son dos JSON: uno **crea** la plantilla, y Meta la aprueba una vez. El otro **envía** el mensaje, y va en cada disparo, con los valores de ese envío en las variables marcadas con llaves.
+
+### 1. Crear la plantilla
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver en [Referencia de la API](/es/templates/create-template).
+
+{/* payload:media_card_carousel */}
+```json
+{
+  "name": "exemplo_media_card_carousel",
+  "category": "MARKETING",
+  "language": "es_ES",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Hola {{nombre_del_cliente}}, tu pedido {{numero_del_pedido}} quedó confirmado y sale hoy para entrega.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nombre_del_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_del_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "CAROUSEL",
+      "cards": [
+        {
+          "components": [
+            {
+              "type": "HEADER",
+              "format": "IMAGE",
+              "example": {
+                "header_handle": [
+                  "4::aW1hZ2UvcG5n"
+                ]
+              }
+            },
+            {
+              "type": "BODY",
+              "text": "Ítem de la colección nueva"
+            },
+            {
+              "type": "BUTTONS",
+              "buttons": [
+                {
+                  "type": "QUICK_REPLY",
+                  "text": "Seguir mi pedido"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "components": [
+            {
+              "type": "HEADER",
+              "format": "IMAGE",
+              "example": {
+                "header_handle": [
+                  "4::aW1hZ2UvcG5n"
+                ]
+              }
+            },
+            {
+              "type": "BODY",
+              "text": "Ítem de la colección nueva"
+            },
+            {
+              "type": "BUTTONS",
+              "buttons": [
+                {
+                  "type": "QUICK_REPLY",
+                  "text": "Seguir mi pedido"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:media_card_carousel */}
+
+### 2. Enviar después de la aprobación
+
+`POST /v1/channels/{channelId}/messages` — ver en [Enviar plantilla](/es/messages/send-template).
+
+{/* send:media_card_carousel */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_media_card_carousel",
+          "language": {
+            "policy": "deterministic",
+            "code": "es_ES"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nombre_del_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_del_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "carousel",
+              "cards": [
+                {
+                  "card_index": 0,
+                  "components": [
+                    {
+                      "type": "header",
+                      "parameters": [
+                        {
+                          "type": "image",
+                          "image": {
+                            "id": "{{card_1_media_id}}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "button",
+                      "sub_type": "quick_reply",
+                      "index": 0,
+                      "parameters": [
+                        {
+                          "type": "payload",
+                          "payload": "{{quick_reply_payload_1}}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "card_index": 1,
+                  "components": [
+                    {
+                      "type": "header",
+                      "parameters": [
+                        {
+                          "type": "image",
+                          "image": {
+                            "id": "{{card_2_media_id}}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "button",
+                      "sub_type": "quick_reply",
+                      "index": 0,
+                      "parameters": [
+                        {
+                          "type": "payload",
+                          "payload": "{{quick_reply_payload_1}}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:media_card_carousel */}
+
+## Lo que Meta rechaza aquí
+
+- Menos de 2 o más de 10 tarjetas.
+- Tarjeta sin archivo.
+- Una tarjeta con texto y otra sin él, o conjuntos de botones distintos entre tarjetas.
+- El enlace que Meta devuelve al leer una plantilla (dominios `whatsapp.net`, `fbcdn.net`, `fbsbx.com`) reenviado como muestra: vuelve como `invalid media sample`, código `2388215`.

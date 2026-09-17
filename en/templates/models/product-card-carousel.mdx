@@ -1,0 +1,220 @@
+---
+title: "Product carousel"
+description: "Cards coming from the catalog: created with 2, sent with up to 10"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`product_card_carousel`
+
+Cards pulled from your catalog.
+
+<TemplatePreview
+  lang="en"
+  body="We picked a few products for you. Swipe to see them."
+  cards={[{ media: 'catalog product', product: true, button: 'View' }, { media: 'catalog product', product: true, button: 'View' }]}
+  caption="The product card has no text: image, name and price come from the catalog at send time, and the button is fixed."
+/>
+
+## How it works
+
+Each card is a placeholder for a product: image, name and price come from the catalog **at send time**, and you pick which product on each dispatch.
+
+The asymmetry that catches everyone: Meta requires **exactly 2 cards at creation**, but accepts **up to 10 at send time**.
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The message above the cards | The products, up to 10 |
+| Exactly 2 empty cards | The photo, name and price of each one |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | Fixed | Always `MARKETING` |
+| `BODY` | The message above the cards | Up to 1024 characters |
+| `CAROUSEL.cards` | The cards | **Exactly 2** at creation |
+| Card `HEADER` | The product slot | `format: PRODUCT`, nothing else |
+| Card `BUTTONS` | The card button | **A single** `SPM` button, with the fixed label |
+
+<Warning>
+  The product card **has no text**. Sending a body on the card, or a second button, comes back as `component of type BODY is required`, code `2388045`, which does not describe the cause.
+</Warning>
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:product_card_carousel */}
+```json
+{
+  "name": "exemplo_product_card_carousel",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "customer_name",
+            "example": "Marina"
+          },
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "CAROUSEL",
+      "cards": [
+        {
+          "components": [
+            {
+              "type": "HEADER",
+              "format": "PRODUCT"
+            },
+            {
+              "type": "BUTTONS",
+              "buttons": [
+                {
+                  "type": "SPM",
+                  "text": "View"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "components": [
+            {
+              "type": "HEADER",
+              "format": "PRODUCT"
+            },
+            {
+              "type": "BUTTONS",
+              "buttons": [
+                {
+                  "type": "SPM",
+                  "text": "View"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:product_card_carousel */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:product_card_carousel */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_product_card_carousel",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{customer_name}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "carousel",
+              "cards": [
+                {
+                  "card_index": 0,
+                  "components": [
+                    {
+                      "type": "header",
+                      "parameters": [
+                        {
+                          "type": "product",
+                          "product": {
+                            "catalog_id": "{{catalog_id}}",
+                            "product_retailer_id": "{{card_1_product_retailer_id}}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "button",
+                      "sub_type": "spm",
+                      "index": 0
+                    }
+                  ]
+                },
+                {
+                  "card_index": 1,
+                  "components": [
+                    {
+                      "type": "header",
+                      "parameters": [
+                        {
+                          "type": "product",
+                          "product": {
+                            "catalog_id": "{{catalog_id}}",
+                            "product_retailer_id": "{{card_2_product_retailer_id}}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "button",
+                      "sub_type": "spm",
+                      "index": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:product_card_carousel */}
+
+## What Meta rejects here
+
+- A card count other than 2 at creation.
+- Text on the product card.
+- Two buttons on the same card.
+- A label other than the required one on the `SPM` button: `Ver` on a `pt_BR` template, `View` elsewhere.

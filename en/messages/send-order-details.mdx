@@ -1,0 +1,58 @@
+---
+title: "Send order details"
+description: "Send the invoice with items, total and the pay button"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
+  shape and plan the integration — the body below is what will apply when it ships.
+</Warning>
+
+## Overview
+
+Sends the order invoice with items, subtotal and total, and the button that opens Pix or link payment.
+
+The `content.type` field will be `ORDER_DETAILS`.
+
+<WindowRule lang="en" template="for order details" href="/en/templates/models/order-details" />
+
+<ChannelSupport type="ORDER_DETAILS" lang="en" />
+
+## Request body
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "ORDER_DETAILS",
+    "message": "Your order is ready. Review it and complete the payment.",
+    "footer": "Payment processed by WhatsApp",
+    "referenceId": "ORD-1042",
+    "goodsType": "physical-goods",
+    "currency": "BRL",
+    "totalAmount": { "value": 50000, "offset": 100 },
+    "payment": {
+      "type": "pix_dynamic_code",
+      "code": "00020126580014br.gov.bcb.pix...",
+      "merchantName": "Loja do João LTDA",
+      "keyType": "CNPJ",
+      "key": "39580525000189"
+    },
+    "items": [
+      { "retailerId": "SKU-1042", "name": "Basic t-shirt", "amount": { "value": 25000, "offset": 100 }, "quantity": 2 }
+    ]
+  }
+}
+```
+
+## Rules
+
+| Rule | Value |
+|---|---|
+| Amounts | **in cents**, with `offset: 100` — 500.00 is `50000` |
+| `referenceId` | unique per order; it is how the status comes back on the webhook |
+| Payment method | Pix with a dynamic code, or a payment link |
+| Account | must be enabled for payments in Brazil |

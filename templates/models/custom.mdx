@@ -1,0 +1,587 @@
+---
+title: "Mensagem customizada"
+description: "O modelo aberto: texto livre com variáveis, cabeçalho e botões"
+---
+
+import { PreviewCycle, TemplatePreview } from '/snippets/template-preview.mdx';
+
+`custom`
+
+Texto livre com variáveis, cabeçalho e botões. É o modelo mais usado e **o único totalmente aberto**: nada aqui é escrito pela Meta, e nenhum campo depende de catálogo, pagamento ou formulário.
+
+## Nove ideias para você partir de uma
+
+export const IDEIAS = [
+    {
+      headerKind: "imagem da campanha",
+      headerIcon: "image",
+      body: "🔥 *A pré-venda foi prorrogada*\nCorra para garantir seu lugar antes que o preço suba.\n\nAcaba às 23h59: depois disso, o mesmo ingresso custa mais caro.",
+      footer: "Não quer receber por aqui? Digite #SAIR",
+      buttons: ['QUERO MEU INGRESSO'],
+      caption: "Promoção · marketing · imagem, negrito, parágrafos e um botão de link",
+    },
+    {
+      body: "{{nome_do_cliente}}, você deixou {{quantidade}} itens no carrinho. Eles ainda estão reservados por 24 horas.",
+      buttons: ['Finalizar compra', 'Não tenho interesse'],
+      caption: "Recuperação de carrinho · marketing · link mais uma saída em resposta rápida",
+    },
+    {
+      headerKind: "vídeo de boas-vindas",
+      headerIcon: "video",
+      body: "Bem-vindo, {{nome_do_cliente}}! Em 40 segundos você vê como tirar o máximo da sua conta. Por onde quer começar?",
+      buttons: ['Configurar agora', 'Falar com alguém'],
+      caption: "Boas-vindas · utility · cabeçalho de vídeo e duas respostas rápidas",
+    },
+    {
+      body: "{{nome_do_cliente}}, seu horário é amanhã às {{hora}} com {{profissional}}. Podemos confirmar?",
+      buttons: ['Confirmar', 'Remarcar'],
+      caption: "Lembrete de agendamento · utility · só respostas rápidas, sem cabeçalho nem rodapé",
+    },
+    {
+      headerKind: "documento em PDF",
+      headerIcon: "document",
+      body: "Sua fatura de {{mes_referencia}} está disponível. Valor de {{valor}}, vencimento em {{data_vencimento}}.",
+      footer: "Dúvidas? Fale com a gente",
+      buttons: ['Pagar agora', 'Falar com o financeiro'],
+      caption: "Cobrança · utility · documento em anexo, link com variável e telefone",
+    },
+    {
+      headerKind: "endereço e mapa, definidos no envio",
+      headerIcon: "location",
+      body: "Sua retirada está pronta, {{nome_do_cliente}}. Estamos te esperando até as {{hora_limite}} de hoje.",
+      buttons: ['Estou a caminho'],
+      caption: "Retirada na loja · utility · cabeçalho de localização, que vira um mapa",
+    },
+    {
+      header: "Manutenção programada",
+      body: "No sábado, das 2h às 5h, o sistema ficará indisponível para manutenção. Nada que você já enviou será perdido.",
+      footer: "Equipe de operações",
+      caption: "Aviso operacional · utility · sem botão nenhum: nem todo template precisa de ação",
+    },
+    {
+      body: "Olá! Sua experiência vale muito para a gente 🔥 Conte como foi em menos de 1 minuto.",
+      buttons: ['Quero responder!'],
+      caption: "Pesquisa · marketing · o mínimo possível: mensagem e um botão",
+    },
+    {
+      header: "Pedido {{numero_do_pedido}} confirmado",
+      body: "Olá {{nome_do_cliente}}, seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje até as 18h.",
+      footer: "Responda SAIR para não receber mais",
+      buttons: ['Acompanhar pedido', 'Ver detalhes', 'Falar com a loja'],
+      caption: "Confirmação de pedido · utility · o payload completo desta página, com os três tipos de botão",
+    }
+];
+
+<PreviewCycle lang="pt" items={IDEIAS} />
+
+<Info>
+  Arraste a faixa para o lado. Estes nove são **pontos de partida, não um catálogo**: todos são o mesmo `custom`, e o que muda é quais componentes entram. Você combina os que quiser — cabeçalho de qualquer formato, ou nenhum; rodapé, ou nenhum; até dez botões, ou nenhum.
+</Info>
+
+Abra o exemplo que se parece com o que você quer e **copie o JSON** pelo botão no canto do bloco. Ele cria exatamente o template da prévia; a partir dele, troque texto, variáveis e botões.
+
+<AccordionGroup>
+  <Accordion title="1. Promoção com imagem">
+
+<TemplatePreview {...IDEIAS[0]} lang="pt" />
+
+```json
+{
+  "name": "prevenda_prorrogada",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "IMAGE",
+      "example": { "header_handle": ["4::aW1hZ2UvcG5n..."] }
+    },
+    {
+      "type": "BODY",
+      "text": "🔥 *A pré-venda foi prorrogada*\nCorra para garantir seu lugar antes que o preço suba.\n\nAcaba às 23h59: depois disso, o mesmo ingresso custa mais caro."
+    },
+    { "type": "FOOTER", "text": "Não quer receber por aqui? Digite #SAIR" },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "URL", "text": "QUERO MEU INGRESSO", "url": "https://sualoja.com/ingresso" }
+      ]
+    }
+  ]
+}
+```
+
+Sem variável, não há `example` no corpo. O negrito é o `*asterisco*` do WhatsApp, e os parágrafos são `\n` — quebra de linha só a mensagem aceita. No envio, cabeçalho de mídia **exige** o parâmetro da imagem: a da criação é só a amostra que a Meta revisa.
+  </Accordion>
+
+  <Accordion title="2. Recuperação de carrinho">
+
+<TemplatePreview {...IDEIAS[1]} lang="pt" />
+
+```json
+{
+  "name": "carrinho_abandonado",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "{{nome_do_cliente}}, você deixou {{quantidade}} itens no carrinho. Eles ainda estão reservados por 24 horas.",
+      "example": {
+        "body_text_named_params": [
+          { "param_name": "nome_do_cliente", "example": "Marina" },
+          { "param_name": "quantidade", "example": "3" }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "URL", "text": "Finalizar compra", "url": "https://sualoja.com/carrinho" },
+        { "type": "QUICK_REPLY", "text": "Não tenho interesse" }
+      ]
+    }
+  ]
+}
+```
+
+A resposta rápida vem **depois** do link, e não entre outros tipos: os botões ficam em dois grupos. Dar uma saída explícita reduz bloqueio, que é o que mais derruba a qualidade do número.
+  </Accordion>
+
+  <Accordion title="3. Boas-vindas com vídeo">
+
+<TemplatePreview {...IDEIAS[2]} lang="pt" />
+
+```json
+{
+  "name": "boas_vindas_onboarding",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "VIDEO",
+      "example": { "header_handle": ["4::dmlkZW8vbXA0..."] }
+    },
+    {
+      "type": "BODY",
+      "text": "Bem-vindo, {{nome_do_cliente}}! Em 40 segundos você vê como tirar o máximo da sua conta. Por onde quer começar?",
+      "example": {
+        "body_text_named_params": [{ "param_name": "nome_do_cliente", "example": "Marina" }]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "QUICK_REPLY", "text": "Configurar agora" },
+        { "type": "QUICK_REPLY", "text": "Falar com alguém" }
+      ]
+    }
+  ]
+}
+```
+
+Vídeo no cabeçalho aceita MP4 e 3GPP, até 16 MB. A resposta rápida abre a janela de 24 horas quando o cliente toca, e aí você conversa sem template.
+  </Accordion>
+
+  <Accordion title="4. Lembrete de agendamento">
+
+<TemplatePreview {...IDEIAS[3]} lang="pt" />
+
+```json
+{
+  "name": "lembrete_agendamento",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "{{nome_do_cliente}}, seu horário é amanhã às {{hora}} com {{profissional}}. Podemos confirmar?",
+      "example": {
+        "body_text_named_params": [
+          { "param_name": "nome_do_cliente", "example": "Marina" },
+          { "param_name": "hora", "example": "14h30" },
+          { "param_name": "profissional", "example": "Dra. Helena" }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "QUICK_REPLY", "text": "Confirmar" },
+        { "type": "QUICK_REPLY", "text": "Remarcar" }
+      ]
+    }
+  ]
+}
+```
+
+A resposta do cliente volta no seu webhook com o texto do botão. Repare que a variável não abre nem fecha o texto — se abrisse, a Meta recusaria com `2388299`.
+  </Accordion>
+
+  <Accordion title="5. Cobrança com boleto em PDF">
+
+<TemplatePreview {...IDEIAS[4]} lang="pt" />
+
+```json
+{
+  "name": "fatura_disponivel",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "DOCUMENT",
+      "example": { "header_handle": ["4::YXBwbGljYXRpb24vcGRm..."] }
+    },
+    {
+      "type": "BODY",
+      "text": "Sua fatura de {{mes_referencia}} está disponível. Valor de {{valor}}, vencimento em {{data_vencimento}}.",
+      "example": {
+        "body_text_named_params": [
+          { "param_name": "mes_referencia", "example": "setembro" },
+          { "param_name": "valor", "example": "R$ 249,90" },
+          { "param_name": "data_vencimento", "example": "10/10" }
+        ]
+      }
+    },
+    { "type": "FOOTER", "text": "Dúvidas? Fale com a gente" },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "URL",
+          "text": "Pagar agora",
+          "url": "https://sualoja.com/fatura/{{1}}",
+          "example": ["https://sualoja.com/fatura/1042"]
+        },
+        { "type": "PHONE_NUMBER", "text": "Falar com o financeiro", "phone_number": "+5511988881234" }
+      ]
+    }
+  ]
+}
+```
+
+O botão de link aceita **uma** variável e só no fim do endereço. Ela é posicional mesmo em template nomeado, porque é a numeração do próprio botão.
+  </Accordion>
+
+  <Accordion title="6. Retirada na loja, com mapa">
+
+<TemplatePreview {...IDEIAS[5]} lang="pt" />
+
+```json
+{
+  "name": "retirada_pronta",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    { "type": "HEADER", "format": "LOCATION" },
+    {
+      "type": "BODY",
+      "text": "Sua retirada está pronta, {{nome_do_cliente}}. Estamos te esperando até as {{hora_limite}} de hoje.",
+      "example": {
+        "body_text_named_params": [
+          { "param_name": "nome_do_cliente", "example": "Marina" },
+          { "param_name": "hora_limite", "example": "18h" }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [{ "type": "QUICK_REPLY", "text": "Estou a caminho" }]
+    }
+  ]
+}
+```
+
+O cabeçalho de localização **não tem nada para preencher na criação**: o endereço, o nome do lugar e as coordenadas vão no envio. Serve para mandar a mesma mensagem apontando para lojas diferentes.
+  </Accordion>
+
+  <Accordion title="7. Aviso operacional, sem botão">
+
+<TemplatePreview {...IDEIAS[6]} lang="pt" />
+
+```json
+{
+  "name": "manutencao_programada",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "components": [
+    { "type": "HEADER", "format": "TEXT", "text": "Manutenção programada" },
+    {
+      "type": "BODY",
+      "text": "No sábado, das 2h às 5h, o sistema ficará indisponível para manutenção. Nada que você já enviou será perdido."
+    },
+    { "type": "FOOTER", "text": "Equipe de operações" }
+  ]
+}
+```
+
+Nem todo template precisa de ação. Sem variável e sem botão, este é o formato mais barato de aprovar e o mais difícil de ser recusado.
+  </Accordion>
+
+  <Accordion title="8. Pesquisa de satisfação">
+
+<TemplatePreview {...IDEIAS[7]} lang="pt" />
+
+```json
+{
+  "name": "pesquisa_experiencia",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Olá! Sua experiência vale muito para a gente 🔥 Conte como foi em menos de 1 minuto."
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "URL", "text": "Quero responder!", "url": "https://sualoja.com/pesquisa" }
+      ]
+    }
+  ]
+}
+```
+
+O mínimo que um template precisa: mensagem e nada mais. Sem variável e com link fixo, o envio leva só o nome e o idioma.
+  </Accordion>
+
+  <Accordion title="9. Confirmação de pedido">
+
+<TemplatePreview {...IDEIAS[8]} lang="pt" />
+
+É o payload completo desta página: cabeçalho de texto com variável, mensagem, rodapé e os três tipos de botão livre. Ele está inteiro no [JSON de criação](#1-criar-o-template), com o JSON de envio ao lado.
+  </Accordion>
+</AccordionGroup>
+
+## Como funciona
+
+Você escreve o texto uma vez, marca com variável o que muda a cada cliente, e a Meta aprova o molde. No envio, cada variável recebe o valor daquele disparo.
+
+É o modelo para tudo que não é comércio, autenticação nem promoção com estrutura própria: confirmação de pedido, aviso de status, cobrança, lembrete de agendamento, retomada de contato.
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O texto do cabeçalho, da mensagem e do rodapé | O valor de cada variável |
+| Os botões e para onde eles levam | O trecho final do endereço, quando o botão de link tem variável |
+| A amostra da mídia do cabeçalho | O arquivo real daquele disparo |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `category` | `UTILITY` ou `MARKETING`, conforme o conteúdo | Você escolhe. Com `allow_category_change`, a Meta corrige em vez de recusar |
+| `HEADER` | Opcional. Texto, imagem, vídeo, documento ou mapa | Texto até 60 caracteres e no máximo uma variável |
+| `BODY` | O texto principal. **Obrigatório** | Até 1024 caracteres, com quebra de linha |
+| `FOOTER` | Opcional. Aviso discreto abaixo da mensagem | Até 60 caracteres, sem variável |
+| `BUTTONS` | Opcional. Resposta rápida, link, telefone, código, chamada de voz ou formulário | Até 10, com as respostas rápidas agrupadas |
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:custom */}
+```json
+{
+  "name": "exemplo_custom",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Pedido {{numero_do_pedido}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Olá {{nome_do_cliente}}, o seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nome_do_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responda SAIR para não receber mais"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "Acompanhar pedido"
+        },
+        {
+          "type": "URL",
+          "text": "Ver detalhes",
+          "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+          "example": [
+            "https://z-api.io/pedido/1042"
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "text": "Falar com a loja",
+          "phone_number": "+5511988881234"
+        },
+        {
+          "type": "COPY_CODE",
+          "example": "PROMO10"
+        },
+        {
+          "type": "VOICE_CALL",
+          "text": "Falar por voz"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:custom */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:custom */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_custom",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nome_do_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "quick_reply",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "payload",
+                  "payload": "{{quick_reply_payload_1}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 1,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{url_suffix_2}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "phone_number",
+              "index": 2,
+              "parameters": []
+            },
+            {
+              "type": "button",
+              "sub_type": "copy_code",
+              "index": 3
+            },
+            {
+              "type": "button",
+              "sub_type": "voice_call",
+              "index": 4
+            },
+            {
+              "type": "button",
+              "sub_type": "flow",
+              "index": 5,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "flow_token": "{{flow_token}}",
+                    "flow_action_data": {}
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:custom */}
+
+## O que a Meta recusa aqui
+
+- Variável **abrindo ou fechando** o texto do cabeçalho ou da mensagem.
+- Variável **sem exemplo**.
+- Texto curto com muitas variáveis.
+- Resposta rápida no meio dos outros botões.
+- Endereço de botão sem `http` ou `https`, e telefone sem o código do país.
+
+Os códigos de erro de cada caso estão em [Validações](/templates/validation).

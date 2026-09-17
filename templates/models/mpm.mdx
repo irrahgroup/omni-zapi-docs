@@ -1,0 +1,190 @@
+---
+title: "Multi-produto"
+description: "Vitrine com seções e até 30 produtos, montada no envio"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`mpm`
+
+Vitrine com seções e vários produtos.
+
+<TemplatePreview
+  headerKind="imagem do produto, vem do catálogo"
+  headerIcon="catalog"
+  header="Seleção da semana"
+  body="Separamos alguns produtos que combinam com o que você comprou. Veja a lista completa."
+  footer="Preços válidos enquanto durar o estoque"
+  buttons={['Ver itens']}
+  caption="O cabeçalho é texto; a imagem acima dele vem da miniatura do produto escolhido no envio."
+/>
+
+## Como funciona
+
+O template é aprovado uma vez e a vitrine é montada no envio, com até **30 produtos** do catálogo em até **10 seções**. O botão é fixo da Meta (`View items`), traduzido para o idioma do cliente.
+
+O cliente abre a lista, adiciona e remove itens do carrinho e manda o pedido de volta, que chega no seu webhook como mensagem de pedido. **O pagamento é o passo seguinte**: você responde com [detalhes do pedido](/templates/models/order-details) ou com um link.
+
+Como os produtos vão no envio, a mesma vitrine serve para campanhas diferentes.
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O cabeçalho de texto, a mensagem e o rodapé | Até 30 produtos, em até 10 seções |
+| O botão, que é fixo | A foto do topo, da miniatura do produto escolhido |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `category` | Fixa | Sempre `MARKETING` |
+| `HEADER` | O título da vitrine | **Obrigatório e só texto**, até 60 caracteres e no máximo uma variável. É o único modelo que exige cabeçalho. A imagem do topo vem do produto escolhido no envio |
+| `BODY` | O texto que apresenta a seleção | Até 1024 caracteres |
+| `FOOTER` | Opcional | Até 60 caracteres |
+| Botão `MPM` | Abre a lista de produtos com seções | `text` sempre `View items`, em inglês, mesmo em template `pt_BR` |
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:mpm */}
+```json
+{
+  "name": "exemplo_mpm",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Pedido {{numero_do_pedido}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Olá {{nome_do_cliente}}, o seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nome_do_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responda SAIR para não receber mais"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "MPM",
+          "text": "View items"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:mpm */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:mpm */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_mpm",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nome_do_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "mpm",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "thumbnail_product_retailer_id": "{{thumbnail_product_retailer_id}}",
+                    "sections": [
+                      {
+                        "title": "{{section_title}}",
+                        "product_items": [
+                          {
+                            "product_retailer_id": "{{product_retailer_id}}"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:mpm */}
+
+## O que a Meta recusa aqui
+
+- Cabeçalho de mídia: aqui ele é só texto.
+- Rótulo diferente de `View items`, com o código `2388153`.
+- Mais de uma variável no cabeçalho, com o código `2388029`.

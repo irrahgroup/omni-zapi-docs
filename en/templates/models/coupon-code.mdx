@@ -1,0 +1,212 @@
+---
+title: "Coupon"
+description: "Message with a discount code the customer copies with one tap"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`coupon_code`
+
+Message with a copyable discount code.
+
+<TemplatePreview
+  lang="en"
+  header="Your reward is here"
+  body="{{customer_name}}, you got a 10% coupon for your next purchase. Tap to copy the code."
+  coupon="BACK10"
+  footer="Valid until the end of the month"
+  buttons={['Copy code', 'See details', 'Call the store', 'Track order']}
+  caption="Copyable code, URL, phone and quick reply — quick replies grouped at the end, as Meta requires."
+/>
+
+## How it works
+
+The copy code button is the heart of the model: the customer taps and the code goes to the clipboard, ready to paste on your site or in your app.
+
+The code you put in at creation is the **sample Meta's reviewer reads**. The real code for each send goes as a button parameter, so the same approved message serves campaigns with different codes.
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The message text and the sample code | The value of each variable |
+| The buttons and where they lead | The coupon code for that dispatch |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | Fixed | Always `MARKETING` |
+| `HEADER` | Optional | Text up to 60 characters, at most one variable |
+| `BODY` | The text presenting the coupon | Up to 1024 characters |
+| `FOOTER` | Optional | Up to 60 characters |
+| `COPY_CODE` button | Copies the code | The `example` is the code: letters, digits, hyphen and underscore, up to 20 characters. Meta rejects spaces and symbols |
+| Other buttons | URL, phone and quick replies | Quick replies stay **grouped**, all before or all after the others |
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:coupon_code */}
+```json
+{
+  "name": "exemplo_coupon_code",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Order {{order_number}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "customer_name",
+            "example": "Marina"
+          },
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Reply STOP to opt out"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "COPY_CODE",
+          "example": "PROMO10"
+        },
+        {
+          "type": "URL",
+          "text": "See details",
+          "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+          "example": [
+            "https://z-api.io/pedido/1042"
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "text": "Call the store",
+          "phone_number": "+5511988881234"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Track order"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:coupon_code */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:coupon_code */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_coupon_code",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{customer_name}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "quick_reply",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "payload",
+                  "payload": "{{quick_reply_payload_1}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 1,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{url_suffix_2}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "phone_number",
+              "index": 2,
+              "parameters": []
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:coupon_code */}
+
+## What Meta rejects here
+
+- A code with a space, accent or symbol, or over 20 characters.
+- More than one copy code button.
+- A quick reply in the middle of the other buttons: they must stay together.
+- A variable in the coupon code, which is not accepted.

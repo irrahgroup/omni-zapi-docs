@@ -1,0 +1,96 @@
+---
+title: "Enviar lista de opções"
+description: "Envie uma lista de seções e opções que o cliente escolhe com um toque"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você já conhecer o
+  formato e planejar a integração — o corpo e os limites abaixo são os que valerão quando ele subir.
+
+  Enquanto isso, para oferecer opções ao cliente use [botões de resposta rápida](/messages/send-interactive-button),
+  que aceitam até 3 opções.
+</Warning>
+
+## Conceituação
+
+Envia uma mensagem com uma lista de opções agrupadas em seções. O cliente toca no botão, abre a lista e
+escolhe uma linha; a escolha volta no seu webhook.
+
+O campo `content.type` será `INTERACTIVE_LIST`.
+
+É o formato para quando as opções não cabem em botões: cardápio, catálogo de serviços, horários, unidades.
+Até 3 opções, prefira os [botões de resposta rápida](/messages/send-interactive-button), que exigem um toque
+a menos.
+
+<ChannelSupport type="INTERACTIVE_LIST" lang="pt" />
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "INTERACTIVE_LIST",
+    "header": "Cardápio",
+    "message": "Escolha uma opção",
+    "footer": "Entrega em 40 min",
+    "button": "Ver opções",
+    "sections": [
+      {
+        "title": "Pizzas",
+        "rows": [
+          { "id": "pizza_marg", "title": "Margherita", "description": "Molho, muçarela e manjericão" },
+          { "id": "pizza_pep", "title": "Pepperoni", "description": "Molho, muçarela e pepperoni" }
+        ]
+      },
+      {
+        "title": "Bebidas",
+        "rows": [
+          { "id": "refri_lata", "title": "Refrigerante lata", "description": "350 ml" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+`header` e `footer` são opcionais. O `id` de cada linha é escolhido por você e é o que volta no webhook
+quando o cliente seleciona.
+
+## Limites da Meta
+
+| Regra | Limite |
+|---|---|
+| Seções | 10 |
+| Linhas | **10 somando todas as seções** |
+| Texto do botão | 20 caracteres |
+| Título da linha | 24 caracteres |
+| Descrição da linha | 72 caracteres |
+| `id` da linha | único dentro da mensagem |
+
+<Warning>
+  O limite de linhas é **no total**, não por seção. Dez seções com dez linhas cada é recusado — o máximo é
+  dez linhas distribuídas entre as seções que você quiser.
+</Warning>
+
+## A resposta do cliente
+
+Quando o cliente escolhe uma linha, o seu webhook recebe a escolha com o mesmo `id` que você enviou:
+
+```json
+{
+  "id": "pizza_marg",
+  "title": "Margherita",
+  "description": "Molho, muçarela e manjericão"
+}
+```
+
+É pelo `id` que a sua aplicação identifica a opção, sem depender do texto exibido — que pode mudar sem
+quebrar a integração.
+
+<Note>
+  Detalhes da regra da Meta Cloud API em [janela de conversa](/conversation-window). Veja a
+  [o que cada canal aceita](/channels/message-support) para todos os canais.
+</Note>

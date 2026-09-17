@@ -1,0 +1,587 @@
+---
+title: "Custom message"
+description: "The open model: free text with variables, header and buttons"
+---
+
+import { PreviewCycle, TemplatePreview } from '/snippets/template-preview.mdx';
+
+`custom`
+
+Free text with variables, header and buttons. It is the most used model and **the only fully open one**: nothing here is written by Meta, and no field depends on a catalog, a payment or a flow.
+
+## Nine ideas to start from
+
+export const IDEIAS = [
+    {
+      headerKind: "campaign image",
+      headerIcon: "image",
+      body: "🔥 *The pre-sale has been extended*\nHurry and secure your spot before the price goes up.\n\nIt ends at 11:59pm: after that, the same ticket costs more.",
+      footer: "Don't want these here? Reply STOP",
+      buttons: ['I WANT MY TICKET'],
+      caption: "Promotion · marketing · image, bold, paragraphs and one URL button",
+    },
+    {
+      body: "{{customer_name}}, you left {{item_count}} items in your cart. They are still reserved for 24 hours.",
+      buttons: ['Complete purchase', 'Not interested'],
+      caption: "Cart recovery · marketing · a URL plus a way out as a quick reply",
+    },
+    {
+      headerKind: "welcome video",
+      headerIcon: "video",
+      body: "Welcome, {{customer_name}}! In 40 seconds you'll see how to get the most out of your account. Where do you want to start?",
+      buttons: ['Set it up now', 'Talk to someone'],
+      caption: "Welcome · utility · video header and two quick replies",
+    },
+    {
+      body: "{{customer_name}}, your appointment is tomorrow at {{time}} with {{professional}}. Can we confirm?",
+      buttons: ['Confirm', 'Reschedule'],
+      caption: "Appointment reminder · utility · quick replies only, no header or footer",
+    },
+    {
+      headerKind: "PDF document",
+      headerIcon: "document",
+      body: "Your {{billing_month}} invoice is available. Amount {{amount}}, due on {{due_date}}.",
+      footer: "Questions? Talk to us",
+      buttons: ['Pay now', 'Call billing'],
+      caption: "Billing · utility · attached document, URL with a variable and a phone button",
+    },
+    {
+      headerKind: "address and map, set at send time",
+      headerIcon: "location",
+      body: "Your pickup is ready, {{customer_name}}. We'll be waiting for you until {{cutoff_time}} today.",
+      buttons: ['On my way'],
+      caption: "Store pickup · utility · location header, which becomes a map",
+    },
+    {
+      header: "Scheduled maintenance",
+      body: "On Saturday, from 2am to 5am, the system will be unavailable for maintenance. Nothing you have already sent will be lost.",
+      footer: "Operations team",
+      caption: "Operational notice · utility · no buttons at all: not every template needs an action",
+    },
+    {
+      body: "Hi! Your experience means a lot to us 🔥 Tell us how it went in under a minute.",
+      buttons: ['I want to answer!'],
+      caption: "Survey · marketing · as simple as it gets: a message and one button",
+    },
+    {
+      header: "Order {{order_number}} confirmed",
+      body: "Hi {{customer_name}}, your order {{order_number}} is confirmed and goes out for delivery today by 6pm.",
+      footer: "Reply STOP to unsubscribe",
+      buttons: ['Track order', 'See details', 'Call the store'],
+      caption: "Order confirmation · utility · this page's full payload, with all three button types",
+    }
+];
+
+<PreviewCycle lang="en" items={IDEIAS} />
+
+<Info>
+  Drag the strip sideways. These nine are **starting points, not a catalog**: they are all the same `custom`, and what changes is which components go in. You combine whichever you want — a header in any format, or none; a footer, or none; up to ten buttons, or none.
+</Info>
+
+Open the example closest to what you want and **copy the JSON** with the button in the corner of the block. It creates exactly the template in the preview; from there, change text, variables and buttons.
+
+<AccordionGroup>
+  <Accordion title="1. Promotion with an image">
+
+<TemplatePreview {...IDEIAS[0]} lang="en" />
+
+```json
+{
+  "name": "presale_extended",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "IMAGE",
+      "example": { "header_handle": ["4::aW1hZ2UvcG5n..."] }
+    },
+    {
+      "type": "BODY",
+      "text": "🔥 *The pre-sale has been extended*\nHurry and secure your spot before the price goes up.\n\nIt ends at 11:59pm: after that, the same ticket costs more."
+    },
+    { "type": "FOOTER", "text": "Don't want these here? Reply STOP" },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "URL", "text": "I WANT MY TICKET", "url": "https://yourstore.com/ticket" }
+      ]
+    }
+  ]
+}
+```
+
+With no variables, the body carries no `example`. Bold is WhatsApp's `*asterisk*`, and the paragraphs are `\n` — only the message accepts line breaks. At send time, a media header **requires** the image parameter: the one at creation is just the sample Meta reviews.
+  </Accordion>
+
+  <Accordion title="2. Cart recovery">
+
+<TemplatePreview {...IDEIAS[1]} lang="en" />
+
+```json
+{
+  "name": "abandoned_cart",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "{{customer_name}}, you left {{item_count}} items in your cart. They are still reserved for 24 hours.",
+      "example": {
+        "body_text_named_params": [
+          { "param_name": "customer_name", "example": "Marina" },
+          { "param_name": "item_count", "example": "3" }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "URL", "text": "Complete purchase", "url": "https://yourstore.com/cart" },
+        { "type": "QUICK_REPLY", "text": "Not interested" }
+      ]
+    }
+  ]
+}
+```
+
+The quick reply comes **after** the URL, not between other types: buttons sit in two groups. Giving an explicit way out reduces blocks, which is what hurts number quality the most.
+  </Accordion>
+
+  <Accordion title="3. Welcome with a video">
+
+<TemplatePreview {...IDEIAS[2]} lang="en" />
+
+```json
+{
+  "name": "welcome_onboarding",
+  "category": "UTILITY",
+  "language": "en_US",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "VIDEO",
+      "example": { "header_handle": ["4::dmlkZW8vbXA0..."] }
+    },
+    {
+      "type": "BODY",
+      "text": "Welcome, {{customer_name}}! In 40 seconds you'll see how to get the most out of your account. Where do you want to start?",
+      "example": {
+        "body_text_named_params": [{ "param_name": "customer_name", "example": "Marina" }]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "QUICK_REPLY", "text": "Set it up now" },
+        { "type": "QUICK_REPLY", "text": "Talk to someone" }
+      ]
+    }
+  ]
+}
+```
+
+A video header accepts MP4 and 3GPP, up to 16 MB. The quick reply opens the 24-hour window when the customer taps it, and from there you talk without a template.
+  </Accordion>
+
+  <Accordion title="4. Appointment reminder">
+
+<TemplatePreview {...IDEIAS[3]} lang="en" />
+
+```json
+{
+  "name": "appointment_reminder",
+  "category": "UTILITY",
+  "language": "en_US",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "{{customer_name}}, your appointment is tomorrow at {{time}} with {{professional}}. Can we confirm?",
+      "example": {
+        "body_text_named_params": [
+          { "param_name": "customer_name", "example": "Marina" },
+          { "param_name": "time", "example": "2:30pm" },
+          { "param_name": "professional", "example": "Dr. Helena" }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "QUICK_REPLY", "text": "Confirm" },
+        { "type": "QUICK_REPLY", "text": "Reschedule" }
+      ]
+    }
+  ]
+}
+```
+
+The customer's answer comes back on your webhook with the button text. Note the variable neither opens nor closes the text — if it did, Meta would reject it with `2388299`.
+  </Accordion>
+
+  <Accordion title="5. Billing with a PDF">
+
+<TemplatePreview {...IDEIAS[4]} lang="en" />
+
+```json
+{
+  "name": "invoice_available",
+  "category": "UTILITY",
+  "language": "en_US",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "DOCUMENT",
+      "example": { "header_handle": ["4::YXBwbGljYXRpb24vcGRm..."] }
+    },
+    {
+      "type": "BODY",
+      "text": "Your {{billing_month}} invoice is available. Amount {{amount}}, due on {{due_date}}.",
+      "example": {
+        "body_text_named_params": [
+          { "param_name": "billing_month", "example": "September" },
+          { "param_name": "amount", "example": "$ 249.90" },
+          { "param_name": "due_date", "example": "10/10" }
+        ]
+      }
+    },
+    { "type": "FOOTER", "text": "Questions? Talk to us" },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "URL",
+          "text": "Pay now",
+          "url": "https://yourstore.com/invoice/{{1}}",
+          "example": ["https://yourstore.com/invoice/1042"]
+        },
+        { "type": "PHONE_NUMBER", "text": "Call billing", "phone_number": "+5511988881234" }
+      ]
+    }
+  ]
+}
+```
+
+The URL button accepts **one** variable, only at the end of the address. It is positional even on a named template, because that is the button's own numbering.
+  </Accordion>
+
+  <Accordion title="6. Store pickup, with a map">
+
+<TemplatePreview {...IDEIAS[5]} lang="en" />
+
+```json
+{
+  "name": "pickup_ready",
+  "category": "UTILITY",
+  "language": "en_US",
+  "parameter_format": "NAMED",
+  "components": [
+    { "type": "HEADER", "format": "LOCATION" },
+    {
+      "type": "BODY",
+      "text": "Your pickup is ready, {{customer_name}}. We'll be waiting for you until {{cutoff_time}} today.",
+      "example": {
+        "body_text_named_params": [
+          { "param_name": "customer_name", "example": "Marina" },
+          { "param_name": "cutoff_time", "example": "6pm" }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [{ "type": "QUICK_REPLY", "text": "On my way" }]
+    }
+  ]
+}
+```
+
+The location header has **nothing to fill in at creation**: the address, the place name and the coordinates go at send time. It lets you send the same message pointing at different stores.
+  </Accordion>
+
+  <Accordion title="7. Operational notice, no buttons">
+
+<TemplatePreview {...IDEIAS[6]} lang="en" />
+
+```json
+{
+  "name": "scheduled_maintenance",
+  "category": "UTILITY",
+  "language": "en_US",
+  "components": [
+    { "type": "HEADER", "format": "TEXT", "text": "Scheduled maintenance" },
+    {
+      "type": "BODY",
+      "text": "On Saturday, from 2am to 5am, the system will be unavailable for maintenance. Nothing you have already sent will be lost."
+    },
+    { "type": "FOOTER", "text": "Operations team" }
+  ]
+}
+```
+
+Not every template needs an action. With no variables and no buttons, this is the cheapest shape to get approved and the hardest to get rejected.
+  </Accordion>
+
+  <Accordion title="8. Satisfaction survey">
+
+<TemplatePreview {...IDEIAS[7]} lang="en" />
+
+```json
+{
+  "name": "experience_survey",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Hi! Your experience means a lot to us 🔥 Tell us how it went in under a minute."
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "URL", "text": "I want to answer!", "url": "https://yourstore.com/survey" }
+      ]
+    }
+  ]
+}
+```
+
+The least a template can be: a message and nothing else. With no variables and a fixed link, the send carries only the name and the language.
+  </Accordion>
+
+  <Accordion title="9. Order confirmation">
+
+<TemplatePreview {...IDEIAS[8]} lang="en" />
+
+It is this page's full payload: text header with a variable, message, footer and the three free button types. It sits complete in the [creation JSON](#1-create-the-template), with the send JSON next to it.
+  </Accordion>
+</AccordionGroup>
+
+## How it works
+
+You write the text once, mark what changes per customer as a variable, and Meta approves the mold. At send time, each variable gets the value for that dispatch.
+
+It is the model for everything that isn't commerce, authentication or a promotion with its own structure: order confirmation, status update, billing, appointment reminder, re-engagement.
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The header, message and footer text | The value of each variable |
+| The buttons and where they lead | The tail of the address, when the URL button has a variable |
+| The header media sample | The real file for that dispatch |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | `UTILITY` or `MARKETING`, depending on the content | You choose. With `allow_category_change`, Meta corrects instead of rejecting |
+| `HEADER` | Optional. Text, image, video, document or map | Text up to 60 characters and at most one variable |
+| `BODY` | The main text. **Required** | Up to 1024 characters, with line breaks |
+| `FOOTER` | Optional. Discreet notice below the message | Up to 60 characters, no variables |
+| `BUTTONS` | Optional. Quick reply, URL, phone, copy code, voice call or flow | Up to 10, with quick replies grouped |
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:custom */}
+```json
+{
+  "name": "exemplo_custom",
+  "category": "UTILITY",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Order {{order_number}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "customer_name",
+            "example": "Marina"
+          },
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Reply STOP to opt out"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "Track order"
+        },
+        {
+          "type": "URL",
+          "text": "See details",
+          "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+          "example": [
+            "https://z-api.io/pedido/1042"
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "text": "Call the store",
+          "phone_number": "+5511988881234"
+        },
+        {
+          "type": "COPY_CODE",
+          "example": "PROMO10"
+        },
+        {
+          "type": "VOICE_CALL",
+          "text": "Talk by voice"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:custom */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:custom */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_custom",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{customer_name}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "quick_reply",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "payload",
+                  "payload": "{{quick_reply_payload_1}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 1,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{url_suffix_2}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "phone_number",
+              "index": 2,
+              "parameters": []
+            },
+            {
+              "type": "button",
+              "sub_type": "copy_code",
+              "index": 3
+            },
+            {
+              "type": "button",
+              "sub_type": "voice_call",
+              "index": 4
+            },
+            {
+              "type": "button",
+              "sub_type": "flow",
+              "index": 5,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "flow_token": "{{flow_token}}",
+                    "flow_action_data": {}
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:custom */}
+
+## What Meta rejects here
+
+- A variable **opening or closing** the header or message text.
+- A variable **without an example**.
+- Short text with too many variables.
+- A quick reply in the middle of the other buttons.
+- A button address without `http` or `https`, and a phone without the country code.
+
+The error code for each case is in [Validation](/en/templates/validation).

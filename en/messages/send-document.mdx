@@ -1,0 +1,55 @@
+---
+title: "Send document"
+description: "Send a PDF, a spreadsheet or any file up to 100 MB"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
+  shape and plan the integration — the body below is what will apply when it ships.
+</Warning>
+
+## Overview
+
+Sends a file to the contact. WhatsApp picks the icon from the extension and the name you provide.
+
+The `content.type` field will be `DOCUMENT`.
+
+<WindowRule lang="en" template="with a document header" href="/en/templates/models/custom" />
+
+<ChannelSupport type="DOCUMENT" lang="en" />
+
+## Request body
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "DOCUMENT",
+    "attachments": [
+      {
+        "url": "https://yourstore.com/invoice.pdf",
+        "fileName": "invoice.pdf",
+        "caption": "Here is your invoice"
+      }
+    ]
+  }
+}
+```
+
+## Rules
+
+| Rule | Value |
+|---|---|
+| Size | up to 100 MB |
+| Types | PDF, Word, Excel, PowerPoint, text |
+| Caption | up to 1024 characters |
+| `fileName` | **with the extension** — it is what defines the icon the customer sees |
+
+<Warning>
+  The `fileName` goes with the extension, like `invoice.pdf`. There is a known defect in that field on the
+  Z-API compatibility layer today: with the extension the file arrives as `invoice.pdf.pdf`, and without it
+  it arrives as `invoice.null`.
+</Warning>

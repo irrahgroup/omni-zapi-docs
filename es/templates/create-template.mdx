@@ -1,25 +1,37 @@
 ---
-title: "Crear plantilla"
-description: "Crea una plantilla nueva y envíala a la aprobación de Meta"
+title: "Referencia de la API"
+description: "La llamada que crea la plantilla: ruta, autenticación, respuestas y errores"
 openapi: "/es/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates"
 ---
 
-## Conceptos
+Esta es la única llamada de creación. **Su cuerpo es el JSON del modelo** que elegiste — no hay una ruta separada por modelo, y mandar el payload de [Modelos](/es/templates/models/overview) ya crea la plantilla.
 
-<Warning>
-  Este endpoint está limitado por **WABA**, así que hoy cubre solo **WhatsApp Oficial**.
+Acá quedan la mecánica y el retorno: la ruta, el `wabaId`, el schema campo por campo y lo que vuelve en cada caso. El playground de arriba dispara la llamada de verdad.
 
-  Instagram y Messenger también tienen plantilla preaprobada: la **Utility Template**, con alcance de página. La compatibilidad con ellos en Omni Z-API está **en implementación**. Consulta la [comparación de los tres tipos de plantilla](/es/templates/introduction).
-</Warning>
-
-Crea una plantilla de mensaje nueva y la envía a la aprobación de Meta. La plantilla arranca con el estado `PENDING` y pasa a `APPROVED` o `REJECTED` tras la revisión.
-
-Usa el endpoint [Sincronizar plantillas](/es/templates/sync-templates) para forzar la actualización del estado.
-
-<Warning>
-  El nombre de la plantilla debe estar en `snake_case`, sin espacios ni caracteres especiales. Una vez creada, el nombre no se puede cambiar.
-</Warning>
+La plantilla nace con estado `PENDING` y pasa a `APPROVED` o `REJECTED` después de la revisión de Meta. Usa [Sincronizar plantillas](/es/templates/sync-templates) para forzar la actualización del estado.
 
 <Note>
-  El `wabaId` se obtiene a través del endpoint [Listar WABAs](/es/templates/list-businesses).
+  El `wabaId` sale del endpoint de [Listar WABAs](/es/templates/list-businesses).
 </Note>
+
+<Warning>
+  El nombre va en `snake_case`, sin espacios ni caracteres especiales, y **no se puede cambiar** después de creado.
+</Warning>
+
+<Warning>
+  Este endpoint está delimitado por **WABA**, así que hoy cubre solo **Meta Cloud API**.
+
+  Instagram y Messenger también tienen plantilla preaprobada — la **Utility Template**, delimitada por página. El soporte para ellos en Omni Z-API está **en implementación**. Mira la [comparación de los tres tipos de plantilla](/es/templates/introduction).
+</Warning>
+
+<CardGroup cols={3}>
+  <Card title="Elegir el modelo" icon="layer-group" href="/es/templates/models/overview">
+    Los 13 modelos y cuál usar
+  </Card>
+  <Card title="Campos de la plantilla" icon="list-check" href="/es/templates/anatomy">
+    Para qué sirve cada campo
+  </Card>
+  <Card title="Validaciones" icon="triangle-exclamation" href="/es/templates/validation">
+    Lo que Meta rechaza
+  </Card>
+</CardGroup>

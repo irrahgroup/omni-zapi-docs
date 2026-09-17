@@ -1,0 +1,127 @@
+---
+title: "Template Library"
+description: "Ready-made model from Meta's library, approved from the start"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`library`
+
+Ready-made model from Meta's library. **It does not go through review** — it is born approved.
+
+<TemplatePreview
+  lang="en"
+  body="Hi {{customer_name}}, your order {{order_number}} has shipped and arrives in {{eta}}."
+  buttons={['Track order', 'Talk to the store']}
+  caption="The text is Meta's, and the buttons are the ones the model defines. You only provide the data for each."
+/>
+
+## How it works
+
+This model's text is written and maintained by Meta: **you don't edit it**, you only provide the data it asks for, such as the button address or the phone. That's why approval is usually faster.
+
+You reference the model by its exact name — `delivery_update_1`, `low_balance_warning_1` and so on. The full list is in [Template Library](/en/templates/template-library), which also lists the models available through the endpoint.
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The model name in the library | The value of each model variable |
+| The text add-ons the model accepts | |
+| The data for the buttons the model defines | |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `library_template_name` | Meta's exact model identifier | Such as `delivery_update_1`. A wrong name is an immediate rejection |
+| `library_template_body_inputs` | The snippets Meta allows adding to the text | Check only what makes sense for your case |
+| `library_template_button_inputs` | The data for each button the model defines | The model says which buttons exist; you fill in the data |
+
+The body add-ons the library accepts:
+
+| Add-on | What it adds |
+|---|---|
+| `add_contact_number` | That the customer can reach you on the account phone |
+| `add_learn_more_link` | That there are more details behind a link |
+| `add_track_package_link` | On delivery models, that the package can be tracked |
+| `add_security_recommendation` | On code models, the do-not-share warning |
+| `code_expiration_minutes` | The code validity, from 1 to 90 minutes |
+
+<Note>
+  The URL button accepts a variable: `base_url` carries the address with the variable at the end, and `url_suffix_example` the same address filled in. The voice call button needs no data at all.
+</Note>
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:library */}
+```json
+{
+  "name": "exemplo_library",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "library_template_name": "delivery_update_1",
+  "library_template_body_inputs": [
+    {
+      "add_contact_number": true,
+      "add_track_package_link": true
+    }
+  ],
+  "library_template_button_inputs": [
+    {
+      "type": "URL",
+      "url": {
+        "base_url": "https://sualoja.com/pedido/{{numero_do_pedido}}",
+        "url_suffix_example": "https://sualoja.com/pedido/1042"
+      }
+    },
+    {
+      "type": "PHONE_NUMBER",
+      "phone_number": "+5511988881234"
+    }
+  ]
+}
+```
+{/* /payload:library */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:library */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_library",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": []
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:library */}
+
+## What Meta rejects here
+
+- A model name that does not exist in the library.
+- A body add-on that model doesn't accept.
+- Button data the model doesn't define, or a button it defines and you left empty.

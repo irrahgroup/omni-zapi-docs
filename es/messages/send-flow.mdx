@@ -1,0 +1,57 @@
+---
+title: "Enviar formulario (Flow)"
+description: "Abre un formulario publicado sin necesidad de plantilla"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
+  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
+</Warning>
+
+## Conceptos
+
+Envía un formulario de WhatsApp — un [Flow](/es/flows/introduction) ya publicado — directo en la conversación,
+**sin plantilla y sin aprobación**.
+
+El campo `content.type` será `FLOW`.
+
+<WindowRule lang="es" template="con botón de formulario" href="/es/templates/anatomy" />
+
+<ChannelSupport type="FLOW" lang="es" />
+
+## Cuerpo de la petición
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "FLOW",
+    "header": "Agendamiento",
+    "message": "Elige el mejor horario para ti.",
+    "footer": "Lleva menos de un minuto",
+    "flow": {
+      "id": "1234567890",
+      "token": "sesion-del-cliente-42",
+      "cta": "Agendar",
+      "action": "navigate",
+      "screen": "AGENDAMIENTO"
+    }
+  }
+}
+```
+
+## Reglas
+
+| Campo | Regla |
+|---|---|
+| `id` o nombre del formulario | uno de los dos, nunca los dos |
+| `token` | identificador que **tú** generas, para casar la respuesta con la sesión del cliente |
+| `cta` | texto del botón, hasta 30 caracteres |
+| `action` | `navigate` abre la pantalla de `screen`; `data_exchange` intercambia datos con tu servidor |
+
+<Note>
+  Solo funciona un formulario **publicado**. Meta no acepta borradores, ni acá ni en plantilla.
+</Note>

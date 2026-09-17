@@ -1,0 +1,57 @@
+---
+title: "Send a flow"
+description: "Open a published flow with no template needed"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
+  shape and plan the integration — the body below is what will apply when it ships.
+</Warning>
+
+## Overview
+
+Sends a WhatsApp flow — a published [Flow](/en/flows/introduction) — straight into the conversation, **with
+no template and no approval**.
+
+The `content.type` field will be `FLOW`.
+
+<WindowRule lang="en" template="with a flow button" href="/en/templates/anatomy" />
+
+<ChannelSupport type="FLOW" lang="en" />
+
+## Request body
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "FLOW",
+    "header": "Booking",
+    "message": "Pick the best time for you.",
+    "footer": "Takes less than a minute",
+    "flow": {
+      "id": "1234567890",
+      "token": "customer-session-42",
+      "cta": "Book",
+      "action": "navigate",
+      "screen": "BOOKING"
+    }
+  }
+}
+```
+
+## Rules
+
+| Field | Rule |
+|---|---|
+| Flow `id` or name | one of the two, never both |
+| `token` | an identifier **you** generate, to match the answer with the customer's session |
+| `cta` | button text, up to 30 characters |
+| `action` | `navigate` opens the screen in `screen`; `data_exchange` exchanges data with your server |
+
+<Note>
+  Only a **published** flow works. Meta does not accept drafts, here or in a template.
+</Note>

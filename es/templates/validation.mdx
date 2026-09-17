@@ -1,0 +1,311 @@
+---
+title: "Validaciones"
+description: "Lo que Meta exige en cada campo, y lo que rechaza"
+---
+
+Meta revisa la plantilla después de crearla, pero **rechaza de inmediato** lo
+que esté fuera de forma. Las reglas de abajo son las que más aparecen, con el
+código de error que genera cada una.
+
+<Note>
+  Lo que la estructura del payload ya dice (límite de caracteres, tipos
+  aceptados, cantidad) está declarado en el schema de
+  [Referencia de la API](/es/templates/create-template): el playground lo muestra
+  campo por campo. Esta página es para las reglas que el schema no expresa.
+</Note>
+
+## Límites de caracteres
+
+| Campo | Límite |
+|---|---|
+| Encabezado de texto | 60 |
+| Mensaje | 1024 |
+| Pie | 60 |
+| Texto del botón | 25 |
+| Dirección del botón | 2000 |
+| Teléfono del botón | 20 |
+| Código de cupón | 20 |
+| Texto de la oferta | 16 |
+| Texto de la tarjeta del carrusel | 160 |
+| Nombre de la plantilla | 512 |
+
+El nombre acepta **minúsculas, números y guion bajo**, y no cambia después de
+creada.
+
+## Salto de línea
+
+Solo el **mensaje** acepta salto de línea. Encabezado, pie y texto del botón son
+de una línea: `\n`, `\r` y tabulación allí son motivo de rechazo, y lo mismo
+vale para más de cuatro espacios seguidos.
+
+En el mensaje, evita una línea en blanco al final y más de dos saltos seguidos.
+
+## Variables
+
+Es de lejos lo que más genera rechazo.
+
+### La variable no puede abrir ni cerrar el texto
+
+<CodeGroup>
+```json Rechazado
+{ "type": "BODY", "text": "{{nombre}}, tu pedido está en camino" }
+```
+
+```json Aceptado
+{ "type": "BODY", "text": "Hola {{nombre}}, tu pedido está en camino" }
+```
+</CodeGroup>
+
+Vale para el encabezado y para el mensaje. Meta lo llama *dangling parameter*, y
+el código es `2388299`.
+
+### Toda variable necesita ejemplo
+
+Sin el `example`, Meta rechaza con `missing expected field(s) (example)`, código
+`2388043`. El ejemplo es lo que el revisor lee para entender la plantilla.
+
+<CodeGroup>
+```json Nombrado
+{
+  "type": "BODY",
+  "text": "Hola {{nombre}}, el pedido {{numero}} está en camino",
+  "example": {
+    "body_text_named_params": [
+      { "param_name": "nombre", "example": "Marina" },
+      { "param_name": "numero", "example": "1042" }
+    ]
+  }
+}
+```
+
+```json Posicional
+{
+  "type": "BODY",
+  "text": "Hola {{1}}, el pedido {{2}} está en camino",
+  "example": { "body_text": [["Marina", "1042"]] }
+}
+```
+</CodeGroup>
+
+### En el posicional, la numeración es secuencia y empieza en 1
+
+El ejemplo viaja como **lista**, y Meta empareja cada ítem por posición. Con
+`{{1}}` y `{{3}}`, el tercero queda sin ejemplo, y el rechazo habla de un campo
+que falta sin mencionar la numeración.
+
+<Warning>
+  `{{1}}` con `{{3}}` se rechaza. Usa `{{1}}` y `{{2}}`.
+</Warning>
+
+### El encabezado acepta una variable
+
+Una sola. La segunda vuelve como *"The Header field can only have up to 1
+variable(s)"*, código `2388029`.
+
+### El pie no acepta variables
+
+Meta trata el pie como texto puro: la variable allí no se sustituye y va literal
+al cliente.
+
+### Texto corto con muchas variables se rechaza
+
+Meta compara la cantidad de variables con el largo del texto y rechaza lo que es
+desproporcionado, con el código `2388293`. No publica la fórmula. Según nuestra
+medición, con dos variables o más, cuenta **tres palabras de texto por variable,
+más una**.
+
+<CodeGroup>
+```json Rechazado
+{ "text": "texto {{a}}{{b}}{{c}}{{d}}. fin" }
+```
+
+```json Aceptado
+{ "text": "Hola {{nombre}}, tu pedido {{numero}} sale hoy para entrega" }
+```
+</CodeGroup>
+
+Dos variables pegadas, sin texto entre ellas, también suelen ser rechazadas.
+
+## Botones
+
+| Regla | Límite |
+|---|---|
+| Botones en total | 10 |
+| Botones de enlace | 2 |
+| Botones de teléfono | 1 |
+| Botones de código de cupón | 1 |
+| Respuestas rápidas | 10 |
+| Botones por tarjeta del carrusel | 2, o 1 en la de producto |
+
+### Las respuestas rápidas van todas juntas
+
+Meta no exige que vayan primero: exige que los botones queden en **dos
+grupos**, el de las respuestas rápidas y el de los demás. Una respuesta rápida
+en medio de otros tipos se rechaza.
+
+| Aceptado | Rechazado |
+|---|---|
+| respuesta rápida, respuesta rápida | respuesta rápida, enlace, respuesta rápida |
+| respuesta rápida, respuesta rápida, enlace, teléfono | enlace, respuesta rápida, enlace |
+| enlace, teléfono, respuesta rápida, respuesta rápida | |
+
+### Formato de la dirección y del teléfono
+
+La dirección necesita `http` o `https`. `www.tutienda.com` sin protocolo se
+rechaza, y el error cita el índice del botón en el payload.
+
+El teléfono va en formato internacional, con el código del país:
+`+5511988881234`. Sin el `+` y sin el país, el rechazo es
+`(#192) ... is not a valid phone number`.
+
+### Variable en el botón
+
+El botón de enlace acepta **una** variable, y solo al final de la dirección:
+
+<CodeGroup>
+```json Aceptado
+{ "type": "URL", "text": "Seguir", "url": "https://tutienda.com/pedido/{{1}}" }
+```
+
+```json Rechazado
+{ "type": "URL", "text": "Seguir", "url": "https://tutienda.com/{{1}}/pedido" }
+```
+</CodeGroup>
+
+Teléfono y código de cupón no aceptan variables.
+
+### Etiquetas que Meta escribe
+
+En catálogo, multiproducto, producto único, checkout, pedido y en el código de
+autenticación, **el texto del botón es de Meta**. El campo `text` sigue siendo
+obligatorio: lo que cambia es que el valor no es tuyo. Mandar otro se rechaza
+con el código `2388153`, y la respuesta dice cuál era el correcto.
+
+| Botón | `text` |
+|---|---|
+| `CATALOG` | `View catalog` |
+| `MPM` | `View items` |
+| `SPM` | `Ver` en plantilla `pt_BR`, `View` en las demás |
+| `PAYMENT_REQUEST` | `Review and Pay` |
+| `ORDER_DETAILS` | `Copy Pix code` |
+
+<Warning>
+  Aquí no hay regla de idioma. En la **misma** plantilla `pt_BR`, Meta exige
+  `Ver` para el `SPM` y `View items`, en inglés, para el `MPM`. Los dos se
+  midieron en rechazos. Cuando rechaza, el mensaje dice el texto exigido: usa
+  ese.
+</Warning>
+
+La app de WhatsApp traduce la etiqueta al idioma de quien recibe, así que el
+valor que mandas en la creación no es lo que lee el cliente.
+
+## Carrusel
+
+- **De 2 a 10 tarjetas** en el de medios. En el de producto, **exactamente 2** en
+  la creación, y hasta 10 en el envío.
+- **Todas las tarjetas con los mismos componentes.** En consecuencia: si una
+  tarjeta tiene texto, todas necesitan tenerlo; el conjunto de botones (tipo y
+  orden) es igual en todas. Lo que cambia de una a otra es el texto del botón y
+  el destino.
+- En el de medios, **toda tarjeta necesita medio**.
+- La tarjeta de producto tiene encabezado `{"format": "PRODUCT"}` y **un único
+  botón**, sin texto de tarjeta. Enviar dos botones o un cuerpo vuelve como
+  `component of type BODY is required`, código `2388045`, que no describe la
+  causa.
+
+## Medios
+
+| Formato | Tipos | Tamaño |
+|---|---|---|
+| Imagen | JPEG, PNG | 5 MB |
+| Video | MP4, 3GPP | 16 MB |
+| Documento | PDF | 100 MB |
+
+En el encabezado y en las tarjetas, la referencia del medio es el
+**identificador** obtenido en [Enviar medios](/es/templates/upload-media), o el
+**enlace público** del archivo, que convertimos a identificador antes de crear
+la plantilla.
+
+<Warning>
+  El enlace que Meta devuelve cuando lees una plantilla (dominios
+  `whatsapp.net`, `fbcdn.net`, `fbsbx.com`) **no vale** como muestra de vuelta:
+  reenviado, se rechaza con `invalid media sample`, código `2388215`. Esto pasa
+  en todo flujo que lee una plantilla y reenvía lo que leyó.
+</Warning>
+
+El enlace tiene que abrirse para un servidor, y no solo en el navegador. Tiendas
+y blogs suelen bloquear la descarga automática, y entonces Meta responde
+`media download failed`, código `380`.
+
+La imagen de encabezado se muestra en **1.91:1**, horizontal. Lo que quede
+fuera de esa proporción no se rechaza: WhatsApp recorta lo que sobra para que
+quepa, y el recorte es por el centro. Conviene armar el arte con esa medida, o
+aceptar que los bordes desaparezcan en el teléfono del cliente.
+
+## Validez del envío
+
+`message_send_ttl_seconds` tiene un rango por categoría:
+
+| Categoría | Rango |
+|---|---|
+| Autenticación | 30 a 900 segundos |
+| Utility | 30 a 43200 segundos |
+| Marketing | 43200 a 2592000 segundos |
+
+El valor `-1` es un atajo de 30 días. En autenticación, la validez del envío no
+puede ser menor que la del código: si el mensaje deja de entregarse antes, el
+cliente pierde las dos cosas.
+
+## Cuántas plantillas caben en la cuenta
+
+Los límites de abajo son **de la cuenta**, y no de la plantilla que estás
+creando. Por eso su rechazo confunde: no habla de nada que esté en tu payload.
+
+| Límite | Valor |
+|---|---|
+| Plantillas por WABA | **250**, o **6.000** con el portafolio verificado y un número con nombre para mostrar aprobado |
+| Creaciones por hora, por WABA | **100** |
+
+El nombre es **único por WABA e idioma**: el mismo nombre en `pt_BR` y en
+`en_US` son dos plantillas, y las dos se aceptan. Repetir nombre e idioma en la
+misma cuenta vuelve como `already exists` — incluso cuando la otra se eliminó
+hace menos de 30 días, porque eliminar reserva el nombre por ese período.
+
+<Note>
+  Pasar de 100 creaciones por hora no es error de payload: es cola. Si estás
+  migrando un catálogo de plantillas de una vez, créalas por lotes y espera
+  entre ellos, en lugar de reintentar de inmediato.
+</Note>
+
+## Editar y eliminar
+
+- Una plantilla **aprobada** acepta hasta **10 ediciones en 30 días**, y **una
+  cada 24 horas**. Rechazada y pausada no tienen ese tope.
+- Solo **aprobada, rechazada y pausada** pueden editarse.
+- **Nombre e idioma no cambian.** La categoría de una plantilla aprobada tampoco.
+- La edición **sustituye todos los componentes**: envía el conjunto completo,
+  porque lo que quede fuera se borra.
+- Después de editar, la plantilla vuelve sola a la fila de revisión.
+- Eliminar una plantilla aprobada **reserva su nombre por 30 días**.
+
+## Errores de Meta, y qué significa cada uno
+
+| Código | Mensaje | Qué corregir |
+|---|---|---|
+| `2388029` | The Header field can only have up to 1 variable(s) | dos variables en el encabezado |
+| `2388043` | missing expected field(s) (example) | variable sin ejemplo, o numeración posicional fuera de secuencia |
+| `2388045` | component of type BODY is required | cuerpo o segundo botón en la tarjeta de producto |
+| `2388153` | Text for button type 'X' cannot be modified | etiqueta fija alterada |
+| `2388158` | number of buttons exceeded the limit | tercer botón en la oferta por tiempo limitado |
+| `2388191` | URL is required at index 1 | oferta sin el botón de enlace |
+| `2388193` | Header type TEXT is not allowed | encabezado de texto en la oferta |
+| `2388215` | invalid media sample | enlace del CDN de Meta reenviado |
+| `2388293` | Parameters words ratio exceeds limit | texto corto con muchas variables |
+| `2388299` | Leading or trailing parameters not allowed | variable al inicio o al final |
+| `#192` | is not a valid phone number | teléfono sin el código del país |
+| `380` | media download failed | enlace que el servidor de Meta no consigue descargar |
+
+<Note>
+  Cuando el rechazo viene de Meta, devolvemos su mensaje original junto con el
+  `traceId`. Guarda los dos: son con los que el soporte identifica el caso.
+</Note>

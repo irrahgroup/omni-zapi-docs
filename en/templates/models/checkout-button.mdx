@@ -1,0 +1,197 @@
+---
+title: "Checkout button"
+description: "The invitation to pay: the order goes at send time and the customer pays without leaving WhatsApp"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`checkout_button`
+
+Takes the customer straight to payment.
+
+<TemplatePreview
+  lang="en"
+  body="Your cart is ready: {{item_count}} items, total {{total_amount}}. Review and check out here."
+  buttons={['Review and Pay', 'I need help']}
+  caption="The order — items, subtotal, total and the payment method — opens after the customer taps the button, and goes at send time."
+/>
+
+## How it works
+
+The template is the invitation to pay, approved once. At send time you provide the order: items, quantities, subtotal, total and the payment method (Pix, boleto, link or card).
+
+The customer taps the button, reviews the order and pays **without leaving WhatsApp**, and the payment result arrives on your webhook. The button label is fixed by Meta (`Review and Pay`), translated to the customer's language.
+
+<Warning>
+  Requires **catalog and payments enabled** in Commerce Manager. Without them the template is approved, but the button does not open payment.
+</Warning>
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The message text and the quick replies | Items, quantities, subtotal and total |
+| The payment button, which is fixed | The payment method |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | Fixed | Always `MARKETING` |
+| `BODY` | The text presenting the cart | Up to 1024 characters |
+| `PAYMENT_REQUEST` button | Opens the order review and payment | `text` always `Review and Pay` |
+| `QUICK_REPLY` buttons | Optional, to give the customer a way out | They go **after** the payment button, grouped |
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:checkout_button */}
+```json
+{
+  "name": "exemplo_checkout_button",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Order {{order_number}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "customer_name",
+            "example": "Marina"
+          },
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Reply STOP to opt out"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "PAYMENT_REQUEST",
+          "text": "Review and Pay"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Track order"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:checkout_button */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:checkout_button */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_checkout_button",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{customer_name}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "checkout",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "reference_id": "{{checkout_reference_id}}",
+                    "type": "digital-goods"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "quick_reply",
+              "index": 1,
+              "parameters": [
+                {
+                  "type": "payload",
+                  "payload": "{{quick_reply_payload_2}}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:checkout_button */}
+
+## What Meta rejects here
+
+- A label other than `Review and Pay`, with code `2388153`.
+- A quick reply interleaved with the payment button.
+
+<Note>
+  Order amounts go **in cents** (offset 100: 500.00 is `50000`), and every order needs a unique `reference_id` — that is how the payment status comes back on the webhook.
+</Note>

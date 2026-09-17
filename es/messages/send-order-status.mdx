@@ -1,0 +1,51 @@
+---
+title: "Enviar estado del pedido"
+description: "Actualiza al cliente sobre el avance y el pago"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
+  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
+</Warning>
+
+## Conceptos
+
+Actualiza un pedido ya enviado: cambia el estado e informa la situación del pago. Referencia el pedido por el
+mismo `referenceId` usado en [detalles del pedido](/es/messages/send-order-details).
+
+El campo `content.type` será `ORDER_STATUS`.
+
+<WindowRule lang="es" />
+
+<ChannelSupport type="ORDER_STATUS" lang="es" />
+
+## Cuerpo de la petición
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "ORDER_STATUS",
+    "message": "Tu pago está confirmado y el pedido está en preparación.",
+    "referenceId": "PED-1042",
+    "orderStatus": "processing",
+    "payment": { "status": "captured" }
+  }
+}
+```
+
+## Reglas
+
+| Regla | Valor |
+|---|---|
+| `referenceId` | el mismo del pedido original |
+| Estado del pedido | acompaña el ciclo del pedido, como `processing` y `completed` |
+| Mensaje | obligatorio |
+
+<Note>
+  Este es el único de los tipos de pedido que **no tiene equivalente en plantilla**: solo tiene sentido después
+  de que un pedido ya fue enviado, y a esa altura la ventana está abierta.
+</Note>

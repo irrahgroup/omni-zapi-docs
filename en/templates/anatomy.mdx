@@ -1,0 +1,206 @@
+---
+title: "Template fields"
+description: "What each field does, its limit, and whether it belongs to creation or to send time"
+---
+
+A template is a **mold approved once**. Creation defines the structure and the fixed text; send time fills in what changes on every dispatch. Almost every question about a field is really this one: does it belong to creation or to send time?
+
+<Info>
+  This page explains **what each field is for**. What Meta rejects in each one is in [Validation](/en/templates/validation), and the ready payload for each model is in [Template models](/en/templates/models/overview).
+</Info>
+
+## Identification
+
+The fields at the root of the payload. They apply to the whole template, whatever the model.
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `name` | Internal name, only so you can find and dispatch the template. **The customer never sees it.** | Lowercase, digits and underscore, up to 512 characters. Unique in the account and **cannot change after creation** |
+| `language` | Template language, in Meta's format | `pt_BR`, `en_US`, `es_ES`. **Cannot change.** The name + language pair is what identifies the template at send time |
+| `category` | How Meta charges and where the template can be used | `UTILITY`, `MARKETING` or `AUTHENTICATION`. Several models have a fixed category |
+| `allow_category_change` | If the content doesn't match the chosen category, Meta **adjusts instead of rejecting** | Boolean. Without it, promotional content in `UTILITY` comes back as a rejection |
+| `parameter_format` | Variable syntax | `NAMED` or `POSITIONAL`. Switching rewrites what is already in the text |
+| `message_send_ttl_seconds` | How long Meta keeps trying to deliver before giving up | Range per category. `-1` is a shortcut for 30 days. Empty uses their default: 10 minutes on authentication, 30 days on the rest |
+
+### The three categories
+
+| Category | When to use | Price |
+|---|---|---|
+| `UTILITY` | Follows a customer action: confirmation, status, billing | Cheapest |
+| `MARKETING` | Promotion, offers and re-engagement | Highest |
+| `AUTHENTICATION` | Verification codes. **Meta defines the text** | Per country |
+
+### Send validity range
+
+| Category | `message_send_ttl_seconds` range |
+|---|---|
+| Authentication | 30 to 900 seconds |
+| Utility | 30 to 43200 seconds |
+| Marketing | 43200 to 2592000 seconds |
+
+<Warning>
+  On authentication, the send validity cannot be shorter than the code validity. If the message stops being delivered before the code expires, the customer loses both.
+</Warning>
+
+## Components
+
+Each item in `components` is an object identified by `type`. Which component exists in which model is what [each model page](/en/templates/models/overview) explains.
+
+| `type` | What it is |
+|---|---|
+| `HEADER` | The strip above the message: text, media, map or product |
+| `BODY` | The main text, and the **only** one that accepts line breaks |
+| `FOOTER` | The discreet line below the message |
+| `BUTTONS` | The buttons |
+| `CAROUSEL` | The cards the customer swipes |
+| `LIMITED_TIME_OFFER` | The offer badge with a countdown |
+| `CALL_PERMISSION_REQUEST` | Asks permission to call. Has no other field |
+
+### Header
+
+`format` decides what the header shows, and each format uses different fields.
+
+| `format` | What appears | What to fill in |
+|---|---|---|
+| `TEXT` | A bold line above the message | `text`, up to 60 characters and **at most one** variable |
+| `IMAGE` | An image | The media handle, in `example.header_handle` |
+| `VIDEO` | A video | The same, with a video |
+| `DOCUMENT` | A PDF | The same, with a document |
+| `LOCATION` | A map | Nothing. The address and coordinates go at send time |
+| `PRODUCT` | The catalog item | Nothing. Exists only on single product and on the product carousel card |
+
+<Note>
+  The media you put in at creation is the **sample Meta reviews**, not what the customer receives. The real file for each dispatch goes at send time. The handle comes from [Upload media](/en/templates/upload-media), and we also accept the public link to the file, which we convert before creating the template.
+</Note>
+
+### Message
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `text` | The main message text | Up to 1024 characters, with line breaks |
+| `example` | The sample values Meta's reviewer reads | Required whenever there is a variable |
+| `add_security_recommendation` | Authentication only: adds the "do not share this code" line, written by Meta | Boolean |
+
+### Footer
+
+Fixed text of up to 60 characters, **with no variables**. Usually used for notices such as "Reply STOP to unsubscribe".
+
+On authentication it has another job: `code_expiration_minutes`, from 1 to 90, shows the code validity. Meta writes the sentence, and leaving it empty hides the line.
+
+### Buttons
+
+| `type` | What the button does | Fields |
+|---|---|---|
+| `QUICK_REPLY` | The customer replies with one tap, without typing | `text` |
+| `URL` | Opens an address in the browser | `text`, `url`, `example` |
+| `PHONE_NUMBER` | Calls a number of yours | `text`, `phone_number` |
+| `COPY_CODE` | Copies a code to the clipboard | `example`, which is the code |
+| `VOICE_CALL` | Opens a WhatsApp voice call with your company | `text` |
+| `FLOW` | Opens a WhatsApp flow you have already published | `text` and a reference to the flow |
+| `OTP` | The authentication code button | `otp_type` and, on one and zero tap, the app details |
+| `CATALOG` | Opens the account catalog | Fixed `text` |
+| `SPM` | Opens one catalog product | Fixed `text` |
+| `MPM` | Opens the product showcase | Fixed `text` |
+| `PAYMENT_REQUEST` | Takes the customer to payment | Fixed `text` |
+| `ORDER_DETAILS` | Opens the order invoice | Fixed `text` |
+
+<Warning>
+  On the last five, **the label belongs to Meta**: the `text` field is still required, but the value isn't yours. The table with the exact values is in [Validation](/en/templates/validation).
+</Warning>
+
+Flow buttons accept three references, and you send **one** of them:
+
+| Field | When to use |
+|---|---|
+| `flow_id` | You have the published flow identifier |
+| `flow_name` | You prefer to reference it by name |
+| `flow_json` | You want to create and link the flow in the same call |
+
+`flow_action` says how it opens: `navigate` goes to the screen in `navigate_screen`, `data_exchange` exchanges data with your server.
+
+```json
+{
+  "type": "BUTTONS",
+  "buttons": [
+    {
+      "type": "FLOW",
+      "text": "Book",
+      "flow_id": "1234567890",
+      "flow_action": "navigate",
+      "navigate_screen": "BOOKING"
+    }
+  ]
+}
+```
+
+<Note>
+  Only a **published** flow works in a template. Meta does not accept drafts.
+</Note>
+
+### Carousel cards
+
+Each item in `cards` has its own `components`: the header with the media or the product, the card text (up to 160 characters) and the buttons.
+
+The rule that catches most people: **every card needs the same components**. If one has text, all do; the set of buttons is the same across cards, and what changes from one card to the next is the label and the destination.
+
+## Variables
+
+A variable is the hole in the mold: you write the text once and fill the value on every send.
+
+| Format | How it looks in the text | How it looks in the example |
+|---|---|---|
+| `NAMED` | Each variable has its own name, which keeps the send readable | One object per variable, with `param_name` and `example` |
+| `POSITIONAL` | Numbered in order, starting at 1 | A list, matched by position |
+
+`NAMED` is Meta's current format, and the one our models use. On the positional one, `parameter_format` changes and so does the shape of the example:
+
+```json
+{
+  "parameter_format": "POSITIONAL",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Order {{1}}",
+      "example": { "header_text": ["1042"] }
+    },
+    {
+      "type": "BODY",
+      "text": "Hi {{1}}, your order {{2}} is out for delivery",
+      "example": { "body_text": [["Marina", "1042"]] }
+    }
+  ]
+}
+```
+
+| Where | How many variables |
+|---|---|
+| Text header | 1 |
+| Message | Several, as long as the text keeps up |
+| Footer | None |
+| URL button address | 1, and only at the end of the address |
+| Phone and coupon code | None |
+
+<Warning>
+  Every variable needs an example, and none can open or close the text. Those are the two biggest causes of rejection — the details, with error codes, are in [Validation](/en/templates/validation).
+</Warning>
+
+## Creation and send time: two different things
+
+| Approved at creation | Sent on every dispatch |
+|---|---|
+| Fixed text, buttons, card structure | Variable values |
+| Category and language | Products, order items, Pix code |
+| The media sample Meta reviews | The real media of each send |
+| The offer badge | The moment the offer expires |
+
+That is what lets you use **the same approved template across different campaigns**. Each model says exactly what falls on each side.
+
+<CardGroup cols={2}>
+  <Card title="Choose the model" icon="layer-group" href="/en/templates/models/overview">
+    The 13 models, what each does and which to pick
+  </Card>
+  <Card title="Validation" icon="triangle-exclamation" href="/en/templates/validation">
+    What Meta rejects, with the code for each error
+  </Card>
+</CardGroup>

@@ -1,0 +1,211 @@
+---
+title: "Cupom"
+description: "Mensagem com código de desconto que o cliente copia com um toque"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`coupon_code`
+
+Mensagem com código de desconto copiável.
+
+<TemplatePreview
+  header="Sua recompensa chegou"
+  body="{{nome_do_cliente}}, você ganhou um cupom de 10% na próxima compra. Toque para copiar o código."
+  coupon="VOLTA10"
+  footer="Válido até o fim do mês"
+  buttons={['Copiar código', 'Ver detalhes', 'Falar com a loja', 'Acompanhar pedido']}
+  caption="Código copiável, link, telefone e resposta rápida — as respostas rápidas agrupadas no fim, como a Meta exige."
+/>
+
+## Como funciona
+
+O botão de copiar código é o coração do modelo: o cliente toca e o código vai para a área de transferência, pronto para colar no seu site ou no seu aplicativo.
+
+O código que você põe na criação é a **amostra que o revisor da Meta lê**. O código real de cada envio vai como parâmetro do botão, então a mesma mensagem aprovada serve para campanhas com códigos diferentes.
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O texto da mensagem e o código de exemplo | O valor de cada variável |
+| Os botões e para onde eles levam | O código do cupom daquele disparo |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `category` | Fixa | Sempre `MARKETING` |
+| `HEADER` | Opcional | Texto até 60 caracteres, no máximo uma variável |
+| `BODY` | O texto que apresenta o cupom | Até 1024 caracteres |
+| `FOOTER` | Opcional | Até 60 caracteres |
+| Botão `COPY_CODE` | Copia o código | O `example` é o código: letras, números, hífen e sublinhado, até 20 caracteres. Espaço ou símbolo a Meta recusa |
+| Outros botões | Link, telefone e respostas rápidas | As respostas rápidas ficam **agrupadas**, todas antes ou todas depois dos demais |
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:coupon_code */}
+```json
+{
+  "name": "exemplo_coupon_code",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Pedido {{numero_do_pedido}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Olá {{nome_do_cliente}}, o seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nome_do_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responda SAIR para não receber mais"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "COPY_CODE",
+          "example": "PROMO10"
+        },
+        {
+          "type": "URL",
+          "text": "Ver detalhes",
+          "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+          "example": [
+            "https://z-api.io/pedido/1042"
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "text": "Falar com a loja",
+          "phone_number": "+5511988881234"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Acompanhar pedido"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:coupon_code */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:coupon_code */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_coupon_code",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nome_do_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "quick_reply",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "payload",
+                  "payload": "{{quick_reply_payload_1}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 1,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{url_suffix_2}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "phone_number",
+              "index": 2,
+              "parameters": []
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:coupon_code */}
+
+## O que a Meta recusa aqui
+
+- Código com espaço, acento ou símbolo, ou acima de 20 caracteres.
+- Mais de um botão de copiar código.
+- Resposta rápida no meio dos outros botões: elas precisam ficar juntas.
+- Variável no código do cupom, que não é aceita.

@@ -1,0 +1,202 @@
+---
+title: "Oferta por tempo limitado"
+description: "Selo de oferta com contagem regressiva, e o prazo definido em cada envio"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`limited_time_offer`
+
+Promoção com contador de expiração.
+
+<TemplatePreview
+  headerKind="imagem ou vídeo da promoção"
+  headerIcon="image"
+  offer="20% de desconto"
+  body="{{nome_do_cliente}}, sua oferta acaba em poucas horas. Use o cupom antes que expire."
+  coupon="VOLTA10"
+  buttons={['Copiar código', 'Aproveitar agora']}
+  caption="O selo traz o texto da oferta, e o WhatsApp mostra um contador ao vivo até o prazo que vai no envio."
+/>
+
+## Como funciona
+
+O componente `LIMITED_TIME_OFFER` põe um selo acima da mensagem e, se você quiser, um contador ao vivo.
+
+**A data não entra na criação**: ela vai em cada disparo, no parâmetro `expiration_time_ms`. Assim a mesma oferta aprovada serve para prazos diferentes.
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O texto do selo e se há contador | O instante em que a oferta expira |
+| A mídia do cabeçalho | O valor de cada variável |
+| O código de exemplo do cupom | O código daquele disparo |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `category` | Fixa | Sempre `MARKETING` |
+| `HEADER` | A mídia da promoção | **Imagem ou vídeo.** Cabeçalho de texto a Meta recusa aqui |
+| `limited_time_offer.text` | O texto do selo, como "20% de desconto" | Até 16 caracteres |
+| `limited_time_offer.has_expiration` | Mostra a contagem regressiva | Booleano. O instante do fim vai no envio |
+| `BODY` | O texto da promoção | Até 1024 caracteres |
+| Botões | Copiar código e link | **Exatamente dois**, e o de link é obrigatório |
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:limited_time_offer */}
+```json
+{
+  "name": "exemplo_limited_time_offer",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "IMAGE",
+      "example": {
+        "header_handle": [
+          "4::aW1hZ2UvcG5n"
+        ]
+      }
+    },
+    {
+      "type": "LIMITED_TIME_OFFER",
+      "limited_time_offer": {
+        "text": "20% de desconto",
+        "has_expiration": true
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Olá {{nome_do_cliente}}, o seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nome_do_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "COPY_CODE",
+          "example": "PROMO10"
+        },
+        {
+          "type": "URL",
+          "text": "Ver detalhes",
+          "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+          "example": [
+            "https://z-api.io/pedido/1042"
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:limited_time_offer */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:limited_time_offer */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_limited_time_offer",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "image",
+                  "image": {
+                    "id": "{{header_media_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nome_do_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "limited_time_offer",
+              "parameters": [
+                {
+                  "type": "limited_time_offer",
+                  "limited_time_offer": {
+                    "expiration_time_ms": "{{expiration_time_ms}}"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{url_suffix_1}}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:limited_time_offer */}
+
+## O que a Meta recusa aqui
+
+| Código | O que aconteceu |
+|---|---|
+| `2388193` | Cabeçalho de texto: aqui só imagem ou vídeo |
+| `2388191` | Oferta sem o botão de link |
+| `2388158` | Um terceiro botão |
+
+O texto do selo acima de 16 caracteres também volta como recusa.

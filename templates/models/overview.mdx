@@ -1,0 +1,109 @@
+---
+title: "Escolher o modelo"
+description: "Os 13 modelos de template, o que cada um faz e qual usar em cada caso"
+---
+
+Criar um template começa aqui: o modelo define **quais campos existem** nele e o que a Meta cobra em cada um. É a primeira decisão, e ela não muda depois — para trocar de modelo, você cria outro template.
+
+Cada página de modelo termina com os dois JSON prontos, o que cria e o que envia. A chamada em si, com rota, respostas e erros, está na [Referência da API](/templates/create-template) ao fim deste grupo.
+
+<Note>
+  As pré-visualizações nas páginas de modelo são **aproximações** de como a mensagem chega no aparelho, para você ver o formato antes de criar. O desenho final é do WhatsApp e muda entre versões do aplicativo.
+</Note>
+
+<Note>
+  Doze modelos são estruturas fechadas, com campos e botões que a Meta fixa. O décimo terceiro, a [mensagem customizada](/templates/models/custom), é o aberto: texto livre, os botões que você quiser, sem amarra de catálogo ou pagamento. Na dúvida, é ele.
+</Note>
+
+## Qual usar
+
+| Modelo | Para que serve | Categoria | Dados no envio |
+|---|---|---|---|
+| [Mensagem customizada](/templates/models/custom) | Texto livre com variáveis, cabeçalho e botões | Você escolhe | Variáveis |
+| [Código de acesso](/templates/models/authentication) | Envio de OTP. A Meta define o texto | `AUTHENTICATION` | O código |
+| [Catálogo](/templates/models/catalog) | Abre o catálogo completo da loja no WhatsApp | `MARKETING` | Produto da capa |
+| [Produto único](/templates/models/spm) | Um produto do catálogo com foto, nome e preço | `MARKETING` | O produto |
+| [Multi-produto](/templates/models/mpm) | Vitrine com seções e vários produtos | `MARKETING` | Até 30 produtos |
+| [Botão de checkout](/templates/models/checkout-button) | Leva o cliente direto para o pagamento | `MARKETING` | O pedido inteiro |
+| [Detalhes do pedido](/templates/models/order-details) | A fatura com itens e total, e o botão de pagar | `UTILITY` | Itens, total, Pix |
+| [Cupom](/templates/models/coupon-code) | Mensagem com código de desconto copiável | `MARKETING` | Variáveis |
+| [Oferta por tempo limitado](/templates/models/limited-time-offer) | Promoção com contador de expiração | `MARKETING` | O prazo |
+| [Carrossel de mídia](/templates/models/media-card-carousel) | Até 10 cartões com imagem ou vídeo | `MARKETING` | A mídia de cada cartão |
+| [Carrossel de produtos](/templates/models/product-card-carousel) | Cartões puxados do seu catálogo | `MARKETING` | Os produtos |
+| [Template Library](/templates/models/library) | Modelo pronto da biblioteca da Meta | Do modelo | Variáveis |
+| [Permissão de chamada](/templates/models/call-permission-request) | Pede autorização para ligar pelo WhatsApp | `UTILITY` ou `MARKETING` | Variáveis |
+
+<Info>
+  **Dados no envio** é a coluna que mais economiza retrabalho. Ela diz o que **não** entra na criação porque muda a cada disparo — e é por isso que o mesmo template aprovado serve para campanhas diferentes.
+</Info>
+
+## Por uso
+
+<CardGroup cols={2}>
+  <Card title="Mensagem customizada" icon="pen-to-square" href="/templates/models/custom">
+    O modelo aberto. Texto livre com variáveis, cabeçalho e botões
+  </Card>
+  <Card title="Código de acesso" icon="key" href="/templates/models/authentication">
+    OTP com botão de copiar, um toque ou zero toque
+  </Card>
+</CardGroup>
+
+### Comércio
+
+<CardGroup cols={2}>
+  <Card title="Catálogo" icon="store" href="/templates/models/catalog">
+    Abre o catálogo completo da conta
+  </Card>
+  <Card title="Produto único" icon="tag" href="/templates/models/spm">
+    Um produto, com foto, nome e preço
+  </Card>
+  <Card title="Multi-produto" icon="grip" href="/templates/models/mpm">
+    Vitrine com seções, montada no envio
+  </Card>
+  <Card title="Botão de checkout" icon="credit-card" href="/templates/models/checkout-button">
+    O convite ao pagamento
+  </Card>
+  <Card title="Detalhes do pedido" icon="receipt" href="/templates/models/order-details">
+    A fatura, com Pix ou link de pagamento
+  </Card>
+</CardGroup>
+
+### Promoção
+
+<CardGroup cols={2}>
+  <Card title="Cupom" icon="ticket" href="/templates/models/coupon-code">
+    Código de desconto copiável
+  </Card>
+  <Card title="Oferta por tempo limitado" icon="clock" href="/templates/models/limited-time-offer">
+    Selo de oferta com contagem regressiva
+  </Card>
+</CardGroup>
+
+### Carrossel
+
+<CardGroup cols={2}>
+  <Card title="Carrossel de mídia" icon="images" href="/templates/models/media-card-carousel">
+    De 2 a 10 cartões com imagem ou vídeo
+  </Card>
+  <Card title="Carrossel de produtos" icon="cart-shopping" href="/templates/models/product-card-carousel">
+    Cartões vindos do catálogo
+  </Card>
+</CardGroup>
+
+### Outros
+
+<CardGroup cols={2}>
+  <Card title="Template Library" icon="book" href="/templates/models/library">
+    Modelo pronto da Meta, sem revisão
+  </Card>
+  <Card title="Permissão de chamada" icon="phone" href="/templates/models/call-permission-request">
+    Autorização para ligar pelo WhatsApp
+  </Card>
+</CardGroup>
+
+## O que vale para todos
+
+- O modelo **não muda** depois de criado, e o nome e o idioma também não.
+- Todo template nasce `PENDING` e vira `APPROVED` ou `REJECTED`. Use [Sincronizar templates](/templates/sync-templates) para forçar a atualização do status.
+- Os campos comuns a todos os modelos estão em [Campos do template](/templates/anatomy); o que a Meta recusa, em [Validações](/templates/validation).
+- O payload de cada modelo vive na página dele, e só ali. O playground da [Referência da API](/templates/create-template) monta um corpo em branco a partir do schema, para você colar o seu.

@@ -1,0 +1,164 @@
+---
+title: "Producto único"
+description: "Un producto del catálogo, con foto, nombre y precio que llegan en el envío"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`spm`
+
+Un producto del catálogo con foto, nombre y precio, y el botón que lo abre.
+
+<TemplatePreview
+  lang="es"
+  headerKind="imagen del producto, viene del catálogo"
+  headerIcon="product"
+  productLine={true}
+  body="Este es el producto por el que preguntaste. Toca para ver los detalles y comprar."
+  footer="Stock limitado"
+  buttons={['Ver']}
+  caption="Imagen, nombre y precio salen del catálogo en el envío. El texto del botón es fijo de Meta."
+/>
+
+## Cómo funciona
+
+La plantilla se aprueba una vez, sin ningún producto: el encabezado va con `format: PRODUCT`, que es un espacio reservado. El producto — foto, nombre y precio — sale del catálogo **en el envío**, identificado por `catalog_id` y `product_retailer_id`.
+
+Es el modelo para responder sobre un ítem específico: la misma plantilla aprobada sirve para cualquier producto de la cuenta.
+
+## En la creación y en el envío
+
+| En la creación | En el envío |
+|---|---|
+| El texto del mensaje y del pie | El producto, con foto, nombre y precio |
+| El encabezado `PRODUCT`, vacío | |
+
+## Campos de este modelo
+
+| Campo | Para qué sirve | Regla |
+|---|---|---|
+| `category` | Fija | Siempre `MARKETING` |
+| `HEADER` | El espacio del producto | `format: PRODUCT`, nada más |
+| `BODY` | El texto al lado del producto | Hasta 160 caracteres |
+| `FOOTER` | Opcional | Hasta 60 caracteres |
+| Botón `SPM` | Abre el producto en el catálogo | Etiqueta fija: `Ver` en plantilla `pt_BR`, `View` en las demás |
+
+<Warning>
+  La etiqueta del `SPM` es el caso que más confunde: en la **misma** plantilla `pt_BR`, Meta exige `Ver` para el `SPM` y `View items`, en inglés, para el `MPM`. No hay regla de idioma; los dos se midieron en rechazos.
+</Warning>
+
+## JSON completo
+
+Son dos JSON: uno **crea** la plantilla, y Meta la aprueba una vez. El otro **envía** el mensaje, y va en cada disparo, con los valores de ese envío en las variables marcadas con llaves.
+
+### 1. Crear la plantilla
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver en [Referencia de la API](/es/templates/create-template).
+
+{/* payload:spm */}
+```json
+{
+  "name": "exemplo_spm",
+  "category": "MARKETING",
+  "language": "es_ES",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "PRODUCT"
+    },
+    {
+      "type": "BODY",
+      "text": "Hola {{nombre_del_cliente}}, tu pedido {{numero_del_pedido}} quedó confirmado y sale hoy para entrega.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nombre_del_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_del_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responde BAJA para no recibir más mensajes"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "SPM",
+          "text": "View"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:spm */}
+
+### 2. Enviar después de la aprobación
+
+`POST /v1/channels/{channelId}/messages` — ver en [Enviar plantilla](/es/messages/send-template).
+
+{/* send:spm */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_spm",
+          "language": {
+            "policy": "deterministic",
+            "code": "es_ES"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nombre_del_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_del_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "product",
+                  "product": {
+                    "catalog_id": "{{catalog_id}}",
+                    "product_retailer_id": "{{product_retailer_id}}"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:spm */}
+
+## Lo que Meta rechaza aquí
+
+- Etiqueta distinta de la exigida en el botón, con el código `2388153`.
+- Cuerpo de más de 160 caracteres.
+- Encabezado de texto o de multimedia en lugar del `PRODUCT`.

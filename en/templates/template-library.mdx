@@ -14,4 +14,77 @@ This endpoint lists what is available for your WABA.
   The library is defined by Meta and varies by category and language. You cannot add templates to it.
 </Note>
 
-To create a regular template, which does go through review, use [Create template](/en/templates/create-template).
+To create a regular template, which does go through review, use [API reference](/en/templates/create-template).
+
+## How to find out which models exist
+
+The list belongs to Meta and changes over time, so you query it instead of
+memorizing it. The endpoint above returns the models available to your WABA,
+and each one comes with its topic and use case.
+
+<Note>
+  On Meta's Graph API, the search (`GET /message_template_library`) accepts the
+  `topic`, `usecase`, `industry` and `language` filters, plus `search` and
+  `name`. **Our route does not pass those filters through today**: it returns
+  the list, and the filtering is yours to do. The values below are there so you
+  can recognize the topic and the use case of each model in the response.
+</Note>
+
+### Topics and use cases
+
+| Filter | Values |
+|---|---|
+| Topic | `ACCOUNT_UPDATE`, `CUSTOMER_FEEDBACK`, `ORDER_MANAGEMENT`, `PAYMENTS` |
+| Industry | `E_COMMERCE`, `FINANCIAL_SERVICES` |
+
+The use cases Meta publishes, by topic:
+
+| Topic | Use cases |
+|---|---|
+| `ORDER_MANAGEMENT` | `ORDER_CONFIRMATION`, `ORDER_ACTION_NEEDED`, `ORDER_DELAY`, `ORDER_PICK_UP`, `ORDER_OR_TRANSACTION_CANCEL`, `DELIVERY_CONFIRMATION`, `DELIVERY_UPDATE`, `DELIVERY_FAILED`, `SHIPMENT_CONFIRMATION`, `RETURN_CONFIRMATION` |
+| `PAYMENTS` | `PAYMENT_CONFIRMATION`, `PAYMENT_DUE_REMINDER`, `PAYMENT_OVERDUE`, `PAYMENT_ACTION_REQUIRED`, `PAYMENT_SCHEDULED`, `PAYMENT_REJECT_FAIL`, `AUTO_PAY_REMINDER`, `LOW_BALANCE_WARNING`, `RECEIPT_ATTACHMENT`, `STATEMENT_ATTACHMENT`, `STATEMENT_AVAILABLE`, `TRANSACTION_ALERT` |
+| `ACCOUNT_UPDATE` | `ACCOUNT_CREATION_CONFIRMATION`, `FRAUD_ALERT` |
+| `CUSTOMER_FEEDBACK` | `FEEDBACK_SURVEY` |
+
+Model names usually end in a number, such as `delivery_update_1` or
+`low_balance_warning_1`: that is what goes in `library_template_name`.
+
+## Creating from a model
+
+Creation uses the same [API reference](/en/templates/create-template)
+endpoint, but the body is different: instead of `components`, you send the
+model name and the inputs it accepts.
+
+```json
+{
+  "name": "delivery_notice",
+  "category": "UTILITY",
+  "language": "en_US",
+  "library_template_name": "delivery_update_1",
+  "library_template_body_inputs": [
+    { "add_contact_number": true, "add_track_package_link": true }
+  ],
+  "library_template_button_inputs": [
+    {
+      "type": "URL",
+      "url": {
+        "base_url": "https://yourstore.com/order/{{1}}",
+        "url_suffix_example": "https://yourstore.com/order/1042"
+      }
+    },
+    { "type": "PHONE_NUMBER", "phone_number": "+5511988881234" }
+  ]
+}
+```
+
+The body text belongs to Meta: you do not write the message, you only turn on
+or off the sentences the model offers (`add_contact_number`,
+`add_learn_more_link`, `add_security_recommendation`,
+`add_track_package_link`) and provide the data for the buttons it asks for.
+
+<Note>
+  A model used **as is** starts out approved. Meta's docs say customizing
+  changes that: *"If you choose Customize template, your template will have to
+  go through review before you are able to send messages."* If you change the
+  content, it goes back into the normal review queue.
+</Note>

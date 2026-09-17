@@ -1,0 +1,47 @@
+---
+title: "Pedir ubicación"
+description: "Muestra un botón que pide la ubicación del cliente"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
+  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
+</Warning>
+
+## Conceptos
+
+Manda un mensaje con el botón **Enviar ubicación**. El cliente lo toca y WhatsApp devuelve su punto a tu
+webhook.
+
+Es lo contrario de [enviar ubicación](/es/messages/send-location): acá quien manda el punto es el cliente.
+
+El campo `content.type` será `LOCATION_REQUEST`.
+
+<WindowRule lang="es" />
+
+<ChannelSupport type="LOCATION_REQUEST" lang="es" />
+
+## Cuerpo de la petición
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "LOCATION_REQUEST",
+    "message": "Para calcular el envío, toca abajo y manda tu ubicación."
+  }
+}
+```
+
+## Reglas
+
+| Regla | Valor |
+|---|---|
+| Texto | hasta 1024 caracteres |
+| Etiqueta del botón | fija de WhatsApp, traducida al idioma del cliente |
+
+La respuesta llega como un mensaje de ubicación común, con latitud, longitud y, cuando el cliente lo permite,
+nombre y dirección.

@@ -1,0 +1,51 @@
+---
+title: "Send order status"
+description: "Update the customer on progress and payment"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
+  shape and plan the integration — the body below is what will apply when it ships.
+</Warning>
+
+## Overview
+
+Updates an order already sent: changes the status and reports the payment situation. It references the order
+by the same `referenceId` used in [order details](/en/messages/send-order-details).
+
+The `content.type` field will be `ORDER_STATUS`.
+
+<WindowRule lang="en" />
+
+<ChannelSupport type="ORDER_STATUS" lang="en" />
+
+## Request body
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "ORDER_STATUS",
+    "message": "Your payment is confirmed and the order is being packed.",
+    "referenceId": "ORD-1042",
+    "orderStatus": "processing",
+    "payment": { "status": "captured" }
+  }
+}
+```
+
+## Rules
+
+| Rule | Value |
+|---|---|
+| `referenceId` | the same as the original order |
+| Order status | follows the order cycle, such as `processing` and `completed` |
+| Message | required |
+
+<Note>
+  This is the only one of the order types with **no template equivalent**: it only makes sense after an order
+  has already been sent, and by then the window is open.
+</Note>

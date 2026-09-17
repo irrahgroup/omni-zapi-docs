@@ -1,0 +1,51 @@
+---
+title: "Enviar status do pedido"
+description: "Atualize o cliente sobre o andamento e o pagamento"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
+  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
+</Warning>
+
+## Conceituação
+
+Atualiza um pedido já enviado: muda o status e informa a situação do pagamento. Referencia o pedido pelo
+mesmo `referenceId` usado em [detalhes do pedido](/messages/send-order-details).
+
+O campo `content.type` será `ORDER_STATUS`.
+
+<WindowRule lang="pt" />
+
+<ChannelSupport type="ORDER_STATUS" lang="pt" />
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "ORDER_STATUS",
+    "message": "Seu pagamento foi confirmado e o pedido está em separação.",
+    "referenceId": "PED-1042",
+    "orderStatus": "processing",
+    "payment": { "status": "captured" }
+  }
+}
+```
+
+## Regras
+
+| Regra | Valor |
+|---|---|
+| `referenceId` | o mesmo do pedido original |
+| Status do pedido | acompanha o ciclo do pedido, como `processing` e `completed` |
+| Mensagem | obrigatória |
+
+<Note>
+  Este é o único dos tipos de pedido que **não tem equivalente em template**: ele só faz sentido depois que
+  um pedido já foi enviado, e a essa altura a janela está aberta.
+</Note>

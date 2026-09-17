@@ -1,0 +1,45 @@
+---
+title: "Send product"
+description: "Send one catalog product, with photo, name and price"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
+  shape and plan the integration — the body below is what will apply when it ships.
+</Warning>
+
+## Overview
+
+Sends a single catalog product. The photo, the name and the price come from Commerce Manager.
+
+The `content.type` field will be `PRODUCT`.
+
+<WindowRule lang="en" template="for single product" href="/en/templates/models/spm" />
+
+<ChannelSupport type="PRODUCT" lang="en" />
+
+## Request body
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "PRODUCT",
+    "message": "This is the product you asked about.",
+    "footer": "Limited stock",
+    "catalogId": "1234567890",
+    "productRetailerId": "SKU-1042"
+  }
+}
+```
+
+## Rules
+
+| Rule | Value |
+|---|---|
+| `catalogId` and `productRetailerId` | both required |
+| Message and footer | optional |
+| Non-existent SKU | Meta rejects it and does not deliver the message |

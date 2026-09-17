@@ -1,0 +1,95 @@
+---
+title: "Send option list"
+description: "Send a list of sections and options the customer picks with one tap"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
+  shape and plan the integration — the body and the limits below are the ones that will apply when it ships.
+
+  In the meantime, to offer options use [quick reply buttons](/en/messages/send-interactive-button),
+  which take up to 3 options.
+</Warning>
+
+## Overview
+
+Sends a message with a list of options grouped into sections. The customer taps the button, opens the list
+and picks a row; the choice comes back on your webhook.
+
+The `content.type` field will be `INTERACTIVE_LIST`.
+
+It is the format for when the options don't fit in buttons: a menu, a service catalog, time slots, branches.
+Up to 3 options, prefer [quick reply buttons](/en/messages/send-interactive-button), which take one tap less.
+
+<ChannelSupport type="INTERACTIVE_LIST" lang="en" />
+
+## Request body
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "INTERACTIVE_LIST",
+    "header": "Menu",
+    "message": "Pick an option",
+    "footer": "Delivery in 40 min",
+    "button": "See options",
+    "sections": [
+      {
+        "title": "Pizzas",
+        "rows": [
+          { "id": "pizza_marg", "title": "Margherita", "description": "Sauce, mozzarella and basil" },
+          { "id": "pizza_pep", "title": "Pepperoni", "description": "Sauce, mozzarella and pepperoni" }
+        ]
+      },
+      {
+        "title": "Drinks",
+        "rows": [
+          { "id": "soda_can", "title": "Soda can", "description": "350 ml" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+`header` and `footer` are optional. The `id` of each row is yours to choose and is what comes back on the
+webhook when the customer selects it.
+
+## Meta's limits
+
+| Rule | Limit |
+|---|---|
+| Sections | 10 |
+| Rows | **10 across all sections combined** |
+| Button text | 20 characters |
+| Row title | 24 characters |
+| Row description | 72 characters |
+| Row `id` | unique within the message |
+
+<Warning>
+  The row limit is a **total**, not per section. Ten sections with ten rows each is rejected — the maximum is
+  ten rows spread across whatever sections you want.
+</Warning>
+
+## The customer's answer
+
+When the customer picks a row, your webhook receives the choice with the same `id` you sent:
+
+```json
+{
+  "id": "pizza_marg",
+  "title": "Margherita",
+  "description": "Sauce, mozzarella and basil"
+}
+```
+
+The `id` is how your application identifies the option, without depending on the displayed text — which can
+change without breaking the integration.
+
+<Note>
+  Details of the Official WhatsApp rule in [conversation window](/en/conversation-window). See the
+  [what each channel accepts](/en/channels/message-support) for all channels.
+</Note>
