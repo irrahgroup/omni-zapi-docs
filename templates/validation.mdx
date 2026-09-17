@@ -9,7 +9,7 @@ que cada uma gera.
 
 <Note>
   O que a estrutura do payload já diz (limite de caractere, tipos aceitos,
-  quantidade) está declarado no schema de [Criar template](/templates/create-template):
+  quantidade) está declarado no schema de [Referência da API](/templates/create-template):
   o playground mostra campo por campo. Esta página é para as regras que o
   schema não expressa.
 </Note>
@@ -132,12 +132,21 @@ Duas variáveis coladas, sem texto entre elas, também costumam ser recusadas.
 | Botões no total | 10 |
 | Botões de link | 2 |
 | Botões de telefone | 1 |
+| Botões de código de cupom | 1 |
+| Respostas rápidas | 10 |
 | Botões por cartão de carrossel | 2, ou 1 no de produto |
 
-### A ordem importa
+### As respostas rápidas ficam todas juntas
 
-As respostas rápidas vêm **todas primeiro**, e os demais botões depois. A Meta
-recusa quando a ordem mistura os dois grupos.
+A Meta não exige que elas venham primeiro: exige que os botões fiquem em
+**dois grupos**, o das respostas rápidas e o dos demais. Resposta rápida no
+meio de outros tipos é recusada.
+
+| Aceito | Recusado |
+|---|---|
+| resposta rápida, resposta rápida | resposta rápida, link, resposta rápida |
+| resposta rápida, resposta rápida, link, telefone | link, resposta rápida, link |
+| link, telefone, resposta rápida, resposta rápida | |
 
 ### Formato do endereço e do telefone
 
@@ -167,8 +176,27 @@ Telefone e código de cupom não aceitam variável.
 ### Rótulos que a Meta escreve
 
 Em catálogo, multi-produto, produto único, checkout, pedido e no código de
-autenticação, **o texto do botão é da Meta**. Se você mandar outro, ela recusa
-dizendo qual é o certo (código `2388153`), então mande o dela ou omita o campo.
+autenticação, **o texto do botão é da Meta**. O campo `text` continua
+obrigatório: o que muda é que o valor não é seu. Mandar outro é recusado com
+o código `2388153`, e a resposta diz qual era o certo.
+
+| Botão | `text` |
+|---|---|
+| `CATALOG` | `View catalog` |
+| `MPM` | `View items` |
+| `SPM` | `Ver` em template `pt_BR`, `View` nos outros |
+| `PAYMENT_REQUEST` | `Review and Pay` |
+| `ORDER_DETAILS` | `Copy Pix code` |
+
+<Warning>
+  Não existe regra de idioma aqui. No **mesmo** template `pt_BR`, a Meta cobra
+  `Ver` para o `SPM` e `View items`, em inglês, para o `MPM`. Os dois foram
+  medidos em recusa. Quando ela recusa, a mensagem diz o texto exigido: use
+  aquele.
+</Warning>
+
+O app do WhatsApp traduz o rótulo para o idioma de quem recebe, então o valor
+que você manda na criação não é o que o cliente lê.
 
 ## Carrossel
 
@@ -206,6 +234,11 @@ O link precisa abrir para um servidor, e não só no navegador. Loja e blog
 costumam bloquear download automático, e aí a Meta responde
 `media download failed`, código `380`.
 
+A imagem de cabeçalho é exibida em **1.91:1**, deitada. O que sair dessa
+proporção não é recusado: o WhatsApp corta as sobras para caber, e o corte é
+pelo centro. Vale montar a arte já nessa medida, ou aceitar que as bordas
+somem no aparelho do cliente.
+
 ## Validade do envio
 
 `message_send_ttl_seconds` tem faixa por categoria:
@@ -219,6 +252,28 @@ costumam bloquear download automático, e aí a Meta responde
 O valor `-1` é atalho de 30 dias. Em autenticação, a validade do envio não pode
 ser menor que a do código: se a mensagem para de ser entregue antes, o cliente
 perde as duas coisas.
+
+## Quantos templates cabem na conta
+
+Os limites abaixo são **da conta**, e não do template que você está criando.
+Por isso a recusa deles confunde: ela não fala de nada que esteja no seu
+payload.
+
+| Limite | Valor |
+|---|---|
+| Templates por WABA | **250**, ou **6.000** com o portfólio verificado e um número com nome de exibição aprovado |
+| Criação por hora, por WABA | **100** |
+
+O nome é **único por WABA e idioma**: o mesmo nome em `pt_BR` e em `en_US` são
+dois templates, e são aceitos. Repetir nome e idioma na mesma conta volta como
+`already exists` — inclusive quando o outro foi excluído há menos de 30 dias,
+porque excluir reserva o nome por esse período.
+
+<Note>
+  Passar de 100 criações por hora não é erro de payload: é fila. Se você está
+  migrando um catálogo de templates de uma vez, crie em lotes e espere entre
+  eles, em vez de tentar de novo na hora.
+</Note>
 
 ## Editar e excluir
 

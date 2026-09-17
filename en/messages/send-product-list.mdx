@@ -1,0 +1,58 @@
+---
+title: "Send multi-product"
+description: "Build a showcase with sections and up to 30 products"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
+  shape and plan the integration — the body below is what will apply when it ships.
+</Warning>
+
+## Overview
+
+Sends a showcase with catalog products grouped into sections. The customer browses, fills a cart and sends
+the order back.
+
+The `content.type` field will be `PRODUCT_LIST`.
+
+<WindowRule lang="en" template="for multi-product" href="/en/templates/models/mpm" />
+
+<ChannelSupport type="PRODUCT_LIST" lang="en" />
+
+## Request body
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "PRODUCT_LIST",
+    "header": "This week's picks",
+    "message": "We picked a few products for you.",
+    "footer": "We ship nationwide",
+    "catalogId": "1234567890",
+    "sections": [
+      {
+        "title": "T-shirts",
+        "products": [
+          { "productRetailerId": "SKU-1042" },
+          { "productRetailerId": "SKU-1043" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Rules
+
+| Rule | Value |
+|---|---|
+| Products | up to **30** across all sections |
+| Header | text only |
+| Valid products | at least one SKU must exist in the catalog |
+
+The order the customer builds arrives on your webhook as an order message. Payment is the next step: reply
+with [order details](/en/messages/send-order-details) or with a link.

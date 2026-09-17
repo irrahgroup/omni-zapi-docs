@@ -1,0 +1,159 @@
+---
+title: "Catálogo"
+description: "Abre o catálogo completo da loja dentro do WhatsApp"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`catalog`
+
+Abre o catálogo completo da loja no WhatsApp.
+
+<TemplatePreview
+  headerKind="imagem do produto, vem do catálogo"
+  headerIcon="catalog"
+  body="Chegaram novidades na loja. Toque no botão abaixo para ver o catálogo completo."
+  footer="Preços válidos enquanto durar o estoque"
+  buttons={['Ver catálogo']}
+  caption="A imagem do topo é o produto de capa, escolhido no envio pelo SKU."
+/>
+
+## Como funciona
+
+O template é aprovado uma vez e abre o catálogo que está conectado à sua conta no **Commerce Manager**. O botão é fixo da Meta (`View catalog`), e o WhatsApp o traduz para o idioma do cliente.
+
+No envio você escolhe o produto da capa pelo SKU; sem isso, a Meta usa o primeiro item da conta.
+
+O cliente navega o catálogo dentro do WhatsApp, monta o carrinho e manda o pedido de volta, que chega no seu webhook como mensagem de pedido. **O pagamento é o passo seguinte**: você responde com [detalhes do pedido](/templates/models/order-details) ou com um link.
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O texto da mensagem e do rodapé | O produto da capa, pelo SKU |
+| O botão, que é fixo | |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `category` | Fixa | Sempre `MARKETING` |
+| `BODY` | O texto que convida a abrir o catálogo | Até 1024 caracteres |
+| `FOOTER` | Opcional | Até 60 caracteres |
+| Botão `CATALOG` | Abre o catálogo da conta | `text` sempre `View catalog`. A Meta não aceita link aqui |
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:catalog */}
+```json
+{
+  "name": "exemplo_catalog",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Olá {{nome_do_cliente}}, o seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nome_do_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responda SAIR para não receber mais"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "CATALOG",
+          "text": "View catalog"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:catalog */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:catalog */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_catalog",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nome_do_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "catalog",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "thumbnail_product_retailer_id": "{{thumbnail_product_retailer_id}}"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:catalog */}
+
+## O que a Meta recusa aqui
+
+- Rótulo diferente de `View catalog` no botão, com o código `2388153`.
+- Cabeçalho: este modelo não tem. O topo vem do catálogo.
+
+<Note>
+  Sem catálogo conectado no Commerce Manager, o template é aprovado mas o botão abre vazio para o cliente.
+</Note>

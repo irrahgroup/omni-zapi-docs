@@ -1,0 +1,52 @@
+---
+title: "Enviar reacción"
+description: "Reacciona con un emoji a un mensaje de la conversación"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
+  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
+</Warning>
+
+## Conceptos
+
+Aplica un emoji a un mensaje que ya está en la conversación. Para quitarlo, manda la misma reacción con el
+emoji vacío.
+
+El campo `content.type` será `REACTION`.
+
+<WindowRule lang="es" />
+
+<ChannelSupport type="REACTION" lang="es" />
+
+## Cuerpo de la petición
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "REACTION",
+    "messageId": "wamid.HBgNNTUxMTk5OTk5OTk5ORUCABIYFjNBMDI...",
+    "emoji": "👍"
+  }
+}
+```
+
+Para quitarla, manda `"emoji": ""`.
+
+## Reglas
+
+| Regla | Valor |
+|---|---|
+| Edad del mensaje objetivo | menos de **30 días** |
+| Emoji | uno solo, como carácter o secuencia unicode |
+| Reaccionar a una reacción | no se acepta |
+| Mensaje borrado | no se acepta |
+
+<Note>
+  La reacción solo genera webhook de **enviado**. No hay confirmación de entrega ni de lectura. Un objetivo
+  inválido vuelve con el código `131009`.
+</Note>

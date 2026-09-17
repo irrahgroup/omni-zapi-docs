@@ -1,0 +1,238 @@
+---
+title: "Detalhes do pedido"
+description: "A fatura com itens e total, e o botão que abre o pagamento por Pix ou link"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`order_details`
+
+A fatura do pedido com itens e total, e o botão que abre o pagamento por Pix ou link.
+
+<TemplatePreview
+  header="Pedido {{numero_do_pedido}}"
+  body="Seu pedido está pronto! Confira os detalhes abaixo e finalize o pagamento."
+  order={true}
+  footer="Pagamento processado pelo WhatsApp"
+  buttons={['Copiar código Pix']}
+  caption="A fatura é desenhada pelo WhatsApp com o que vai no envio: itens, quantidades, subtotal, taxas e total."
+/>
+
+## Como funciona
+
+A criação leva cabeçalho, mensagem, rodapé e o botão fixo. **A fatura não existe aqui**: itens, subtotal, total e o código Pix mudam a cada pedido e vão no envio.
+
+<Tabs>
+  <Tab title="Pix">
+    O cliente toca no botão, vê a fatura e paga com Pix Copia e Cola no app do banco.
+
+    - O código Pix é gerado do seu lado (banco ou gateway), com o valor daquele pedido, e vai no envio. A Meta só transporta.
+    - No envio vão também os dados de quem recebe: nome, tipo de chave e chave. O nome aparece para o cliente conferir antes de pagar.
+    - A conta precisa estar habilitada para pagamentos no Brasil. Sem isso o template é aprovado, mas o pagamento não abre.
+  </Tab>
+  <Tab title="Link de pagamento">
+    O cliente toca no botão, vê a fatura e é levado para a sua página de pagamento.
+
+    - O link vai no envio, um por pedido, então serve para gateway, boleto, cartão ou o que você já usa.
+    - Nada de chave Pix aqui: quem cobra é a sua página, e ela recebe o cliente já com o pedido identificado.
+    - Use HTTPS e uma página que abra no celular, porque o cliente sai do WhatsApp para pagar.
+  </Tab>
+</Tabs>
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O cabeçalho, a mensagem e o rodapé | Itens, subtotal e total |
+| O botão, que é fixo | O código Pix ou o link de pagamento |
+| | Os dados do recebedor e o tipo de mercadoria |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `category` | Fixa | Sempre `UTILITY` |
+| `HEADER` | Opcional. Costuma levar o número do pedido | Texto até 60 caracteres, no máximo uma variável |
+| `BODY` | O texto que apresenta a fatura | Até 1024 caracteres |
+| `FOOTER` | Opcional | Até 60 caracteres |
+| Botão `ORDER_DETAILS` | Abre a fatura e o pagamento | `text` sempre `Copy Pix code` |
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:order_details */}
+```json
+{
+  "name": "exemplo_order_details",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Pedido {{numero_do_pedido}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Olá {{nome_do_cliente}}, o seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nome_do_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responda SAIR para não receber mais"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "ORDER_DETAILS",
+          "text": "Copy Pix code"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:order_details */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:order_details */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_order_details",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nome_do_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "order_details",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "order_details": {
+                      "reference_id": "{{reference_id}}",
+                      "type": "physical-goods",
+                      "payment_type": "br",
+                      "payment_settings": [
+                        {
+                          "type": "pix_dynamic_code",
+                          "pix_dynamic_code": {
+                            "code": "{{pix_code}}",
+                            "merchant_name": "Loja do João LTDA",
+                            "key": "39580525000189",
+                            "key_type": "CNPJ"
+                          }
+                        }
+                      ],
+                      "currency": "BRL",
+                      "total_amount": {
+                        "value": "{{total_value}}",
+                        "offset": 100
+                      },
+                      "order": {
+                        "status": "pending",
+                        "items": [
+                          {
+                            "retailer_id": "{{item_1_retailer_id}}",
+                            "name": "{{item_1_name}}",
+                            "amount": {
+                              "value": "{{item_1_value}}",
+                              "offset": 100
+                            },
+                            "quantity": "{{item_1_quantity}}"
+                          }
+                        ],
+                        "subtotal": {
+                          "value": "{{subtotal_value}}",
+                          "offset": 100
+                        },
+                        "tax": {
+                          "value": "{{tax_value}}",
+                          "offset": 100,
+                          "description": "{{tax_description}}"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:order_details */}
+
+## O que a Meta recusa aqui
+
+- Rótulo diferente de `Copy Pix code`: *"Text for button type 'ORDER_DETAILS' cannot be modified and must always be 'Copy Pix code'"*, código `2388153`.
+
+<Note>
+  Dois detalhes que a Meta cobra no envio: os valores vão **em centavos** (offset 100, então R$ 500,00 é `50000`) e cada pedido precisa de um `reference_id` único, que é por onde o status do pagamento volta no webhook.
+</Note>

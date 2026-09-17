@@ -1,0 +1,203 @@
+---
+title: "Limited time offer"
+description: "Offer badge with a countdown, and the deadline set on every send"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`limited_time_offer`
+
+Promotion with an expiration counter.
+
+<TemplatePreview
+  lang="en"
+  headerKind="promotion image or video"
+  headerIcon="image"
+  offer="20% off"
+  body="{{customer_name}}, your offer ends in a few hours. Use the coupon before it expires."
+  coupon="BACK10"
+  buttons={['Copy code', 'Get it now']}
+  caption="The badge carries the offer text, and WhatsApp shows a live counter until the deadline that goes at send time."
+/>
+
+## How it works
+
+The `LIMITED_TIME_OFFER` component puts a badge above the message and, if you want, a live counter.
+
+**The date does not go in at creation**: it travels with each dispatch, in the `expiration_time_ms` parameter. That way one approved offer serves different deadlines.
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The badge text and whether there is a counter | The moment the offer expires |
+| The header media | The value of each variable |
+| The sample coupon code | The code for that dispatch |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | Fixed | Always `MARKETING` |
+| `HEADER` | The promotion media | **Image or video.** Meta rejects a text header here |
+| `limited_time_offer.text` | The badge text, such as "20% off" | Up to 16 characters |
+| `limited_time_offer.has_expiration` | Shows the countdown | Boolean. The end moment goes at send time |
+| `BODY` | The promotion text | Up to 1024 characters |
+| Buttons | Copy code and URL | **Exactly two**, and the URL one is required |
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:limited_time_offer */}
+```json
+{
+  "name": "exemplo_limited_time_offer",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "IMAGE",
+      "example": {
+        "header_handle": [
+          "4::aW1hZ2UvcG5n"
+        ]
+      }
+    },
+    {
+      "type": "LIMITED_TIME_OFFER",
+      "limited_time_offer": {
+        "text": "20% off",
+        "has_expiration": true
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "customer_name",
+            "example": "Marina"
+          },
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "COPY_CODE",
+          "example": "PROMO10"
+        },
+        {
+          "type": "URL",
+          "text": "See details",
+          "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+          "example": [
+            "https://z-api.io/pedido/1042"
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:limited_time_offer */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:limited_time_offer */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_limited_time_offer",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "image",
+                  "image": {
+                    "id": "{{header_media_id}}"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{customer_name}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "limited_time_offer",
+              "parameters": [
+                {
+                  "type": "limited_time_offer",
+                  "limited_time_offer": {
+                    "expiration_time_ms": "{{expiration_time_ms}}"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{url_suffix_1}}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:limited_time_offer */}
+
+## What Meta rejects here
+
+| Code | What happened |
+|---|---|
+| `2388193` | Text header: here it is image or video only |
+| `2388191` | Offer without the URL button |
+| `2388158` | A third button |
+
+Badge text over 16 characters also comes back as a rejection.

@@ -1,0 +1,55 @@
+---
+title: "Enviar documento"
+description: "Envie PDF, planilha ou qualquer arquivo de até 100 MB"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
+  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
+</Warning>
+
+## Conceituação
+
+Envia um arquivo para o contato. O WhatsApp mostra o ícone conforme a extensão e o nome que você informar.
+
+O campo `content.type` será `DOCUMENT`.
+
+<WindowRule lang="pt" template="com cabeçalho de documento" href="/templates/models/custom" />
+
+<ChannelSupport type="DOCUMENT" lang="pt" />
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "DOCUMENT",
+    "attachments": [
+      {
+        "url": "https://sualoja.com/nota-fiscal.pdf",
+        "fileName": "nota-fiscal.pdf",
+        "caption": "Segue a sua nota fiscal"
+      }
+    ]
+  }
+}
+```
+
+## Regras
+
+| Regra | Valor |
+|---|---|
+| Tamanho | até 100 MB |
+| Tipos | PDF, Word, Excel, PowerPoint, texto |
+| Legenda | até 1024 caracteres |
+| `fileName` | **com extensão** — é ela que define o ícone que o cliente vê |
+
+<Warning>
+  O `fileName` vai com a extensão, como `nota-fiscal.pdf`. Na camada de compatibilidade Z-API existe hoje um
+  defeito conhecido nesse campo: com extensão o arquivo chega como `nota-fiscal.pdf.pdf`, e sem extensão
+  chega como `nota-fiscal.null`.
+</Warning>

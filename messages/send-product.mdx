@@ -1,0 +1,45 @@
+---
+title: "Enviar produto"
+description: "Mande um produto do catálogo, com foto, nome e preço"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
+  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
+</Warning>
+
+## Conceituação
+
+Envia um único produto do catálogo. A foto, o nome e o preço vêm do Commerce Manager.
+
+O campo `content.type` será `PRODUCT`.
+
+<WindowRule lang="pt" template="de produto único" href="/templates/models/spm" />
+
+<ChannelSupport type="PRODUCT" lang="pt" />
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "PRODUCT",
+    "message": "Este é o produto que você perguntou.",
+    "footer": "Estoque limitado",
+    "catalogId": "1234567890",
+    "productRetailerId": "SKU-1042"
+  }
+}
+```
+
+## Regras
+
+| Regra | Valor |
+|---|---|
+| `catalogId` e `productRetailerId` | os dois obrigatórios |
+| Mensagem e rodapé | opcionais |
+| SKU inexistente | a Meta recusa e não entrega a mensagem |

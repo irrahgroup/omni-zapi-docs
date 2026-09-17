@@ -1,18 +1,190 @@
-export const ChannelSupport = ({
-  whatsapp = 'yes',
-  web = 'yes',
-  instagram = 'yes',
-  messenger = 'yes',
-  telegram = 'yes',
-  lang = 'pt',
-}) => {
+export const ChannelSupport = ({ type, lang = 'pt' }) => {
+  const MATRIX = {
+    TEXT: ['yes', 'yes', 'yes', 'yes', 'yes'],
+    IMAGE: ['yes', 'yes', 'yes', 'yes', 'yes'],
+    AUDIO: ['yes', 'yes', 'yes', 'yes', 'yes'],
+    VIDEO: ['yes', 'yes', 'yes', 'yes', 'yes'],
+    DOCUMENT: ['yes', 'yes', 'yes', 'yes', 'yes'],
+    STICKER: ['yes', 'yes', 'partial', 'partial', 'yes'],
+    LOCATION: ['yes', 'yes', 'no', 'no', 'yes'],
+    LOCATION_REQUEST: ['yes', 'no', 'no', 'no', 'yes'],
+    CONTACT: ['yes', 'yes', 'no', 'no', 'yes'],
+    REACTION: ['yes', 'yes', 'yes', 'unknown', 'yes'],
+    INTERACTIVE_BUTTON: ['yes', 'yes', 'yes', 'yes', 'yes'],
+    INTERACTIVE_ACTION: ['yes', 'yes', 'partial', 'yes', 'partial'],
+    INTERACTIVE_LIST: ['yes', 'yes', 'no', 'no', 'no'],
+    FLOW: ['yes', 'no', 'no', 'no', 'no'],
+    CATALOG: ['yes', 'partial', 'no', 'no', 'no'],
+    PRODUCT: ['yes', 'partial', 'no', 'no', 'no'],
+    PRODUCT_LIST: ['yes', 'no', 'no', 'no', 'no'],
+    ORDER_DETAILS: ['yes', 'partial', 'no', 'partial', 'partial'],
+    ORDER_STATUS: ['yes', 'partial', 'no', 'no', 'no'],
+    TEMPLATE: ['yes', 'no', 'no', 'yes', 'no'],
+  };
+
+  const COMMERCE_WEB = {
+    pt: 'Passa pela compatibilidade com a Z-API, e só funciona se o número conectado for uma conta **WhatsApp Business** com produtos cadastrados. Número pessoal não tem catálogo, então não há o que enviar.',
+    en: 'It goes through the Z-API compatibility layer, and only works if the connected number is a **WhatsApp Business** account with registered products. A personal number has no catalog, so there is nothing to send.',
+    es: 'Pasa por la compatibilidad con Z-API, y solo funciona si el número conectado es una cuenta **WhatsApp Business** con productos registrados. Un número personal no tiene catálogo, así que no hay nada que enviar.',
+  };
+
+  const NOTES = {
+    STICKER: [
+      [2, 'partial', {
+        pt: 'O Instagram aceita só o sticker de coração. O seu arquivo `.webp` não passa por lá.',
+        en: 'Instagram accepts only the heart sticker. Your own `.webp` file does not go through.',
+        es: 'Instagram acepta solo el sticker de corazón. Tu archivo `.webp` no pasa por ahí.',
+      }],
+      [3, 'partial', {
+        pt: 'O Messenger aceita só os stickers do catálogo público da Meta, escolhidos por identificador, e o joinha. Arquivo seu não passa.',
+        en: 'Messenger accepts only the public stickers from Meta catalog, picked by id, plus the thumbs-up. Your own file does not go through.',
+        es: 'Messenger acepta solo los stickers del catálogo público de Meta, elegidos por identificador, y el pulgar arriba. Tu archivo no pasa.',
+      }],
+    ],
+    LOCATION: [
+      [2, 'no', {
+        pt: 'Instagram e Messenger não têm mensagem de localização. Se precisar mandar um endereço por lá, mande como texto ou como link de mapa.',
+        en: 'Instagram and Messenger have no location message. To send an address there, send it as text or as a map link.',
+        es: 'Instagram y Messenger no tienen mensaje de ubicación. Para enviar una dirección allí, mándala como texto o como enlace de mapa.',
+      }],
+    ],
+    CONTACT: [
+      [2, 'no', {
+        pt: 'Instagram e Messenger não têm cartão de contato. Por lá, o jeito é mandar o telefone escrito no texto.',
+        en: 'Instagram and Messenger have no contact card. There, the way out is writing the phone number in the text.',
+        es: 'Instagram y Messenger no tienen tarjeta de contacto. Allí, la salida es escribir el teléfono en el texto.',
+      }],
+    ],
+    LOCATION_REQUEST: [
+      [4, 'info', {
+        pt: 'No Telegram isso não é um tipo de mensagem: é um botão de teclado que pede a localização. Para o cliente dá no mesmo, ele toca e a localização chega.',
+        en: 'On Telegram this is not a message type: it is a keyboard button that asks for the location. For the customer it is the same, they tap and the location arrives.',
+        es: 'En Telegram esto no es un tipo de mensaje: es un botón de teclado que pide la ubicación. Para el cliente da igual, toca y la ubicación llega.',
+      }],
+    ],
+    REACTION: [
+      [3, 'unknown', {
+        pt: 'No Messenger nós recebemos a reação do cliente, mas não achamos na documentação da Meta a confirmação de que a empresa pode reagir. Assim que confirmarmos, esta célula muda.',
+        en: 'On Messenger we do receive the customer reaction, but we could not find confirmation in Meta documentation that the business can react. As soon as we confirm it, this cell changes.',
+        es: 'En Messenger recibimos la reacción del cliente, pero no encontramos en la documentación de Meta la confirmación de que la empresa pueda reaccionar. Cuando lo confirmemos, esta celda cambia.',
+      }],
+    ],
+    INTERACTIVE_ACTION: [
+      [2, 'partial', {
+        pt: 'No Instagram só o botão de link funciona. Botão de ligar não existe na plataforma.',
+        en: 'On Instagram only the link button works. There is no call button on the platform.',
+        es: 'En Instagram solo funciona el botón de enlace. El botón de llamar no existe en la plataforma.',
+      }],
+      [4, 'partial', {
+        pt: 'No Telegram só o botão de link funciona. O teclado dele não tem botão de ligar.',
+        en: 'On Telegram only the link button works. Its keyboard has no call button.',
+        es: 'En Telegram solo funciona el botón de enlace. Su teclado no tiene botón de llamar.',
+      }],
+    ],
+    INTERACTIVE_LIST: [
+      [2, 'no', {
+        pt: 'Instagram e Messenger não têm mensagem de lista, e o teclado do Telegram não tem lista com seções. Nos três, o caminho é quebrar as opções em botões.',
+        en: 'Instagram and Messenger have no list message, and the Telegram keyboard has no sectioned list. On all three, the way out is breaking the options into buttons.',
+        es: 'Instagram y Messenger no tienen mensaje de lista, y el teclado de Telegram no tiene lista con secciones. En los tres, la salida es dividir las opciones en botones.',
+      }],
+    ],
+    FLOW: [
+      [1, 'no', {
+        pt: 'O Flow é um formulário da plataforma oficial da Meta. Nenhum outro canal tem equivalente, nem a conexão não oficial do WhatsApp.',
+        en: 'The Flow is a form from Meta official platform. No other channel has an equivalent, not even the unofficial WhatsApp connection.',
+        es: 'El Flow es un formulario de la plataforma oficial de Meta. Ningún otro canal tiene equivalente, ni la conexión no oficial de WhatsApp.',
+      }],
+    ],
+    CATALOG: [[1, 'partial', COMMERCE_WEB]],
+    PRODUCT: [[1, 'partial', COMMERCE_WEB]],
+    ORDER_STATUS: [[1, 'partial', COMMERCE_WEB]],
+    PRODUCT_LIST: [
+      [1, 'no', {
+        pt: 'Mandar vários produtos numa mensagem só existe na plataforma oficial. Na conexão não oficial dá para mandar um produto por vez.',
+        en: 'Sending several products in one message exists only on the official platform. On the unofficial connection you can send one product at a time.',
+        es: 'Enviar varios productos en un mensaje existe solo en la plataforma oficial. En la conexión no oficial puedes enviar un producto por vez.',
+      }],
+    ],
+    ORDER_DETAILS: [
+      [1, 'partial', COMMERCE_WEB],
+      [3, 'partial', {
+        pt: 'No Messenger o equivalente é o comprovante de pedido: mostra itens, total e forma de pagamento, mas é o registro de uma compra já feita. Não tem botão de pagar.',
+        en: 'On Messenger the equivalent is the order receipt: it shows items, total and payment method, but it is the record of a purchase already made. There is no pay button.',
+        es: 'En Messenger el equivalente es el comprobante de pedido: muestra artículos, total y forma de pago, pero es el registro de una compra ya hecha. No tiene botón de pagar.',
+      }],
+      [4, 'partial', {
+        pt: 'No Telegram o equivalente é a fatura, que cobra dentro do app. Ela exige um provedor de pagamento configurado no bot.',
+        en: 'On Telegram the equivalent is the invoice, which collects payment inside the app. It requires a payment provider configured on the bot.',
+        es: 'En Telegram el equivalente es la factura, que cobra dentro de la app. Exige un proveedor de pago configurado en el bot.',
+      }],
+    ],
+    TEMPLATE: [
+      [3, 'info', {
+        pt: 'No Messenger o que existe é o Utility Template, aprovado pela Meta por página e só na categoria de utilidade. Não é o mesmo template do WhatsApp.',
+        en: 'On Messenger what exists is the Utility Template, approved by Meta per page and only in the utility category. It is not the same template as WhatsApp.',
+        es: 'En Messenger lo que existe es la Utility Template, aprobada por Meta por página y solo en la categoría de utilidad. No es la misma plantilla de WhatsApp.',
+      }],
+      [1, 'no', {
+        pt: 'WhatsApp Web, Instagram e Telegram não têm template, e também não precisam: só a Meta Cloud API tem janela de 24 horas para reabrir.',
+        en: 'WhatsApp Web, Instagram and Telegram have no template, and they do not need one: only Meta Cloud API has a 24-hour window to reopen.',
+        es: 'WhatsApp Web, Instagram y Telegram no tienen plantilla, y tampoco la necesitan: sola Meta Cloud API tiene ventana de 24 horas para reabrir.',
+      }],
+    ],
+  };
+
   const L = {
-    pt: { title: 'Disponibilidade por canal', win: 'No WhatsApp Oficial exige a janela de 24 horas aberta. Nos outros canais não há janela.', names: ['WhatsApp Oficial', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'] },
-    en: { title: 'Availability per channel', win: 'On WhatsApp Official it requires the 24-hour window to be open. The other channels have no window.', names: ['WhatsApp Official', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'] },
-    es: { title: 'Disponibilidad por canal', win: 'En WhatsApp Oficial exige que la ventana de 24 horas esté abierta. Los demás canales no tienen ventana.', names: ['WhatsApp Oficial', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'] },
+    pt: {
+      title: 'Disponibilidade por canal',
+      names: ['Meta Cloud API', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'],
+      only: 'Só na Meta Cloud API, e exige a janela de 24 horas aberta.',
+      win: 'Na Meta Cloud API exige a janela de 24 horas aberta. Nos outros canais que aceitam este tipo não há janela.',
+      more: 'Como ler esta tabela e o que muda em cada canal',
+      href: '/channels/message-support',
+      missing: 'Tipo sem linha na matriz de canais.',
+    },
+    en: {
+      title: 'Availability per channel',
+      names: ['Meta Cloud API', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'],
+      only: 'Meta Cloud API only, and it requires the 24-hour window to be open.',
+      win: 'On Meta Cloud API it requires the 24-hour window to be open. The other channels that accept this type have no window.',
+      more: 'How to read this table and what changes on each channel',
+      href: '/en/channels/message-support',
+      missing: 'Type missing from the channel matrix.',
+    },
+    es: {
+      title: 'Disponibilidad por canal',
+      names: ['Meta Cloud API', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'],
+      only: 'Solo en Meta Cloud API, y exige que la ventana de 24 horas esté abierta.',
+      win: 'En Meta Cloud API exige que la ventana de 24 horas esté abierta. Los demás canales que aceptan este tipo no tienen ventana.',
+      more: 'Cómo leer esta tabla y qué cambia en cada canal',
+      href: '/es/channels/message-support',
+      missing: 'Tipo sin fila en la matriz de canales.',
+    },
   }[lang];
-  const mark = (v) => (v === 'yes' ? '✅' : v === 'partial' ? '⚠️' : '❌');
-  const vals = [whatsapp, web, instagram, messenger, telegram];
+
+  const vals = MATRIX[type];
+  if (!vals) {
+    return <p><strong>{L.missing}</strong></p>;
+  }
+
+  const rich = (text) =>
+    text
+      .split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+      .map((part, i) =>
+        part.startsWith('**') ? (
+          <strong key={i}>{part.slice(2, -2)}</strong>
+        ) : part.startsWith('`') ? (
+          <code key={i}>{part.slice(1, -1)}</code>
+        ) : (
+          part
+        ),
+      );
+
+  const mark = (v) => (v === 'yes' ? '✅' : v === 'partial' ? '⚠️' : v === 'unknown' ? '🔍' : '❌');
+  const icon = { partial: '⚠️', unknown: '🔍', info: 'ℹ️', no: '❌' };
+  const supported = vals.filter((v) => v !== 'no').length;
+  const notes = NOTES[type] || [];
+
   return (
     <div>
       <p><strong>{L.title}</strong></p>
@@ -24,7 +196,20 @@ export const ChannelSupport = ({
           <tr>{vals.map((v, i) => <td key={i} style={{ textAlign: 'center' }}>{mark(v)}</td>)}</tr>
         </tbody>
       </table>
-      {whatsapp === 'yes' && <p>{L.win}</p>}
+
+      {vals[0] === 'yes' && <p>{supported === 1 ? L.only : L.win}</p>}
+
+      {notes.length > 0 && (
+        <ul>
+          {notes.map((note, i) => (
+            <li key={i}>
+              {icon[note[1]]} <strong>{L.names[note[0]]}</strong>: {rich(note[2][lang])}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p><a href={L.href}>{L.more}</a></p>
     </div>
   );
 };

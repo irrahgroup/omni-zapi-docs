@@ -1,0 +1,196 @@
+---
+title: "Botão de checkout"
+description: "O convite ao pagamento: o pedido vai no envio e o cliente paga sem sair do WhatsApp"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`checkout_button`
+
+Leva o cliente direto para o pagamento.
+
+<TemplatePreview
+  body="Seu carrinho está pronto: {{quantidade_de_itens}} itens, total de {{valor_total}}. Revise e finalize por aqui."
+  buttons={['Revisar e pagar', 'Preciso de ajuda']}
+  caption="O pedido — itens, subtotal, total e a forma de pagamento — abre depois que o cliente toca no botão, e vai no envio."
+/>
+
+## Como funciona
+
+O template é o convite ao pagamento, aprovado uma vez. No envio você manda o pedido: itens, quantidades, subtotal, total e a forma de pagamento (Pix, boleto, link ou cartão).
+
+O cliente toca no botão, revisa o pedido e paga **sem sair do WhatsApp**, e o resultado do pagamento chega no seu webhook. O texto do botão é fixo da Meta (`Review and Pay`), traduzido para o idioma do cliente.
+
+<Warning>
+  Exige **catálogo e pagamentos habilitados** no Commerce Manager. Sem isso o template é aprovado, mas o botão não abre o pagamento.
+</Warning>
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O texto da mensagem e as respostas rápidas | Itens, quantidades, subtotal e total |
+| O botão de pagamento, que é fixo | A forma de pagamento |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `category` | Fixa | Sempre `MARKETING` |
+| `BODY` | O texto que apresenta o carrinho | Até 1024 caracteres |
+| Botão `PAYMENT_REQUEST` | Abre a revisão do pedido e o pagamento | `text` sempre `Review and Pay` |
+| Botões `QUICK_REPLY` | Opcionais, para dar saída ao cliente | Vão **depois** do botão de pagamento, agrupados |
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:checkout_button */}
+```json
+{
+  "name": "exemplo_checkout_button",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Pedido {{numero_do_pedido}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Olá {{nome_do_cliente}}, o seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nome_do_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responda SAIR para não receber mais"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "PAYMENT_REQUEST",
+          "text": "Review and Pay"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Acompanhar pedido"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:checkout_button */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:checkout_button */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_checkout_button",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nome_do_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "checkout",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "reference_id": "{{checkout_reference_id}}",
+                    "type": "digital-goods"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "quick_reply",
+              "index": 1,
+              "parameters": [
+                {
+                  "type": "payload",
+                  "payload": "{{quick_reply_payload_2}}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:checkout_button */}
+
+## O que a Meta recusa aqui
+
+- Rótulo diferente de `Review and Pay`, com o código `2388153`.
+- Resposta rápida intercalada com o botão de pagamento.
+
+<Note>
+  Os valores do pedido vão **em centavos** (offset 100: R$ 500,00 é `50000`), e cada pedido precisa de um `reference_id` único — é por ele que o status do pagamento volta no webhook.
+</Note>

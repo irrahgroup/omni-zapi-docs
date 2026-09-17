@@ -1,0 +1,220 @@
+---
+title: "Carrusel de productos"
+description: "Tarjetas que vienen del catálogo: creado con 2, enviado con hasta 10"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`product_card_carousel`
+
+Tarjetas que salen de tu catálogo.
+
+<TemplatePreview
+  lang="es"
+  body="Elegimos algunos productos para ti. Desliza para verlos."
+  cards={[{ media: 'producto del catálogo', product: true, button: 'Ver' }, { media: 'producto del catálogo', product: true, button: 'Ver' }]}
+  caption="La tarjeta de producto no tiene texto: imagen, nombre y precio salen del catálogo en el envío, y el botón es fijo."
+/>
+
+## Cómo funciona
+
+Cada tarjeta es un espacio reservado para un producto: imagen, nombre y precio salen del catálogo **en el envío**, y eliges qué producto en cada disparo.
+
+La asimetría que atrapa a todos: Meta exige **exactamente 2 tarjetas en la creación**, pero acepta **hasta 10 en el envío**.
+
+## En la creación y en el envío
+
+| En la creación | En el envío |
+|---|---|
+| El mensaje arriba de las tarjetas | Los productos, hasta 10 |
+| Exactamente 2 tarjetas vacías | La foto, el nombre y el precio de cada uno |
+
+## Campos de este modelo
+
+| Campo | Para qué sirve | Regla |
+|---|---|---|
+| `category` | Fija | Siempre `MARKETING` |
+| `BODY` | El mensaje arriba de las tarjetas | Hasta 1024 caracteres |
+| `CAROUSEL.cards` | Las tarjetas | **Exactamente 2** en la creación |
+| `HEADER` de la tarjeta | El espacio del producto | `format: PRODUCT`, nada más |
+| `BUTTONS` de la tarjeta | El botón de la tarjeta | **Un único** botón `SPM`, con la etiqueta fija |
+
+<Warning>
+  La tarjeta de producto **no tiene texto**. Mandar un cuerpo en la tarjeta, o un segundo botón, vuelve como `component of type BODY is required`, código `2388045`, que no describe la causa.
+</Warning>
+
+## JSON completo
+
+Son dos JSON: uno **crea** la plantilla, y Meta la aprueba una vez. El otro **envía** el mensaje, y va en cada disparo, con los valores de ese envío en las variables marcadas con llaves.
+
+### 1. Crear la plantilla
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver en [Referencia de la API](/es/templates/create-template).
+
+{/* payload:product_card_carousel */}
+```json
+{
+  "name": "exemplo_product_card_carousel",
+  "category": "MARKETING",
+  "language": "es_ES",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Hola {{nombre_del_cliente}}, tu pedido {{numero_del_pedido}} quedó confirmado y sale hoy para entrega.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nombre_del_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_del_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "CAROUSEL",
+      "cards": [
+        {
+          "components": [
+            {
+              "type": "HEADER",
+              "format": "PRODUCT"
+            },
+            {
+              "type": "BUTTONS",
+              "buttons": [
+                {
+                  "type": "SPM",
+                  "text": "View"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "components": [
+            {
+              "type": "HEADER",
+              "format": "PRODUCT"
+            },
+            {
+              "type": "BUTTONS",
+              "buttons": [
+                {
+                  "type": "SPM",
+                  "text": "View"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:product_card_carousel */}
+
+### 2. Enviar después de la aprobación
+
+`POST /v1/channels/{channelId}/messages` — ver en [Enviar plantilla](/es/messages/send-template).
+
+{/* send:product_card_carousel */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_product_card_carousel",
+          "language": {
+            "policy": "deterministic",
+            "code": "es_ES"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nombre_del_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_del_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "carousel",
+              "cards": [
+                {
+                  "card_index": 0,
+                  "components": [
+                    {
+                      "type": "header",
+                      "parameters": [
+                        {
+                          "type": "product",
+                          "product": {
+                            "catalog_id": "{{catalog_id}}",
+                            "product_retailer_id": "{{card_1_product_retailer_id}}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "button",
+                      "sub_type": "spm",
+                      "index": 0
+                    }
+                  ]
+                },
+                {
+                  "card_index": 1,
+                  "components": [
+                    {
+                      "type": "header",
+                      "parameters": [
+                        {
+                          "type": "product",
+                          "product": {
+                            "catalog_id": "{{catalog_id}}",
+                            "product_retailer_id": "{{card_2_product_retailer_id}}"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "button",
+                      "sub_type": "spm",
+                      "index": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:product_card_carousel */}
+
+## Lo que Meta rechaza aquí
+
+- Cantidad de tarjetas distinta de 2 en la creación.
+- Texto en la tarjeta de producto.
+- Dos botones en la misma tarjeta.
+- Etiqueta distinta de la exigida en el botón `SPM`: `Ver` en plantilla `pt_BR`, `View` en las demás.

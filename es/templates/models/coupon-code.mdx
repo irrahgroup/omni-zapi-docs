@@ -1,0 +1,212 @@
+---
+title: "Cupón"
+description: "Mensaje con un código de descuento que el cliente copia con un toque"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`coupon_code`
+
+Mensaje con un código de descuento que se copia con un toque.
+
+<TemplatePreview
+  lang="es"
+  header="Llegó tu recompensa"
+  body="{{nombre_del_cliente}}, ganaste un cupón de 10% en tu próxima compra. Toca para copiar el código."
+  coupon="VUELVE10"
+  footer="Válido hasta fin de mes"
+  buttons={['Copiar código', 'Ver detalles', 'Llamar a la tienda', 'Seguir pedido']}
+  caption="Código que se copia, enlace, teléfono y respuesta rápida — las respuestas rápidas agrupadas al final, como exige Meta."
+/>
+
+## Cómo funciona
+
+El botón de copiar código es el corazón del modelo: el cliente toca y el código va al portapapeles, listo para pegar en tu sitio o en tu aplicación.
+
+El código que pones en la creación es la **muestra que lee el revisor de Meta**. El código real de cada envío va como parámetro del botón, así que el mismo mensaje aprobado sirve para campañas con códigos distintos.
+
+## En la creación y en el envío
+
+| En la creación | En el envío |
+|---|---|
+| El texto del mensaje y el código de ejemplo | El valor de cada variable |
+| Los botones y adónde llevan | El código del cupón de ese disparo |
+
+## Campos de este modelo
+
+| Campo | Para qué sirve | Regla |
+|---|---|---|
+| `category` | Fija | Siempre `MARKETING` |
+| `HEADER` | Opcional | Texto hasta 60 caracteres, como máximo una variable |
+| `BODY` | El texto que presenta el cupón | Hasta 1024 caracteres |
+| `FOOTER` | Opcional | Hasta 60 caracteres |
+| Botón `COPY_CODE` | Copia el código | El `example` es el código: letras, números, guion y guion bajo, hasta 20 caracteres. Meta rechaza espacios y símbolos |
+| Otros botones | Enlace, teléfono y respuestas rápidas | Las respuestas rápidas quedan **agrupadas**, todas antes o todas después de los demás |
+
+## JSON completo
+
+Son dos JSON: uno **crea** la plantilla, y Meta la aprueba una vez. El otro **envía** el mensaje, y va en cada disparo, con los valores de ese envío en las variables marcadas con llaves.
+
+### 1. Crear la plantilla
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver en [Referencia de la API](/es/templates/create-template).
+
+{/* payload:coupon_code */}
+```json
+{
+  "name": "exemplo_coupon_code",
+  "category": "MARKETING",
+  "language": "es_ES",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Pedido {{numero_del_pedido}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "numero_del_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hola {{nombre_del_cliente}}, tu pedido {{numero_del_pedido}} quedó confirmado y sale hoy para entrega.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nombre_del_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_del_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responde BAJA para no recibir más mensajes"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "COPY_CODE",
+          "example": "PROMO10"
+        },
+        {
+          "type": "URL",
+          "text": "Ver detalles",
+          "url": "https://z-api.io/pedido/{{numero_do_pedido}}",
+          "example": [
+            "https://z-api.io/pedido/1042"
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "text": "Hablar con la tienda",
+          "phone_number": "+5511988881234"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Seguir mi pedido"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:coupon_code */}
+
+### 2. Enviar después de la aprobación
+
+`POST /v1/channels/{channelId}/messages` — ver en [Enviar plantilla](/es/messages/send-template).
+
+{/* send:coupon_code */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_coupon_code",
+          "language": {
+            "policy": "deterministic",
+            "code": "es_ES"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{numero_del_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nombre_del_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_del_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "quick_reply",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "payload",
+                  "payload": "{{quick_reply_payload_1}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 1,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{url_suffix_2}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "phone_number",
+              "index": 2,
+              "parameters": []
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:coupon_code */}
+
+## Lo que Meta rechaza aquí
+
+- Código con espacio, acento o símbolo, o de más de 20 caracteres.
+- Más de un botón de copiar código.
+- Respuesta rápida en medio de los otros botones: tienen que quedar juntas.
+- Variable en el código del cupón, que no se acepta.

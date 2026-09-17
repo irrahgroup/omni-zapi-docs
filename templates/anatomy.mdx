@@ -1,0 +1,206 @@
+---
+title: "Campos do template"
+description: "O que cada campo faz, o limite dele, e se ele vale na criação ou no envio"
+---
+
+O template é um **molde aprovado uma vez**. A criação define a estrutura e o texto fixo; o envio preenche o que muda a cada disparo. Quase toda dúvida sobre um campo é, no fundo, esta pergunta: ele vale na criação ou no envio?
+
+<Info>
+  Esta página explica **para que serve cada campo**. O que a Meta recusa em cada um está em [Validações](/templates/validation), e o payload pronto de cada modelo está em [Modelos de template](/templates/models/overview).
+</Info>
+
+## Identificação
+
+Os campos da raiz do payload. Valem para o template inteiro, qualquer que seja o modelo.
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `name` | Nome interno, só para você achar e disparar o template. **O cliente nunca vê.** | Minúsculas, números e sublinhado, até 512 caracteres. Único na conta e **não muda depois de criado** |
+| `language` | Idioma do template, no formato da Meta | `pt_BR`, `en_US`, `es_ES`. **Não muda depois.** É o par nome + idioma que identifica o template no envio |
+| `category` | Como a Meta cobra e onde o template pode ser usado | `UTILITY`, `MARKETING` ou `AUTHENTICATION`. Vários modelos têm categoria fixa |
+| `allow_category_change` | Se o conteúdo não combinar com a categoria escolhida, a Meta **ajusta em vez de reprovar** | Booleano. Sem ele, conteúdo promocional em `UTILITY` volta como recusa |
+| `parameter_format` | Sintaxe das variáveis | `NAMED` ou `POSITIONAL`. Trocar reescreve o que já está no texto |
+| `message_send_ttl_seconds` | Quanto tempo a Meta tenta entregar antes de desistir | Faixa por categoria. `-1` é atalho de 30 dias. Em branco vale o padrão dela: 10 minutos em autenticação, 30 dias no resto |
+
+### As três categorias
+
+| Categoria | Quando usar | Preço |
+|---|---|---|
+| `UTILITY` | Acompanha uma ação do cliente: confirmação, status, cobrança | Mais barato |
+| `MARKETING` | Divulgação, oferta e retomada de contato | Mais alto |
+| `AUTHENTICATION` | Códigos de verificação. **O texto é definido pela Meta** | Por país |
+
+### Faixa da validade do envio
+
+| Categoria | Faixa de `message_send_ttl_seconds` |
+|---|---|
+| Autenticação | 30 a 900 segundos |
+| Utility | 30 a 43200 segundos |
+| Marketing | 43200 a 2592000 segundos |
+
+<Warning>
+  Em autenticação, a validade do envio não pode ser menor que a do código. Se a mensagem para de ser entregue antes de o código expirar, o cliente perde as duas coisas.
+</Warning>
+
+## Componentes
+
+Cada item de `components` é um objeto identificado pelo `type`. Qual componente existe em qual modelo é o que [cada página de modelo](/templates/models/overview) explica.
+
+| `type` | O que é |
+|---|---|
+| `HEADER` | A faixa acima da mensagem: texto, mídia, mapa ou produto |
+| `BODY` | O texto principal, e o **único** que aceita quebra de linha |
+| `FOOTER` | A linha discreta abaixo da mensagem |
+| `BUTTONS` | Os botões |
+| `CAROUSEL` | Os cartões que o cliente desliza |
+| `LIMITED_TIME_OFFER` | O selo de oferta com contagem regressiva |
+| `CALL_PERMISSION_REQUEST` | Pede permissão para ligar. Não tem nenhum outro campo |
+
+### Cabeçalho
+
+O `format` decide o que o cabeçalho mostra, e cada formato usa campos diferentes.
+
+| `format` | O que aparece | O que preencher |
+|---|---|---|
+| `TEXT` | Uma linha em negrito acima da mensagem | `text`, até 60 caracteres e **no máximo uma** variável |
+| `IMAGE` | Uma imagem | O identificador da mídia, em `example.header_handle` |
+| `VIDEO` | Um vídeo | O mesmo, com um vídeo |
+| `DOCUMENT` | Um PDF | O mesmo, com um documento |
+| `LOCATION` | Um mapa | Nada. O endereço e as coordenadas vão no envio |
+| `PRODUCT` | O item do catálogo | Nada. Existe só no produto único e no cartão do carrossel de produto |
+
+<Note>
+  A mídia que você põe na criação é a **amostra que a Meta revisa**, não a que o cliente recebe. O arquivo real de cada disparo vai no envio. O identificador sai de [Enviar mídia](/templates/upload-media), e também aceitamos o link público do arquivo, que convertemos antes de criar o template.
+</Note>
+
+### Mensagem
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `text` | O texto principal da mensagem | Até 1024 caracteres, com quebra de linha |
+| `example` | Os valores de exemplo que o revisor da Meta lê | Obrigatório sempre que houver variável |
+| `add_security_recommendation` | Só em autenticação: acrescenta a frase "não compartilhe este código", escrita pela Meta | Booleano |
+
+### Rodapé
+
+Texto fixo de até 60 caracteres, **sem variáveis**. Costuma ser usado para avisos como "Responda SAIR para não receber mais".
+
+Em autenticação ele tem outra função: `code_expiration_minutes`, de 1 a 90, mostra a validade do código. Quem escreve a frase é a Meta, e deixar vazio esconde a linha.
+
+### Botões
+
+| `type` | O que o botão faz | Campos |
+|---|---|---|
+| `QUICK_REPLY` | O cliente responde com um toque, sem digitar | `text` |
+| `URL` | Abre um endereço no navegador | `text`, `url`, `example` |
+| `PHONE_NUMBER` | Liga para um número seu | `text`, `phone_number` |
+| `COPY_CODE` | Copia um código para a área de transferência | `example`, que é o código |
+| `VOICE_CALL` | Abre uma chamada de voz no WhatsApp com a sua empresa | `text` |
+| `FLOW` | Abre um formulário do WhatsApp que você já publicou | `text` e uma referência ao formulário |
+| `OTP` | O botão do código de autenticação | `otp_type` e, em um e zero toque, os dados do app |
+| `CATALOG` | Abre o catálogo da conta | `text` fixo |
+| `SPM` | Abre um produto do catálogo | `text` fixo |
+| `MPM` | Abre a vitrine de produtos | `text` fixo |
+| `PAYMENT_REQUEST` | Leva o cliente ao pagamento | `text` fixo |
+| `ORDER_DETAILS` | Abre a fatura do pedido | `text` fixo |
+
+<Warning>
+  Nos cinco últimos, **o rótulo é da Meta**: o campo `text` continua obrigatório, mas o valor não é seu. A tabela com os valores exatos está em [Validações](/templates/validation).
+</Warning>
+
+Os botões de formulário aceitam três referências, e você manda **uma** delas:
+
+| Campo | Quando usar |
+|---|---|
+| `flow_id` | Você tem o identificador do formulário publicado |
+| `flow_name` | Você prefere referenciar pelo nome |
+| `flow_json` | Você quer criar e vincular o formulário na mesma chamada |
+
+`flow_action` diz como ele abre: `navigate` vai para a tela em `navigate_screen`, `data_exchange` troca dados com o seu servidor.
+
+```json
+{
+  "type": "BUTTONS",
+  "buttons": [
+    {
+      "type": "FLOW",
+      "text": "Agendar",
+      "flow_id": "1234567890",
+      "flow_action": "navigate",
+      "navigate_screen": "AGENDAMENTO"
+    }
+  ]
+}
+```
+
+<Note>
+  Só formulário **publicado** vale em template. Rascunho a Meta não aceita.
+</Note>
+
+### Cartões do carrossel
+
+Cada item de `cards` tem os próprios `components`: o cabeçalho com a mídia ou o produto, o texto do cartão (até 160 caracteres) e os botões.
+
+A regra que mais pega: **todos os cartões precisam ter os mesmos componentes**. Se um tem texto, todos têm; o conjunto de botões é igual em todos, e o que muda de um cartão para o outro é o rótulo e o destino.
+
+## Variáveis
+
+A variável é o buraco no molde: você escreve o texto uma vez e preenche o valor a cada envio.
+
+| Formato | Como fica no texto | Como fica no exemplo |
+|---|---|---|
+| `NAMED` | Cada variável tem nome próprio, o que deixa o envio legível | Um objeto por variável, com `param_name` e `example` |
+| `POSITIONAL` | Numeradas na ordem, começando em 1 | Uma lista, casada por posição |
+
+`NAMED` é o formato atual da Meta, e é o que os nossos modelos usam. No posicional, muda o `parameter_format` e a forma do exemplo:
+
+```json
+{
+  "parameter_format": "POSITIONAL",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Pedido {{1}}",
+      "example": { "header_text": ["1042"] }
+    },
+    {
+      "type": "BODY",
+      "text": "Olá {{1}}, o seu pedido {{2}} saiu para entrega",
+      "example": { "body_text": [["Marina", "1042"]] }
+    }
+  ]
+}
+```
+
+| Onde | Quantas variáveis |
+|---|---|
+| Cabeçalho de texto | 1 |
+| Mensagem | Várias, desde que o texto acompanhe |
+| Rodapé | Nenhuma |
+| Endereço do botão de link | 1, e só no fim do endereço |
+| Telefone e código de cupom | Nenhuma |
+
+<Warning>
+  Toda variável precisa de exemplo, e nenhuma pode abrir ou fechar o texto. São as duas maiores causas de recusa — os detalhes, com os códigos de erro, estão em [Validações](/templates/validation).
+</Warning>
+
+## Criação e envio: duas coisas diferentes
+
+| Aprovado na criação | Enviado a cada disparo |
+|---|---|
+| Texto fixo, botões, estrutura dos cartões | Valores das variáveis |
+| Categoria e idioma | Produtos, itens do pedido, código Pix |
+| A amostra de mídia que a Meta revisa | A mídia real de cada envio |
+| O selo da oferta | O instante em que a oferta expira |
+
+É isso que permite usar **o mesmo template aprovado em campanhas diferentes**. Cada modelo diz o que exatamente cai de cada lado.
+
+<CardGroup cols={2}>
+  <Card title="Escolher o modelo" icon="layer-group" href="/templates/models/overview">
+    Os 13 modelos, o que cada um faz e qual escolher
+  </Card>
+  <Card title="Validações" icon="triangle-exclamation" href="/templates/validation">
+    O que a Meta recusa, com o código de cada erro
+  </Card>
+</CardGroup>

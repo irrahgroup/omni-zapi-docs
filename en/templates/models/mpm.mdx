@@ -1,0 +1,191 @@
+---
+title: "Multi-product"
+description: "Showcase with sections and up to 30 products, assembled at send time"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`mpm`
+
+Showcase with sections and several products.
+
+<TemplatePreview
+  lang="en"
+  headerKind="product image, comes from the catalog"
+  headerIcon="catalog"
+  header="This week's picks"
+  body="We picked a few products that go with what you bought. See the full list."
+  footer="Prices valid while stock lasts"
+  buttons={['View items']}
+  caption="The header is text; the image above it comes from the thumbnail of the product picked at send time."
+/>
+
+## How it works
+
+The template is approved once and the showcase is assembled at send time, with up to **30 products** from the catalog in up to **10 sections**. The button is fixed by Meta (`View items`), translated to the customer's language.
+
+The customer opens the list, adds and removes items from the cart and sends the order back, which arrives on your webhook as an order message. **Payment is the next step**: you reply with [order details](/en/templates/models/order-details) or with a link.
+
+Because the products go at send time, the same showcase serves different campaigns.
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The text header, the message and the footer | Up to 30 products, in up to 10 sections |
+| The button, which is fixed | The top photo, from the chosen product thumbnail |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | Fixed | Always `MARKETING` |
+| `HEADER` | The showcase title | **Required, and text only**, up to 60 characters and at most one variable. It is the only model that requires a header. The top image comes from the product picked at send time |
+| `BODY` | The text presenting the selection | Up to 1024 characters |
+| `FOOTER` | Optional | Up to 60 characters |
+| `MPM` button | Opens the product list with sections | `text` always `View items`, in English, even on a `pt_BR` template |
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:mpm */}
+```json
+{
+  "name": "exemplo_mpm",
+  "category": "MARKETING",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Order {{order_number}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "customer_name",
+            "example": "Marina"
+          },
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Reply STOP to opt out"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "MPM",
+          "text": "View items"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:mpm */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:mpm */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_mpm",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{customer_name}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "mpm",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "thumbnail_product_retailer_id": "{{thumbnail_product_retailer_id}}",
+                    "sections": [
+                      {
+                        "title": "{{section_title}}",
+                        "product_items": [
+                          {
+                            "product_retailer_id": "{{product_retailer_id}}"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:mpm */}
+
+## What Meta rejects here
+
+- A media header: here it is text only.
+- A label other than `View items`, with code `2388153`.
+- More than one variable in the header, with code `2388029`.

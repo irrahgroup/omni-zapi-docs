@@ -1,0 +1,58 @@
+---
+title: "Enviar multi-produto"
+description: "Monte uma vitrine com seções e até 30 produtos"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
+  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
+</Warning>
+
+## Conceituação
+
+Envia uma vitrine com produtos do catálogo, agrupados em seções. O cliente navega, monta o carrinho e manda
+o pedido de volta.
+
+O campo `content.type` será `PRODUCT_LIST`.
+
+<WindowRule lang="pt" template="de multi-produto" href="/templates/models/mpm" />
+
+<ChannelSupport type="PRODUCT_LIST" lang="pt" />
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "PRODUCT_LIST",
+    "header": "Seleção da semana",
+    "message": "Separamos alguns produtos para você.",
+    "footer": "Entrega em todo o Brasil",
+    "catalogId": "1234567890",
+    "sections": [
+      {
+        "title": "Camisetas",
+        "products": [
+          { "productRetailerId": "SKU-1042" },
+          { "productRetailerId": "SKU-1043" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Regras
+
+| Regra | Valor |
+|---|---|
+| Produtos | até **30** somando todas as seções |
+| Cabeçalho | só texto |
+| Produtos válidos | ao menos um SKU precisa existir no catálogo |
+
+O pedido montado pelo cliente chega no seu webhook como mensagem de pedido. O pagamento é o passo seguinte:
+responda com [detalhes do pedido](/messages/send-order-details) ou com um link.

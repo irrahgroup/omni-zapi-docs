@@ -1,0 +1,163 @@
+---
+title: "Access code"
+description: "OTP delivery: Meta writes the text, you only send the code"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`authentication`
+
+OTP delivery. **Meta defines the text** — you don't write the message body, only the button and the validity.
+
+<TemplatePreview
+  lang="en"
+  body="<your code> is your verification code. For your security, do not share it. Expires in 10 minutes."
+  buttons={['Copy code']}
+  caption="Everything here is written by Meta: the text, the security notice, the validity line and the button label."
+/>
+
+## How it works
+
+The code is not registered here. The template is the mold, and Meta fixes the text around it — *"«code» is your verification code"*. You generate and send the code at send time, a different one per customer.
+
+That is why the body and the footer go without text: what you control is whether the security line shows, how long the code lasts and how the customer receives it.
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The button type and the code validity | The code, which goes in the body and in the button, in the same dispatch |
+| The security line, if you want it | |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | Fixed | Always `AUTHENTICATION` |
+| `message_send_ttl_seconds` | How long Meta keeps trying to deliver | 30 to 900 seconds. Never shorter than the code validity |
+| `add_security_recommendation` | Adds the "do not share this code" notice | Boolean. Meta writes the sentence |
+| `code_expiration_minutes` | Shows the validity in the message | 1 to 90 minutes. Empty hides the line |
+| `otp_type` | How the customer receives the code | `COPY_CODE` works on any device. `ONE_TAP` and `ZERO_TAP` require your own app |
+| `supported_apps` | The app that receives the code | `package_name` and `signature_hash`. Required on one and zero tap |
+| `zero_tap_terms_accepted` | Zero tap terms acceptance | Without it, Meta rejects the template |
+
+<Note>
+  The button `text` is written and translated by Meta based on the template language. Whatever you send there is ignored.
+</Note>
+
+The model below uses `COPY_CODE`, the only one that needs no app details. For autofill, the button changes:
+
+```json
+{
+  "type": "BUTTONS",
+  "buttons": [
+    {
+      "type": "OTP",
+      "otp_type": "ZERO_TAP",
+      "zero_tap_terms_accepted": true,
+      "supported_apps": [
+        {
+          "package_name": "com.yourcompany.app",
+          "signature_hash": "K8a%2FAINcGX7"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:authentication */}
+```json
+{
+  "name": "exemplo_authentication",
+  "category": "AUTHENTICATION",
+  "language": "en_US",
+  "allow_category_change": true,
+  "components": [
+    {
+      "type": "BODY",
+      "add_security_recommendation": true
+    },
+    {
+      "type": "FOOTER",
+      "code_expiration_minutes": 10
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "OTP",
+          "otp_type": "COPY_CODE"
+        }
+      ]
+    }
+  ],
+  "message_send_ttl_seconds": 600
+}
+```
+{/* /payload:authentication */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:authentication */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_authentication",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{otp_code}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{otp_code}}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:authentication */}
+
+## What Meta rejects here
+
+- `ONE_TAP` or `ZERO_TAP` without `supported_apps`.
+- Zero tap without accepting the terms.
+- Code validity outside the 1 to 90 minute range.
+- Send validity shorter than the code validity: the message stops being delivered before the code expires, and the customer loses both.

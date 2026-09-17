@@ -1,62 +1,37 @@
 ---
-title: "Create template"
-description: "Create a new template and submit for Meta approval"
+title: "API reference"
+description: "The call that creates the template: route, authentication, responses and errors"
 openapi: "/en/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates"
 ---
 
-## Overview
+This is the single creation call. **Its body is the JSON of the model** you picked — there is no separate route per model, and sending the payload from [Models](/en/templates/models/overview) already creates the template.
 
-<Warning>
-  This endpoint is WABA-scoped, so today it covers **WhatsApp Official** only.
+What lives here is the mechanics and the return: the route, the `wabaId`, the schema field by field and what comes back in each case. The playground above fires the real call.
 
-  Instagram and Messenger also have pre-approved templates — the **Utility Template**, page-scoped. Support for them in Omni Z-API is **being implemented**. See the [comparison of the three template types](/en/templates/introduction).
-</Warning>
-
-Creates a new message template and submits it for Meta approval. The template starts with `PENDING` status and is updated to `APPROVED` or `REJECTED` after review.
-
-Use the [Sync templates](/en/templates/sync-templates) endpoint to force a status update.
-
-<Warning>
-  The template name must be in `snake_case`, with no spaces or special characters. Once created, the name cannot be changed.
-</Warning>
+The template starts as `PENDING` and becomes `APPROVED` or `REJECTED` after Meta's review. Use [Sync templates](/en/templates/sync-templates) to force a status update.
 
 <Note>
-  The `wabaId` is obtained from the [List WABAs](/en/templates/list-businesses) endpoint.
+  The `wabaId` comes from the [List WABAs](/en/templates/list-businesses) endpoint.
 </Note>
 
-## Ready-made models
+<Warning>
+  The name goes in `snake_case`, with no spaces or special characters, and **cannot be changed** after creation.
+</Warning>
 
-The example selector in the request above has **one payload per template
-type**: media carousel, coupon, limited-time offer, multi-product, order details
-and the rest. Pick the model and copy the JSON.
+<Warning>
+  This endpoint is scoped by **WABA**, so today it covers only **Official WhatsApp**.
 
-Each type accepts different components, and that is what
-[Template types](/en/templates/types) explains. What Meta rejects in each field
-is in [Validation](/en/templates/validation).
+  Instagram and Messenger also have a pre-approved template — the **Utility Template**, scoped by page. Support for them in Omni Z-API is **being implemented**. See the [comparison of the three template kinds](/en/templates/introduction).
+</Warning>
 
-## Which field belongs to which component
-
-Each item in `components` is an object identified by `type`. The table shows
-which fields that type uses.
-
-| `type` | Fields |
-|---|---|
-| `HEADER` | `format`, `text` (60), `example` |
-| `BODY` | `text` (1024), `example`, `add_security_recommendation` |
-| `FOOTER` | `text` (60), `code_expiration_minutes` |
-| `BUTTONS` | `buttons` |
-| `CAROUSEL` | `cards` |
-| `LIMITED_TIME_OFFER` | `limited_time_offer` |
-| `CALL_PERMISSION_REQUEST` | none |
-
-And on the buttons, inside `buttons`:
-
-| `type` | Fields |
-|---|---|
-| `QUICK_REPLY` | `text` (25) |
-| `URL` | `text`, `url`, `example` |
-| `PHONE_NUMBER` | `text`, `phone_number` |
-| `COPY_CODE` | `example` (the code, up to 20) |
-| `OTP` | `otp_type`, `supported_apps`, `zero_tap_terms_accepted` |
-| `FLOW` | `text`, `flow_id` or `flow_name` or `flow_json`, `flow_action`, `navigate_screen` |
-| `CATALOG`, `MPM`, `SPM`, `PAYMENT_REQUEST`, `ORDER_DETAILS`, `VOICE_CALL` | none: Meta writes the label |
+<CardGroup cols={3}>
+  <Card title="Choose the model" icon="layer-group" href="/en/templates/models/overview">
+    The 13 models and which to use
+  </Card>
+  <Card title="Template fields" icon="list-check" href="/en/templates/anatomy">
+    What each field is for
+  </Card>
+  <Card title="Validation" icon="triangle-exclamation" href="/en/templates/validation">
+    What Meta rejects
+  </Card>
+</CardGroup>

@@ -1,0 +1,127 @@
+---
+title: "Template Library"
+description: "Modelo ya hecho de la biblioteca de Meta, que nace aprobado"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`library`
+
+Modelo ya hecho de la biblioteca de Meta. **No pasa por revisión** — nace aprobado.
+
+<TemplatePreview
+  lang="es"
+  body="Hola {{nombre_del_cliente}}, tu pedido {{numero_del_pedido}} fue enviado y llega en {{plazo}}."
+  buttons={['Rastrear pedido', 'Hablar con la tienda']}
+  caption="El texto es de Meta, y los botones son los que define el modelo. Tú solo informas los datos de cada uno."
+/>
+
+## Cómo funciona
+
+El texto de este modelo lo escribe y lo mantiene Meta: **tú no lo editas**, solo completas los datos que pide, como la dirección del botón o el teléfono. Por eso la aprobación suele ser más rápida.
+
+Referencias el modelo por su nombre exacto — `delivery_update_1`, `low_balance_warning_1` y así. La lista completa está en [Template Library](/es/templates/template-library), que también lista los modelos disponibles por el endpoint.
+
+## En la creación y en el envío
+
+| En la creación | En el envío |
+|---|---|
+| El nombre del modelo en la biblioteca | El valor de cada variable del modelo |
+| Los ajustes de texto que el modelo acepta | |
+| Los datos de los botones que el modelo define | |
+
+## Campos de este modelo
+
+| Campo | Para qué sirve | Regla |
+|---|---|---|
+| `library_template_name` | El identificador exacto del modelo de Meta | Como `delivery_update_1`. Un nombre equivocado es rechazo inmediato |
+| `library_template_body_inputs` | Los fragmentos que Meta permite agregar al texto | Marca solo lo que tenga sentido para tu caso |
+| `library_template_button_inputs` | Los datos de cada botón que el modelo define | El modelo dice qué botones existen; tú completas los datos |
+
+Los ajustes de cuerpo que acepta la biblioteca:
+
+| Ajuste | Qué agrega |
+|---|---|
+| `add_contact_number` | Que el cliente puede hablar contigo por el teléfono de la cuenta |
+| `add_learn_more_link` | Que hay más detalles en un enlace |
+| `add_track_package_link` | En modelos de entrega, que se puede seguir el paquete |
+| `add_security_recommendation` | En modelos con código, la alerta de no compartirlo |
+| `code_expiration_minutes` | La vigencia del código, de 1 a 90 minutos |
+
+<Note>
+  El botón de enlace acepta variable: `base_url` lleva la dirección con la variable al final, y `url_suffix_example` la misma dirección rellenada. El botón de llamada de voz no pide ningún dato.
+</Note>
+
+## JSON completo
+
+Son dos JSON: uno **crea** la plantilla, y Meta la aprueba una vez. El otro **envía** el mensaje, y va en cada disparo, con los valores de ese envío en las variables marcadas con llaves.
+
+### 1. Crear la plantilla
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver en [Referencia de la API](/es/templates/create-template).
+
+{/* payload:library */}
+```json
+{
+  "name": "exemplo_library",
+  "category": "MARKETING",
+  "language": "es_ES",
+  "allow_category_change": true,
+  "library_template_name": "delivery_update_1",
+  "library_template_body_inputs": [
+    {
+      "add_contact_number": true,
+      "add_track_package_link": true
+    }
+  ],
+  "library_template_button_inputs": [
+    {
+      "type": "URL",
+      "url": {
+        "base_url": "https://sualoja.com/pedido/{{numero_do_pedido}}",
+        "url_suffix_example": "https://sualoja.com/pedido/1042"
+      }
+    },
+    {
+      "type": "PHONE_NUMBER",
+      "phone_number": "+5511988881234"
+    }
+  ]
+}
+```
+{/* /payload:library */}
+
+### 2. Enviar después de la aprobación
+
+`POST /v1/channels/{channelId}/messages` — ver en [Enviar plantilla](/es/messages/send-template).
+
+{/* send:library */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_library",
+          "language": {
+            "policy": "deterministic",
+            "code": "es_ES"
+          },
+          "components": []
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:library */}
+
+## Lo que Meta rechaza aquí
+
+- Nombre de modelo que no existe en la biblioteca.
+- Ajuste de cuerpo que ese modelo no acepta.
+- Dato de botón que el modelo no define, o botón que sí define y dejaste vacío.

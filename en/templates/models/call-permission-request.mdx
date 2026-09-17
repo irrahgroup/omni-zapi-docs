@@ -1,0 +1,135 @@
+---
+title: "Call permission"
+description: "Asks permission to call on WhatsApp before the first call"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`call_permission_request`
+
+Asks permission to call on WhatsApp.
+
+<TemplatePreview
+  lang="en"
+  body="Can we call you about your order {{order_number}}?"
+  callPermission={true}
+  caption="An approximation. The card is WhatsApp's: fixed text, the name from the account profile and no button you define. Both allow actions are documented; declining exists too, but Meta does not describe how the three appear on screen."
+/>
+
+## How it works
+
+Calling a customer on WhatsApp requires explicit permission. This model is the request: you write the reason, and WhatsApp adds the authorization part, with the name from your account profile.
+
+The `CALL_PERMISSION_REQUEST` component **has no fields at all** — its presence is what defines the model.
+
+There is no accept button and decline button in the template: WhatsApp draws the action. Meta's documentation mentions **allow calls** and **temporarily allow**, for 7 days, plus declining, but it doesn't describe the screen — so the preview above is an approximation, and the button arrangement on the device may differ.
+
+What is documented, and what you can rely on, is the answer: it arrives on your webhook with `response` as `accept` or `reject`. When the permission is temporary, `is_permanent: false` and `expiration_timestamp` come along.
+
+<Warning>
+  Meta **does not allow combining** the permission component with other interactive components. No buttons, carousel or offer badge on the same template.
+</Warning>
+
+## At creation and at send time
+
+| At creation | At send time |
+|---|---|
+| The text explaining why you want to call | The value of each variable |
+| The permission component | |
+
+## Fields in this model
+
+| Field | What it is for | Rule |
+|---|---|---|
+| `category` | You choose | `UTILITY` or `MARKETING` |
+| `BODY` | The reason for the call | Up to 1024 characters |
+| `CALL_PERMISSION_REQUEST` | The authorization request | No fields |
+
+## Full JSON
+
+Two JSON payloads: one **creates** the template, and Meta approves it once. The other **sends** the message, and goes on every dispatch, with that send's values in the variables marked with braces.
+
+### 1. Create the template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — see [API reference](/en/templates/create-template).
+
+{/* payload:call_permission_request */}
+```json
+{
+  "name": "exemplo_call_permission_request",
+  "category": "UTILITY",
+  "language": "en_US",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Hi {{customer_name}}, your order {{order_number}} is confirmed and ships today.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "customer_name",
+            "example": "Marina"
+          },
+          {
+            "param_name": "order_number",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "CALL_PERMISSION_REQUEST"
+    }
+  ]
+}
+```
+{/* /payload:call_permission_request */}
+
+### 2. Send it once approved
+
+`POST /v1/channels/{channelId}/messages` — see [Send template](/en/messages/send-template).
+
+{/* send:call_permission_request */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_call_permission_request",
+          "language": {
+            "policy": "deterministic",
+            "code": "en_US"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{customer_name}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{order_number}}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:call_permission_request */}
+
+## What Meta rejects here
+
+- Buttons, carousel or any other interactive component on the same template.
+- The `AUTHENTICATION` category.

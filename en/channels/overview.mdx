@@ -11,7 +11,7 @@ In {projectName} you connect the channel once and use **the same endpoints** for
 
 <CardGroup cols={3}>
   <Card title="Meta" icon="meta" href="/en/channels/connect-channel">
-    WhatsApp Official, Instagram and Messenger connect through Meta OAuth.
+    Meta Cloud API, Instagram and Messenger connect through Meta OAuth.
   </Card>
   <Card title="QR Code" icon="qrcode" href="/en/channels/introduction">
     WhatsApp Web connects by scanning the QR Code.
@@ -21,54 +21,23 @@ In {projectName} you connect the channel once and use **the same endpoints** for
   </Card>
 </CardGroup>
 
-## Capability matrix
+## Not every channel accepts everything
 
-Not everything works on every channel — the limit comes from the platform, not from our API.
+The request body is the same on every channel, but each platform has its own limits: Instagram has no
+location message, Telegram has no call button, product catalog only exists where there is a catalog.
+**The limit is the platform's, not our API's.**
 
-| Feature | WhatsApp Official | WhatsApp Web | Instagram | Messenger | Telegram |
-|---|:---:|:---:|:---:|:---:|:---:|
-| Text | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Image | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Audio | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Video | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Document | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Sticker | ✅ | ✅ | ⚠️ | ✅ | ✅ |
-| Location | ✅ | ✅ | ❌ | ❌ | ✅ |
-| Contact | ✅ | ✅ | ❌ | ❌ | ✅ |
-| Quick reply buttons | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Action buttons | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Pre-approved template | ✅ WABA | ❌ | ❌ ¹ | ✅ Utility | ❌ |
-| Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Reaction (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
-| Poll | ❌ | ✅ | ❌ | ❌ | ✅ |
+The full table, with every caveat spelled out and what to send instead when the channel does not
+accept it, lives on a page of its own:
 
-### The `content.type` for each feature
+<Card title="What each channel accepts" icon="table-cells" href="/en/channels/message-support">
+  The 20 message types across the five channels, mark by mark, with the condition behind each ⚠️.
+</Card>
 
-| Feature | `content.type` | Endpoint |
-|---|---|---|
-| Text | `TEXT` | [Send text](/en/messages/send-text) |
-| Image | `IMAGE` | [Send image](/en/messages/send-image) |
-| Audio | `AUDIO` | [Send audio](/en/messages/send-audio) |
-| Video | `VIDEO` | [Send video](/en/messages/send-video) |
-| Sticker | `STICKER` | [Send sticker](/en/messages/send-sticker) |
-| Location | `LOCATION` | [Send location](/en/messages/send-location) |
-| Contact | `CONTACT` | [Send contact](/en/messages/send-contact) |
-| Quick reply buttons | `INTERACTIVE_BUTTON` | [Send text with buttons](/en/messages/send-interactive-button) |
-| Action buttons | `INTERACTIVE_ACTION` | [Send action buttons](/en/messages/send-interactive-action) |
-| Template | `TEMPLATE` | [Send template](/en/messages/send-template) |
-
-<Note>
-  ⚠️ **Instagram and stickers**: the platform only accepts the heart sticker (`like_heart`), not arbitrary stickers.
-
-  ¹ **Instagram and pre-approved templates**: the Graph API `message_templates` edge exists only on the `Page` node. Omni Z-API connects Instagram through **Instagram Login** (the `IGUserForIGOnlyAPI` node), which does not expose that edge. Details in [Connect Instagram](/en/connect/instagram).
-
-  🔍 Cell not confirmed in the platform's official documentation.
-</Note>
-
-## Conversation window: only WhatsApp Official has one
+## Conversation window: only Meta Cloud API has one
 
 <Warning>
-  The [24-hour window](/en/conversation-window) rule is **exclusive to WhatsApp Official**. On the other channels you send messages at any time, with no window and no templates.
+  The [24-hour window](/en/conversation-window) rule is **exclusive to Meta Cloud API**. On the other channels you send messages at any time, with no window and no templates.
 </Warning>
 
 | Channel | Window | How to start a conversation outside it |
@@ -97,15 +66,15 @@ Two channels have templates that go through Meta approval, with different scopes
 
 | Channel | Feature | Scope | Categories |
 |---|---|---|---|
-| WhatsApp Official | message template | **WABA** | `UTILITY`, `MARKETING`, `AUTHENTICATION` |
+| Meta Cloud API | message template | **WABA** | `UTILITY`, `MARKETING`, `AUTHENTICATION` |
 | Messenger | **Utility Template** | **page** | `UTILITY` only |
 
 Instagram, WhatsApp Web and Telegram have none. On Instagram that follows from the login model we use — see [Connect Instagram](/en/connect/instagram).
 
-[Flows](/en/flows/introduction) are **WhatsApp Official only**.
+[Flows](/en/flows/introduction) are **Meta Cloud API only**.
 
 <Note>
-  Omni Z-API's [Templates](/en/templates/introduction) endpoints currently cover WhatsApp Official only. The Messenger Utility Template is **being implemented**.
+  Omni Z-API's [Templates](/en/templates/introduction) endpoints currently cover Meta Cloud API only. The Messenger Utility Template is **being implemented**.
 </Note>
 
 ## Next steps

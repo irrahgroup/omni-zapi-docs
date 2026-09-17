@@ -1,0 +1,55 @@
+---
+title: "Enviar documento"
+description: "Envía un PDF, una planilla o cualquier archivo de hasta 100 MB"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<Warning>
+  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
+  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
+</Warning>
+
+## Conceptos
+
+Envía un archivo al contacto. WhatsApp elige el ícono según la extensión y el nombre que informes.
+
+El campo `content.type` será `DOCUMENT`.
+
+<WindowRule lang="es" template="con encabezado de documento" href="/es/templates/models/custom" />
+
+<ChannelSupport type="DOCUMENT" lang="es" />
+
+## Cuerpo de la petición
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "DOCUMENT",
+    "attachments": [
+      {
+        "url": "https://tutienda.com/factura.pdf",
+        "fileName": "factura.pdf",
+        "caption": "Aquí está tu factura"
+      }
+    ]
+  }
+}
+```
+
+## Reglas
+
+| Regla | Valor |
+|---|---|
+| Tamaño | hasta 100 MB |
+| Tipos | PDF, Word, Excel, PowerPoint, texto |
+| Leyenda | hasta 1024 caracteres |
+| `fileName` | **con la extensión** — es la que define el ícono que ve el cliente |
+
+<Warning>
+  El `fileName` va con la extensión, como `factura.pdf`. Hoy hay un defecto conocido en ese campo en la capa
+  de compatibilidad Z-API: con extensión el archivo llega como `factura.pdf.pdf`, y sin ella llega como
+  `factura.null`.
+</Warning>

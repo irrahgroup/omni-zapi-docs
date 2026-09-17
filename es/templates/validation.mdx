@@ -10,7 +10,7 @@ código de error que genera cada una.
 <Note>
   Lo que la estructura del payload ya dice (límite de caracteres, tipos
   aceptados, cantidad) está declarado en el schema de
-  [Crear plantilla](/es/templates/create-template): el playground lo muestra
+  [Referencia de la API](/es/templates/create-template): el playground lo muestra
   campo por campo. Esta página es para las reglas que el schema no expresa.
 </Note>
 
@@ -133,12 +133,21 @@ Dos variables pegadas, sin texto entre ellas, también suelen ser rechazadas.
 | Botones en total | 10 |
 | Botones de enlace | 2 |
 | Botones de teléfono | 1 |
+| Botones de código de cupón | 1 |
+| Respuestas rápidas | 10 |
 | Botones por tarjeta del carrusel | 2, o 1 en la de producto |
 
-### El orden importa
+### Las respuestas rápidas van todas juntas
 
-Las respuestas rápidas van **todas primero**, y los demás botones después. Meta
-rechaza cuando el orden mezcla los dos grupos.
+Meta no exige que vayan primero: exige que los botones queden en **dos
+grupos**, el de las respuestas rápidas y el de los demás. Una respuesta rápida
+en medio de otros tipos se rechaza.
+
+| Aceptado | Rechazado |
+|---|---|
+| respuesta rápida, respuesta rápida | respuesta rápida, enlace, respuesta rápida |
+| respuesta rápida, respuesta rápida, enlace, teléfono | enlace, respuesta rápida, enlace |
+| enlace, teléfono, respuesta rápida, respuesta rápida | |
 
 ### Formato de la dirección y del teléfono
 
@@ -164,6 +173,31 @@ El botón de enlace acepta **una** variable, y solo al final de la dirección:
 </CodeGroup>
 
 Teléfono y código de cupón no aceptan variables.
+
+### Etiquetas que Meta escribe
+
+En catálogo, multiproducto, producto único, checkout, pedido y en el código de
+autenticación, **el texto del botón es de Meta**. El campo `text` sigue siendo
+obligatorio: lo que cambia es que el valor no es tuyo. Mandar otro se rechaza
+con el código `2388153`, y la respuesta dice cuál era el correcto.
+
+| Botón | `text` |
+|---|---|
+| `CATALOG` | `View catalog` |
+| `MPM` | `View items` |
+| `SPM` | `Ver` en plantilla `pt_BR`, `View` en las demás |
+| `PAYMENT_REQUEST` | `Review and Pay` |
+| `ORDER_DETAILS` | `Copy Pix code` |
+
+<Warning>
+  Aquí no hay regla de idioma. En la **misma** plantilla `pt_BR`, Meta exige
+  `Ver` para el `SPM` y `View items`, en inglés, para el `MPM`. Los dos se
+  midieron en rechazos. Cuando rechaza, el mensaje dice el texto exigido: usa
+  ese.
+</Warning>
+
+La app de WhatsApp traduce la etiqueta al idioma de quien recibe, así que el
+valor que mandas en la creación no es lo que lee el cliente.
 
 ## Carrusel
 
@@ -203,6 +237,11 @@ El enlace tiene que abrirse para un servidor, y no solo en el navegador. Tiendas
 y blogs suelen bloquear la descarga automática, y entonces Meta responde
 `media download failed`, código `380`.
 
+La imagen de encabezado se muestra en **1.91:1**, horizontal. Lo que quede
+fuera de esa proporción no se rechaza: WhatsApp recorta lo que sobra para que
+quepa, y el recorte es por el centro. Conviene armar el arte con esa medida, o
+aceptar que los bordes desaparezcan en el teléfono del cliente.
+
 ## Validez del envío
 
 `message_send_ttl_seconds` tiene un rango por categoría:
@@ -216,6 +255,27 @@ y blogs suelen bloquear la descarga automática, y entonces Meta responde
 El valor `-1` es un atajo de 30 días. En autenticación, la validez del envío no
 puede ser menor que la del código: si el mensaje deja de entregarse antes, el
 cliente pierde las dos cosas.
+
+## Cuántas plantillas caben en la cuenta
+
+Los límites de abajo son **de la cuenta**, y no de la plantilla que estás
+creando. Por eso su rechazo confunde: no habla de nada que esté en tu payload.
+
+| Límite | Valor |
+|---|---|
+| Plantillas por WABA | **250**, o **6.000** con el portafolio verificado y un número con nombre para mostrar aprobado |
+| Creaciones por hora, por WABA | **100** |
+
+El nombre es **único por WABA e idioma**: el mismo nombre en `pt_BR` y en
+`en_US` son dos plantillas, y las dos se aceptan. Repetir nombre e idioma en la
+misma cuenta vuelve como `already exists` — incluso cuando la otra se eliminó
+hace menos de 30 días, porque eliminar reserva el nombre por ese período.
+
+<Note>
+  Pasar de 100 creaciones por hora no es error de payload: es cola. Si estás
+  migrando un catálogo de plantillas de una vez, créalas por lotes y espera
+  entre ellos, en lugar de reintentar de inmediato.
+</Note>
 
 ## Editar y eliminar
 

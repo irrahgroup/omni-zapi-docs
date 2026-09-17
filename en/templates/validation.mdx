@@ -9,7 +9,7 @@ with the error code each one produces.
 
 <Note>
   Whatever the payload structure already states (character limits, accepted
-  types, counts) is declared in the [Create template](/en/templates/create-template)
+  types, counts) is declared in the [API reference](/en/templates/create-template)
   schema: the playground shows it field by field. This page is for the rules the
   schema cannot express.
 </Note>
@@ -135,12 +135,21 @@ as well.
 | Buttons in total | 10 |
 | URL buttons | 2 |
 | Phone buttons | 1 |
+| Copy code buttons | 1 |
+| Quick replies | 10 |
 | Buttons per carousel card | 2, or 1 on the product card |
 
-### Order matters
+### Quick replies stay together
 
-Quick replies come **all first**, and the remaining buttons after them. Meta
-rejects the template when the order mixes the two groups.
+Meta doesn't require them to come first: it requires the buttons to sit in
+**two groups**, the quick replies and everything else. A quick reply in the
+middle of other types is rejected.
+
+| Accepted | Rejected |
+|---|---|
+| quick reply, quick reply | quick reply, URL, quick reply |
+| quick reply, quick reply, URL, phone | URL, quick reply, URL |
+| URL, phone, quick reply, quick reply | |
 
 ### URL and phone format
 
@@ -166,6 +175,32 @@ The URL button accepts **one** variable, and only at the end of the address:
 </CodeGroup>
 
 Phone numbers and coupon codes accept no variables.
+
+### Labels Meta writes
+
+On catalog, multi-product, single product, checkout, order and on the
+authentication code, **the button text belongs to Meta**. The `text` field is
+still required: what changes is that the value isn't yours. Sending a
+different one is rejected with code `2388153`, and the response says which one
+was right.
+
+| Button | `text` |
+|---|---|
+| `CATALOG` | `View catalog` |
+| `MPM` | `View items` |
+| `SPM` | `Ver` on a `pt_BR` template, `View` elsewhere |
+| `PAYMENT_REQUEST` | `Review and Pay` |
+| `ORDER_DETAILS` | `Copy Pix code` |
+
+<Warning>
+  There is no language rule here. On the **same** `pt_BR` template, Meta
+  demands `Ver` for `SPM` and `View items`, in English, for `MPM`. Both were
+  measured in rejections. When it rejects, the message states the required
+  text: use that one.
+</Warning>
+
+The WhatsApp app translates the label into the recipient's language, so the
+value you send at creation is not what the customer reads.
 
 ## Carousel
 
@@ -204,6 +239,11 @@ The link has to open for a server, not only in a browser. Stores and blogs
 often block automated downloads, and then Meta answers
 `media download failed`, code `380`.
 
+The header image is displayed at **1.91:1**, landscape. Anything outside that
+ratio is not rejected: WhatsApp crops the excess to fit, from the center. Worth
+building the artwork at that size, or accepting that the edges disappear on the
+customer's phone.
+
 ## Delivery window
 
 `message_send_ttl_seconds` has a range per category:
@@ -217,6 +257,29 @@ often block automated downloads, and then Meta answers
 The value `-1` is a shortcut for 30 days. On authentication, the delivery window
 cannot be shorter than the code validity: if the message stops being delivered
 first, the customer loses both.
+
+## How many templates fit in the account
+
+The limits below belong to **the account**, not to the template you are
+creating. That is why their rejection is confusing: it does not mention
+anything that is in your payload.
+
+| Limit | Value |
+|---|---|
+| Templates per WABA | **250**, or **6,000** with a verified portfolio and a number with an approved display name |
+| Creations per hour, per WABA | **100** |
+
+The name is **unique per WABA and language**: the same name in `pt_BR` and in
+`en_US` are two templates, and both are accepted. Repeating name and language
+in the same account comes back as `already exists` — including when the other
+one was deleted less than 30 days ago, because deleting reserves the name for
+that period.
+
+<Note>
+  Going over 100 creations per hour is not a payload error: it is a queue. If
+  you are migrating a whole catalog of templates at once, create them in
+  batches and wait between them, instead of retrying right away.
+</Note>
 
 ## Editing and deleting
 

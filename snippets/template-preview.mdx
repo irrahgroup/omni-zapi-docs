@@ -1,71 +1,308 @@
 export const TemplatePreview = ({
   header,
   headerKind = 'text',
+  headerIcon,
+  productLine,
   body,
   footer,
   buttons = [],
   cards = [],
   offer,
   coupon,
+  order,
+  callPermission,
   caption,
+  height,
+  lang = 'pt',
 }) => {
+  const L = {
+    pt: { contact: 'Cliente teste', label: 'pré-visualização',
+          orderNote: 'exemplo: os valores e os itens vêm no envio',
+          item: 'Produto', qty: 'Qtd. 1', subtotal: 'Subtotal', tax: 'Taxas', total: 'Total',
+          callAsk: 'A empresa pode te ligar?', callAllow: 'Permitir chamadas', callAllowTemp: 'Permitir por 7 dias',
+          money: 'R$ 00,00', price: 'R$ preço', name: 'nome do produto' },
+    en: { contact: 'Test customer', label: 'preview',
+          orderNote: 'sample: amounts and items come at send time',
+          item: 'Product', qty: 'Qty. 1', subtotal: 'Subtotal', tax: 'Taxes', total: 'Total',
+          callAsk: 'Can the business call you?', callAllow: 'Allow calls', callAllowTemp: 'Temporarily allow calls',
+          money: '$ 00.00', price: '$ price', name: 'product name' },
+    es: { contact: 'Cliente de prueba', label: 'previsualización',
+          orderNote: 'ejemplo: los valores y los ítems vienen en el envío',
+          item: 'Producto', qty: 'Cant. 1', subtotal: 'Subtotal', tax: 'Impuestos', total: 'Total',
+          callAsk: '¿La empresa puede llamarte?', callAllow: 'Permitir llamadas', callAllowTemp: 'Permitir por 7 días',
+          money: '$ 00,00', price: '$ precio', name: 'nombre del producto' },
+  }[lang];
+
   const S = {
-    stage: { background: 'var(--zp-page, #eff0ed)', border: '1px solid var(--zp-border, #e4e7e1)',
-             borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column',
-             gap: 8, alignItems: 'flex-start', margin: '12px 0' },
-    bubble: { background: 'var(--zp-surface, #fff)', borderRadius: 10, maxWidth: 330, width: '100%',
-              boxShadow: '0 1px 2px rgba(0,0,0,.08)', overflow: 'hidden', fontSize: 13.5, lineHeight: 1.45 },
-    pad: { padding: '9px 11px' },
-    media: { height: 92, background: 'var(--zp-field, #f4f5f3)', display: 'flex',
-             alignItems: 'center', justifyContent: 'center', fontSize: 11,
-             color: 'var(--zp-ink-tertiary, #8a9183)', letterSpacing: '.04em', textTransform: 'uppercase' },
-    head: { fontWeight: 700, marginBottom: 5 },
-    foot: { fontSize: 11.5, color: 'var(--zp-ink-tertiary, #8a9183)', marginTop: 6 },
-    btn: { borderTop: '1px solid var(--zp-border, #e4e7e1)', padding: '8px 10px',
-           textAlign: 'center', color: '#027eb5', fontSize: 13, fontWeight: 500 },
-    chip: { display: 'inline-block', background: 'var(--zp-brand-wash, #e3eed9)',
-            color: 'var(--zp-brand-ink, #477722)', borderRadius: 5, padding: '2px 7px',
-            fontSize: 11.5, fontWeight: 700, marginBottom: 6 },
-    row: { display: 'flex', gap: 8, maxWidth: 330, width: '100%' },
-    card: { background: 'var(--zp-surface, #fff)', borderRadius: 10, flex: 1, overflow: 'hidden',
-            boxShadow: '0 1px 2px rgba(0,0,0,.08)', fontSize: 12.5 },
-    cap: { fontSize: 11.5, color: 'var(--zp-ink-tertiary, #8a9183)', marginTop: 2 },
+    wrap: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+            gap: 8, margin: '16px 0', flexShrink: 0, scrollSnapAlign: 'start' },
+    device: { width: 320, maxWidth: '100%', padding: 10, borderRadius: 30,
+              background: '#1f201e', boxSizing: 'border-box', display: 'flex',
+              flexDirection: 'column', height,
+              boxShadow: '0 18px 40px -28px rgb(31 32 30 / .55)' },
+    speaker: { display: 'block', width: '22%', height: 3, margin: '1px auto 6px',
+               borderRadius: 999, background: 'rgb(255 255 255 / .35)' },
+    screen: { borderRadius: 22, overflow: 'hidden', background: '#e9e4dc',
+              display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 },
+
+    bar: { display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px',
+           background: '#477722' },
+    avatar: { width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+              background: 'rgb(255 255 255 / .22)' },
+    name: { display: 'block', fontSize: 12.5, fontWeight: 600, lineHeight: 1, color: '#fff' },
+    sub: { display: 'block', marginTop: 4, fontSize: 10.5, lineHeight: 1,
+           color: 'rgb(255 255 255 / .72)' },
+
+    chat: { padding: '14px 13px', minHeight: 230, flex: 1, overflowY: 'auto' },
+    bubble: { background: '#fff', borderRadius: 10, borderTopLeftRadius: 2,
+              maxWidth: 252, boxShadow: '0 1px 1px rgb(0 0 0 / .13)',
+              overflow: 'hidden', fontSize: 13, lineHeight: 1.45, color: '#1f201e' },
+    pad: { padding: '8px 10px 6px' },
+    media: { height: 92, background: '#f1efe9', display: 'flex', alignItems: 'center',
+             justifyContent: 'center', flexDirection: 'column', gap: 3, fontSize: 10,
+             color: '#8a9183', letterSpacing: '.04em', textTransform: 'uppercase',
+             textAlign: 'center', padding: '0 10px', lineHeight: 1.35 },
+    mediaSub: { textTransform: 'none', letterSpacing: 0, fontSize: 9.5 },
+    head: { fontWeight: 700, marginBottom: 4 },
+    foot: { fontSize: 11, color: '#8a9183', marginTop: 6 },
+    time: { display: 'block', textAlign: 'right', fontSize: 10, color: '#9aa093', marginTop: 2 },
+    btn: { borderTop: '1px solid #e7e9e3', padding: '8px 10px', textAlign: 'center',
+           color: '#027eb5', fontSize: 12.5, fontWeight: 500 },
+    chip: { display: 'inline-block', background: '#e3eed9', color: '#477722',
+            borderRadius: 5, padding: '2px 7px', fontSize: 11, fontWeight: 700,
+            marginBottom: 6 },
+
+    invoice: { margin: '8px 0 2px', padding: 8, borderRadius: 8, background: '#f6f5f1',
+               display: 'flex', flexDirection: 'column', gap: 6 },
+    invoiceNote: { fontSize: 9, color: '#9aa093', textTransform: 'uppercase',
+                   letterSpacing: '.04em' },
+    line: { display: 'flex', alignItems: 'center', gap: 7 },
+    thumb: { width: 26, height: 26, borderRadius: 5, flexShrink: 0, background: '#fff',
+             border: '1px solid #e7e9e3' },
+    lineName: { flex: 1, minWidth: 0, fontSize: 10.5, lineHeight: 1.3 },
+    lineQty: { display: 'block', fontSize: 9, color: '#9aa093' },
+    lineValue: { fontSize: 10.5, flexShrink: 0 },
+    totals: { display: 'flex', flexDirection: 'column', gap: 3, paddingTop: 5,
+              borderTop: '1px solid #e7e9e3' },
+    totalRow: { display: 'flex', justifyContent: 'space-between', fontSize: 10.5 },
+
+    callCard: { display: 'flex', alignItems: 'center', gap: 7, padding: '8px 10px',
+                fontSize: 11.5, color: '#1f201e' },
+    callIcon: { width: 20, height: 20, borderRadius: 999, flexShrink: 0, background: '#eef0ea' },
+
+    row: { display: 'flex', gap: 7, marginTop: 7, maxWidth: 252 },
+    card: { background: '#fff', borderRadius: 10, flex: 1, minWidth: 0, overflow: 'hidden',
+            fontSize: 12, boxShadow: '0 1px 1px rgb(0 0 0 / .13)' },
+
+    cap: { fontSize: 11.5, color: 'var(--zp-ink-tertiary, #8a9183)', width: 320,
+           maxWidth: '100%', minHeight: 34 },
   };
+
+  const ICON = { catalog: '🛍', product: '🛍', location: '📍', image: '🖼', video: '▶' };
 
   const withVars = (text) =>
     String(text || '').split(/(\{\{[^}]+\}\})/g).map((part, i) =>
       part.startsWith('{{')
-        ? <span key={i} style={{ background: 'var(--zp-brand-wash, #e3eed9)',
-            color: 'var(--zp-brand-ink, #477722)', borderRadius: 3, padding: '0 3px' }}>{part}</span>
+        ? <span key={i} style={{ background: '#e3eed9', color: '#477722',
+            borderRadius: 3, padding: '0 3px' }}>{part}</span>
         : <span key={i}>{part}</span>);
 
+  const mediaBlock = (label, sub, height) => (
+    <div style={height ? { ...S.media, height } : S.media}>
+      {headerIcon && <span style={{ fontSize: 15 }}>{ICON[headerIcon] || ''}</span>}
+      <span>{label}</span>
+      {sub && <span style={S.mediaSub}>{sub}</span>}
+    </div>
+  );
+
   return (
-    <div style={S.stage}>
-      <div style={S.bubble}>
-        {headerKind !== 'text' && headerKind !== 'none' && <div style={S.media}>{headerKind}</div>}
-        <div style={S.pad}>
-          {offer && <div style={S.chip}>{offer}</div>}
-          {header && headerKind === 'text' && <div style={S.head}>{withVars(header)}</div>}
-          {body && <div>{withVars(body)}</div>}
-          {coupon && <div style={{ ...S.chip, marginTop: 8, marginBottom: 0 }}>{coupon}</div>}
-          {footer && <div style={S.foot}>{footer}</div>}
+    <div style={S.wrap}>
+      <div style={S.device}>
+        <span aria-hidden="true" style={S.speaker} />
+
+        <div style={S.screen}>
+          <div style={S.bar}>
+            <span style={S.avatar} />
+            <span style={{ minWidth: 0 }}>
+              <span style={S.name}>{L.contact}</span>
+              <span style={S.sub}>{L.label}</span>
+            </span>
+          </div>
+
+          <div style={S.chat}>
+            <div style={S.bubble}>
+              {headerKind !== 'text' && headerKind !== 'none' &&
+                mediaBlock(headerKind, productLine === true ? `${L.name} · ${L.price}` : productLine)}
+
+              <div style={S.pad}>
+                {offer && <div style={S.chip}>{offer}</div>}
+                {header && <div style={S.head}>{withVars(header)}</div>}
+                {body && <div style={{ whiteSpace: 'pre-wrap' }}>{withVars(body)}</div>}
+                {coupon && <div style={{ ...S.chip, marginTop: 8, marginBottom: 0 }}>{coupon}</div>}
+
+                {order && (
+                  <div style={S.invoice}>
+                    <span style={S.invoiceNote}>{L.orderNote}</span>
+                    {[1, 2].map((i) => (
+                      <span key={i} style={S.line}>
+                        <span style={S.thumb} />
+                        <span style={S.lineName}>
+                          {L.item} {i}
+                          <span style={S.lineQty}>{L.qty}</span>
+                        </span>
+                        <span style={S.lineValue}>{L.money}</span>
+                      </span>
+                    ))}
+                    <span style={S.totals}>
+                      {[[L.subtotal, false], [L.tax, false], [L.total, true]].map(([label, strong]) => (
+                        <span key={label} style={S.totalRow}>
+                          <span style={{ fontWeight: strong ? 600 : 400,
+                                         color: strong ? '#1f201e' : '#6b7264' }}>{label}</span>
+                          <span style={{ fontWeight: strong ? 600 : 400 }}>{L.money}</span>
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                )}
+
+                {footer && <div style={S.foot}>{footer}</div>}
+                <span style={S.time}>10:24</span>
+              </div>
+
+              {callPermission && (
+                <div style={{ borderTop: '1px solid #e7e9e3' }}>
+                  <div style={S.callCard}>
+                    <span style={S.callIcon} />
+                    <span>{L.callAsk}</span>
+                  </div>
+                  <div style={S.btn}>{L.callAllow}</div>
+                  <div style={S.btn}>{L.callAllowTemp}</div>
+                </div>
+              )}
+
+              {buttons.map((b, i) => <div key={i} style={S.btn}>{b}</div>)}
+            </div>
+
+            {cards.length > 0 && (
+              <div style={S.row}>
+                {cards.map((c, i) => (
+                  <div key={i} style={S.card}>
+                    <div style={{ ...S.media, height: 64, gap: 2 }}>
+                      <span>{c.media || 'imagem'}</span>
+                      {c.product && <span style={S.mediaSub}>{L.name} · {L.price}</span>}
+                    </div>
+                    {c.text && <div style={{ padding: '6px 8px' }}>{c.text}</div>}
+                    {(c.buttons || (c.button ? [c.button] : [])).map((b, j) => (
+                      <div key={j} style={{ ...S.btn, padding: '6px 8px', fontSize: 11.5 }}>{b}</div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        {buttons.map((b, i) => <div key={i} style={S.btn}>{b}</div>)}
       </div>
 
-      {cards.length > 0 && (
-        <div style={S.row}>
-          {cards.map((c, i) => (
-            <div key={i} style={S.card}>
-              <div style={{ ...S.media, height: 70 }}>{c.media || 'imagem'}</div>
-              <div style={{ padding: '7px 9px' }}>{c.text}</div>
-              {c.button && <div style={{ ...S.btn, padding: '6px 8px', fontSize: 12 }}>{c.button}</div>}
-            </div>
-          ))}
-        </div>
-      )}
-
       {caption && <div style={S.cap}>{caption}</div>}
+    </div>
+  );
+};
+
+export const PreviewRow = ({ children }) => (
+  <div
+    style={{
+      display: 'flex',
+      gap: 16,
+      overflowX: 'auto',
+      scrollSnapType: 'x mandatory',
+      paddingBottom: 10,
+      margin: '8px 0 4px',
+    }}
+  >
+    {children}
+  </div>
+);
+
+export const PreviewCycle = ({ items = [], lang = 'pt', seconds = 6, height = 540 }) => {
+  const L = {
+    pt: { pause: 'passa sozinho, pare o cursor em cima para ler com calma' },
+    en: { pause: 'it cycles on its own; hover to stop and read' },
+    es: { pause: 'pasa solo, deja el cursor encima para leer con calma' },
+  }[lang];
+
+  const [order, setOrder] = useState(items.map((_, index) => index));
+  const [at, setAt] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  const shuffle = () => {
+    const next = items.map((_, index) => index);
+    for (let i = next.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const keep = next[i];
+      next[i] = next[j];
+      next[j] = keep;
+    }
+    return next;
+  };
+
+  useEffect(() => {
+    setOrder(shuffle());
+    setAt(0);
+  }, []);
+
+  useEffect(() => {
+    if (paused || items.length < 2) return undefined;
+
+    const timer = setTimeout(() => {
+      setAt((current) => {
+        const next = current + 1;
+        if (next >= items.length) {
+          setOrder(shuffle());
+          return 0;
+        }
+        return next;
+      });
+    }, seconds * 1000);
+
+    return () => clearTimeout(timer);
+  }, [at, paused, items.length, seconds]);
+
+  const index = order[at] === undefined ? 0 : order[at];
+  const item = items[index] || {};
+
+  return (
+    <div
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, margin: '16px 0' }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <style>{'@keyframes zpFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}'}</style>
+
+      <div key={at} style={{ animation: 'zpFade .45s ease both' }}>
+        <TemplatePreview {...item} lang={lang} height={height} />
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 320, maxWidth: '100%' }}>
+        {items.map((_, dot) => (
+          <button
+            key={dot}
+            type="button"
+            aria-label={String(dot + 1)}
+            onClick={() => setAt(dot)}
+            style={{
+              flex: 1,
+              height: 3,
+              padding: 0,
+              border: 'none',
+              borderRadius: 999,
+              cursor: 'pointer',
+              background: dot === at ? '#477722' : 'var(--zp-border, #d8dcd4)',
+            }}
+          />
+        ))}
+      </div>
+
+      <span style={{ fontSize: 11, color: 'var(--zp-ink-tertiary, #8a9183)' }}>{L.pause}</span>
     </div>
   );
 };

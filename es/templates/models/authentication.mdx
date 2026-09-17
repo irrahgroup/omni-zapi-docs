@@ -1,0 +1,163 @@
+---
+title: "Código de acceso"
+description: "Envío de OTP: Meta escribe el texto, tú mandas solo el código"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`authentication`
+
+Envío de OTP. **El texto lo define Meta** — no escribes el cuerpo del mensaje, solo configuras el botón y la vigencia.
+
+<TemplatePreview
+  lang="es"
+  body="<tu código> es tu código de verificación. Por seguridad, no lo compartas. Expira en 10 minutos."
+  buttons={['Copiar código']}
+  caption="Todo acá lo escribe Meta: el texto, el aviso de seguridad, la línea de vigencia y la etiqueta del botón."
+/>
+
+## Cómo funciona
+
+El código no se registra acá. La plantilla es el molde, y Meta fija el texto alrededor — *"«código» es tu código de verificación"*. El código lo generas y lo mandas tú, en el envío, uno distinto para cada cliente.
+
+Por eso el cuerpo y el pie van sin texto: lo que controlas es si aparece la frase de seguridad, cuánto vale el código y cómo lo recibe el cliente.
+
+## En la creación y en el envío
+
+| En la creación | En el envío |
+|---|---|
+| El tipo de botón y la vigencia del código | El código, que va en el cuerpo y en el botón, en el mismo disparo |
+| La frase de seguridad, si la quieres | |
+
+## Campos de este modelo
+
+| Campo | Para qué sirve | Regla |
+|---|---|---|
+| `category` | Fija | Siempre `AUTHENTICATION` |
+| `message_send_ttl_seconds` | Cuánto tiempo intenta entregar Meta | De 30 a 900 segundos. Nunca menor que la vigencia del código |
+| `add_security_recommendation` | Agrega el aviso de no compartir el código | Booleano. La frase la escribe Meta |
+| `code_expiration_minutes` | Muestra la vigencia en el mensaje | De 1 a 90 minutos. Vacío esconde la línea |
+| `otp_type` | Cómo recibe el código el cliente | `COPY_CODE` funciona en cualquier teléfono. `ONE_TAP` y `ZERO_TAP` exigen app propia |
+| `supported_apps` | La app que recibe el código | `package_name` y `signature_hash`. Obligatorio en un toque y cero toques |
+| `zero_tap_terms_accepted` | Aceptación de los términos de cero toques | Sin eso, Meta rechaza |
+
+<Note>
+  El `text` del botón lo escribe y lo traduce Meta según el idioma de la plantilla. Lo que mandes ahí se ignora.
+</Note>
+
+El modelo de abajo usa `COPY_CODE`, el único que no pide datos de la aplicación. Para el autocompletado, el botón cambia:
+
+```json
+{
+  "type": "BUTTONS",
+  "buttons": [
+    {
+      "type": "OTP",
+      "otp_type": "ZERO_TAP",
+      "zero_tap_terms_accepted": true,
+      "supported_apps": [
+        {
+          "package_name": "com.tuempresa.app",
+          "signature_hash": "K8a%2FAINcGX7"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## JSON completo
+
+Son dos JSON: uno **crea** la plantilla, y Meta la aprueba una vez. El otro **envía** el mensaje, y va en cada disparo, con los valores de ese envío en las variables marcadas con llaves.
+
+### 1. Crear la plantilla
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver en [Referencia de la API](/es/templates/create-template).
+
+{/* payload:authentication */}
+```json
+{
+  "name": "exemplo_authentication",
+  "category": "AUTHENTICATION",
+  "language": "es_ES",
+  "allow_category_change": true,
+  "components": [
+    {
+      "type": "BODY",
+      "add_security_recommendation": true
+    },
+    {
+      "type": "FOOTER",
+      "code_expiration_minutes": 10
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "OTP",
+          "otp_type": "COPY_CODE"
+        }
+      ]
+    }
+  ],
+  "message_send_ttl_seconds": 600
+}
+```
+{/* /payload:authentication */}
+
+### 2. Enviar después de la aprobación
+
+`POST /v1/channels/{channelId}/messages` — ver en [Enviar plantilla](/es/messages/send-template).
+
+{/* send:authentication */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_authentication",
+          "language": {
+            "policy": "deterministic",
+            "code": "es_ES"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{otp_code}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "url",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{otp_code}}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:authentication */}
+
+## Lo que Meta rechaza aquí
+
+- `ONE_TAP` o `ZERO_TAP` sin `supported_apps`.
+- Cero toques sin la aceptación de los términos.
+- Vigencia del código fuera del rango de 1 a 90 minutos.
+- Vigencia del envío menor que la del código: el mensaje deja de entregarse antes de que el código expire, y el cliente pierde las dos cosas.

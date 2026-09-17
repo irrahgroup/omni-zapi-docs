@@ -1,0 +1,126 @@
+---
+title: "Template Library"
+description: "Modelo pronto da biblioteca da Meta, que já nasce aprovado"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`library`
+
+Modelo pronto da biblioteca da Meta. **Não passa por revisão** — já nasce aprovado.
+
+<TemplatePreview
+  body="Olá {{nome_do_cliente}}, seu pedido {{numero_do_pedido}} foi enviado e chega em {{prazo}}."
+  buttons={['Rastrear pedido', 'Falar com a loja']}
+  caption="O texto é da Meta, e os botões são os que o modelo define. Você informa só os dados de cada um."
+/>
+
+## Como funciona
+
+O texto deste modelo é escrito e mantido pela Meta: **você não edita**, só informa os dados que ele pede, como o endereço do botão ou o telefone. Por isso a aprovação costuma ser mais rápida.
+
+Você referencia o modelo pelo nome exato — `delivery_update_1`, `low_balance_warning_1` e assim por diante. A lista completa está em [Template Library](/templates/template-library), que também lista os modelos disponíveis por endpoint.
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O nome do modelo na biblioteca | O valor de cada variável do modelo |
+| Os ajustes de texto que o modelo aceita | |
+| Os dados dos botões que o modelo define | |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `library_template_name` | O identificador exato do modelo da Meta | Como `delivery_update_1`. Nome errado é recusa imediata |
+| `library_template_body_inputs` | Os trechos que a Meta permite acrescentar ao texto | Marque só o que faz sentido para o seu caso |
+| `library_template_button_inputs` | Os dados de cada botão que o modelo define | O modelo diz quais botões existem; você preenche os dados |
+
+Os ajustes de corpo que a biblioteca aceita:
+
+| Ajuste | O que acrescenta |
+|---|---|
+| `add_contact_number` | A informação de que o cliente pode falar com você pelo telefone da conta |
+| `add_learn_more_link` | A informação de que há mais detalhes em um link |
+| `add_track_package_link` | Em modelos de entrega, a informação de acompanhar o pacote |
+| `add_security_recommendation` | Em modelos com código, o alerta de não compartilhar |
+| `code_expiration_minutes` | A validade do código, de 1 a 90 minutos |
+
+<Note>
+  O botão de link aceita variável: `base_url` leva o endereço com a variável no fim, e `url_suffix_example` o mesmo endereço preenchido. O botão de chamada de voz não pede dado nenhum.
+</Note>
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:library */}
+```json
+{
+  "name": "exemplo_library",
+  "category": "MARKETING",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "library_template_name": "delivery_update_1",
+  "library_template_body_inputs": [
+    {
+      "add_contact_number": true,
+      "add_track_package_link": true
+    }
+  ],
+  "library_template_button_inputs": [
+    {
+      "type": "URL",
+      "url": {
+        "base_url": "https://sualoja.com/pedido/{{numero_do_pedido}}",
+        "url_suffix_example": "https://sualoja.com/pedido/1042"
+      }
+    },
+    {
+      "type": "PHONE_NUMBER",
+      "phone_number": "+5511988881234"
+    }
+  ]
+}
+```
+{/* /payload:library */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:library */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_library",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": []
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:library */}
+
+## O que a Meta recusa aqui
+
+- Nome de modelo que não existe na biblioteca.
+- Ajuste de corpo que aquele modelo não aceita.
+- Dado de botão que o modelo não define, ou botão que ele define e você não preencheu.

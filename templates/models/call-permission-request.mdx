@@ -1,0 +1,134 @@
+---
+title: "Permissão de chamada"
+description: "Pede autorização para ligar pelo WhatsApp antes da primeira chamada"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`call_permission_request`
+
+Pede autorização para ligar pelo WhatsApp.
+
+<TemplatePreview
+  body="Podemos te ligar para falar sobre o seu pedido {{numero_do_pedido}}?"
+  callPermission={true}
+  caption="Aproximação. O cartão é do WhatsApp: texto fixo, nome vindo do perfil da conta e nenhum botão que você defina. As duas ações de permitir estão documentadas; recusar também existe, mas a Meta não descreve como as três aparecem na tela."
+/>
+
+## Como funciona
+
+Ligar para um cliente pelo WhatsApp exige permissão explícita. Este modelo é o pedido: você escreve o motivo, e o WhatsApp acrescenta o trecho da autorização, com o nome do perfil da sua conta.
+
+O componente `CALL_PERMISSION_REQUEST` **não tem nenhum campo** — a presença dele é o que define o modelo.
+
+Não existe botão de aceitar e botão de recusar no template: quem desenha a ação é o WhatsApp. A documentação da Meta cita **permitir chamadas** e **permitir temporariamente**, por 7 dias, e a recusa, mas não descreve a tela — então a prévia acima é uma aproximação, e o arranjo dos botões no aparelho pode ser outro.
+
+O que é documentado, e no que você pode confiar, é a resposta: ela chega no seu webhook com `response` igual a `accept` ou `reject`. Quando a permissão é temporária, vêm junto `is_permanent: false` e o `expiration_timestamp`.
+
+<Warning>
+  A Meta **não deixa combinar** o componente de permissão com outros componentes interativos. Nada de botões, carrossel ou selo de oferta no mesmo template.
+</Warning>
+
+## Na criação e no envio
+
+| Na criação | No envio |
+|---|---|
+| O texto que explica por que você quer ligar | O valor de cada variável |
+| O componente de permissão | |
+
+## Campos deste modelo
+
+| Campo | Para que serve | Regra |
+|---|---|---|
+| `category` | Você escolhe | `UTILITY` ou `MARKETING` |
+| `BODY` | O motivo da chamada | Até 1024 caracteres |
+| `CALL_PERMISSION_REQUEST` | O pedido de autorização | Sem nenhum campo |
+
+## JSON completo
+
+São dois JSON: um **cria** o template, e a Meta aprova uma vez. O outro **envia** a mensagem, e vai a cada disparo, com os valores daquele envio nas variáveis marcadas com chaves.
+
+### 1. Criar o template
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver em [Referência da API](/templates/create-template).
+
+{/* payload:call_permission_request */}
+```json
+{
+  "name": "exemplo_call_permission_request",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Olá {{nome_do_cliente}}, o seu pedido {{numero_do_pedido}} foi confirmado e sai para entrega hoje.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nome_do_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_do_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "CALL_PERMISSION_REQUEST"
+    }
+  ]
+}
+```
+{/* /payload:call_permission_request */}
+
+### 2. Enviar depois de aprovado
+
+`POST /v1/channels/{channelId}/messages` — ver em [Enviar template](/messages/send-template).
+
+{/* send:call_permission_request */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_call_permission_request",
+          "language": {
+            "policy": "deterministic",
+            "code": "pt_BR"
+          },
+          "components": [
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nome_do_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_do_pedido}}"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:call_permission_request */}
+
+## O que a Meta recusa aqui
+
+- Botões, carrossel ou qualquer outro componente interativo no mesmo template.
+- Categoria `AUTHENTICATION`.

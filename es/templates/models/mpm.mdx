@@ -1,0 +1,191 @@
+---
+title: "Multiproducto"
+description: "Vitrina con secciones y hasta 30 productos, armada en el envío"
+---
+
+import { TemplatePreview } from '/snippets/template-preview.mdx';
+
+`mpm`
+
+Vitrina con secciones y varios productos.
+
+<TemplatePreview
+  lang="es"
+  headerKind="imagen del producto, viene del catálogo"
+  headerIcon="catalog"
+  header="Selección de la semana"
+  body="Separamos algunos productos que combinan con lo que compraste. Mira la lista completa."
+  footer="Precios válidos mientras dure el stock"
+  buttons={['Ver artículos']}
+  caption="El encabezado es texto; la imagen de arriba sale de la miniatura del producto elegido en el envío."
+/>
+
+## Cómo funciona
+
+La plantilla se aprueba una vez y la vitrina se arma en el envío, con hasta **30 productos** del catálogo en hasta **10 secciones**. El botón lo fija Meta (`View items`), traducido al idioma del cliente.
+
+El cliente abre la lista, agrega y quita ítems del carrito y manda el pedido de vuelta, que llega a tu webhook como mensaje de pedido. **El pago es el paso siguiente**: respondes con [detalles del pedido](/es/templates/models/order-details) o con un enlace.
+
+Como los productos van en el envío, la misma vitrina sirve para campañas distintas.
+
+## En la creación y en el envío
+
+| En la creación | En el envío |
+|---|---|
+| El encabezado de texto, el mensaje y el pie | Hasta 30 productos, en hasta 10 secciones |
+| El botón, que es fijo | La foto de arriba, de la miniatura del producto elegido |
+
+## Campos de este modelo
+
+| Campo | Para qué sirve | Regla |
+|---|---|---|
+| `category` | Fija | Siempre `MARKETING` |
+| `HEADER` | El título de la vitrina | **Obligatorio y solo texto**, hasta 60 caracteres y como máximo una variable. Es el único modelo que exige encabezado. La imagen de arriba sale del producto elegido en el envío |
+| `BODY` | El texto que presenta la selección | Hasta 1024 caracteres |
+| `FOOTER` | Opcional | Hasta 60 caracteres |
+| Botón `MPM` | Abre la lista de productos con secciones | `text` siempre `View items`, en inglés, incluso en plantilla `pt_BR` |
+
+## JSON completo
+
+Son dos JSON: uno **crea** la plantilla, y Meta la aprueba una vez. El otro **envía** el mensaje, y va en cada disparo, con los valores de ese envío en las variables marcadas con llaves.
+
+### 1. Crear la plantilla
+
+`POST /whatsapp/businesses/{wabaId}/templates` — ver en [Referencia de la API](/es/templates/create-template).
+
+{/* payload:mpm */}
+```json
+{
+  "name": "exemplo_mpm",
+  "category": "MARKETING",
+  "language": "es_ES",
+  "allow_category_change": true,
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Pedido {{numero_del_pedido}}",
+      "example": {
+        "header_text_named_params": [
+          {
+            "param_name": "numero_del_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "BODY",
+      "text": "Hola {{nombre_del_cliente}}, tu pedido {{numero_del_pedido}} quedó confirmado y sale hoy para entrega.",
+      "example": {
+        "body_text_named_params": [
+          {
+            "param_name": "nombre_del_cliente",
+            "example": "Marina"
+          },
+          {
+            "param_name": "numero_del_pedido",
+            "example": "1042"
+          }
+        ]
+      }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Responde BAJA para no recibir más mensajes"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "MPM",
+          "text": "View items"
+        }
+      ]
+    }
+  ]
+}
+```
+{/* /payload:mpm */}
+
+### 2. Enviar después de la aprobación
+
+`POST /v1/channels/{channelId}/messages` — ver en [Enviar plantilla](/es/messages/send-template).
+
+{/* send:mpm */}
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEMPLATE",
+    "attachments": [
+      {
+        "template": {
+          "name": "exemplo_mpm",
+          "language": {
+            "policy": "deterministic",
+            "code": "es_ES"
+          },
+          "components": [
+            {
+              "type": "header",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{numero_del_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "body",
+              "parameters": [
+                {
+                  "type": "text",
+                  "text": "{{nombre_del_cliente}}"
+                },
+                {
+                  "type": "text",
+                  "text": "{{numero_del_pedido}}"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "sub_type": "mpm",
+              "index": 0,
+              "parameters": [
+                {
+                  "type": "action",
+                  "action": {
+                    "thumbnail_product_retailer_id": "{{thumbnail_product_retailer_id}}",
+                    "sections": [
+                      {
+                        "title": "{{section_title}}",
+                        "product_items": [
+                          {
+                            "product_retailer_id": "{{product_retailer_id}}"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+{/* /send:mpm */}
+
+## Lo que Meta rechaza aquí
+
+- Encabezado de multimedia: aquí es solo texto.
+- Etiqueta distinta de `View items`, con el código `2388153`.
+- Más de una variable en el encabezado, con el código `2388029`.

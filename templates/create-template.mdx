@@ -1,61 +1,37 @@
 ---
-title: "Criar template"
-description: "Crie um novo template e envie para aprovação da Meta"
+title: "Referência da API"
+description: "A chamada que cria o template: rota, autenticação, respostas e erros"
 openapi: "/pt/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates"
 ---
 
-## Conceituação
+Esta é a chamada única de criação. **O corpo dela é o JSON do modelo** que você escolheu — não existe rota separada por modelo, e mandar o payload de [Modelos](/templates/models/overview) já cria o template.
+
+Aqui ficam a mecânica e o retorno: a rota, o `wabaId`, o schema campo a campo e o que volta em cada caso. O playground acima dispara a chamada de verdade.
+
+O template nasce com status `PENDING` e passa a `APPROVED` ou `REJECTED` depois da revisão da Meta. Use [Sincronizar templates](/templates/sync-templates) para forçar a atualização do status.
+
+<Note>
+  O `wabaId` sai do endpoint de [Listar WABAs](/templates/list-businesses).
+</Note>
 
 <Warning>
-  Este endpoint é escopado por **WABA**, então hoje cobre só o **WhatsApp Oficial**.
+  O nome vai em `snake_case`, sem espaço nem caractere especial, e **não pode ser alterado** depois de criado.
+</Warning>
+
+<Warning>
+  Este endpoint é escopado por **WABA**, então hoje cobre só o **Meta Cloud API**.
 
   Instagram e Messenger também têm template pré-aprovado — o **Utility Template**, escopado por página. O suporte a eles no Omni Z-API está **em implementação**. Veja a [comparação dos três tipos de template](/templates/introduction).
 </Warning>
 
-Cria um novo template de mensagem e envia para aprovação da Meta. O template começa com status `PENDING` e é atualizado para `APPROVED` ou `REJECTED` após a revisão.
-
-Use o endpoint de [Sincronizar templates](/templates/sync-templates) para forçar a atualização do status.
-
-<Warning>
-  O nome do template deve ser em `snake_case`, sem espaços ou caracteres especiais. Uma vez criado, o nome não pode ser alterado.
-</Warning>
-
-<Note>
-  O `wabaId` é obtido através do endpoint de [Listar WABAs](/templates/list-businesses).
-</Note>
-
-## Modelos prontos
-
-O seletor de exemplos da requisição acima tem **um payload por tipo de
-template**: carrossel de mídia, cupom, oferta por tempo limitado, multi-produto,
-detalhes do pedido e os demais. Escolha o modelo e copie o JSON.
-
-Cada tipo aceita componentes diferentes, e é isso que [Tipos de template](/templates/types)
-explica. O que a Meta recusa em cada campo está em [Validações](/templates/validation).
-
-## Qual campo vale em qual componente
-
-Cada item de `components` é um objeto identificado pelo `type`. A tabela diz
-quais campos aquele tipo usa.
-
-| `type` | Campos |
-|---|---|
-| `HEADER` | `format`, `text` (60), `example` |
-| `BODY` | `text` (1024), `example`, `add_security_recommendation` |
-| `FOOTER` | `text` (60), `code_expiration_minutes` |
-| `BUTTONS` | `buttons` |
-| `CAROUSEL` | `cards` |
-| `LIMITED_TIME_OFFER` | `limited_time_offer` |
-| `CALL_PERMISSION_REQUEST` | nenhum |
-
-E nos botões, dentro de `buttons`:
-
-| `type` | Campos |
-|---|---|
-| `QUICK_REPLY` | `text` (25) |
-| `URL` | `text`, `url`, `example` |
-| `PHONE_NUMBER` | `text`, `phone_number` |
-| `COPY_CODE` | `example` (o código, até 20) |
-| `OTP` | `otp_type`, `supported_apps`, `zero_tap_terms_accepted` |
-| `FLOW` | `text`, `flow_id` ou `flow_name` ou `flow_json`, `flow_action`, `navigate_screen` |
-| `CATALOG`, `MPM`, `SPM`, `PAYMENT_REQUEST`, `ORDER_DETAILS`, `VOICE_CALL` | nenhum: a Meta escreve o rótulo |
+<CardGroup cols={3}>
+  <Card title="Escolher o modelo" icon="layer-group" href="/templates/models/overview">
+    Os 13 modelos e qual usar
+  </Card>
+  <Card title="Campos do template" icon="list-check" href="/templates/anatomy">
+    Para que serve cada campo
+  </Card>
+  <Card title="Validações" icon="triangle-exclamation" href="/templates/validation">
+    O que a Meta recusa
+  </Card>
+</CardGroup>
