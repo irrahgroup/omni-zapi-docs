@@ -1,0 +1,286 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Parceiro: Listar Canais",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels": {
+      "get": {
+        "summary": "Listar canais (Parceiro)",
+        "description": "Lista os canais do workspace da chave, do mais recente para o mais antigo, com paginacao e filtros opcionais. Requer role ENTERPRISE.",
+        "operationId": "partnerListChannels",
+        "tags": [
+          "Parceiros"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Pagina desejada, comecando em 0",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Quantidade de canais por pagina (1 a 100)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "description": "Filtra por nome ou identificador do canal",
+            "schema": {
+              "type": "string",
+              "example": "suporte"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "Filtra pela tecnologia do canal",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "META_WHATSAPP",
+                "Z_API_WHATSAPP",
+                "META_INSTAGRAM",
+                "META_MESSENGER",
+                "BOT_TELEGRAM"
+              ]
+            }
+          },
+          {
+            "name": "middleware",
+            "in": "query",
+            "required": false,
+            "description": "Sinonimo de `type`, para quem vem da Z-API. Se os dois forem enviados, `type` prevalece",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "META_WHATSAPP",
+                "Z_API_WHATSAPP",
+                "META_INSTAGRAM",
+                "META_MESSENGER",
+                "BOT_TELEGRAM"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pagina de canais do workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Autorizacao invalida ou parametro fora do formato esperado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Authorization",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "pageSize": {
+                    "summary": "pageSize",
+                    "value": {
+                      "error": "pageSize must be between 1 and 100"
+                    }
+                  },
+                  "type": {
+                    "summary": "type",
+                    "value": {
+                      "error": "type must be one of [META_WHATSAPP, Z_API_WHATSAPP, META_INSTAGRAM, META_MESSENGER, BOT_TELEGRAM]"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Conta sem role ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Channel listing requires ENTERPRISE role"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "Channel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "AA0C61D24A6549A3BF83239847DE1CC2"
+          },
+          "name": {
+            "type": "string",
+            "example": "Suporte"
+          },
+          "token": {
+            "type": "string",
+            "nullable": true,
+            "example": "F1B29C3D4E5A6B7C8D9E0F1A2B3C4D5E"
+          },
+          "tenant": {
+            "type": "string",
+            "example": "01A090B7FB82798CB38AB259C0B65FBE"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "META_WHATSAPP",
+              "Z_API_WHATSAPP",
+              "META_INSTAGRAM",
+              "META_MESSENGER",
+              "BOT_TELEGRAM"
+            ],
+            "example": "META_WHATSAPP"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-03-11T14:02:00.000Z"
+          },
+          "due": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "example": 1774915200000
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": [
+              "PAID",
+              "PENDING",
+              "BOLETO_PENDING",
+              "CANCELLATION_PROCESS",
+              "CANCELED",
+              "TRIAL"
+            ],
+            "example": "PAID"
+          },
+          "trial": {
+            "type": "boolean",
+            "example": false
+          },
+          "phoneConnected": {
+            "type": "boolean",
+            "example": true
+          },
+          "whatsappConnected": {
+            "type": "boolean",
+            "example": true
+          },
+          "phoneNumberConnected": {
+            "type": "string",
+            "nullable": true,
+            "example": "5585999999999"
+          },
+          "businessId": {
+            "type": "string",
+            "nullable": true,
+            "example": "102938475610293"
+          },
+          "whatsappCoexistence": {
+            "type": "boolean",
+            "example": false
+          },
+          "webhooksCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Quantidade de webhooks cadastrados no canal",
+            "example": 2
+          }
+        }
+      },
+      "ChannelPage": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "example": 37
+          },
+          "totalPage": {
+            "type": "integer",
+            "example": 2
+          },
+          "pageSize": {
+            "type": "integer",
+            "example": 20
+          },
+          "page": {
+            "type": "integer",
+            "example": 0
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Channel"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada no painel de Seguranca do Omni Z-API"
+      }
+    }
+  }
+}
