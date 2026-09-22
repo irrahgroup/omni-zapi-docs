@@ -64,8 +64,12 @@ Para asegurarte de que las peticiones que recibes provienen realmente de {projec
 
 Cuando está habilitada:
 - Se genera un `secret` de 64 caracteres hexadecimales, que se devuelve **una sola vez**, en la creación o la actualización.
-- Cada petición enviada a tu webhook incluye un header con la firma HMAC-SHA256 calculada sobre el payload.
+- Cada petición enviada a tu webhook trae el header `x-webhook-signature`, con el formato `t={unix_timestamp},v1={hmac_sha256_hex}`.
 - Verificas la firma en tu servidor usando el `secret` que has almacenado.
+
+<Warning>
+  La firma **no** es el HMAC solo del cuerpo. Se calcula sobre una cadena canónica de cinco campos, de la cual el cuerpo es el último. Consulta [Firma HMAC](/es/webhooks/signature) para la cadena exacta, un ejemplo completo y código de validación listo para usar.
+</Warning>
 
 <Warning>
   El `secret` se muestra **únicamente** en la respuesta de creación o de actualización con `signing: true`. Guárdalo de forma segura: no se puede recuperar después.

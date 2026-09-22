@@ -1,0 +1,208 @@
+---
+title: "Assinatura HMAC"
+description: "Valide que a requisição recebida veio do Omni Z-API e não foi adulterada"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+Quando um webhook tem `signing: true`, toda requisição que o {projectName} envia ao seu endpoint carrega uma assinatura HMAC-SHA256. Esta página descreve exatamente o que é assinado, para que você reproduza o cálculo no seu servidor.
+
+Vale para os dois tipos de webhook — [de canal](/webhooks/channel-webhooks) e [de template](/webhooks/template-webhooks).
+
+## Headers recebidos
+
+| Header | Formato | Para que serve |
+|---|---|---|
+| `x-webhook-signature` | `t={unix_timestamp},v1={hmac_sha256_hex}` | A assinatura em si |
+| `x-idempotency-key` | `{topic}:{partition}:{offset}` | Deduplicação **e** três dos campos assinados |
+
+- `t` — instante da assinatura, em segundos desde a época (UTC).
+- `v1` — o HMAC-SHA256 em hexadecimal minúsculo. O prefixo `v1=` é a versão do esquema e **não** faz parte do que é assinado.
+
+<Warning>
+  O `x-idempotency-key` não é opcional para quem valida a assinatura: ele é a única fonte de `topic`, `partition` e `offset`, que entram no cálculo.
+</Warning>
+
+## O que é assinado
+
+A assinatura é calculada sobre uma string canônica de **cinco campos separados por `\n`** (byte `0x0A`, sem `\r`, sem quebra de linha no final):
+
+```
+{t}
+{topic}
+{partition}
+{offset}
+{corpo}
+```
+
+O corpo entra **literalmente**, byte a byte como foi enviado — sem reserialização, sem reordenar chaves, sem remover espaços.
+
+<Warning>
+  Calcular o HMAC **apenas sobre o corpo** não funciona. O corpo é só o último dos cinco campos.
+</Warning>
+
+## Se o corpo chegar comprimido
+
+Requisições com 1024 bytes ou mais são enviadas com `content-encoding: gzip`. A assinatura é calculada sobre os bytes **descomprimidos**.
+
+Se o seu framework HTTP já descomprime o corpo automaticamente, use o corpo que ele entrega. Se você lê o corpo cru, descomprima antes de calcular o HMAC — senão a validação passa nos payloads pequenos e falha nos grandes, o que aparenta ser intermitência.
+
+## Exemplo completo
+
+Todos os valores abaixo são consistentes entre si: com este `secret` e este corpo, o `v1` do header é reproduzível.
+
+Secret devolvido pela API (exemplo, não é um secret real):
+
+```
+a7f3c81e9d2b4605f1a8c3e7b9d40f6218273645a8b9c0d1e2f3041526374859
+```
+
+Requisição recebida:
+
+```http
+POST /seu-endpoint HTTP/1.1
+content-type: application/json
+x-idempotency-key: webhook.delivery.event:0:539402
+x-webhook-signature: t=1789474359,v1=c9a6812419c87dc26841fd802f1b4704f7dfe868b178ba55f9c432642be67230
+content-length: 364
+
+[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]
+```
+
+String canônica montada a partir dela — `t` vem do `x-webhook-signature`, e `topic`, `partition` e `offset` vêm do `x-idempotency-key`:
+
+```
+1789474359
+webhook.delivery.event
+0
+539402
+[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]
+```
+
+Conferência no terminal:
+
+```bash
+printf '1789474359\nwebhook.delivery.event\n0\n539402\n%s' \
+  '[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]' \
+| openssl dgst -sha256 -hmac 'a7f3c81e9d2b4605f1a8c3e7b9d40f6218273645a8b9c0d1e2f3041526374859'
+```
+
+```
+SHA2-256(stdin)= c9a6812419c87dc26841fd802f1b4704f7dfe868b178ba55f9c432642be67230
+```
+
+## Validando no seu servidor
+
+<CodeGroup>
+
+```js Node.js
+const crypto = require('crypto');
+const zlib = require('zlib');
+
+function verifyWebhookSignature({
+  secret,
+  rawBody,            // Buffer com o corpo exatamente como chegou
+  signatureHeader,    // x-webhook-signature
+  idempotencyHeader,  // x-idempotency-key
+  contentEncoding,    // content-encoding, se houver
+  toleranceSeconds = 300,
+}) {
+  // 1. Se o corpo chegou comprimido, descomprima antes de assinar.
+  const body = contentEncoding === 'gzip' ? zlib.gunzipSync(rawBody) : rawBody;
+
+  // 2. Separe t e v1 do header de assinatura.
+  const parts = {};
+  for (const pair of signatureHeader.split(',')) {
+    const i = pair.indexOf('=');
+    parts[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
+  }
+  const { t, v1 } = parts;
+
+  // 3. Recupere topic, partition e offset do header de idempotência.
+  const last = idempotencyHeader.lastIndexOf(':');
+  const prev = idempotencyHeader.lastIndexOf(':', last - 1);
+  const topic = idempotencyHeader.slice(0, prev);
+  const partition = idempotencyHeader.slice(prev + 1, last);
+  const offset = idempotencyHeader.slice(last + 1);
+
+  // 4. Monte a string canônica e calcule o HMAC.
+  const canonical = Buffer.concat([
+    Buffer.from(`${t}\n${topic}\n${partition}\n${offset}\n`, 'utf8'),
+    body,
+  ]);
+  const expected = crypto.createHmac('sha256', secret).update(canonical).digest();
+  const received = Buffer.from(v1, 'hex');
+
+  // 5. Compare em tempo constante e rejeite assinaturas antigas.
+  const valid =
+    expected.length === received.length && crypto.timingSafeEqual(expected, received);
+  const fresh = Math.abs(Math.floor(Date.now() / 1000) - Number(t)) <= toleranceSeconds;
+
+  return valid && fresh;
+}
+```
+
+```python Python
+import gzip
+import hashlib
+import hmac
+import time
+
+
+def verify_webhook_signature(
+    secret: str,
+    raw_body: bytes,            # corpo exatamente como chegou
+    signature_header: str,      # x-webhook-signature
+    idempotency_header: str,    # x-idempotency-key
+    content_encoding: str | None = None,
+    tolerance_seconds: int = 300,
+) -> bool:
+    # 1. Se o corpo chegou comprimido, descomprima antes de assinar.
+    body = gzip.decompress(raw_body) if content_encoding == "gzip" else raw_body
+
+    # 2. Separe t e v1 do header de assinatura.
+    parts = dict(p.strip().split("=", 1) for p in signature_header.split(","))
+    t, v1 = parts["t"], parts["v1"]
+
+    # 3. Recupere topic, partition e offset do header de idempotência.
+    topic, partition, offset = idempotency_header.rsplit(":", 2)
+
+    # 4. Monte a string canônica e calcule o HMAC.
+    canonical = b"\n".join([
+        t.encode(), topic.encode(), partition.encode(), offset.encode(), body,
+    ])
+    expected = hmac.new(secret.encode(), canonical, hashlib.sha256).hexdigest()
+
+    # 5. Compare em tempo constante e rejeite assinaturas antigas.
+    fresh = abs(int(time.time()) - int(t)) <= tolerance_seconds
+    return hmac.compare_digest(expected, v1) and fresh
+```
+
+</CodeGroup>
+
+<Note>
+  Leia o corpo **cru**. Frameworks que fazem `JSON.parse` e depois `JSON.stringify` antes de você assinar mudam os bytes (ordem de chaves, espaços, escapes) e a assinatura não fecha. No Express, use `express.raw({ type: 'application/json' })` na rota do webhook.
+</Note>
+
+## Proteção contra replay
+
+Compare `t` com a hora atual do seu servidor e rejeite requisições fora de uma janela aceitável — 5 minutos é um valor razoável. Só isso não basta: use também o `x-idempotency-key` para descartar reentregas do mesmo evento, que chegam com o mesmo valor.
+
+## Rotação do secret
+
+O `secret` é devolvido **apenas** na resposta de criação ou de atualização com `signing: true`. O `GET` não o retorna.
+
+<Warning>
+  Todo `PATCH` com `signing: true` gera um secret novo e invalida o anterior — inclusive quando a assinatura já estava habilitada e a sua intenção era só mudar outro campo no mesmo request. Se você não quer rotacionar, **omita** o campo `signing`.
+</Warning>
+
+Depois de rotacionar, valide com o secret da **última** resposta recebida.
+
+## Se a assinatura não fecha
+
+1. Você está assinando os cinco campos, e não só o corpo?
+2. O separador é `\n` puro, sem `\r`, e não há quebra de linha no fim?
+3. O corpo é o cru, sem reserialização do seu framework?
+4. Se veio `content-encoding: gzip`, você descomprimiu antes?
+5. `topic`, `partition` e `offset` saíram do `x-idempotency-key` desta mesma requisição?
+6. O secret é o da última resposta com `signing: true`?

@@ -64,8 +64,12 @@ Para garantir que as requisições recebidas são realmente do {projectName} e n
 
 Quando habilitado:
 - Um `secret` de 64 caracteres hexadecimais é gerado e retornado **apenas uma vez** na criação/atualização.
-- Cada requisição enviada ao seu webhook inclui um header com a assinatura HMAC-SHA256 calculada sobre o payload.
+- Cada requisição enviada ao seu webhook traz o header `x-webhook-signature`, no formato `t={unix_timestamp},v1={hmac_sha256_hex}`.
 - Você verifica a assinatura no seu servidor usando o `secret` armazenado.
+
+<Warning>
+  A assinatura **não** é o HMAC apenas do corpo. Ela é calculada sobre uma string canônica de cinco campos, da qual o corpo é o último. Veja [Assinatura HMAC](/webhooks/signature) para a string exata, um exemplo completo e código de validação pronto.
+</Warning>
 
 <Warning>
   O `secret` é exibido **apenas** na resposta de criação ou de atualização com `signing: true`. Armazene-o com segurança — ele não pode ser recuperado depois.
