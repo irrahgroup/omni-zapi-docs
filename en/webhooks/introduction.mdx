@@ -64,8 +64,12 @@ To ensure requests received are genuinely from {projectName} and have not been t
 
 When enabled:
 - A 64-character hexadecimal `secret` is generated and returned **only once** on create/update.
-- Each request sent to your webhook includes a header with an HMAC-SHA256 signature computed over the payload.
+- Each request sent to your webhook carries the `x-webhook-signature` header, in the form `t={unix_timestamp},v1={hmac_sha256_hex}`.
 - You verify the signature on your server using the stored `secret`.
+
+<Warning>
+  The signature is **not** the HMAC of the body alone. It is computed over a canonical string of five fields, of which the body is the last. See [HMAC signing](/en/webhooks/signature) for the exact string, a complete example, and ready-to-use verification code.
+</Warning>
 
 <Warning>
   The `secret` is shown **only** in the create response or in an update with `signing: true`. Store it securely — it cannot be retrieved afterwards.

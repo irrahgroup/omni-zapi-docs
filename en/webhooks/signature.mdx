@@ -1,0 +1,208 @@
+---
+title: "HMAC signing"
+description: "Verify that an incoming request came from Omni Z-API and was not tampered with"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+When a webhook has `signing: true`, every request {projectName} sends to your endpoint carries an HMAC-SHA256 signature. This page describes exactly what is signed, so you can reproduce the computation on your server.
+
+It applies to both webhook types — [channel](/en/webhooks/channel-webhooks) and [template](/en/webhooks/template-webhooks).
+
+## Headers you receive
+
+| Header | Format | What it is for |
+|---|---|---|
+| `x-webhook-signature` | `t={unix_timestamp},v1={hmac_sha256_hex}` | The signature itself |
+| `x-idempotency-key` | `{topic}:{partition}:{offset}` | Deduplication **and** three of the signed fields |
+
+- `t` — the moment the request was signed, in seconds since the epoch (UTC).
+- `v1` — the HMAC-SHA256 in lowercase hex. The `v1=` prefix is the scheme version and is **not** part of what gets signed.
+
+<Warning>
+  `x-idempotency-key` is not optional if you verify the signature: it is the only source of `topic`, `partition`, and `offset`, which are part of the computation.
+</Warning>
+
+## What gets signed
+
+The signature is computed over a canonical string of **five fields separated by `\n`** (byte `0x0A`, no `\r`, no trailing newline):
+
+```
+{t}
+{topic}
+{partition}
+{offset}
+{body}
+```
+
+The body goes in **literally**, byte for byte as it was sent — no reserialization, no key reordering, no whitespace stripping.
+
+<Warning>
+  Computing the HMAC **over the body alone** does not work. The body is only the last of the five fields.
+</Warning>
+
+## If the body arrives compressed
+
+Requests of 1024 bytes or more are sent with `content-encoding: gzip`. The signature is computed over the **uncompressed** bytes.
+
+If your HTTP framework decompresses the body for you, use the body it hands you. If you read the raw body, decompress it before computing the HMAC — otherwise verification passes on small payloads and fails on large ones, which looks like flakiness.
+
+## Complete example
+
+Every value below is consistent with the others: with this `secret` and this body, the `v1` in the header is reproducible.
+
+Secret returned by the API (example, not a real secret):
+
+```
+a7f3c81e9d2b4605f1a8c3e7b9d40f6218273645a8b9c0d1e2f3041526374859
+```
+
+Request received:
+
+```http
+POST /your-endpoint HTTP/1.1
+content-type: application/json
+x-idempotency-key: webhook.delivery.event:0:539402
+x-webhook-signature: t=1789474359,v1=c9a6812419c87dc26841fd802f1b4704f7dfe868b178ba55f9c432642be67230
+content-length: 364
+
+[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]
+```
+
+The canonical string built from it — `t` comes from `x-webhook-signature`, while `topic`, `partition`, and `offset` come from `x-idempotency-key`:
+
+```
+1789474359
+webhook.delivery.event
+0
+539402
+[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]
+```
+
+Check it from the terminal:
+
+```bash
+printf '1789474359\nwebhook.delivery.event\n0\n539402\n%s' \
+  '[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]' \
+| openssl dgst -sha256 -hmac 'a7f3c81e9d2b4605f1a8c3e7b9d40f6218273645a8b9c0d1e2f3041526374859'
+```
+
+```
+SHA2-256(stdin)= c9a6812419c87dc26841fd802f1b4704f7dfe868b178ba55f9c432642be67230
+```
+
+## Verifying on your server
+
+<CodeGroup>
+
+```js Node.js
+const crypto = require('crypto');
+const zlib = require('zlib');
+
+function verifyWebhookSignature({
+  secret,
+  rawBody,            // Buffer holding the body exactly as received
+  signatureHeader,    // x-webhook-signature
+  idempotencyHeader,  // x-idempotency-key
+  contentEncoding,    // content-encoding, if present
+  toleranceSeconds = 300,
+}) {
+  // 1. If the body arrived compressed, decompress it before signing.
+  const body = contentEncoding === 'gzip' ? zlib.gunzipSync(rawBody) : rawBody;
+
+  // 2. Pull t and v1 out of the signature header.
+  const parts = {};
+  for (const pair of signatureHeader.split(',')) {
+    const i = pair.indexOf('=');
+    parts[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
+  }
+  const { t, v1 } = parts;
+
+  // 3. Recover topic, partition, and offset from the idempotency header.
+  const last = idempotencyHeader.lastIndexOf(':');
+  const prev = idempotencyHeader.lastIndexOf(':', last - 1);
+  const topic = idempotencyHeader.slice(0, prev);
+  const partition = idempotencyHeader.slice(prev + 1, last);
+  const offset = idempotencyHeader.slice(last + 1);
+
+  // 4. Build the canonical string and compute the HMAC.
+  const canonical = Buffer.concat([
+    Buffer.from(`${t}\n${topic}\n${partition}\n${offset}\n`, 'utf8'),
+    body,
+  ]);
+  const expected = crypto.createHmac('sha256', secret).update(canonical).digest();
+  const received = Buffer.from(v1, 'hex');
+
+  // 5. Compare in constant time and reject stale signatures.
+  const valid =
+    expected.length === received.length && crypto.timingSafeEqual(expected, received);
+  const fresh = Math.abs(Math.floor(Date.now() / 1000) - Number(t)) <= toleranceSeconds;
+
+  return valid && fresh;
+}
+```
+
+```python Python
+import gzip
+import hashlib
+import hmac
+import time
+
+
+def verify_webhook_signature(
+    secret: str,
+    raw_body: bytes,            # the body exactly as received
+    signature_header: str,      # x-webhook-signature
+    idempotency_header: str,    # x-idempotency-key
+    content_encoding: str | None = None,
+    tolerance_seconds: int = 300,
+) -> bool:
+    # 1. If the body arrived compressed, decompress it before signing.
+    body = gzip.decompress(raw_body) if content_encoding == "gzip" else raw_body
+
+    # 2. Pull t and v1 out of the signature header.
+    parts = dict(p.strip().split("=", 1) for p in signature_header.split(","))
+    t, v1 = parts["t"], parts["v1"]
+
+    # 3. Recover topic, partition, and offset from the idempotency header.
+    topic, partition, offset = idempotency_header.rsplit(":", 2)
+
+    # 4. Build the canonical string and compute the HMAC.
+    canonical = b"\n".join([
+        t.encode(), topic.encode(), partition.encode(), offset.encode(), body,
+    ])
+    expected = hmac.new(secret.encode(), canonical, hashlib.sha256).hexdigest()
+
+    # 5. Compare in constant time and reject stale signatures.
+    fresh = abs(int(time.time()) - int(t)) <= tolerance_seconds
+    return hmac.compare_digest(expected, v1) and fresh
+```
+
+</CodeGroup>
+
+<Note>
+  Read the **raw** body. Frameworks that `JSON.parse` and then `JSON.stringify` before you sign change the bytes (key order, whitespace, escapes) and the signature will not match. In Express, use `express.raw({ type: 'application/json' })` on the webhook route.
+</Note>
+
+## Replay protection
+
+Compare `t` against your server's current time and reject requests outside an acceptable window — 5 minutes is a reasonable value. That alone is not enough: also use `x-idempotency-key` to discard redeliveries of the same event, which arrive with the same value.
+
+## Rotating the secret
+
+The `secret` is returned **only** in the create response or in an update response with `signing: true`. `GET` does not return it.
+
+<Warning>
+  Every `PATCH` with `signing: true` generates a new secret and invalidates the previous one — including when signing was already enabled and you only meant to change another field in the same request. If you do not want to rotate, **omit** the `signing` field.
+</Warning>
+
+After rotating, verify with the secret from the **most recent** response you received.
+
+## When the signature does not match
+
+1. Are you signing all five fields, and not the body alone?
+2. Is the separator a bare `\n`, with no `\r` and no trailing newline?
+3. Is the body the raw one, with no reserialization by your framework?
+4. If `content-encoding: gzip` was present, did you decompress first?
+5. Did `topic`, `partition`, and `offset` come from the `x-idempotency-key` of this same request?
+6. Is the secret the one from the most recent response with `signing: true`?

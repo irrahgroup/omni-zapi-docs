@@ -1,0 +1,208 @@
+---
+title: "Firma HMAC"
+description: "Verifica que la petición recibida proviene de Omni Z-API y no ha sido manipulada"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+Cuando un webhook tiene `signing: true`, cada petición que {projectName} envía a tu endpoint lleva una firma HMAC-SHA256. Esta página describe exactamente qué se firma, para que puedas reproducir el cálculo en tu servidor.
+
+Vale para los dos tipos de webhook: [de canal](/es/webhooks/channel-webhooks) y [de plantilla](/es/webhooks/template-webhooks).
+
+## Headers que recibes
+
+| Header | Formato | Para qué sirve |
+|---|---|---|
+| `x-webhook-signature` | `t={unix_timestamp},v1={hmac_sha256_hex}` | La firma en sí |
+| `x-idempotency-key` | `{topic}:{partition}:{offset}` | Deduplicación **y** tres de los campos firmados |
+
+- `t` — el instante de la firma, en segundos desde la época (UTC).
+- `v1` — el HMAC-SHA256 en hexadecimal minúsculo. El prefijo `v1=` es la versión del esquema y **no** forma parte de lo que se firma.
+
+<Warning>
+  El `x-idempotency-key` no es opcional si validas la firma: es la única fuente de `topic`, `partition` y `offset`, que entran en el cálculo.
+</Warning>
+
+## Qué se firma
+
+La firma se calcula sobre una cadena canónica de **cinco campos separados por `\n`** (byte `0x0A`, sin `\r`, sin salto de línea final):
+
+```
+{t}
+{topic}
+{partition}
+{offset}
+{cuerpo}
+```
+
+El cuerpo entra **literalmente**, byte a byte tal y como se envió: sin reserializar, sin reordenar claves, sin quitar espacios.
+
+<Warning>
+  Calcular el HMAC **solo sobre el cuerpo** no funciona. El cuerpo es únicamente el último de los cinco campos.
+</Warning>
+
+## Si el cuerpo llega comprimido
+
+Las peticiones de 1024 bytes o más se envían con `content-encoding: gzip`. La firma se calcula sobre los bytes **descomprimidos**.
+
+Si tu framework HTTP ya descomprime el cuerpo automáticamente, usa el cuerpo que te entrega. Si lees el cuerpo crudo, descomprímelo antes de calcular el HMAC: de lo contrario la validación pasa en los payloads pequeños y falla en los grandes, lo que parece intermitencia.
+
+## Ejemplo completo
+
+Todos los valores de abajo son consistentes entre sí: con este `secret` y este cuerpo, el `v1` del header es reproducible.
+
+Secret devuelto por la API (ejemplo, no es un secret real):
+
+```
+a7f3c81e9d2b4605f1a8c3e7b9d40f6218273645a8b9c0d1e2f3041526374859
+```
+
+Petición recibida:
+
+```http
+POST /tu-endpoint HTTP/1.1
+content-type: application/json
+x-idempotency-key: webhook.delivery.event:0:539402
+x-webhook-signature: t=1789474359,v1=c9a6812419c87dc26841fd802f1b4704f7dfe868b178ba55f9c432642be67230
+content-length: 364
+
+[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]
+```
+
+Cadena canónica construida a partir de ella — `t` viene del `x-webhook-signature`, y `topic`, `partition` y `offset` vienen del `x-idempotency-key`:
+
+```
+1789474359
+webhook.delivery.event
+0
+539402
+[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]
+```
+
+Comprobación en el terminal:
+
+```bash
+printf '1789474359\nwebhook.delivery.event\n0\n539402\n%s' \
+  '[{"field":"message_template_status_update","identifier":"01A0A4FBC8CD7DCBBBFAA8382F5514A5","type":"TEMPLATE_STATUS","value":{"event":"APPROVED","message_template_category":"UTILITY","message_template_id":"1587155656151346","message_template_language":"pt_BR","message_template_name":"exemplo_teste_assinatura_webhook","reason":"NONE"},"waba_id":"845974408299669"}]' \
+| openssl dgst -sha256 -hmac 'a7f3c81e9d2b4605f1a8c3e7b9d40f6218273645a8b9c0d1e2f3041526374859'
+```
+
+```
+SHA2-256(stdin)= c9a6812419c87dc26841fd802f1b4704f7dfe868b178ba55f9c432642be67230
+```
+
+## Validando en tu servidor
+
+<CodeGroup>
+
+```js Node.js
+const crypto = require('crypto');
+const zlib = require('zlib');
+
+function verifyWebhookSignature({
+  secret,
+  rawBody,            // Buffer con el cuerpo exactamente como llegó
+  signatureHeader,    // x-webhook-signature
+  idempotencyHeader,  // x-idempotency-key
+  contentEncoding,    // content-encoding, si viene
+  toleranceSeconds = 300,
+}) {
+  // 1. Si el cuerpo llegó comprimido, descomprímelo antes de firmar.
+  const body = contentEncoding === 'gzip' ? zlib.gunzipSync(rawBody) : rawBody;
+
+  // 2. Separa t y v1 del header de firma.
+  const parts = {};
+  for (const pair of signatureHeader.split(',')) {
+    const i = pair.indexOf('=');
+    parts[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
+  }
+  const { t, v1 } = parts;
+
+  // 3. Recupera topic, partition y offset del header de idempotencia.
+  const last = idempotencyHeader.lastIndexOf(':');
+  const prev = idempotencyHeader.lastIndexOf(':', last - 1);
+  const topic = idempotencyHeader.slice(0, prev);
+  const partition = idempotencyHeader.slice(prev + 1, last);
+  const offset = idempotencyHeader.slice(last + 1);
+
+  // 4. Construye la cadena canónica y calcula el HMAC.
+  const canonical = Buffer.concat([
+    Buffer.from(`${t}\n${topic}\n${partition}\n${offset}\n`, 'utf8'),
+    body,
+  ]);
+  const expected = crypto.createHmac('sha256', secret).update(canonical).digest();
+  const received = Buffer.from(v1, 'hex');
+
+  // 5. Compara en tiempo constante y rechaza firmas antiguas.
+  const valid =
+    expected.length === received.length && crypto.timingSafeEqual(expected, received);
+  const fresh = Math.abs(Math.floor(Date.now() / 1000) - Number(t)) <= toleranceSeconds;
+
+  return valid && fresh;
+}
+```
+
+```python Python
+import gzip
+import hashlib
+import hmac
+import time
+
+
+def verify_webhook_signature(
+    secret: str,
+    raw_body: bytes,            # el cuerpo exactamente como llegó
+    signature_header: str,      # x-webhook-signature
+    idempotency_header: str,    # x-idempotency-key
+    content_encoding: str | None = None,
+    tolerance_seconds: int = 300,
+) -> bool:
+    # 1. Si el cuerpo llegó comprimido, descomprímelo antes de firmar.
+    body = gzip.decompress(raw_body) if content_encoding == "gzip" else raw_body
+
+    # 2. Separa t y v1 del header de firma.
+    parts = dict(p.strip().split("=", 1) for p in signature_header.split(","))
+    t, v1 = parts["t"], parts["v1"]
+
+    # 3. Recupera topic, partition y offset del header de idempotencia.
+    topic, partition, offset = idempotency_header.rsplit(":", 2)
+
+    # 4. Construye la cadena canónica y calcula el HMAC.
+    canonical = b"\n".join([
+        t.encode(), topic.encode(), partition.encode(), offset.encode(), body,
+    ])
+    expected = hmac.new(secret.encode(), canonical, hashlib.sha256).hexdigest()
+
+    # 5. Compara en tiempo constante y rechaza firmas antiguas.
+    fresh = abs(int(time.time()) - int(t)) <= tolerance_seconds
+    return hmac.compare_digest(expected, v1) and fresh
+```
+
+</CodeGroup>
+
+<Note>
+  Lee el cuerpo **crudo**. Los frameworks que hacen `JSON.parse` y luego `JSON.stringify` antes de que firmes cambian los bytes (orden de claves, espacios, escapes) y la firma no cuadra. En Express, usa `express.raw({ type: 'application/json' })` en la ruta del webhook.
+</Note>
+
+## Protección contra replay
+
+Compara `t` con la hora actual de tu servidor y rechaza las peticiones fuera de una ventana aceptable: 5 minutos es un valor razonable. Eso solo no basta: usa también el `x-idempotency-key` para descartar reentregas del mismo evento, que llegan con el mismo valor.
+
+## Rotación del secret
+
+El `secret` se devuelve **únicamente** en la respuesta de creación o de actualización con `signing: true`. El `GET` no lo devuelve.
+
+<Warning>
+  Cada `PATCH` con `signing: true` genera un secret nuevo e invalida el anterior, incluso cuando la firma ya estaba habilitada y tu intención era solo cambiar otro campo en la misma petición. Si no quieres rotar, **omite** el campo `signing`.
+</Warning>
+
+Después de rotar, valida con el secret de la **última** respuesta recibida.
+
+## Si la firma no cuadra
+
+1. ¿Estás firmando los cinco campos, y no solo el cuerpo?
+2. ¿El separador es `\n` puro, sin `\r`, y no hay salto de línea al final?
+3. ¿El cuerpo es el crudo, sin reserializar por tu framework?
+4. Si vino `content-encoding: gzip`, ¿lo descomprimiste antes?
+5. ¿`topic`, `partition` y `offset` salieron del `x-idempotency-key` de esta misma petición?
+6. ¿El secret es el de la última respuesta con `signing: true`?
