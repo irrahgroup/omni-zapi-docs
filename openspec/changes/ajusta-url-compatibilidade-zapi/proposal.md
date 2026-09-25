@@ -47,4 +47,20 @@ Vale decidir depois se a compatibilidade passa a usar variável — o que muda o
 
 ## Rastreabilidade
 
-Sem task no ClickUp. Pedido direto em conversa. Precisa de task própria antes do PR.
+ClickUp **HM-409** — *Rota de compatibilidade Z-API recusa envio por qualquer canal que não seja META_WHATSAPP*.
+
+A HM-409 é um hotfix de backend no `pennsylvania-reading`, já concluído, e os critérios de aceite CA01–CA08 tratam do gate de `META_WHATSAPP`, não da documentação. O que amarra esta change à task é a afirmação no enunciado dela:
+
+> servida hoje pelo `pennsylvania-reading` em `zapi.hubmessage.io` (host que passará a ser `zapi.omni.z-api.io`)
+
+É a habilitação desse host que esta change documenta. **Nenhum critério de aceite da HM-409 é cumprido aqui** — isto é o desdobramento em documentação de uma decisão registrada nela.
+
+Duas observações que a leitura da task levantou:
+
+- O host vigente segundo a task é `zapi.hubmessage.io`, e a palavra `hubmessage` **não aparece em nenhum lugar da documentação**. Ou seja, a doc nunca documentou o host real desta rota: apontava para `api.omni.z-api.io`. Esta change a alinha ao host de destino, não ao vigente.
+- O `curl` de evidência da task usa `/instances/`, e o spec usa `/channels/`. Não é divergência: `z-api/introduction.mdx:34` documenta que a rota aceita os dois.
+
+```
+branch   ajusta-url-compatibilidade-zapi
+título   fix(HM-409): aponta a compatibilidade Z-API para zapi.omni.z-api.io
+```
