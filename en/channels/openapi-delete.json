@@ -10,7 +10,7 @@
     "/v1/channels/{channelId}": {
       "delete": {
         "summary": "Delete channel (Partner)",
-        "description": "Permanently removes a channel and all its data. Deletion is only allowed when the channel has no active subscription (status `CANCELED`, `TRIAL`, or `PENDING`). Requires ENTERPRISE role.",
+        "description": "Deletes a channel. Deletion is only allowed when the channel has no active subscription (status `CANCELED`, `TRIAL`, or `PENDING`). Requires ENTERPRISE role.",
         "operationId": "partnerDeleteChannel",
         "tags": ["Partners"],
         "parameters": [
@@ -91,8 +91,8 @@
             "description": "Internal service integration failure",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 502, "message": "Hermitage deleteChannel failed" }
+                "schema": { "$ref": "#/components/schemas/InternalError" },
+                "example": { "error": "Hermitage deleteChannel failed" }
               }
             }
           }
@@ -121,6 +121,12 @@
             "description": "Reason for deletion (optional, but recommended for auditing)",
             "example": "Customer closed the company"
           }
+        }
+      },
+      "InternalError": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
         }
       },
       "Error": {
