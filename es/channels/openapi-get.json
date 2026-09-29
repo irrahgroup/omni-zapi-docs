@@ -1,0 +1,223 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Socio: Consultar Canal",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}": {
+      "get": {
+        "summary": "Consultar canal (Socio)",
+        "description": "Devuelve los datos de un canal del workspace de la clave, junto con los webhooks registrados en el. Requiere el rol ENTERPRISE.",
+        "operationId": "partnerGetChannel",
+        "tags": [
+          "Socios"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Identificador del canal",
+            "schema": {
+              "type": "string",
+              "example": "AA0C61D24A6549A3BF83239847DE1CC2"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Canal encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Channel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Autorizacion invalida o parametro fuera del formato esperado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Authorization",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cuenta sin el rol ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Channel listing requires ENTERPRISE role"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal no encontrado en el workspace de la clave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Channel not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "ChannelWebhook": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "01A08132F180733B83D7B7BDFAF9E574"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://parceiro.example.com/hook"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "MESSAGE_RECEIVED",
+              "MESSAGE_DELIVERY"
+            ]
+          }
+        }
+      },
+      "Channel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "AA0C61D24A6549A3BF83239847DE1CC2"
+          },
+          "name": {
+            "type": "string",
+            "example": "Suporte"
+          },
+          "token": {
+            "type": "string",
+            "nullable": true,
+            "example": "F1B29C3D4E5A6B7C8D9E0F1A2B3C4D5E"
+          },
+          "tenant": {
+            "type": "string",
+            "example": "01A090B7FB82798CB38AB259C0B65FBE"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "META_WHATSAPP",
+              "Z_API_WHATSAPP",
+              "META_INSTAGRAM",
+              "META_MESSENGER",
+              "BOT_TELEGRAM"
+            ],
+            "example": "META_WHATSAPP"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-03-11T14:02:00.000Z"
+          },
+          "due": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "example": 1774915200000
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": [
+              "PAID",
+              "PENDING",
+              "BOLETO_PENDING",
+              "CANCELLATION_PROCESS",
+              "CANCELED",
+              "TRIAL"
+            ],
+            "example": "PAID"
+          },
+          "phoneConnected": {
+            "type": "boolean",
+            "example": true
+          },
+          "whatsappConnected": {
+            "type": "boolean",
+            "example": true
+          },
+          "phoneNumberConnected": {
+            "type": "string",
+            "nullable": true,
+            "example": "5585999999999"
+          },
+          "businessId": {
+            "type": "string",
+            "nullable": true,
+            "example": "102938475610293"
+          },
+          "whatsappCoexistence": {
+            "type": "boolean",
+            "example": false
+          },
+          "webhooks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChannelWebhook"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

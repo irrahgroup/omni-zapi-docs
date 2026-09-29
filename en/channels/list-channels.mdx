@@ -1,0 +1,40 @@
+---
+title: "List channels"
+description: "List the channels in your workspace via API"
+openapi: "/en/channels/openapi-list.json GET /v1/channels"
+---
+
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+## Overview
+
+Returns the channels in the workspace of your Secret Key, newest first. Deleted channels are not listed, and neither are channels from other workspaces — the scope is always the account that owns the key.
+
+<Warning>
+  <EnterpriseText lang="en" />
+</Warning>
+
+### Pagination
+
+| Parameter | Default | Limit |
+|---|---|---|
+| `page` | `0` | — |
+| `pageSize` | `20` | `100` |
+
+The response carries `total` (channels matching the filter), `totalPage`, `pageSize` and `page`, with the channels in `content`.
+
+### Filters
+
+| Parameter | Effect |
+|---|---|
+| `query` | Part of the channel name, case-insensitive, or the beginning of the identifier |
+| `type` | Channel technology: `META_WHATSAPP`, `Z_API_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER`, `BOT_TELEGRAM` |
+| `middleware` | Alias of `type`. If both are sent, `type` wins |
+
+<Note>
+  In Z-API, `middleware` tells whether the instance runs on `web` or `mobile`. Omni has no such distinction: the field holds the channel technology, the same value accepted in [Create channel](/en/channels/create-channel). The `middleware` parameter exists for those who migrated from Z-API and kept the old name in their code.
+</Note>
+
+### Channel webhooks
+
+Each channel carries `webhooksCount`, the number of webhook endpoints registered on it. To see the URLs and events of each one, use [Get channel](/en/channels/get-channel) or [List webhooks](/en/webhooks/list-webhooks).
