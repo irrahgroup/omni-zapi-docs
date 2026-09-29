@@ -23,4 +23,4 @@
 - [x] 4.1 Confirmar que nenhum termo interno vazou: `grep -rniE "lógic|logical|lógico|soft|excluded" {channels,en/channels,es/channels}/delete-channel.mdx {pt,en,es}/channels/openapi-delete.json` deve retornar vazio
 - [x] 4.2 Confirmar o diff mínimo: `git diff --stat` lista só os 6 arquivos de "Impact", e `docs.json` fica intocado
 - [x] 4.3 Rodar `python3 scripts/check-docs.py` e confirmar `check-docs: tudo certo`. Executado manualmente por quem implementa — este repositório não tem `.github/workflows/`, logo não há execução automática em PR
-- [ ] 4.4 Subir `mint dev`, abrir `/channels/delete-channel` nos três idiomas e confirmar visualmente a seção nova e o exemplo do `502` no painel do endpoint; encerrar o servidor
+- [x] 4.4 Subir `mint dev`, abrir `/channels/delete-channel` nos três idiomas e confirmar visualmente a seção nova e o exemplo do `502` no painel do endpoint; encerrar o servidor
