@@ -8,17 +8,47 @@ openapi: "/en/templates/openapi.json POST /whatsapp/businesses/{wabaId}/template
 
 Meta **does not accept the file directly** when creating the template. It requires a `header_handle` produced by the Resumable Upload API, which depends on the application token — that is why the upload goes through here and not through your frontend.
 
-This endpoint takes the file and returns the handle, ready to use.
+This endpoint takes the file, or its public link, and returns the handle, ready to use.
 
 ## When you need this
 
 Only when the template has a `HEADER` component of type `IMAGE`, `VIDEO` or `DOCUMENT`. Templates with a text header, or with no header, need no upload.
 
+## Two ways to send
+
+The format is chosen by the request `Content-Type`.
+
+<Tabs>
+  <Tab title="File (multipart)">
+    `multipart/form-data` with the file in the `file` field.
+
+    The `type` field is **optional**. The MIME type used is the one from the `file` part itself; `type` only applies when the part arrives without a type or as `application/octet-stream`.
+
+    ```bash
+    curl -X POST https://api.omni.z-api.io/whatsapp/businesses/{wabaId}/templates/media \
+      -H "Authorization: Bearer YOUR_SECRET_KEY" \
+      -F "file=@banner.jpg;type=image/jpeg"
+    ```
+  </Tab>
+  <Tab title="Public link (JSON)">
+    `application/json` with the public address of the media in the `url` field.
+
+    ```bash
+    curl -X POST https://api.omni.z-api.io/whatsapp/businesses/{wabaId}/templates/media \
+      -H "Authorization: Bearer YOUR_SECRET_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://cdn.example.com/banner.jpg"}'
+    ```
+
+    The platform downloads the media. The address must be `http` or `https` and public: private or internal addresses are rejected.
+  </Tab>
+</Tabs>
+
 ## Flow
 
 <Steps>
-  <Step title="Upload the file">
-    `POST /whatsapp/businesses/{wabaId}/templates/media` with `multipart/form-data`, fields `file` and `type`.
+  <Step title="Upload the file or the link">
+    `POST /whatsapp/businesses/{wabaId}/templates/media`, in one of the two ways above.
   </Step>
   <Step title="Keep the handle">
     The response returns the handle in the `h` field.
@@ -41,12 +71,12 @@ Only when the template has a `HEADER` component of type `IMAGE`, `VIDEO` or `DOC
 </Warning>
 
 <Note>
-  Besides `h`, the API accepts the handle under the keys `handle`, `header_handle`, `headerHandle` and `mediaHandle`. Use `h`, which is the canonical form.
+  For larger files, the handle may contain line breaks. Use the value of `h` exactly as received, without removing anything.
 </Note>
 
 ## Configuration prerequisite
 
-The upload depends on the Meta **App ID** and **App Secret** registered on the account. Without them the call returns `422` with `MISSING_APP_CREDENTIALS`.
+The upload depends on the Meta **App ID** registered on the account. Without it the call returns `422`, with code `375` in the error body.
 
 This is configured in the dashboard, under **Security** — there is no public endpoint to register the app credentials. See also [SDK origins](/en/channels/sdk-info), which covers the other prerequisite of the SDK flow.
 
@@ -54,5 +84,17 @@ This is configured in the dashboard, under **Security** — there is no public e
 
 | Item | Value |
 |---|---|
-| Maximum size | 100 MB |
-| Required fields | `file`, `type` |
+| Maximum size per file | 100 MB |
+| Maximum size per link | 5 MB |
+| Required field (multipart) | `file` |
+| Required field (JSON) | `url` |
+
+## Errors
+
+| Status | When |
+|---|---|
+| `400` | Missing or empty `file`, missing or blank `url`, invalid JSON, or invalid secret key (`{"error": "Authorization invalid"}`) |
+| `413` | File larger than 100 MB |
+| `415` | `Content-Type` other than `multipart/form-data` and `application/json` |
+| `422` | The platform refused the upload. The error body comes in `error`. Most common codes: `375` (channel without App ID), `377` (link not allowed), `380` (failed to download the link) |
+| `502` | Platform unavailable |
