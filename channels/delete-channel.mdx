@@ -1,6 +1,6 @@
 ---
 title: "Remover canal"
-description: "Remova permanentemente um canal via API"
+description: "Exclua um canal via API"
 openapi: "/pt/channels/openapi-delete.json DELETE /v1/channels/{channelId}"
 ---
 
@@ -8,7 +8,7 @@ import { EnterpriseText } from '/snippets/notes.mdx';
 
 ## Conceituação
 
-Remove permanentemente um canal e todos os seus dados. A exclusão é irreversível — o canal é fisicamente removido do sistema.
+Exclui um canal. Depois de excluído, o canal deixa de poder ser usado, e não é possível desfazer a exclusão pela API.
 
 <Warning>
   <EnterpriseText lang="pt" />
@@ -16,7 +16,7 @@ Remove permanentemente um canal e todos os seus dados. A exclusão é irreversí
 
 ### Condições para exclusão
 
-A exclusão só é permitida quando o canal não possui assinatura ativa. A tabela abaixo descreve o comportamento por status:
+A exclusão só é permitida quando o canal está [desconectado](/channels/disconnect) e não possui assinatura ativa. Com o canal conectado, a API responde `422` com `INSTANCE_STILL_CONNECTED`. A tabela abaixo descreve o comportamento por status:
 
 | Status | Exclusão permitida | Observação |
 |---|---|---|
@@ -27,8 +27,16 @@ A exclusão só é permitida quando o canal não possui assinatura ativa. A tabe
 | Cancelado | Sim | — |
 
 <Warning>
-  A exclusão é permanente e irreversível. Para excluir um canal com assinatura ativa, primeiro cancele a assinatura via [Cancelar assinatura](/channels/cancel-subscription) e aguarde o status `CANCELED`.
+  A exclusão não pode ser desfeita pela API. Para excluir um canal com assinatura ativa, primeiro cancele a assinatura via [Cancelar assinatura](/channels/cancel-subscription) e aguarde o status `CANCELED`.
 </Warning>
+
+### Erro `502`
+
+Se a exclusão falhar no serviço interno, a API responde `502` com o corpo abaixo, sem detalhes internos. Tente novamente e, se o erro persistir, fale com o suporte.
+
+```json
+{ "error": "Hermitage deleteChannel failed" }
+```
 
 <Note>
   O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel).
