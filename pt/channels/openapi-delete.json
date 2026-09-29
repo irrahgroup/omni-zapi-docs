@@ -10,7 +10,7 @@
     "/v1/channels/{channelId}": {
       "delete": {
         "summary": "Excluir canal (Parceiro)",
-        "description": "Remove permanentemente um canal e todos os seus dados. A exclusão só é permitida quando o canal não possui assinatura ativa (status `CANCELED`, `TRIAL` ou `PENDING`). Requer role ENTERPRISE.",
+        "description": "Exclui um canal. A exclusão só é permitida quando o canal não possui assinatura ativa (status `CANCELED`, `TRIAL` ou `PENDING`). Requer role ENTERPRISE.",
         "operationId": "partnerDeleteChannel",
         "tags": ["Parceiros"],
         "parameters": [
@@ -91,8 +91,8 @@
             "description": "Falha na integração com o serviço interno",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 502, "message": "Hermitage deleteChannel failed" }
+                "schema": { "$ref": "#/components/schemas/InternalError" },
+                "example": { "error": "Hermitage deleteChannel failed" }
               }
             }
           }
@@ -121,6 +121,12 @@
             "description": "Motivo da exclusão (opcional, mas recomendado para auditoria)",
             "example": "Cliente encerrou a empresa"
           }
+        }
+      },
+      "InternalError": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
         }
       },
       "Error": {

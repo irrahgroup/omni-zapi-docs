@@ -1,6 +1,6 @@
 ---
 title: "Eliminar canal"
-description: "Elimina permanentemente un canal mediante la API"
+description: "Elimina un canal mediante la API"
 openapi: "/es/channels/openapi-delete.json DELETE /v1/channels/{channelId}"
 ---
 
@@ -8,7 +8,7 @@ import { EnterpriseText } from '/snippets/notes.mdx';
 
 ## Conceptos
 
-Elimina permanentemente un canal y todos sus datos. El borrado es irreversible: el canal se elimina físicamente del sistema.
+Elimina un canal. Una vez eliminado, el canal ya no se puede usar, y el borrado no se puede deshacer mediante la API.
 
 <Warning>
   <EnterpriseText lang="es" />
@@ -16,7 +16,7 @@ Elimina permanentemente un canal y todos sus datos. El borrado es irreversible: 
 
 ### Condiciones para eliminar
 
-Solo se permite eliminar el canal cuando no tiene una suscripción activa. La siguiente tabla describe el comportamiento según el estado:
+Solo se permite eliminar el canal cuando está [desconectado](/es/channels/disconnect) y no tiene una suscripción activa. Si el canal sigue conectado, la API responde `422` con `INSTANCE_STILL_CONNECTED`. La siguiente tabla describe el comportamiento según el estado:
 
 | Estado | ¿Se permite eliminar? | Observación |
 |---|---|---|
@@ -27,8 +27,16 @@ Solo se permite eliminar el canal cuando no tiene una suscripción activa. La si
 | Cancelado | Sí | — |
 
 <Warning>
-  El borrado es permanente e irreversible. Para eliminar un canal con suscripción activa, primero cancela la suscripción con [Cancelar suscripción](/es/channels/cancel-subscription) y espera a que el estado sea `CANCELED`.
+  El borrado no se puede deshacer mediante la API. Para eliminar un canal con suscripción activa, primero cancela la suscripción con [Cancelar suscripción](/es/channels/cancel-subscription) y espera a que el estado sea `CANCELED`.
 </Warning>
+
+### Error `502`
+
+Si el borrado falla en el servicio interno, la API responde `502` con el cuerpo siguiente, sin detalles internos. Inténtalo de nuevo y, si el error persiste, contacta con soporte.
+
+```json
+{ "error": "Hermitage deleteChannel failed" }
+```
 
 <Note>
   El `channelId` se obtiene a través del endpoint [Crear canal](/es/channels/create-channel).

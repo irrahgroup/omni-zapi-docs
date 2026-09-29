@@ -39,7 +39,8 @@ Fonte: `channels/delete-channel.mdx:19` — condição de desconexão; `pt/chann
 #### Scenario: Paridade entre idiomas
 
 - **WHEN** a mesma página é consultada em português, inglês e espanhol
-- **THEN** as três trazem a mesma condição e o mesmo corpo de erro
+- **THEN** as três trazem a mesma condição de canal desconectado, com o código `INSTANCE_STILL_CONNECTED`
+- **AND** as três mostram o mesmo corpo do `502`, `{ "error": "Hermitage deleteChannel failed" }`
 
 ### Requirement: Corpo do erro 502
 
