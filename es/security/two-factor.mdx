@@ -1,0 +1,33 @@
+---
+title: "Autenticación de dos factores"
+description: "Agrega una capa extra de protección al inicio de sesión del panel de Omni Z-API"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+La autenticación de dos factores (2FA) pide, además del correo y la contraseña, un código generado por una aplicación autenticadora (Google Authenticator, Microsoft Authenticator, Authy, etc.) para iniciar sesión en el panel de {projectName}.
+
+## Activar
+
+1. En el panel, abre **Mi cuenta**.
+2. En **Seguridad y cumplimiento**, en la tarjeta **Verificación en dos pasos**, haz clic en **Activar 2FA**.
+3. Escanea el código QR con la aplicación autenticadora (o escribe el código que aparece debajo).
+4. Ingresa el código de 6 dígitos que muestra la aplicación para confirmar.
+
+<Frame>
+  <img src="/images/security-two-factor.png" alt="Tarjeta Autenticación de dos factores en Mi cuenta" />
+</Frame>
+
+Desde entonces, cada inicio de sesión en el panel pide el código de la aplicación después de la contraseña.
+
+## Desactivar
+
+En **Mi cuenta → Seguridad y cumplimiento**, haz clic en **Desactivar 2FA** y confirma.
+
+## 2FA y la API
+
+El 2FA protege **el inicio de sesión en el panel**. No cambia la autenticación de la API: las llamadas siguen usando la Secret Key, sin código de verificación. Para proteger la API, usa la [restricción de IP](/es/security/ip-restriction) y guarda la Secret Key solo en tu backend.
+
+<Warning>
+  Conserva el acceso a la aplicación autenticadora. Sin ella, no puedes completar el inicio de sesión en el panel.
+</Warning>

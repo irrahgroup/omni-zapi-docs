@@ -1,0 +1,34 @@
+---
+title: "Security"
+description: "Protect access to the API and to your Omni Z-API account"
+---
+
+import { projectName, frontendUrl } from '/snippets/variables.mdx';
+
+{projectName} groups the workspace security settings in the **Administration → Security** menu of the dashboard: [Security](https://app.omni.z-api.io/app/security). Only the workspace **Owner** can open this menu (see [Team and roles](/en/security/team)).
+
+<Frame>
+  <img src="/images/security-overview.png" alt="Security menu in the Omni Z-API dashboard" />
+</Frame>
+
+| Setting | What it protects | Where |
+|---|---|---|
+| [API credentials](/en/authentication) | Authentication of API calls with Public Key and Secret Key | **Security → API Credentials** |
+| [IP restriction](/en/security/ip-restriction) | Which IPs can call the API with the Secret Key | **Security → IP Restriction** |
+| [SDK authorized domains](/en/security/sdk-domains) | Which websites can open the channel connection SDK | **Security → SDK Configuration** |
+| [Two-factor authentication](/en/security/two-factor) | Dashboard login | **My account → Security and compliance** |
+| [Team and roles](/en/security/team) | Who accesses the workspace and what each person can do | **Administration → Team** |
+| [Audit log](/en/security/audit) | History of who did what in the workspace | **Administration → Audit log** |
+
+## Why use each one
+
+- **API credentials:** the Secret Key stays only on your server, and the Public Key can go to the browser without giving access to the API. If the Secret Key leaks, generate a new one and the previous one stops working.
+- **IP restriction:** a leaked Secret Key is useless outside your servers. Nobody can send messages, delete channels or change the webhook to receive your customers' messages.
+- **SDK authorized domains:** prevents another website from using your Public Key to open the channel connection flow on your behalf.
+- **Two-factor authentication:** a leaked password is not enough to sign in to the dashboard, where the keys and workspace settings are.
+- **Team and roles:** each person gets only the access they need. Those who only follow along can't change anything, and people who leave the team lose access when removed.
+- **Audit log:** shows who made each change, when and from which IP. It helps investigate a problem and prove what happened, with records that cannot be changed.
+
+<Tip>
+  Start with the credentials: no API call is accepted without the Secret Key. The other settings are optional and add layers of protection.
+</Tip>

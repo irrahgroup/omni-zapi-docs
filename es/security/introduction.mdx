@@ -1,0 +1,34 @@
+---
+title: "Seguridad"
+description: "Protege el acceso a la API y a tu cuenta de Omni Z-API"
+---
+
+import { projectName, frontendUrl } from '/snippets/variables.mdx';
+
+{projectName} reúne la configuración de seguridad del workspace en el menú **Administración → Seguridad** del panel: [Seguridad](https://app.omni.z-api.io/app/security). Solo el **Owner** del workspace puede abrir este menú (ver [Equipo y roles](/es/security/team)).
+
+<Frame>
+  <img src="/images/security-overview.png" alt="Menú Seguridad del panel de Omni Z-API" />
+</Frame>
+
+| Configuración | Qué protege | Dónde está |
+|---|---|---|
+| [Credenciales de la API](/es/authentication) | Autenticación de las llamadas con Public Key y Secret Key | **Seguridad → Credenciales de la API** |
+| [Restricción de IP](/es/security/ip-restriction) | Qué IP pueden llamar a la API con la Secret Key | **Seguridad → Restricción por IP** |
+| [Dominios autorizados del SDK](/es/security/sdk-domains) | En qué sitios se puede abrir el SDK de conexión de canales | **Seguridad → Configuración del SDK** |
+| [Autenticación de dos factores](/es/security/two-factor) | Inicio de sesión en el panel | **Mi cuenta → Seguridad y cumplimiento** |
+| [Equipo y roles](/es/security/team) | Quién accede al workspace y qué puede hacer cada persona | **Administración → Equipo** |
+| [Auditoría](/es/security/audit) | Historial de quién hizo qué en el workspace | **Administración → Auditoría** |
+
+## Por qué usar cada una
+
+- **Credenciales de la API:** la Secret Key queda solo en tu servidor y la Public Key puede ir al navegador sin dar acceso a la API. Si la Secret Key se filtra, genera una nueva y la anterior deja de funcionar.
+- **Restricción de IP:** una Secret Key filtrada no sirve de nada fuera de tus servidores. Nadie puede enviar mensajes, borrar canales ni cambiar el webhook para recibir los mensajes de tus clientes.
+- **Dominios autorizados del SDK:** impide que otro sitio use tu Public Key para abrir el flujo de conexión de canales en tu nombre.
+- **Autenticación de dos factores:** una contraseña filtrada no basta para entrar al panel, donde están las claves y la configuración del workspace.
+- **Equipo y roles:** cada persona recibe solo el acceso que necesita. Quien solo acompaña no cambia nada, y quien sale del equipo pierde el acceso al ser quitado.
+- **Auditoría:** muestra quién hizo cada cambio, cuándo y desde qué IP. Ayuda a investigar un problema y a comprobar lo que pasó, con registros que no se pueden modificar.
+
+<Tip>
+  Empieza por las credenciales: sin la Secret Key no se acepta ninguna llamada a la API. Las demás configuraciones son opcionales y suman capas de protección.
+</Tip>

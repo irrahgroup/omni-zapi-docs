@@ -1,0 +1,33 @@
+---
+title: "Autenticação de dois fatores"
+description: "Adicione uma camada extra de proteção ao login no painel do Omni Z-API"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+A autenticação de dois fatores (2FA) pede, além de e-mail e senha, um código gerado por um aplicativo autenticador (Google Authenticator, Microsoft Authenticator, Authy etc.) para entrar no painel do {projectName}.
+
+## Ativar
+
+1. No painel, abra **Minha conta**.
+2. Em **Segurança e conformidade**, no card **Autenticação de dois fatores**, clique em **Ativar 2FA**.
+3. Leia o QR Code com o aplicativo autenticador (ou digite o código exibido abaixo dele).
+4. Informe o código de 6 dígitos exibido no aplicativo para confirmar.
+
+<Frame>
+  <img src="/images/security-two-factor.png" alt="Card Autenticação de dois fatores em Minha conta" />
+</Frame>
+
+A partir daí, todo login no painel pede o código do aplicativo depois da senha.
+
+## Desativar
+
+Em **Minha conta → Segurança e conformidade**, clique em **Desativar 2FA** e confirme.
+
+## 2FA e a API
+
+O 2FA protege **o login no painel**. Ele não muda a autenticação da API: as chamadas continuam usando a Secret Key, sem código de verificação. Para proteger a API, use a [restrição de IP](/security/ip-restriction) e mantenha a Secret Key só no backend.
+
+<Warning>
+  Guarde o acesso ao aplicativo autenticador. Sem ele, não é possível concluir o login no painel.
+</Warning>
