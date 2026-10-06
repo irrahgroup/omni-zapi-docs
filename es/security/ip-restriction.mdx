@@ -1,0 +1,53 @@
+---
+title: "Restricción de IP"
+description: "Limita qué direcciones IP pueden llamar a la API de Omni Z-API"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+La restricción de IP define qué direcciones pueden llamar a la API de {projectName}. Con ella activa, una Secret Key filtrada no funciona fuera de los servidores que liberaste.
+
+## Cómo funciona
+
+- **Lista vacía:** se acepta cualquier IP. Es el comportamiento por defecto.
+- **Con IP registradas:** solo las IP de la lista pueden llamar a la API. Las llamadas desde otras direcciones se rechazan.
+- **Coincidencia exacta:** cada IP se compara exactamente como se registró. No se aceptan rangos ni notación CIDR (por ejemplo, `203.0.113.0/24`): registra cada IP.
+- **Alcance:** la restricción se aplica a **todas** las llamadas autenticadas con la **Secret Key**, desde cualquier IP: canales, mensajes, plantillas, flows y webhooks. Ninguna ruta con Secret Key queda fuera.
+- **IP considerada:** es la IP desde la que la conexión llega a la API. Los encabezados como `X-Forwarded-For` se ignoran, así que no sirve indicar otra IP en ellos.
+- **Tiempo para aplicarse:** después de guardar, la nueva lista puede tardar **hasta 10 minutos** en aplicarse en la API. Esto vale para agregar, quitar o vaciar la lista. En ese intervalo, la regla anterior todavía puede aplicarse. El [SDK de conexión de canales](/es/channels/connect-channel), que usa la Public Key, se controla con los [dominios autorizados del SDK](/es/security/sdk-domains).
+
+## Registrar las IP
+
+1. En el panel, abre **Administración →** [Seguridad](https://app.omni.z-api.io/app/security).
+2. Abre la pestaña **Restricción por IP** y haz clic en **Configurar ahora**.
+3. Ingresa la IP y, si quieres, una descripción para identificarla. Haz clic en **Agregar** para incluir otra IP.
+4. Haz clic en **Guardar los cambios**.
+5. El sistema pide un **código de confirmación** enviado a ti; ingresa el código para completar el cambio.
+
+Solo el **Owner** del workspace puede cambiar la lista de IP.
+
+<Frame>
+  <img src="/images/security-ip-restriction.png" alt="Restricción de IP en el menú Seguridad" />
+</Frame>
+
+<Note>
+  Al cambiar de servidor, registra la IP nueva **antes** de apagar la antigua y espera hasta 10 minutos. Así las llamadas no se rechazan durante el cambio.
+</Note>
+
+<Warning>
+  Registra la **IP de salida** de los servidores que llaman a la API. Si tu entorno cambia de IP (servicios con IP dinámica, por ejemplo), la API empieza a rechazar las llamadas en cuanto la IP cambia.
+</Warning>
+
+## Respuesta para IP no permitida
+
+Cuando la llamada viene de una IP fuera de la lista, la API responde `400` con la IP de origen:
+
+```json
+{
+  "error": "203.0.113.10 not allowed"
+}
+```
+
+Si la IP de origen no se puede identificar, el mensaje es `"ip not allowed"`.
+
+Para corregirlo, registra la IP indicada en el mensaje o haz la llamada desde un servidor ya permitido.

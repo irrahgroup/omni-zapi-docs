@@ -1,0 +1,34 @@
+---
+title: "Segurança"
+description: "Proteja o acesso à API e à sua conta no Omni Z-API"
+---
+
+import { projectName, frontendUrl } from '/snippets/variables.mdx';
+
+O {projectName} reúne as configurações de segurança do workspace no menu **Administração → Segurança** do painel: [Segurança](https://app.omni.z-api.io/app/security). Só o **Owner** do workspace acessa esse menu (veja [Time e papéis](/security/team)).
+
+<Frame>
+  <img src="/images/security-overview.png" alt="Menu Segurança do painel do Omni Z-API" />
+</Frame>
+
+| Configuração | O que protege | Onde fica |
+|---|---|---|
+| [Credenciais da API](/authentication) | Autenticação das chamadas com Public Key e Secret Key | **Segurança → Credenciais da API** |
+| [Restrição de IP](/security/ip-restriction) | Quais IPs podem chamar a API com a Secret Key | **Segurança → Restrição de IP** |
+| [Domínios autorizados da SDK](/security/sdk-domains) | Em quais sites o SDK de conexão de canais pode ser aberto | **Segurança → Configurações da SDK** |
+| [Autenticação de dois fatores](/security/two-factor) | Login no painel | **Minha conta → Segurança e conformidade** |
+| [Time e papéis](/security/team) | Quem acessa o workspace e o que cada pessoa pode fazer | **Administração → Time** |
+| [Auditoria](/security/audit) | Histórico de quem fez o quê no workspace | **Administração → Auditoria** |
+
+## Por que usar cada uma
+
+- **Credenciais da API:** a Secret Key fica só no seu servidor e a Public Key pode ir para o navegador sem dar acesso à API. Se a Secret Key vazar, gere uma nova e a anterior deixa de funcionar.
+- **Restrição de IP:** uma Secret Key vazada não serve para nada fora dos seus servidores. Ninguém consegue enviar mensagens, apagar canais ou trocar o webhook para receber as mensagens dos seus clientes.
+- **Domínios autorizados da SDK:** impede que outro site use a sua Public Key para abrir o fluxo de conexão de canais em seu nome.
+- **Autenticação de dois fatores:** uma senha vazada não basta para entrar no painel, onde ficam as chaves e as configurações do workspace.
+- **Time e papéis:** cada pessoa recebe só o acesso de que precisa. Quem só acompanha não altera nada, e quem sai do time perde o acesso ao ser removido.
+- **Auditoria:** mostra quem fez cada alteração, quando e de qual IP. Ajuda a investigar um problema e a comprovar o que aconteceu, com registros que não podem ser alterados.
+
+<Tip>
+  Comece pelas credenciais: sem a Secret Key nenhuma chamada de API é aceita. As demais configurações são opcionais e somam camadas de proteção.
+</Tip>
