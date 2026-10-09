@@ -13,29 +13,62 @@ Canal de tipo `Z_API_WHATSAPP`. Se conecta mediante el **código QR**, igual que
 
 - Un número de WhatsApp con la app instalada en el móvil
 - Acceso al móvil para escanear el código QR
+- [`@omnizapi/connect`](https://www.npmjs.com/package/@omnizapi/connect) 1.1.0 o superior
+- Una ruta en tu backend que obtiene el código QR con la Secret Key
 
 ## Conectar
 
+Además del `channelId`, WhatsApp Web necesita la función `getQRCode`. El SDK abre la ventana de conexión, la ventana le pide el código QR a tu página y el SDK llama a tu `getQRCode` para responder. El usuario escanea el código QR desde WhatsApp en el móvil, en **Dispositivos vinculados**.
+
 ```javascript
 const client = OmniZapi.newClient({ publicKey: 'SU_PUBLIC_KEY' });
-const response = await client.connect({ channelId: 'ID_DEL_CANAL' });
-```
+const channelId = 'ID_DEL_CANAL';
 
-El SDK abre una ventana con el código QR. El usuario lo escanea desde WhatsApp en el móvil, en **Dispositivos vinculados**.
-
-### El código QR en tu propia interfaz
-
-Si prefieres dibujar el código QR dentro de tu producto en lugar de usar la ventana del SDK, pasa un `getQRCode`:
-
-```javascript
 const response = await client.connect({
-  channelId: 'ID_DEL_CANAL',
+  channelId,
   getQRCode: async () => {
-    // devuelve { value } con el contenido del QR, o { connected: true } al conectar
-    return await miBackend.obtenerQrCode();
+    const res = await fetch(`/api/omni/channels/${encodeURIComponent(channelId)}/qr-code`, { credentials: 'include' });
+    const body = await res.json();
+    // Rechaza con status y mensaje: la ventana muestra el mensaje cuando el status es 4xx
+    if (!res.ok) throw { status: res.status, message: body.message ?? null };
+    // Sin value y sin connected: true, la ventana entiende que el código QR aún no está listo
+    return { connected: body.connected === true, value: body.qrcode ?? undefined };
   },
 });
 ```
+
+Sin `getQRCode`, `connect` rechaza con un `OmnizapiError` de código `INVALID_OPTIONS` y cierra la ventana antes de cargar la conexión. Los demás canales ignoran `getQRCode`, así que puedes pasarlo siempre.
+
+El dominio de tu página tiene que estar en los [dominios autorizados del SDK](/es/security/sdk-domains). Es a ellos a los que la ventana envía el pedido del código QR.
+
+### La ruta en tu backend
+
+El código QR viene de `GET /v1/channels/{id}/zapi/qr-code/image`, que exige la Secret Key. Por eso la consulta ocurre en tu backend, y la clave nunca llega al navegador.
+
+```javascript
+app.get('/api/omni/channels/:id/qr-code', requireSessionAndChannelOwnership, async (req, res) => {
+  const response = await fetch(
+    `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(req.params.id)}/zapi/qr-code/image`,
+    { headers: { Authorization: `Bearer ${process.env.OMNI_SECRET_KEY}` } },
+  );
+  const body = await response.json();
+  if (!response.ok) {
+    // El error de la API viene en error.errors[0]; reenvía solo el texto
+    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? null });
+  }
+  res.json({ qrcode: body.qrcode, connected: body.connected });
+});
+```
+
+La API devuelve `qrcode`, la imagen del código QR, y `connected`, que es `true` cuando el número ya está conectado. Reenvía los dos tal como llegaron.
+
+<Warning>
+  Comprueba la sesión del usuario y que el canal le pertenece **antes** de llamar a la API. Una ruta que entrega el código QR de cualquier canal permite que alguien vincule su propio número a un canal ajeno.
+</Warning>
+
+<Note>
+  Hasta la versión 1.0.4, el SDK solo entregaba el código QR a la ventana dentro del propio panel. En cualquier otro dominio, la ventana se cerraba nada más abrirse y `connect` devolvía `success: false` con `reason: "not_completed"`. Actualiza a la 1.1.0.
+</Note>
 
 ## Qué cambia en WhatsApp Web
 

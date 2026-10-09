@@ -13,29 +13,62 @@ Canal do tipo `Z_API_WHATSAPP`. Conecta pelo **QR Code**, como o WhatsApp Web fa
 
 - Um número de WhatsApp com o app instalado no celular
 - Acesso ao celular para escanear o QR Code
+- [`@omnizapi/connect`](https://www.npmjs.com/package/@omnizapi/connect) 1.1.0 ou superior
+- Uma rota no seu backend que busca o QR Code com a Secret Key
 
 ## Conectando
 
+O WhatsApp Web pede, além do `channelId`, a função `getQRCode`. O SDK abre a janela de conexão, a janela pede o QR Code à sua página e o SDK chama o seu `getQRCode` para responder. O usuário escaneia o QR Code pelo WhatsApp do celular, em **Aparelhos conectados**.
+
 ```javascript
 const client = OmniZapi.newClient({ publicKey: 'SUA_PUBLIC_KEY' });
-const response = await client.connect({ channelId: 'ID_DO_CANAL' });
-```
+const channelId = 'ID_DO_CANAL';
 
-O SDK abre uma janela com o QR Code. O usuário escaneia pelo WhatsApp do celular, em **Aparelhos conectados**.
-
-### QR Code na sua própria interface
-
-Se você quiser desenhar o QR Code dentro do seu produto em vez de usar a janela do SDK, passe um `getQRCode`:
-
-```javascript
 const response = await client.connect({
-  channelId: 'ID_DO_CANAL',
+  channelId,
   getQRCode: async () => {
-    // devolva { value } com o conteudo do QR, ou { connected: true } quando conectar
-    return await meuBackend.buscarQrCode();
+    const res = await fetch(`/api/omni/channels/${encodeURIComponent(channelId)}/qr-code`, { credentials: 'include' });
+    const body = await res.json();
+    // Recuse com status e mensagem: a janela mostra a mensagem quando o status é 4xx
+    if (!res.ok) throw { status: res.status, message: body.message ?? null };
+    // Sem value e sem connected: true, a janela entende que o QR Code ainda não está pronto
+    return { connected: body.connected === true, value: body.qrcode ?? undefined };
   },
 });
 ```
+
+Sem o `getQRCode`, o `connect` rejeita com `OmnizapiError` de código `INVALID_OPTIONS` e fecha a janela antes de carregar a conexão. Os outros canais ignoram o `getQRCode`, então você pode passá-lo sempre.
+
+O domínio da sua página precisa estar nos [domínios autorizados da SDK](/security/sdk-domains). É para eles que a janela manda o pedido de QR Code.
+
+### A rota no seu backend
+
+O QR Code vem de `GET /v1/channels/{id}/zapi/qr-code/image`, que exige a Secret Key. Por isso a busca acontece no seu backend, e a chave nunca vai para o navegador.
+
+```javascript
+app.get('/api/omni/channels/:id/qr-code', requireSessionAndChannelOwnership, async (req, res) => {
+  const response = await fetch(
+    `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(req.params.id)}/zapi/qr-code/image`,
+    { headers: { Authorization: `Bearer ${process.env.OMNI_SECRET_KEY}` } },
+  );
+  const body = await response.json();
+  if (!response.ok) {
+    // O erro da API vem em error.errors[0]; repasse só o texto
+    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? null });
+  }
+  res.json({ qrcode: body.qrcode, connected: body.connected });
+});
+```
+
+A API devolve `qrcode`, a imagem do QR Code, e `connected`, que é `true` quando o número já está conectado. Repasse os dois como vieram.
+
+<Warning>
+  Confira a sessão do usuário e se o canal pertence a ele **antes** de chamar a API. Uma rota que entrega o QR Code de qualquer canal permite que alguém ligue o próprio número a um canal que não é dele.
+</Warning>
+
+<Note>
+  Até a versão 1.0.4, o SDK só entregava o QR Code à janela dentro do próprio painel. Em qualquer outro domínio, a janela fechava logo ao abrir e o `connect` devolvia `success: false` com `reason: "not_completed"`. Atualize para a 1.1.0.
+</Note>
 
 ## O que muda no WhatsApp Web
 
