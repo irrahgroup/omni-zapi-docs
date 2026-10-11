@@ -465,7 +465,7 @@
     "/whatsapp/businesses/{wabaId}/templates/media": {
       "post": {
         "summary": "Subir multimedia para plantilla",
-        "description": "Sube el archivo del HEADER multimedia y devuelve el `header_handle` que exige Meta.\n\nMeta no acepta el archivo directamente al crear la plantilla: exige el handle de la Resumable Upload API, que depende del token de la aplicación. Este endpoint hace ese puente.",
+        "description": "Sube el multimedia del HEADER y devuelve el `header_handle` que exige Meta.\n\nMeta no acepta el archivo directamente al crear la plantilla: exige el handle de la Resumable Upload API, que depende del token de la aplicación. Este endpoint hace ese puente.\n\nAcepta dos formatos, elegidos por el `Content-Type`: el archivo en `multipart/form-data` o el enlace público del multimedia en `application/json`.",
         "operationId": "uploadTemplateMedia",
         "tags": [
           "Plantillas"
@@ -489,8 +489,7 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "file",
-                  "type"
+                  "file"
                 ],
                 "properties": {
                   "file": {
@@ -500,8 +499,24 @@
                   },
                   "type": {
                     "type": "string",
-                    "description": "MIME type del archivo (p. ej.: `image/jpeg`, `video/mp4`, `application/pdf`)",
+                    "description": "Opcional. MIME type del archivo (p. ej.: `image/jpeg`, `video/mp4`, `application/pdf`). Solo se usa cuando la parte `file` llega sin tipo o como `application/octet-stream`",
                     "example": "image/jpeg"
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Dirección pública (`http` o `https`) del multimedia. La plataforma descarga el archivo; las direcciones privadas o internas se rechazan. Límite de 5 MB",
+                    "example": "https://cdn.ejemplo.com/banner.jpg"
                   }
                 }
               }
@@ -523,21 +538,14 @@
             }
           },
           "400": {
-            "description": "Petición no válida: archivo vacío o falta `type`",
+            "description": "Petición no válida: falta `file` o está vacío, falta `url` o está en blanco, JSON no válido o secret key no válida",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Token no válido o ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/TemplateMediaError"
+                },
+                "example": {
+                  "error": "Authorization invalid"
                 }
               }
             }
@@ -547,27 +555,55 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/TemplateMediaError"
+                },
+                "example": {
+                  "error": "Content Too Large"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "`Content-Type` distinto de `multipart/form-data` y `application/json`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateMediaError"
+                },
+                "example": {
+                  "error": "Unsupported Media Type"
                 }
               }
             }
           },
           "422": {
-            "description": "La cuenta no tiene App ID ni App Secret de Meta configurados (`MISSING_APP_CREDENTIALS`)",
+            "description": "La plataforma o Meta rechazó la subida, o Meta falló al procesarla (formato, tamaño, token vencido o Meta no disponible). El cuerpo de error llega en `error`. Códigos más comunes: `375` (canal sin App ID), `377` (enlace no permitido), `380` (error al descargar el enlace)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/TemplateMediaError"
+                },
+                "example": {
+                  "error": {
+                    "status": 400,
+                    "errors": [
+                      {
+                        "code": "377",
+                        "name": "META_WHATSAPP_MEDIA_URL_NOT_ALLOWED",
+                        "message": "Media URL not allowed"
+                      }
+                    ]
+                  }
                 }
               }
             }
           },
           "502": {
-            "description": "Meta rechazó la subida (`META_REFUSED`) o no se pudo leer la configuración del app (`CONFIG_UNREACHABLE`)",
+            "description": "Plataforma no disponible. Un rechazo o falla de Meta no llega como `502`: llega como `422`",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/TemplateMediaError"
                 }
               }
             }
@@ -1384,6 +1420,22 @@
                 "description": "Muestra la cuenta regresiva. El instante final va en el envío."
               }
             }
+          }
+        }
+      },
+      "TemplateMediaError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "description": "Mensaje de error (texto) o, en el `422`, el cuerpo de error devuelto por la plataforma",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object"
+              }
+            ]
           }
         }
       }

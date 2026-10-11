@@ -8,17 +8,47 @@ openapi: "/es/templates/openapi.json POST /whatsapp/businesses/{wabaId}/template
 
 Meta **no acepta el archivo directamente** al crear la plantilla. Exige un `header_handle` producido por la Resumable Upload API, que depende del token de la aplicación; por eso la subida pasa por aquí y no por tu frontend.
 
-Este endpoint recibe el archivo y devuelve el handle listo para usar.
+Este endpoint recibe el archivo, o su enlace público, y devuelve el handle listo para usar.
 
 ## Cuándo lo necesitas
 
 Solo cuando la plantilla tiene un componente `HEADER` de tipo `IMAGE`, `VIDEO` o `DOCUMENT`. Las plantillas con header de texto, o sin header, no necesitan subida.
 
+## Dos formas de enviar
+
+El formato se elige por el `Content-Type` de la petición.
+
+<Tabs>
+  <Tab title="Archivo (multipart)">
+    `multipart/form-data` con el archivo en el campo `file`.
+
+    El campo `type` es **opcional**. El MIME type usado es el de la propia parte `file`; `type` solo se tiene en cuenta cuando la parte llega sin tipo o como `application/octet-stream`.
+
+    ```bash
+    curl -X POST https://api.omni.z-api.io/whatsapp/businesses/{wabaId}/templates/media \
+      -H "Authorization: Bearer SU_SECRET_KEY" \
+      -F "file=@banner.jpg;type=image/jpeg"
+    ```
+  </Tab>
+  <Tab title="Enlace público (JSON)">
+    `application/json` con la dirección pública del multimedia en el campo `url`.
+
+    ```bash
+    curl -X POST https://api.omni.z-api.io/whatsapp/businesses/{wabaId}/templates/media \
+      -H "Authorization: Bearer SU_SECRET_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://cdn.ejemplo.com/banner.jpg"}'
+    ```
+
+    Quien descarga el multimedia es la plataforma. La dirección debe ser `http` o `https` y pública: las direcciones privadas o internas se rechazan.
+  </Tab>
+</Tabs>
+
 ## Flujo
 
 <Steps>
-  <Step title="Sube el archivo">
-    `POST /whatsapp/businesses/{wabaId}/templates/media` con `multipart/form-data`, campos `file` y `type`.
+  <Step title="Sube el archivo o el enlace">
+    `POST /whatsapp/businesses/{wabaId}/templates/media`, de una de las dos formas anteriores.
   </Step>
   <Step title="Guarda el handle">
     La respuesta trae el handle en el campo `h`.
@@ -41,12 +71,12 @@ Solo cuando la plantilla tiene un componente `HEADER` de tipo `IMAGE`, `VIDEO` o
 </Warning>
 
 <Note>
-  Además de `h`, la API acepta el handle en las claves `handle`, `header_handle`, `headerHandle` y `mediaHandle`. Usa `h`, que es la forma canónica.
+  En archivos más grandes, el handle puede llegar con saltos de línea. Usa el valor de `h` exactamente como lo recibes, sin quitar nada.
 </Note>
 
 ## Requisito de configuración
 
-La subida depende del **App ID** y el **App Secret** de Meta registrados en la cuenta. Sin ellos, la llamada devuelve `422` con `MISSING_APP_CREDENTIALS`.
+La subida depende del **App ID** de Meta registrado en la cuenta. Sin él, la llamada devuelve `422`, con el código `375` en el cuerpo de error.
 
 Esto se configura en el panel, en **Seguridad**: no hay endpoint público para registrar las credenciales del app. Consulta también [Orígenes del SDK](/es/channels/sdk-info), que cubre el otro requisito del flujo con SDK.
 
@@ -54,5 +84,17 @@ Esto se configura en el panel, en **Seguridad**: no hay endpoint público para r
 
 | Elemento | Valor |
 |---|---|
-| Tamaño máximo | 100 MB |
-| Campos obligatorios | `file`, `type` |
+| Tamaño máximo por archivo | 100 MB |
+| Tamaño máximo por enlace | 5 MB |
+| Campo obligatorio (multipart) | `file` |
+| Campo obligatorio (JSON) | `url` |
+
+## Errores
+
+| Estado | Cuándo |
+|---|---|
+| `400` | Falta `file` o está vacío, falta `url` o está en blanco, JSON no válido, o secret key no válida (`{"error": "Authorization invalid"}`) |
+| `413` | Archivo de más de 100 MB |
+| `415` | `Content-Type` distinto de `multipart/form-data` y `application/json` |
+| `422` | La plataforma o Meta rechazó la subida, o Meta falló al procesarla (formato, tamaño, token vencido o Meta no disponible). El cuerpo de error llega en `error`. Códigos más comunes: `375` (canal sin App ID), `377` (enlace no permitido), `380` (error al descargar el enlace) |
+| `502` | Plataforma no disponible. Un rechazo o falla de Meta no llega como `502`: llega como `422` |

@@ -8,17 +8,47 @@ openapi: "/pt/templates/openapi.json POST /whatsapp/businesses/{wabaId}/template
 
 A Meta **não aceita o arquivo direto** na criação do template. Ela exige um `header_handle` produzido pela Resumable Upload API, que depende do token da aplicação — por isso o upload passa por aqui, e não pelo seu frontend.
 
-Este endpoint recebe o arquivo e devolve o handle pronto para usar.
+Este endpoint recebe o arquivo, ou o link público dele, e devolve o handle pronto para usar.
 
 ## Quando você precisa disso
 
 Somente quando o template tem um componente `HEADER` do tipo `IMAGE`, `VIDEO` ou `DOCUMENT`. Templates com header de texto, ou sem header, não precisam de upload.
 
+## Duas formas de enviar
+
+O formato é escolhido pelo `Content-Type` da requisição.
+
+<Tabs>
+  <Tab title="Arquivo (multipart)">
+    `multipart/form-data` com o arquivo no campo `file`.
+
+    O campo `type` é **opcional**. O MIME type usado é o da própria parte `file`; `type` só entra quando a parte chega sem tipo ou como `application/octet-stream`.
+
+    ```bash
+    curl -X POST https://api.omni.z-api.io/whatsapp/businesses/{wabaId}/templates/media \
+      -H "Authorization: Bearer SUA_SECRET_KEY" \
+      -F "file=@banner.jpg;type=image/jpeg"
+    ```
+  </Tab>
+  <Tab title="Link público (JSON)">
+    `application/json` com o endereço público da mídia no campo `url`.
+
+    ```bash
+    curl -X POST https://api.omni.z-api.io/whatsapp/businesses/{wabaId}/templates/media \
+      -H "Authorization: Bearer SUA_SECRET_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://cdn.exemplo.com/banner.jpg"}'
+    ```
+
+    Quem baixa a mídia é a plataforma. O endereço precisa ser `http` ou `https` e público: endereços privados ou internos são recusados.
+  </Tab>
+</Tabs>
+
 ## Fluxo
 
 <Steps>
-  <Step title="Suba o arquivo">
-    `POST /whatsapp/businesses/{wabaId}/templates/media` com `multipart/form-data`, campos `file` e `type`.
+  <Step title="Suba o arquivo ou o link">
+    `POST /whatsapp/businesses/{wabaId}/templates/media`, em uma das duas formas acima.
   </Step>
   <Step title="Guarde o handle">
     A resposta traz o handle no campo `h`.
@@ -41,12 +71,12 @@ Somente quando o template tem um componente `HEADER` do tipo `IMAGE`, `VIDEO` ou
 </Warning>
 
 <Note>
-  Além de `h`, a API aceita o handle nas chaves `handle`, `header_handle`, `headerHandle` e `mediaHandle`. Use `h`, que é a forma canônica.
+  Em arquivos maiores, o handle pode vir com quebras de linha. Use o valor de `h` exatamente como recebido, sem remover nada.
 </Note>
 
 ## Pré-requisito de configuração
 
-O upload depende do **App ID** e do **App Secret** da Meta cadastrados na conta. Sem isso a chamada retorna `422` com `MISSING_APP_CREDENTIALS`.
+O upload depende do **App ID** da Meta cadastrado na conta. Sem ele a chamada retorna `422`, com o código `375` no corpo de erro.
 
 Isso é configurado no painel, em **Segurança** — não há endpoint público para cadastrar as credenciais do app. Veja também [Origens do SDK](/channels/sdk-info), que trata do outro pré-requisito do fluxo via SDK.
 
@@ -54,5 +84,17 @@ Isso é configurado no painel, em **Segurança** — não há endpoint público 
 
 | Item | Valor |
 |---|---|
-| Tamanho máximo | 100 MB |
-| Campos obrigatórios | `file`, `type` |
+| Tamanho máximo por arquivo | 100 MB |
+| Tamanho máximo por link | 5 MB |
+| Campo obrigatório (multipart) | `file` |
+| Campo obrigatório (JSON) | `url` |
+
+## Erros
+
+| Status | Quando |
+|---|---|
+| `400` | `file` ausente ou vazio, `url` ausente ou em branco, JSON inválido, ou secret key inválida (`{"error": "Authorization invalid"}`) |
+| `413` | Arquivo acima de 100 MB |
+| `415` | `Content-Type` diferente de `multipart/form-data` e `application/json` |
+| `422` | A plataforma ou a Meta recusou o upload, ou a Meta falhou ao processá-lo (formato, tamanho, token vencido ou Meta fora do ar). O corpo de erro vem em `error`. Códigos mais comuns: `375` (canal sem App ID), `377` (link não permitido), `380` (falha ao baixar o link) |
+| `502` | Plataforma indisponível. Recusa ou falha da Meta não sai como `502`: vem como `422` |
