@@ -1,22 +1,18 @@
 ---
 title: "Conectar uma IA (MCP)"
-description: "Deixe um assistente de IA usar o seu workspace do Omni Z-API, com as permissões que você autorizar"
+description: "Conecte um assistente de IA ao seu workspace do Omni Z-API como um app conectado, pelo MCP"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
-Em **Administração →** [Apps conectados](https://app.omni.z-api.io/app/connected-apps) ficam os programas de fora que alguém do workspace autorizou a usar a conta, sem passar senha nem Secret Key. Eles se conectam por dois caminhos:
+**Apps conectados** são programas de fora, como uma integração de parceiro ou um assistente de IA, que alguém do workspace autorizou a usar a conta sem passar senha nem Secret Key. Todos ficam em **Administração →** [Apps conectados](https://app.omni.z-api.io/app/connected-apps) e seguem a mesma política do workspace.
 
-- **Apps, por OAuth:** integrações cadastradas pela plataforma, como as de parceiros. Elas usam a API do {projectName} com as permissões que você autorizou, o que pode incluir o envio de mensagens. Conectar um app por OAuth é outro tema e não está nesta página.
-- **IAs, pelo MCP:** assistentes de IA que usam o workspace pelo servidor MCP. São um caso dentro dos apps conectados.
+Um app conectado entra por uma de duas portas:
 
-Esta página trata do segundo caminho.
+- **Pelo próprio app:** o app (por exemplo, a integração de um parceiro) abre o login do {projectName} e usa a API com as permissões autorizadas, o que pode incluir o envio de mensagens. Essa porta é outro tema e não está nesta página.
+- **Por uma IA, pelo MCP:** um assistente de IA usa o workspace pelo servidor MCP (Model Context Protocol) do {projectName}. A IA é um app conectado como os outros, com o mesmo login, o mesmo consentimento e a mesma política.
 
-## Conectar uma IA
-
-O {projectName} tem um servidor MCP (Model Context Protocol). Com ele, um assistente de IA como Claude, ChatGPT, Cursor, VS Code ou n8n usa o seu workspace. Nesta versão, a IA consulta canais, templates, flows, webhooks e cobrança. A lista completa está abaixo.
-
-A IA não recebe a sua Secret Key. Você entra com a sua conta, escolhe o workspace e autoriza o acesso. Esse acesso pode ser revogado a qualquer momento.
+Esta página trata da porta do MCP. A IA não recebe a sua Secret Key: você entra com a sua conta, escolhe o workspace e autoriza o acesso, que pode ser revogado a qualquer momento.
 
 ## Endereço do servidor
 
@@ -24,15 +20,16 @@ A IA não recebe a sua Secret Key. Você entra com a sua conta, escolhe o worksp
 https://mcp.omni.z-api.io/mcp
 ```
 
-Use esse endereço em qualquer cliente de IA compatível com servidor MCP remoto. A autenticação é feita pelo login da sua conta (OAuth), sem chave para copiar.
+Use esse endereço em qualquer cliente de IA compatível com servidor MCP remoto, como Claude, ChatGPT, Cursor, VS Code ou n8n. A autenticação é feita pelo login da sua conta (OAuth), sem chave para copiar.
 
 ## Como a conexão funciona
 
 1. Você adiciona o endereço no cliente de IA.
 2. O cliente abre a tela de login do {projectName}. Entre com a sua conta.
-3. Escolha o workspace que a IA vai consultar.
+3. Escolha o workspace.
 4. Confira o que a IA vai poder fazer.
 5. Clique para autorizar.
+6. Se o workspace exigir aprovação, a IA só começa a funcionar depois que o **Owner** aprovar o pedido em **Pedidos de aprovação**, na tela Apps conectados.
 
 O acesso aparece em **Administração →** [Apps conectados](https://app.omni.z-api.io/app/connected-apps), na seção **Apps conectados ao workspace**, com quem autorizou. Para cortar o acesso, clique em **Revogar**.
 
@@ -90,10 +87,12 @@ O acesso aparece em **Administração →** [Apps conectados](https://app.omni.z
 </Tabs>
 
 <Warning>
-  Cursor, n8n e outros apps que se registram sozinhos só conectam se o workspace aceitar IAs não verificadas ou se o app estiver liberado em **Apps permitidos**. Veja a política do workspace, abaixo.
+  Cursor, n8n e outros apps que se registram sozinhos só conectam se o workspace aceitar IAs não verificadas ou se o app estiver liberado em **Apps permitidos**. Veja **Apps que entram pelo MCP (IAs)**, abaixo.
 </Warning>
 
 ## O que a IA pode fazer
+
+A IA pode fazer o que as **Permissões máximas** da política deixam: ela nunca recebe uma permissão que não esteja marcada ali. Novas operações vão entrar no MCP, sempre dentro dessas permissões.
 
 Nesta versão, a IA pode usar as ferramentas abaixo. Todas consultam dados; as de validação conferem um template ou um flow e devolvem os erros, sem criar, enviar ou sincronizar nada.
 
@@ -104,27 +103,36 @@ Nesta versão, a IA pode usar as ferramentas abaixo. Todas consultam dados; as d
 | **Ver flows** | `flows_list`, `flows_get`, `flows_validate` |
 | **Ver cobrança e planos** | `plans_list`, `billing_summary` |
 
-Novas operações vão entrar no MCP. O que a IA faz depende sempre das **Permissões máximas** da política do workspace: ela nunca recebe uma permissão que não esteja marcada ali. Sem **Ver cobrança e planos**, por exemplo, ela não consulta cobrança nem planos.
+Sem **Ver cobrança e planos**, por exemplo, a IA não consulta cobrança nem planos.
 
 Cada chamada da IA fica registrada na [Auditoria](/security/audit), com o ator **IA conectada**.
 
 ## Política do workspace
 
-Em **Administração →** [Apps conectados](https://app.omni.z-api.io/app/connected-apps), clique em **Ver a política**. Só quem gerencia os apps do workspace muda a política.
+A política vale para todos os apps conectados, entrem eles pelo próprio app ou pelo MCP. Em **Administração →** [Apps conectados](https://app.omni.z-api.io/app/connected-apps), clique em **Ver a política**. Só quem gerencia os apps do workspace muda a política.
 
 | Opção | O que faz |
 |---|---|
 | **Permitir apps neste workspace** | Liga ou desliga todos os apps conectados. Desligar os apps também desliga as IAs. |
-| **IAs conectadas** | Liga ou desliga o acesso das IAs pelo MCP. |
-| **Aceitar IAs não verificadas** | Deixa entrar IAs sem o selo de verificado, como Cursor e n8n. |
 | **Apps permitidos** | Qualquer app do catálogo ou só os apps escolhidos. Com só os escolhidos, é a lista que decide. |
-| **Permissões máximas** | O máximo que um app recebe: **Ver canais**, **Ver templates**, **Ver flows** e **Ver cobrança e planos**. |
+| **Permissões máximas** | O máximo que um app recebe, por exemplo **Ver canais**, **Ver templates**, **Ver flows** e **Ver cobrança e planos**. |
 | Limite de mensagens, validade do acesso e verificação em duas etapas | Limite de mensagens por dia por app, quantos dias o acesso vale e se quem autoriza precisa ter a [verificação em duas etapas](/security/two-factor) ligada. |
-| **Atender IAs mesmo fora da lista de IPs** | Só aparece quando o workspace tem [lista de IPs](/security/ip-restriction). |
 
-## Segurança
+### Apps que entram pelo MCP (IAs)
 
-- **IAs não verificadas:** só entram com **Aceitar IAs não verificadas** ligado ou com o app liberado em **Apps permitidos**. Claude, ChatGPT e VS Code são verificados.
-- **Lista de IPs:** os pedidos da IA vêm dos servidores do provedor de IA, não da sua rede. Se o workspace tem [restrição de IP](/security/ip-restriction), o acesso pela IA é recusado, a não ser que **Atender IAs mesmo fora da lista de IPs** esteja ligado.
-- **Cortar todas as IAs de uma vez:** desligue **IAs conectadas**. Nenhum acesso é revogado: os outros apps continuam conectados pela API pública.
-- **Cortar uma IA:** em **Apps conectados ao workspace**, clique em **Revogar** no app. Ele só volta se alguém autorizar de novo.
+Estas opções são exceções em cima da política, e só valem para as IAs:
+
+| Opção | O que faz |
+|---|---|
+| **IAs conectadas** | Liga ou desliga o acesso de todas as IAs pelo MCP. Desligar não revoga nenhum acesso: os apps que entram pelo próprio app continuam conectados. |
+| **Aceitar IAs não verificadas** | Deixa entrar IAs sem o selo de verificado. Claude, ChatGPT e VS Code são verificados. Cursor, n8n e outros apps que se registram sozinhos só entram com esta opção ligada ou liberados em **Apps permitidos**. |
+| **Atender IAs mesmo fora da lista de IPs** | Só aparece quando o workspace tem [lista de IPs](/security/ip-restriction). Os pedidos da IA vêm dos servidores do provedor de IA, não da sua rede. Com a opção desligada, o workspace recusa as consultas da IA a canais, templates, flows e webhooks. |
+
+<Note>
+  A lista de IPs não é um bloqueio completo das IAs. Para cortar o acesso de todas as IAs, desligue **IAs conectadas**.
+</Note>
+
+## Revogar
+
+- **Uma IA:** em **Apps conectados ao workspace**, clique em **Revogar** no app. Ele só volta se alguém autorizar de novo.
+- **Todas as IAs:** desligue **IAs conectadas** na política.

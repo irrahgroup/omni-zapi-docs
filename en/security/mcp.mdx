@@ -1,22 +1,18 @@
 ---
 title: "Connect an AI (MCP)"
-description: "Let an AI assistant use your Omni Z-API workspace, with the permissions you authorize"
+description: "Connect an AI assistant to your Omni Z-API workspace as a connected app, through MCP"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
-**Administration →** [Connected apps](https://app.omni.z-api.io/app/connected-apps) holds the outside programs that someone in the workspace authorized to use the account, without handing over a password or the Secret Key. They connect in two ways:
+**Connected apps** are outside programs, such as a partner integration or an AI assistant, that someone in the workspace authorized to use the account without handing over a password or the Secret Key. They all live in **Administration →** [Connected apps](https://app.omni.z-api.io/app/connected-apps) and follow the same workspace policy.
 
-- **Apps, through OAuth:** integrations registered by the platform, such as partner integrations. They use the {projectName} API with the permissions you authorized, which can include sending messages. Connecting an app through OAuth is a separate topic and is not covered on this page.
-- **AIs, through MCP:** AI assistants that use the workspace through the MCP server. They are a case within connected apps.
+A connected app comes in through one of two doors:
 
-This page covers the second way.
+- **Through the app itself:** the app (for example, a partner integration) opens the {projectName} sign-in and uses the API with the authorized permissions, which can include sending messages. That door is a separate topic and is not covered on this page.
+- **Through an AI, via MCP:** an AI assistant uses the workspace through the {projectName} MCP (Model Context Protocol) server. The AI is a connected app like any other, with the same sign-in, the same consent and the same policy.
 
-## Connect an AI
-
-{projectName} has an MCP (Model Context Protocol) server. With it, an AI assistant such as Claude, ChatGPT, Cursor, VS Code or n8n can use your workspace. In this version, the AI looks up channels, templates, flows, webhooks and billing. The full list is below.
-
-The AI never gets your Secret Key. You sign in with your account, choose the workspace and authorize the access. You can revoke that access at any time.
+This page covers the MCP door. The AI never gets your Secret Key: you sign in with your account, choose the workspace and authorize the access, which you can revoke at any time.
 
 ## Server address
 
@@ -24,15 +20,16 @@ The AI never gets your Secret Key. You sign in with your account, choose the wor
 https://mcp.omni.z-api.io/mcp
 ```
 
-Use this address in any AI client that supports a remote MCP server. Authentication goes through your account sign-in (OAuth), with no key to copy.
+Use this address in any AI client that supports a remote MCP server, such as Claude, ChatGPT, Cursor, VS Code or n8n. Authentication goes through your account sign-in (OAuth), with no key to copy.
 
 ## How the connection works
 
 1. You add the address to the AI client.
 2. The client opens the {projectName} sign-in page. Sign in with your account.
-3. Choose the workspace the AI will read.
+3. Choose the workspace.
 4. Check what the AI will be able to do.
 5. Click to authorize.
+6. If the workspace requires approval, the AI only starts working after the **Owner** approves the request in **Approval requests**, on the Connected apps page.
 
 The access shows up in **Administration →** [Connected apps](https://app.omni.z-api.io/app/connected-apps), in the **Apps connected to the workspace** section, along with who authorized it. To cut the access, click **Revoke**.
 
@@ -90,10 +87,12 @@ The access shows up in **Administration →** [Connected apps](https://app.omni.
 </Tabs>
 
 <Warning>
-  Cursor, n8n and other apps that register themselves only connect if the workspace accepts unverified AIs or the app is allowed in **Allowed apps**. See the workspace policy below.
+  Cursor, n8n and other apps that register themselves only connect if the workspace accepts unverified AIs or the app is allowed in **Allowed apps**. See **Apps that come in through MCP (AIs)** below.
 </Warning>
 
 ## What the AI can do
+
+The AI can do what the policy's **Maximum permissions** allow: it never gets a permission that isn't checked there. New operations will be added to MCP, always within those permissions.
 
 In this version, the AI can use the tools below. They all look up data; the validation tools check a template or a flow and return the errors, without creating, sending or syncing anything.
 
@@ -104,27 +103,36 @@ In this version, the AI can use the tools below. They all look up data; the vali
 | **See flows** | `flows_list`, `flows_get`, `flows_validate` |
 | **See billing and plans** | `plans_list`, `billing_summary` |
 
-New operations will be added to MCP. What the AI does always depends on the workspace policy's **Maximum permissions**: it never gets a permission that isn't checked there. Without **See billing and plans**, for example, it doesn't look up billing or plans.
+Without **See billing and plans**, for example, the AI doesn't look up billing or plans.
 
 Every AI call is recorded in the [Audit log](/en/security/audit), with the **Connected AI** actor.
 
 ## Workspace policy
 
-In **Administration →** [Connected apps](https://app.omni.z-api.io/app/connected-apps), click **See the policy**. Only people who manage the workspace apps can change the policy.
+The policy applies to every connected app, whether it comes in through the app itself or through MCP. In **Administration →** [Connected apps](https://app.omni.z-api.io/app/connected-apps), click **See the policy**. Only people who manage the workspace apps can change the policy.
 
 | Option | What it does |
 |---|---|
 | **Allow apps in this workspace** | Turns all connected apps on or off. Turning off apps also turns off the AIs. |
-| **Connected AIs** | Turns AI access through MCP on or off. |
-| **Accept unverified AIs** | Lets in AIs without the verified badge, such as Cursor and n8n. |
 | **Allowed apps** | Any app in the catalog or only the chosen apps. With only the chosen apps, the list decides. |
-| **Maximum permissions** | The most an app gets: **See channels**, **See templates**, **See flows** and **See billing and plans**. |
+| **Maximum permissions** | The most an app gets, for example **See channels**, **See templates**, **See flows** and **See billing and plans**. |
 | Message limit, access validity and two-step verification | Message limit per day per app, how many days the access lasts and whether whoever authorizes needs [two-step verification](/en/security/two-factor) turned on. |
-| **Serve AIs even outside the IP list** | Only shows up when the workspace has an [IP list](/en/security/ip-restriction). |
 
-## Security
+### Apps that come in through MCP (AIs)
 
-- **Unverified AIs:** they only get in with **Accept unverified AIs** turned on or with the app allowed in **Allowed apps**. Claude, ChatGPT and VS Code are verified.
-- **IP list:** AI requests come from the AI provider's servers, not from your network. If the workspace has [IP restriction](/en/security/ip-restriction), access by AI is refused unless **Serve AIs even outside the IP list** is on.
-- **Cut every AI at once:** turn off **Connected AIs**. No access is revoked: the other apps stay connected through the public API.
-- **Cut one AI:** in **Apps connected to the workspace**, click **Revoke** on the app. It only comes back if someone authorizes it again.
+These options are exceptions on top of the policy, and they only apply to AIs:
+
+| Option | What it does |
+|---|---|
+| **Connected AIs** | Turns access through MCP on or off for every AI. Turning it off revokes no access: apps that come in through the app itself stay connected. |
+| **Accept unverified AIs** | Lets in AIs without the verified badge. Claude, ChatGPT and VS Code are verified. Cursor, n8n and other apps that register themselves only get in with this option on or when allowed in **Allowed apps**. |
+| **Serve AIs even outside the IP list** | Only shows up when the workspace has an [IP list](/en/security/ip-restriction). AI requests come from the AI provider's servers, not from your network. With the option off, the workspace refuses the AI's lookups of channels, templates, flows and webhooks. |
+
+<Note>
+  The IP list is not a complete block on AIs. To cut access for every AI, turn off **Connected AIs**.
+</Note>
+
+## Revoke
+
+- **One AI:** in **Apps connected to the workspace**, click **Revoke** on the app. It only comes back if someone authorizes it again.
+- **Every AI:** turn off **Connected AIs** in the policy.
