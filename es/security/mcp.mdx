@@ -1,6 +1,6 @@
 ---
 title: "Conectar una IA (MCP)"
-description: "Deja que un asistente de IA consulte tu workspace de Omni Z-API, solo para lectura"
+description: "Deja que un asistente de IA use tu workspace de Omni Z-API, con los permisos que autorices"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
@@ -8,13 +8,13 @@ import { projectName } from '/snippets/variables.mdx';
 En **Administración →** [Apps conectadas](https://app.omni.z-api.io/app/connected-apps) están los programas externos que alguien del workspace autorizó a usar la cuenta, sin entregar una contraseña ni la Secret Key. Se conectan por dos caminos:
 
 - **Apps, por OAuth:** integraciones registradas por la plataforma, como las de socios. Usan la API de {projectName} con los permisos que autorizaste, lo que puede incluir el envío de mensajes. Conectar una app por OAuth es otro tema y no está en esta página.
-- **IA, por MCP:** asistentes de IA que consultan el workspace por el servidor MCP. Son un caso dentro de las apps conectadas, y la IA **solo lee**.
+- **IA, por MCP:** asistentes de IA que usan el workspace por el servidor MCP. Son un caso dentro de las apps conectadas.
 
 Esta página trata del segundo camino.
 
 ## Conectar una IA
 
-{projectName} tiene un servidor MCP (Model Context Protocol). Con él, un asistente de IA como Claude, ChatGPT, Cursor, VS Code o n8n consulta tu workspace: canales, plantillas, flows, webhooks y cobro. La IA **solo lee**: no envía mensajes ni crea, cambia o borra nada.
+{projectName} tiene un servidor MCP (Model Context Protocol). Con él, un asistente de IA como Claude, ChatGPT, Cursor, VS Code o n8n usa tu workspace. En esta versión, la IA consulta canales, plantillas, flows, webhooks y cobro. La lista completa está abajo.
 
 La IA no recibe tu Secret Key. Entras con tu cuenta, eliges el workspace y autorizas el acceso. Puedes revocar ese acceso en cualquier momento.
 
@@ -95,7 +95,7 @@ El acceso aparece en **Administración →** [Apps conectadas](https://app.omni.
 
 ## Qué puede hacer la IA
 
-Todas las herramientas son de lectura. Las de validación revisan una plantilla o un flow y devuelven los errores, sin crear, enviar ni sincronizar nada.
+En esta versión, la IA puede usar las herramientas de abajo. Todas consultan datos; las de validación revisan una plantilla o un flow y devuelven los errores, sin crear, enviar ni sincronizar nada.
 
 | Permiso | Herramientas |
 |---|---|
@@ -104,9 +104,9 @@ Todas las herramientas son de lectura. Las de validación revisan una plantilla 
 | **Ver flows** | `flows_list`, `flows_get`, `flows_validate` |
 | **Ver cobro y planes** | `plans_list`, `billing_summary` |
 
-La IA solo recibe los permisos marcados en **Permisos máximos**. Sin **Ver cobro y planes**, por ejemplo, no lee el cobro ni los planes.
+Nuevas operaciones van a entrar en el MCP. Lo que hace la IA depende siempre de los **Permisos máximos** de la política del workspace: nunca recibe un permiso que no esté marcado ahí. Sin **Ver cobro y planes**, por ejemplo, no consulta el cobro ni los planes.
 
-Cada lectura queda registrada en la [Auditoría](/es/security/audit), con el actor **IA conectada**.
+Cada llamada de la IA queda registrada en la [Auditoría](/es/security/audit), con el actor **IA conectada**.
 
 ## Política del workspace
 
@@ -125,6 +125,6 @@ En **Administración →** [Apps conectadas](https://app.omni.z-api.io/app/conne
 ## Seguridad
 
 - **IA no verificadas:** solo entran con **Aceptar IA no verificadas** activado o con la app liberada en **Apps permitidas**. Claude, ChatGPT y VS Code están verificados.
-- **Lista de IP:** los pedidos de la IA vienen de los servidores del proveedor de IA, no de tu red. Si el workspace tiene [restricción de IP](/es/security/ip-restriction), la lectura por IA se rechaza, a menos que **Atender a las IA incluso fuera de la lista de IP** esté encendido.
+- **Lista de IP:** los pedidos de la IA vienen de los servidores del proveedor de IA, no de tu red. Si el workspace tiene [restricción de IP](/es/security/ip-restriction), el acceso por IA se rechaza, a menos que **Atender a las IA incluso fuera de la lista de IP** esté encendido.
 - **Cortar todas las IA a la vez:** apaga **IA conectadas**. No se revoca ningún acceso: las otras apps siguen conectadas por la API pública.
 - **Cortar una IA:** en **Apps conectadas al workspace**, haz clic en **Revocar** en la app. Solo vuelve si alguien la autoriza de nuevo.

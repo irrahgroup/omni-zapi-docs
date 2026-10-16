@@ -8,7 +8,7 @@ Define o que a documentação promete sobre a conexão de um assistente de IA ao
 
 ### Requirement: Dois caminhos de conexão
 
-A página SHALL abrir dizendo que os apps conectados chegam por dois caminhos: apps por OAuth, cadastrados pela plataforma, que usam a API com as permissões autorizadas, envio de mensagens incluído; e IAs pelo MCP, um caso dentro dos apps conectados, só de leitura. A página MUST dizer que conectar um app por OAuth é outro tema e MUST NOT descrever o fluxo de desenvolvedor.
+A página SHALL abrir dizendo que os apps conectados chegam por dois caminhos: apps por OAuth, cadastrados pela plataforma, que usam a API com as permissões autorizadas, envio de mensagens incluído; e IAs pelo MCP, um caso dentro dos apps conectados. A página MUST dizer que conectar um app por OAuth é outro tema e MUST NOT descrever o fluxo de desenvolvedor.
 
 Fonte (`pennsylvania-hermitage@develop`): `AdminOAuthResource.java` — `POST /admin/oauth/clients`, só para `ADMIN` e `FATHER` da plataforma; `OAuthScope.java` — `messages:send`, `templates:write` e `flows:write` fora do conjunto do MCP.
 
@@ -28,16 +28,16 @@ Fonte (`pennsylvania-pittsburgh@develop`): `k8s-templates/production/values.yaml
 - **WHEN** o leitor copia o endereço da página
 - **THEN** o endereço termina em `/mcp`
 
-### Requirement: Somente leitura e ferramentas por permissão
+### Requirement: Ferramentas desta versão e permissões
 
-A página SHALL dizer que a IA só lê e SHALL listar as 13 ferramentas pela permissão que cada uma exige: **Ver canais** (`account_whoami`, `channel_types_list`, `channels_list`, `channels_get`, `webhooks_list`), **Ver templates** (`templates_list`, `templates_get`, `templates_validate`), **Ver flows** (`flows_list`, `flows_get`, `flows_validate`) e **Ver cobrança e planos** (`plans_list`, `billing_summary`). A página MUST dizer que a IA não recebe mais do que **Permissões máximas**.
+A página SHALL dizer o que a IA pode fazer nesta versão e SHALL listar as 13 ferramentas pela permissão que cada uma exige: **Ver canais** (`account_whoami`, `channel_types_list`, `channels_list`, `channels_get`, `webhooks_list`), **Ver templates** (`templates_list`, `templates_get`, `templates_validate`), **Ver flows** (`flows_list`, `flows_get`, `flows_validate`) e **Ver cobrança e planos** (`plans_list`, `billing_summary`). A página MUST dizer que novas operações vão entrar e que o que a IA faz depende das **Permissões máximas** da política. A página MUST NOT afirmar que o MCP é só de leitura nem prometer data ou lista de operações futuras.
 
 Fonte (`pennsylvania-pittsburgh@develop`): `app/core/domain/tool.go` — catálogo com o escopo de cada ferramenta.
 
 #### Scenario: Cobrança desmarcada
 
-- **WHEN** o leitor consulta o que a IA lê sem **Ver cobrança e planos**
-- **THEN** a página diz que ela não lê cobrança nem planos
+- **WHEN** o leitor consulta o que a IA faz sem **Ver cobrança e planos**
+- **THEN** a página diz que ela não consulta cobrança nem planos
 
 ### Requirement: Política e segurança
 
@@ -48,4 +48,4 @@ Fonte (`pennsylvania-lancaster@ominizapi`): `src/i18n/pt-br.json` — chaves `co
 #### Scenario: Workspace com lista de IPs
 
 - **WHEN** o workspace tem lista de IPs e a opção de atender IAs está desligada
-- **THEN** a página diz que a leitura pela IA é recusada
+- **THEN** a página diz que o acesso pela IA é recusado
