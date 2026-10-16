@@ -7,11 +7,14 @@ O Omni Z-API ganhou um servidor MCP somente leitura (`pennsylvania-pittsburgh`, 
 ## What Changes
 
 - Nova página **Conectar uma IA (MCP)** / **Connect an AI (MCP)** / **Conectar una IA (MCP)**, como sétima página do grupo Segurança nos três idiomas.
+- A página abre com os dois caminhos de conexão: apps por OAuth, cadastrados pela plataforma e com envio possível, e IAs pelo MCP, só de leitura. O fluxo de app por OAuth fica para outra página.
 - A página traz o endereço do servidor, o fluxo de autorização, o passo a passo curto por cliente (Claude, ChatGPT, Cursor, VS Code e n8n), as ferramentas por permissão, a política do workspace e as regras de segurança.
 - A Introdução da seção Segurança ganha a linha e o parágrafo do novo recurso.
 - A opção `mcp` de `contextual.options` no `docs.json` é o menu contextual do Mintlify e não muda.
 
 ### Fora de escopo
+
+- Página sobre conectar um app por OAuth. Hoje o cliente é cadastrado só pela plataforma (`POST /admin/oauth/clients` no hermitage), sem fluxo de desenvolvedor para documentar.
 
 - Telas dos clientes de IA além do necessário para adicionar o endereço.
 - Imagens da tela Apps conectados.

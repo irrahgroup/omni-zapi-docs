@@ -6,6 +6,17 @@ Define o que a documentação promete sobre a conexão de um assistente de IA ao
 
 ## ADDED Requirements
 
+### Requirement: Dois caminhos de conexão
+
+A página SHALL abrir dizendo que os apps conectados chegam por dois caminhos: apps por OAuth, cadastrados pela plataforma, que usam a API com as permissões autorizadas, envio de mensagens incluído; e IAs pelo MCP, um caso dentro dos apps conectados, só de leitura. A página MUST dizer que conectar um app por OAuth é outro tema e MUST NOT descrever o fluxo de desenvolvedor.
+
+Fonte (`pennsylvania-hermitage@develop`): `AdminOAuthResource.java` — `POST /admin/oauth/clients`, só para `ADMIN` e `FATHER` da plataforma; `OAuthScope.java` — `messages:send`, `templates:write` e `flows:write` fora do conjunto do MCP.
+
+#### Scenario: Leitor que integra um sistema próprio
+
+- **WHEN** o leitor abre a página
+- **THEN** ele vê, antes do passo a passo, que apps por OAuth são outro caminho, com envio possível, e que a página trata só das IAs
+
 ### Requirement: Endereço e fluxo de conexão
 
 A página SHALL informar o endereço `https://mcp.omni.z-api.io/mcp` e o fluxo: o cliente abre o login, a pessoa escolhe o workspace, vê o que a IA pode fazer e autoriza. A página MUST dizer que o acesso aparece em **Apps conectados ao workspace** e pode ser revogado ali.
