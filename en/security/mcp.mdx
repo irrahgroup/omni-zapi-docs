@@ -1,0 +1,138 @@
+---
+title: "Connect an AI (MCP)"
+description: "Connect an AI assistant to your Omni Z-API workspace as a connected app, through MCP"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+**Connected apps** are outside programs, such as a partner integration or an AI assistant, that someone in the workspace authorized to use the account without handing over a password or the Secret Key. They all live in **Administration →** [Connected apps](https://app.omni.z-api.io/app/connected-apps) and follow the same workspace policy.
+
+A connected app comes in through one of two doors:
+
+- **Through the app itself:** the app (for example, a partner integration) opens the {projectName} sign-in and uses the API with the authorized permissions, which can include sending messages. That door is a separate topic and is not covered on this page.
+- **Through an AI, via MCP:** an AI assistant uses the workspace through the {projectName} MCP (Model Context Protocol) server. The AI is a connected app like any other, with the same sign-in, the same consent and the same policy.
+
+This page covers the MCP door. The AI never gets your Secret Key: you sign in with your account, choose the workspace and authorize the access, which you can revoke at any time.
+
+## Server address
+
+```text
+https://mcp.omni.z-api.io/mcp
+```
+
+Use this address in any AI client that supports a remote MCP server, such as Claude, ChatGPT, Cursor, VS Code or n8n. Authentication goes through your account sign-in (OAuth), with no key to copy.
+
+## How the connection works
+
+1. You add the address to the AI client.
+2. The client opens the {projectName} sign-in page. Sign in with your account.
+3. Choose the workspace.
+4. Check what the AI will be able to do.
+5. Click to authorize.
+6. If the workspace requires approval, the AI only starts working after the **Owner** approves the request in **Approval requests**, on the Connected apps page.
+
+The access shows up in **Administration →** [Connected apps](https://app.omni.z-api.io/app/connected-apps), in the **Apps connected to the workspace** section, along with who authorized it. To cut the access, click **Revoke**.
+
+<Note>
+  The AI acts with the permissions of the person who authorized it and disconnects when that person leaves the workspace.
+</Note>
+
+## Connect your AI client
+
+<Tabs>
+  <Tab title="Claude">
+    1. Add a **custom connector** with the address `https://mcp.omni.z-api.io/mcp`.
+    2. When you connect, Claude opens the {projectName} sign-in. Follow the flow above.
+  </Tab>
+  <Tab title="ChatGPT">
+    1. In **connectors** (or in **developer mode**, depending on your plan), add a remote MCP server with the address `https://mcp.omni.z-api.io/mcp`.
+    2. When you connect, ChatGPT opens the {projectName} sign-in. Follow the flow above.
+  </Tab>
+  <Tab title="Cursor">
+    Add the server to Cursor's `mcp.json` file:
+
+    ```json mcp.json
+    {
+      "mcpServers": {
+        "omni-zapi": {
+          "url": "https://mcp.omni.z-api.io/mcp"
+        }
+      }
+    }
+    ```
+
+    On the first call, Cursor opens the {projectName} sign-in.
+  </Tab>
+  <Tab title="VS Code">
+    Add the server to VS Code's `mcp.json` file:
+
+    ```json mcp.json
+    {
+      "servers": {
+        "omni-zapi": {
+          "type": "http",
+          "url": "https://mcp.omni.z-api.io/mcp"
+        }
+      }
+    }
+    ```
+
+    When the server starts, VS Code opens the {projectName} sign-in.
+  </Tab>
+  <Tab title="n8n">
+    1. In your workflow, add the **MCP Client** node.
+    2. Enter the address `https://mcp.omni.z-api.io/mcp` and choose OAuth authentication.
+    3. Connect the credential: n8n opens the {projectName} sign-in.
+  </Tab>
+</Tabs>
+
+<Warning>
+  Cursor, n8n and other apps that register themselves only connect if the workspace accepts unverified AIs or the app is allowed in **Allowed apps**. See **Apps that come in through MCP (AIs)** below.
+</Warning>
+
+## What the AI can do
+
+The AI can do what the policy's **Maximum permissions** allow: it never gets a permission that isn't checked there. New operations will be added to MCP, always within those permissions.
+
+In this version, the AI can use the tools below. They all look up data; the validation tools check a template or a flow and return the errors, without creating, sending or syncing anything.
+
+| Permission | Tools |
+|---|---|
+| **See channels** | `account_whoami` (account details), `channel_types_list`, `channels_list`, `channels_get`, `webhooks_list` |
+| **See templates** | `templates_list`, `templates_get`, `templates_validate` |
+| **See flows** | `flows_list`, `flows_get`, `flows_validate` |
+| **See billing and plans** | `plans_list`, `billing_summary` |
+
+Without **See billing and plans**, for example, the AI doesn't look up billing or plans.
+
+Every AI call is recorded in the [Audit log](/en/security/audit), with the **Connected AI** actor.
+
+## Workspace policy
+
+The policy applies to every connected app, whether it comes in through the app itself or through MCP. In **Administration →** [Connected apps](https://app.omni.z-api.io/app/connected-apps), click **See the policy**. Only people who manage the workspace apps can change the policy.
+
+| Option | What it does |
+|---|---|
+| **Allow apps in this workspace** | Turns all connected apps on or off. Turning off apps also turns off the AIs. |
+| **Allowed apps** | Any app in the catalog or only the chosen apps. With only the chosen apps, the list decides. |
+| **Maximum permissions** | The most an app gets, for example **See channels**, **See templates**, **See flows** and **See billing and plans**. |
+| Message limit, access validity and two-step verification | Message limit per day per app, how many days the access lasts and whether whoever authorizes needs [two-step verification](/en/security/two-factor) turned on. |
+
+### Apps that come in through MCP (AIs)
+
+These options are exceptions on top of the policy, and they only apply to AIs:
+
+| Option | What it does |
+|---|---|
+| **Connected AIs** | Turns access through MCP on or off for every AI. Turning it off revokes no access: apps that come in through the app itself stay connected. |
+| **Accept unverified AIs** | Lets in AIs without the verified badge. Claude, ChatGPT and VS Code are verified. Cursor, n8n and other apps that register themselves only get in with this option on or when allowed in **Allowed apps**. |
+| **Serve AIs even outside the IP list** | Only shows up when the workspace has an [IP list](/en/security/ip-restriction). AI requests come from the AI provider's servers, not from your network. With the option off, the workspace refuses the AI's lookups of channels, templates, flows and webhooks. |
+
+<Note>
+  The IP list is not a complete block on AIs. To cut access for every AI, turn off **Connected AIs**.
+</Note>
+
+## Revoke
+
+- **One AI:** in **Apps connected to the workspace**, click **Revoke** on the app. It only comes back if someone authorizes it again.
+- **Every AI:** turn off **Connected AIs** in the policy.
