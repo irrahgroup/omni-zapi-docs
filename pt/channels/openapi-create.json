@@ -65,6 +65,20 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Nome já usado por outro canal ativo do workspace. A comparação ignora maiúsculas e os espaços das pontas; acento e espaço interno diferenciam. Reconheça pelo campo `error`, que é estável; `message` é sempre em inglês.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelNameInUseError"
+                },
+                "example": {
+                  "error": "channel_name_in_use",
+                  "message": "A channel with this name already exists in this workspace. Pick another one."
+                }
+              }
+            }
           }
         }
       }
@@ -133,6 +147,26 @@
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "ChannelNameInUseError": {
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "channel_name_in_use"
+            ],
+            "description": "Código estável da recusa"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto fixo, sempre em inglês"
           }
         }
       }

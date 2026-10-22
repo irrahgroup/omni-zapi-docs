@@ -40,3 +40,24 @@ Las respuestas de error no cambian y no traen token.
 | `META_INSTAGRAM` | Instagram |
 | `META_MESSENGER` | Messenger |
 | `BOT_TELEGRAM` | Telegram |
+
+### Nombre único en el workspace
+
+El nombre del canal es único entre los canales activos del workspace. Si otro canal activo ya usa el mismo nombre, la creación se rechaza con `409`, y no se crea ningún canal:
+
+```json
+{
+  "error": "channel_name_in_use",
+  "message": "A channel with this name already exists in this workspace. Pick another one."
+}
+```
+
+- La comparación no distingue mayúsculas e ignora los espacios del inicio y del final: `Ventas`, `ventas` y ` Ventas ` son el mismo nombre. El canal se guarda sin esos espacios.
+- Los acentos y los espacios internos diferencian: `Ventás` y `Ven  tas` son otros nombres.
+- El tipo de canal no importa: un `META_WHATSAPP` y un `BOT_TELEGRAM` no pueden tener el mismo nombre en el workspace.
+- Un canal cancelado y todavía no eliminado sigue ocupando el nombre. Un canal eliminado libera el nombre.
+- Reconozca el rechazo por el campo `error`, que es estable. El `message` siempre está en inglés y se puede mostrar al usuario.
+
+<Note>
+**Cambio de comportamiento.** A partir del **[fecha a confirmar]**, `POST /v1/channels` rechaza con `409 channel_name_in_use` el nombre ya usado por otro canal activo del workspace. Antes, la creación aceptaba nombres repetidos. Los canales existentes no cambian, incluso los que ya tienen el nombre repetido. Si su integración crea canales con nombres repetidos, trate el `409` eligiendo otro nombre.
+</Note>

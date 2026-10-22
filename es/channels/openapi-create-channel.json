@@ -85,6 +85,20 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "409": {
+            "description": "Nombre ya usado por otro canal activo del workspace. La comparación ignora mayúsculas y los espacios de los extremos; los acentos y los espacios internos diferencian. Reconózcalo por el campo `error`, que es estable; `message` siempre está en inglés.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelNameInUseError"
+                },
+                "example": {
+                  "error": "channel_name_in_use",
+                  "message": "A channel with this name already exists in this workspace. Pick another one."
+                }
+              }
+            }
+          },
           "422": {
             "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
             "content": {
@@ -170,6 +184,26 @@
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "ChannelNameInUseError": {
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "channel_name_in_use"
+            ],
+            "description": "Código estable del rechazo"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto fijo, siempre en inglés"
           }
         }
       }
