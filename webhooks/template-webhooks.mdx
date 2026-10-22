@@ -25,17 +25,18 @@ Authorization: Bearer <secret-key>
 
 ## Eventos de template aceitos
 
-Um webhook de template aceita **somente** eventos de template. Enviar qualquer evento não-template resulta em `422`.
+Um webhook de template aceita **somente** eventos de conta: os de template e o aviso de desconexão de canal (`CHANNEL_DISCONNECTED`). Enviar um evento de canal resulta em `422`.
 
 | Valor (exato, SNAKE_CASE) | Significado |
 |---|---|
 | `UPDATE_TEMPLATE_STATUS` | Atualização de status de template (aprovado/rejeitado etc.) |
 | `UPDATE_TEMPLATE_CATEGORY` | Atualização de categoria de template |
+| `CHANNEL_DISCONNECTED` | Aviso de desconexão de canal, com o motivo em código. **Em liberação**: veja [Aviso de desconexão de canal](/webhooks/channel-disconnected) |
 
 ## Regras de negócio
 
 1. **Escopo dos eventos (obrigatório).**
-   - Webhook **de template** → só aceita eventos de template. Qualquer evento não-template → `422`.
+   - Webhook **de template** → só aceita eventos de conta (template e `CHANNEL_DISCONNECTED`). Evento de canal → `422`.
    - Webhook **de canal** → **não** pode assinar eventos de template → `422`.
 2. **`payloadFormat` é ignorado.** Para webhooks de template o formato é sempre `DEFAULT`. O campo pode ser omitido; se enviado (qualquer valor, inclusive `CHATWOOT`), é silenciosamente descartado e persistido como `DEFAULT`.
 3. **`instanceId` gravado como `null`** automaticamente — não há campo de instância nestas rotas. `channelId` também vem `null`.
@@ -70,5 +71,8 @@ Um webhook de template aceita **somente** eventos de template. Enviar qualquer e
   </Card>
   <Card title="Estrutura dos payloads" icon="brackets-curly" href="/webhooks/template-payloads">
     Exemplos reais dos payloads recebidos para cada evento de template.
+  </Card>
+  <Card title="Aviso de desconexão de canal" icon="plug-circle-xmark" href="/webhooks/channel-disconnected">
+    Receba a desconexão de qualquer canal do workspace, com o motivo em código.
   </Card>
 </CardGroup>

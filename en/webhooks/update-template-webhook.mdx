@@ -10,7 +10,7 @@ Partially updates a template webhook's configuration. Only the fields sent in th
 
 ### Updating events
 
-When sending the `events` field, the list replaces the existing events and must contain **only** template events (otherwise → `422`):
+When sending the `events` field, the list replaces the existing events and must contain **only** account events: template events and `CHANNEL_DISCONNECTED` (otherwise → `422`). Until `CHANNEL_DISCONNECTED` is released, a request that adds it returns `422 {"error":"Platform events are not available yet"}`; keeping or removing the one the webhook already has keeps working:
 
 ```json
 { "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"] }

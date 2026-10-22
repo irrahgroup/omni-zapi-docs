@@ -1,0 +1,142 @@
+---
+title: "Channel disconnection notice"
+description: "Receive a notice on the global webhook, with a reason code, whenever a channel in your workspace is disconnected"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+<Warning>
+  **Feature being rolled out.** The `CHANNEL_DISCONNECTED` event is being released gradually, and availability depends on activation for your account. Until it is released, a request that adds it to a webhook returns `422 {"error":"Platform events are not available yet"}` and nothing is saved.
+</Warning>
+
+## What it is
+
+`CHANNEL_DISCONNECTED` is an **account** event in {projectName}: it is delivered to the workspace's global webhook (the [template webhook](/en/webhooks/template-webhooks), with no instance) and tells you that a channel in the workspace was disconnected, with the reason as a code.
+
+With it, if you integrate many channels you no longer need to subscribe to `DISCONNECTED` channel by channel to learn about a disconnection.
+
+<Note>
+  **The channel webhook's `DISCONNECTED` does not change.** Its body, rules and formats (`DEFAULT`, `Z_API` and `CHATWOOT`) stay the same, and it does **not** carry the reason code. If you already subscribe to `DISCONNECTED` on a channel, you keep receiving it as today. `CHANNEL_DISCONNECTED` is an additional notice, on the global webhook only.
+</Note>
+
+## How to subscribe
+
+Add `CHANNEL_DISCONNECTED` to `events` when you [create](/en/webhooks/create-template-webhook) or [update](/en/webhooks/update-template-webhook) the global webhook:
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/webhooks \
+  -H "Authorization: Bearer <secret-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://channels.example.com/hook","events":["CHANNEL_DISCONNECTED"]}'
+```
+
+- **Global webhook only.** Channel webhooks and default instance webhooks reject the event with `422`.
+- **`DEFAULT` format only.** The global webhook is already `DEFAULT`.
+- **Independent of other events.** The same webhook can subscribe to `CHANNEL_DISCONNECTED` alone, or together with template and billing events.
+- **In the dashboard**, subscribing to the event requires the **See billing** permission, the same one billing events require (Owner and Manager, see [Team and roles](/en/security/team)).
+- **Until it is released**, a request that adds the event receives `422 {"error":"Platform events are not available yet"}`. Reading, keeping or removing a `CHANNEL_DISCONNECTED` the webhook already has keeps working.
+
+## What your server receives
+
+The body is the event:
+
+```json
+{
+  "id": "0b8e5f0e-4a3c-5d1b-9c2e-7f6a5b4c3d2e",
+  "type": "CHANNEL_DISCONNECTED",
+  "occurredAt": "2026-10-21T18:00:00Z",
+  "data": {
+    "instanceId": "<instance id>",
+    "channelType": "META_WHATSAPP",
+    "reasonCode": "PARTNER_REMOVED",
+    "reason": "WABA disconnected due to primary device inactivity",
+    "origin": "EXTERNAL",
+    "initiatedBy": "SYSTEM",
+    "disconnectedAt": "2026-10-21T18:00:00Z"
+  }
+}
+```
+
+| Field | Type | Description | Can be `null` |
+|---|---|---|---|
+| `id` | string | Notice identifier. Use it to discard duplicates | no |
+| `type` | string | Always `CHANNEL_DISCONNECTED` | no |
+| `occurredAt` | string | Same as `data.disconnectedAt` | no |
+| `data.instanceId` | string | The disconnected channel | no |
+| `data.channelType` | string | `META_WHATSAPP`, `Z_API_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER` or `BOT_TELEGRAM` | no |
+| `data.reasonCode` | string | The reason as a code (see "Reason codes", below) | yes |
+| `data.reason` | string | The reason text, as the provider described it. It may change without notice: to automate, use `reasonCode` | yes |
+| `data.origin` | string | Who disconnected: `USER`, `BILLING` or `EXTERNAL` (see "Origin", below) | no |
+| `data.initiatedBy` | string | What the provider reported about who started the disconnection | yes |
+| `data.disconnectedAt` | string | When the disconnection happened, in ISO-8601 UTC | no |
+
+<Note>
+  The body never carries a phone number, the provider's number or account id, a token or a credential. `reason` is sent as the provider wrote it and may contain the channel's number (for example, `Disconnected from <number>` on WhatsApp Web): it is the same text the dashboard and the channel's `DISCONNECTED` already show.
+</Note>
+
+## Origin
+
+| `origin` | When |
+|---|---|
+| `USER` | The channel was disconnected from the dashboard or through the API |
+| `BILLING` | The channel was disconnected by a cut-off for non-payment or by the end of the subscription |
+| `EXTERNAL` | The provider disconnected the channel (Meta, Z-API or Telegram) |
+
+The notice is sent for all three origins. When `origin` is `USER` or `BILLING`, `reasonCode` is always `null`.
+
+## Reason codes
+
+| `reasonCode` | What happened |
+|---|---|
+| `PHONE_BANNED` | The number was banned or blocked by the provider |
+| `ACCOUNT_DISABLED` | The provider account was disabled or deleted (on the official WhatsApp, the WhatsApp Business account) |
+| `PARTNER_REMOVED` | The WhatsApp Business account removed {projectName} as a partner |
+| `APP_UNINSTALLED` | The {projectName} app was uninstalled from the provider account |
+| `PHONE_REMOVED` | The number was removed from the WhatsApp Business account |
+| `TOKEN_REVOKED` | The Telegram bot token was revoked, or the bot was deleted |
+| `PERMISSION_REVOKED` | The permission granted to {projectName} was revoked. Reserved: not sent yet |
+| `REPEATED_SEND_FAILURE` | The channel was disconnected after repeated send failures. Reserved: not sent yet |
+
+<Warning>
+  **`reasonCode` can be `null`.** This happens when the reason has no code, for example a WhatsApp Web session drop, and whenever `origin` is `USER` or `BILLING`. In those cases, use `origin` and, if needed, the `reason` text.
+</Warning>
+
+<Warning>
+  **New codes may appear.** The list may grow without prior notice. Treat a code you don't know as a generic disconnection reason, without breaking your integration.
+</Warning>
+
+## One notice per disconnection
+
+- **Once per drop.** Repetitions of the same disconnection (provider redeliveries, repeated callbacks) don't generate another notice. The next notice is sent when the channel reconnects and drops again, with a different `id`.
+- **The first event's code.** If a later event of the same drop brings another reason, the dashboard shows the new one, but the global webhook does not receive another notice.
+
+## One notice per channel
+
+A WhatsApp Business account (WABA) can have several channels. When Meta disconnects the whole account (for example, with `PARTNER_REMOVED`), **one notice is sent for each channel**, each with its own `instanceId`, to the global webhook of the workspace that owns each channel.
+
+This differs from the account restriction notice (`ACCOUNT_RESTRICTION`), which is sent **once per WABA**, with the list of affected channels. The difference is intentional: a disconnection is the state of each channel, while a restriction is an account state that does not disconnect the channels.
+
+## Together with billing events
+
+When billing disconnects the channel, the global webhook receives `CHANNEL_DISCONNECTED` with `origin` `BILLING` **and** the billing event for that path:
+
+| Path | Billing events | `CHANNEL_DISCONNECTED` |
+|---|---|---|
+| Instance released for non-payment | `BILLING_INSTANCE_RELEASED` (and `BILLING_SUBSCRIPTION_CANCELED`) | yes, `origin` `BILLING` |
+| End of a requested cancellation | `BILLING_SUBSCRIPTION_CANCELED` | yes, `origin` `BILLING` |
+| End of the trial period | none | yes, `origin` `BILLING` |
+| Instance suspended for late payment | `BILLING_INSTANCE_SUSPENDED` | **no**: suspension does not disconnect the channel |
+
+There is no guaranteed order between the billing event and `CHANNEL_DISCONNECTED`. Each event is delivered only to whoever subscribed to it.
+
+## Best practices
+
+- **Order is not guaranteed.** Sort by `disconnectedAt` and discard duplicates by `id`.
+- **Automate on `reasonCode`**, never on the `reason` text.
+- **Handle a `null` `reasonCode` and unknown codes.**
+
+## Limitations
+
+- The reason code appears only in this notice. Reading the channel through the API (`GET /v1/channels/{id}`) does not return it.
+- Channels that were already disconnected before the release have no code until their next drop.
+- Some disconnections don't go through the provider event flow and generate no notice: for example, a WhatsApp Web disconnection confirmed by the provider without a return event, and a billing cut-off of a WhatsApp Web channel without an active subscription.

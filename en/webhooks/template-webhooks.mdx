@@ -25,17 +25,18 @@ Authorization: Bearer <secret-key>
 
 ## Accepted template events
 
-A template webhook accepts **only** template events. Sending any non-template event results in `422`.
+A template webhook accepts **only** account events: template events and the channel disconnection notice (`CHANNEL_DISCONNECTED`). Sending a channel event results in `422`.
 
 | Value (exact, SNAKE_CASE) | Meaning |
 |---|---|
 | `UPDATE_TEMPLATE_STATUS` | Template status update (approved/rejected etc.) |
 | `UPDATE_TEMPLATE_CATEGORY` | Template category update |
+| `CHANNEL_DISCONNECTED` | Channel disconnection notice, with a reason code. **Being rolled out**: see [Channel disconnection notice](/en/webhooks/channel-disconnected) |
 
 ## Business rules
 
 1. **Event scope (required).**
-   - **Template** webhook → only accepts template events. Any non-template event → `422`.
+   - **Template** webhook → only accepts account events (template and `CHANNEL_DISCONNECTED`). A channel event → `422`.
    - **Channel** webhook → **cannot** subscribe to template events → `422`.
 2. **`payloadFormat` is ignored.** For template webhooks the format is always `DEFAULT`. The field may be omitted; if sent (any value, including `CHATWOOT`), it is silently discarded and persisted as `DEFAULT`.
 3. **`instanceId` stored as `null`** automatically — there is no instance field on these routes. `channelId` also comes back `null`.
@@ -70,5 +71,8 @@ A template webhook accepts **only** template events. Sending any non-template ev
   </Card>
   <Card title="Payload structure" icon="brackets-curly" href="/en/webhooks/template-payloads">
     Real payload examples received for each template event.
+  </Card>
+  <Card title="Channel disconnection notice" icon="plug-circle-xmark" href="/en/webhooks/channel-disconnected">
+    Receive the disconnection of any channel in the workspace, with a reason code.
   </Card>
 </CardGroup>

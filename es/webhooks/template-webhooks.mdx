@@ -25,17 +25,18 @@ Authorization: Bearer <secret-key>
 
 ## Eventos de plantilla admitidos
 
-Un webhook de plantilla admite **únicamente** eventos de plantilla. Enviar cualquier evento que no sea de plantilla devuelve `422`.
+Un webhook de plantilla admite **únicamente** eventos de cuenta: los de plantilla y el aviso de desconexión de canal (`CHANNEL_DISCONNECTED`). Enviar un evento de canal devuelve `422`.
 
 | Valor (exacto, SNAKE_CASE) | Significado |
 |---|---|
 | `UPDATE_TEMPLATE_STATUS` | Actualización del estado de una plantilla (aprobada, rechazada, etc.) |
 | `UPDATE_TEMPLATE_CATEGORY` | Actualización de la categoría de una plantilla |
+| `CHANNEL_DISCONNECTED` | Aviso de desconexión de canal, con el motivo en código. **En liberación**: consulta [Aviso de desconexión de canal](/es/webhooks/channel-disconnected) |
 
 ## Reglas de negocio
 
 1. **Alcance de los eventos (obligatorio).**
-   - Webhook **de plantilla** → solo admite eventos de plantilla. Cualquier otro evento → `422`.
+   - Webhook **de plantilla** → solo admite eventos de cuenta (plantilla y `CHANNEL_DISCONNECTED`). Un evento de canal → `422`.
    - Webhook **de canal** → **no** puede suscribirse a eventos de plantilla → `422`.
 2. **`payloadFormat` se ignora.** En los webhooks de plantilla el formato es siempre `DEFAULT`. El campo se puede omitir; si se envía (con cualquier valor, incluido `CHATWOOT`), se descarta de forma silenciosa y se persiste como `DEFAULT`.
 3. **`instanceId` se guarda como `null`** automáticamente: en estas rutas no hay campo de instancia. `channelId` también llega como `null`.
@@ -70,5 +71,8 @@ Un webhook de plantilla admite **únicamente** eventos de plantilla. Enviar cual
   </Card>
   <Card title="Estructura de los payloads" icon="brackets-curly" href="/es/webhooks/template-payloads">
     Ejemplos reales de los payloads que se reciben para cada evento de plantilla.
+  </Card>
+  <Card title="Aviso de desconexión de canal" icon="plug-circle-xmark" href="/es/webhooks/channel-disconnected">
+    Recibe la desconexión de cualquier canal del workspace, con el motivo en código.
   </Card>
 </CardGroup>

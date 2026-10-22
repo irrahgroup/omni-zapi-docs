@@ -1,0 +1,142 @@
+---
+title: "Aviso de desconexão de canal"
+description: "Receba no webhook global um aviso, com o motivo em código, sempre que um canal do workspace for desconectado"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+<Warning>
+  **Recurso em liberação.** O evento `CHANNEL_DISCONNECTED` está sendo liberado aos poucos, e a disponibilidade depende da ativação na sua conta. Enquanto ele não estiver liberado, o pedido que o acrescenta a um webhook responde `422 {"error":"Platform events are not available yet"}`, sem gravar nada.
+</Warning>
+
+## O que é
+
+O `CHANNEL_DISCONNECTED` é um evento **de conta** do {projectName}: chega ao webhook global do workspace (o [webhook de template](/webhooks/template-webhooks), sem instância) e avisa que um canal do workspace foi desconectado, com o motivo em código.
+
+Com ele, quem integra vários canais não precisa assinar o `DISCONNECTED` canal por canal para saber de uma queda.
+
+<Note>
+  **O `DISCONNECTED` do webhook de canal não muda.** O corpo, as regras e os formatos (`DEFAULT`, `Z_API` e `CHATWOOT`) continuam os mesmos, e ele **não** traz o código do motivo. Quem já assina `DISCONNECTED` no canal continua recebendo como hoje. O `CHANNEL_DISCONNECTED` é um aviso a mais, só no webhook global.
+</Note>
+
+## Como assinar
+
+Inclua `CHANNEL_DISCONNECTED` em `events` ao [criar](/webhooks/create-template-webhook) ou [atualizar](/webhooks/update-template-webhook) o webhook global:
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/webhooks \
+  -H "Authorization: Bearer <secret-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://canais.example.com/hook","events":["CHANNEL_DISCONNECTED"]}'
+```
+
+- **Só no webhook global.** O webhook de canal e o padrão de instância recusam o evento com `422`.
+- **Só no formato `DEFAULT`.** O webhook global já é `DEFAULT`.
+- **Não depende de outros eventos.** O mesmo webhook pode assinar só `CHANNEL_DISCONNECTED`, ou junto com os eventos de template e de cobrança.
+- **No painel**, assinar o evento exige a permissão **Ver a cobrança**, a mesma dos eventos de cobrança (Owner e Manager, veja [Time e papéis](/security/team)).
+- **Enquanto não estiver liberado**, o pedido que acrescenta o evento recebe `422 {"error":"Platform events are not available yet"}`. Ler, manter ou tirar o `CHANNEL_DISCONNECTED` que o webhook já tem continua funcionando.
+
+## O que o seu servidor recebe
+
+O corpo é o evento:
+
+```json
+{
+  "id": "0b8e5f0e-4a3c-5d1b-9c2e-7f6a5b4c3d2e",
+  "type": "CHANNEL_DISCONNECTED",
+  "occurredAt": "2026-10-21T18:00:00Z",
+  "data": {
+    "instanceId": "<id da instância>",
+    "channelType": "META_WHATSAPP",
+    "reasonCode": "PARTNER_REMOVED",
+    "reason": "WABA disconnected due to primary device inactivity",
+    "origin": "EXTERNAL",
+    "initiatedBy": "SYSTEM",
+    "disconnectedAt": "2026-10-21T18:00:00Z"
+  }
+}
+```
+
+| Campo | Tipo | Descrição | Pode vir `null` |
+|---|---|---|---|
+| `id` | string | Identificador do aviso. Use para descartar repetição | não |
+| `type` | string | Sempre `CHANNEL_DISCONNECTED` | não |
+| `occurredAt` | string | Igual a `data.disconnectedAt` | não |
+| `data.instanceId` | string | O canal desconectado | não |
+| `data.channelType` | string | `META_WHATSAPP`, `Z_API_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER` ou `BOT_TELEGRAM` | não |
+| `data.reasonCode` | string | O motivo em código (veja "Códigos do motivo", abaixo) | sim |
+| `data.reason` | string | O texto do motivo, como o provedor o descreveu. Pode mudar sem aviso: para automatizar, use `reasonCode` | sim |
+| `data.origin` | string | Quem desconectou: `USER`, `BILLING` ou `EXTERNAL` (veja "Origem", abaixo) | não |
+| `data.initiatedBy` | string | O que o provedor informou sobre quem iniciou a desconexão | sim |
+| `data.disconnectedAt` | string | Quando a desconexão aconteceu, em ISO-8601 UTC | não |
+
+<Note>
+  O corpo nunca traz telefone, id do número ou da conta no provedor, token nem credencial. O `reason` vai como o provedor escreveu e pode conter o número do canal (por exemplo, `Disconnected from <número>` no Z-API): é o mesmo texto que o painel e o `DISCONNECTED` do canal já mostram.
+</Note>
+
+## Origem
+
+| `origin` | Quando |
+|---|---|
+| `USER` | O canal foi desconectado pelo painel ou pela API |
+| `BILLING` | O canal foi desconectado pelo corte por falta de pagamento ou pelo fim da assinatura |
+| `EXTERNAL` | O provedor desconectou o canal (Meta, Z-API ou Telegram) |
+
+O aviso sai para as três origens. Com `origin` `USER` ou `BILLING`, o `reasonCode` vem sempre `null`.
+
+## Códigos do motivo
+
+| `reasonCode` | O que aconteceu |
+|---|---|
+| `PHONE_BANNED` | O número foi banido ou bloqueado pelo provedor |
+| `ACCOUNT_DISABLED` | A conta no provedor foi desativada ou excluída (no WhatsApp oficial, a conta do WhatsApp Business) |
+| `PARTNER_REMOVED` | A conta do WhatsApp Business removeu o {projectName} como parceiro |
+| `APP_UNINSTALLED` | O aplicativo do {projectName} foi desinstalado da conta no provedor |
+| `PHONE_REMOVED` | O número foi removido da conta do WhatsApp Business |
+| `TOKEN_REVOKED` | O token do bot do Telegram foi revogado, ou o bot foi excluído |
+| `PERMISSION_REVOKED` | A permissão dada ao {projectName} foi revogada. Reservado: ainda não é enviado |
+| `REPEATED_SEND_FAILURE` | O canal foi desconectado depois de falhas de envio repetidas. Reservado: ainda não é enviado |
+
+<Warning>
+  **`reasonCode` pode vir `null`.** Isso acontece quando o motivo não tem código, por exemplo numa queda de sessão do WhatsApp Web, e sempre que `origin` é `USER` ou `BILLING`. Nesses casos, use `origin` e, se precisar, o texto de `reason`.
+</Warning>
+
+<Warning>
+  **Novos códigos podem surgir.** A lista pode crescer sem aviso prévio. Trate um código que você não conhece como um motivo genérico de desconexão, sem quebrar a sua integração.
+</Warning>
+
+## Um aviso por desconexão
+
+- **Uma vez por queda.** Repetições da mesma desconexão (reentregas do provedor, callbacks repetidos) não geram outro aviso. O próximo aviso sai quando o canal reconectar e cair de novo, com outro `id`.
+- **O código do primeiro evento.** Se um evento posterior da mesma queda trouxer outro motivo, o painel passa a mostrar o novo, mas o webhook global não recebe outro aviso.
+
+## Um aviso por canal
+
+Uma conta do WhatsApp Business (WABA) pode ter vários canais. Quando a Meta desconecta a conta inteira (por exemplo, com `PARTNER_REMOVED`), sai **um aviso para cada canal**, cada um com o próprio `instanceId`, no webhook global do workspace dono de cada canal.
+
+Isso é diferente do aviso de restrição da conta (`ACCOUNT_RESTRICTION`), que sai **uma vez por WABA**, com a lista de canais atingidos. A diferença é proposital: a desconexão é o estado de cada canal, e a restrição é um estado da conta, que não desconecta os canais.
+
+## Junto com os eventos de cobrança
+
+Quando o canal é desconectado pela cobrança, o webhook global recebe o `CHANNEL_DISCONNECTED` com `origin` `BILLING` **e** o evento de cobrança do caminho:
+
+| Caminho | Eventos de cobrança | `CHANNEL_DISCONNECTED` |
+|---|---|---|
+| Instância liberada por falta de pagamento | `BILLING_INSTANCE_RELEASED` (e `BILLING_SUBSCRIPTION_CANCELED`) | sim, `origin` `BILLING` |
+| Fim de um cancelamento pedido | `BILLING_SUBSCRIPTION_CANCELED` | sim, `origin` `BILLING` |
+| Fim do período de teste | nenhum | sim, `origin` `BILLING` |
+| Instância suspensa por atraso | `BILLING_INSTANCE_SUSPENDED` | **não**: a suspensão não desconecta o canal |
+
+Não há ordem garantida entre o evento de cobrança e o `CHANNEL_DISCONNECTED`. Cada evento chega só a quem o assinou.
+
+## Boas práticas
+
+- **A ordem não é garantida.** Ordene pelo `disconnectedAt` e descarte repetição pelo `id`.
+- **Automatize pelo `reasonCode`**, nunca pelo texto de `reason`.
+- **Trate `reasonCode` `null` e códigos desconhecidos.**
+
+## Limitações
+
+- O código do motivo aparece só neste aviso. A leitura do canal pela API (`GET /v1/channels/{id}`) não o traz.
+- Canais que já estavam desconectados antes da liberação ficam sem código até a próxima queda.
+- Algumas desconexões não passam pelo fluxo de eventos do provedor e não geram aviso: por exemplo, a desconexão do WhatsApp Web confirmada pelo provedor sem evento de retorno, e o corte por cobrança de um canal do WhatsApp Web sem assinatura ativa.

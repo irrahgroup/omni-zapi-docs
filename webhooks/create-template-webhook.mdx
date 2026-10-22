@@ -8,7 +8,11 @@ openapi: "/pt/webhooks/openapi-template.json POST /v1/webhooks"
 
 Cria um webhook de template. Ele não depende de uma instância — o `instanceId` é gravado como `null` automaticamente — e recebe apenas os eventos de template do WhatsApp.
 
-O campo `events` aceita **somente** `UPDATE_TEMPLATE_STATUS` e `UPDATE_TEMPLATE_CATEGORY`. Qualquer evento não-template resulta em `422`.
+O campo `events` aceita **somente** `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY` e `CHANNEL_DISCONNECTED`. Um evento de canal resulta em `422`.
+
+<Note>
+  O `CHANNEL_DISCONNECTED` está em liberação. Enquanto ele não estiver liberado na sua conta, o pedido que o inclui responde `422 {"error":"Platform events are not available yet"}`, sem gravar nada. Veja [Aviso de desconexão de canal](/webhooks/channel-disconnected).
+</Note>
 
 ### `payloadFormat` é ignorado
 
