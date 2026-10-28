@@ -1,0 +1,155 @@
+---
+title: "Billing and account restriction events"
+description: "Receive billing notices and the Meta restriction of the WhatsApp Business account on the global webhook"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## What they are
+
+Besides template events and the [channel disconnection notice](/en/webhooks/channel-disconnected), the workspace global webhook can receive two groups of **account events**:
+
+- **Billing:** payment declined, payment recovered, subscription canceled, instance suspended and instance released for non-payment.
+- **Meta account restriction (`ACCOUNT_RESTRICTION`):** Meta restricted the WhatsApp Business account (WABA), recorded a violation or scheduled its deactivation.
+
+These events do not depend on a channel. They arrive at the global webhook, the [template webhook](/en/webhooks/template-webhooks), with no instance.
+
+## How to subscribe
+
+Add the events to `events` when you [create](/en/webhooks/create-template-webhook) or [update](/en/webhooks/update-template-webhook) the global webhook:
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/webhooks \
+  -H "Authorization: Bearer <secret-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://account.example.com/hook","events":["BILLING_PAYMENT_FAILED","BILLING_PAYMENT_RECOVERED","ACCOUNT_RESTRICTION"]}'
+```
+
+- **Global webhook only.** Channel webhooks and the instance default webhook reject these events with `422`.
+- **`DEFAULT` format only.** The global webhook is already `DEFAULT`.
+- **Each event is independent.** Subscribe only to the ones you use, with or without template events and `CHANNEL_DISCONNECTED`.
+- **In the dashboard**, subscribing to a billing event requires the **See billing** permission (Owner and Manager, see [Team and roles](/en/security/team)).
+- **A `PATCH` with `events` replaces the list.** To keep receiving them, send the events that were already subscribed again.
+
+## Billing events
+
+| Event | When it is sent |
+|---|---|
+| `BILLING_PAYMENT_FAILED` | A subscription charge was declined. Sent once per charge attempt |
+| `BILLING_PAYMENT_RECOVERED` | An invoice that had failed was paid, or the subscription left the overdue state with the payment (for example, a boleto paid after its due date) |
+| `BILLING_SUBSCRIPTION_CANCELED` | The subscription of an instance was canceled, on request or for non-payment. A plan change does not send it |
+| `BILLING_INSTANCE_SUSPENDED` | The instance was suspended for overdue payment. The channel stays linked and works again once the payment is made |
+| `BILLING_INSTANCE_RELEASED` | The instance was released for non-payment. The channel link was undone, and the channel must be reconnected |
+
+### What your server receives
+
+The body is the event:
+
+```json
+{
+  "id": "6f1c0e8a-2b1d-5c3e-9a4f-1b2c3d4e5f60",
+  "type": "BILLING_PAYMENT_FAILED",
+  "occurredAt": "2026-10-28T13:00:00Z",
+  "data": {
+    "instanceIds": ["<instance id>"],
+    "invoiceRef": "d51d88d9-762c-58ef-b018-66c2968dd84e",
+    "amount": "99.90",
+    "currency": "BRL",
+    "attemptCount": 1,
+    "failureCode": null,
+    "nextAttemptAt": "2026-11-01T13:00:00Z"
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `id` | Identifier of the fact. Repetitions of the same fact arrive with the same `id`: use it to discard them |
+| `type` | The event, always starting with `BILLING_` |
+| `occurredAt` | When the fact happened, in ISO-8601 UTC |
+| `data` | The event fields, in the table below |
+
+| Event | `data` fields |
+|---|---|
+| `BILLING_PAYMENT_FAILED` | `instanceIds`, `invoiceRef`, `amount`, `currency`, `attemptCount`, `failureCode`, `nextAttemptAt` |
+| `BILLING_PAYMENT_RECOVERED` | `instanceIds`, `invoiceRef`, `amount`, `currency`, `recoveredAt` |
+| `BILLING_SUBSCRIPTION_CANCELED` | `instanceId`, `canceledAt`, `accessEndedAt`, `reason`: `REQUESTED`, `PAYMENT_FAILED`, `PAYMENT_DISPUTED` or `OTHER` |
+| `BILLING_INSTANCE_SUSPENDED` | `instanceId`, `reason`: `PAYMENT_OVERDUE` |
+| `BILLING_INSTANCE_RELEASED` | `instanceId`, `reason`: `PAYMENT_OVERDUE` |
+
+- **`instanceIds`** lists the instances covered by the invoice. One invoice can cover more than one.
+- **`invoiceRef`** identifies the invoice and is the same on failure and recovery. With two invoices failing in the same workspace, it tells which one was paid.
+- **`amount`** is decimal text (`"99.90"`) and **`currency`** is the uppercase ISO 4217 code. On failure, `amount` is the amount due; on recovery, the amount paid. When the recovery comes from a subscription status change, and not from paying an invoice, `amount` and `currency` are `null`, and so is `invoiceRef` if there is no invoice.
+- **`attemptCount`** is the charge attempt number, and **`nextAttemptAt`** is the next automatic attempt, or `null` when there is none.
+
+<Warning>
+  **`failureCode` can be `null`.** When a card is declined, the payment provider does not always report the reason. Do not rely on it to handle the failure.
+</Warning>
+
+<Note>
+  The body never carries card data, payment provider ids, invoice link, email or name.
+</Note>
+
+## Meta account restriction (`ACCOUNT_RESTRICTION`)
+
+Sent when Meta reports one of these situations on the WhatsApp Business account (WABA) of your channels:
+
+| `source_event` | What Meta reported |
+|---|---|
+| `ACCOUNT_RESTRICTION` | The account was restricted, for example from starting conversations or adding numbers |
+| `ACCOUNT_VIOLATION` | The account had a policy violation |
+| `DISABLED_UPDATE` | The account deactivation was scheduled |
+
+The restriction **does not disconnect the channel** and does not change its state in {projectName}. When Meta actually disconnects the account, the [channel disconnection notice](/en/webhooks/channel-disconnected) also arrives, one per channel.
+
+### What your server receives
+
+```json
+{
+  "waba_id": "102030405060708",
+  "notice_id": "9f2c6a1e0b8d4c7f3a5e6b9d1c2f4a7e8b0c3d5f6a9e1b2c4d7f8a0b3c5e6d9f",
+  "instances": ["<instance id>", "<another instance id>"],
+  "event": {
+    "channel_events": [
+      {
+        "type": "ACCOUNT_RESTRICTION",
+        "source_event": "ACCOUNT_RESTRICTION",
+        "moment": 1792090000123,
+        "meta_time": 1792089990,
+        "restriction_info": [
+          { "restriction_type": "RESTRICTED_BIZ_INITIATED_MESSAGING", "expiration": 1792694790 }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `waba_id` | The restricted WhatsApp Business account |
+| `notice_id` | Identifier of the notice. Repetitions of the same notice arrive with the same `notice_id`: use it to discard them |
+| `instances` | The instances **of your workspace** in that account. Instances of other workspaces never appear |
+| `event.channel_events[0].type` | Always `ACCOUNT_RESTRICTION` |
+| `event.channel_events[0].source_event` | The kind of Meta notice (table above) |
+| `event.channel_events[0].moment` | When {projectName} received the notice, in milliseconds since 1970 |
+| `event.channel_events[0].meta_time` | When Meta generated the notice, in seconds since 1970. May be absent |
+| `event.channel_events[0].phone_number` | The number Meta mentions, when the restriction is about a number. May be absent |
+| `event.channel_events[0].restriction_info`, `ban_info`, `violation_info` | Meta's detail, as Meta sent it. Only the block that applies is present |
+
+<Note>
+  The `restriction_info`, `ban_info` and `violation_info` blocks are passed on **as Meta sends them**, untranslated. The possible values, such as `restriction_type` and `waba_ban_state`, are in Meta's documentation and may change. The `event` object may also carry other routing fields that are not part of the contract: ignore the ones not in this table.
+</Note>
+
+### One notice per workspace
+
+- **One account, one notice.** The restriction belongs to the account, so the workspace receives **one notice** with the `instances` list, not one notice per channel.
+- **Per number.** If Meta mentions different numbers (for example, call restrictions), one notice is sent per number, each with its own `phone_number` and `notice_id`.
+- **Repetition.** A Meta resend can produce a second notice with the same `notice_id`. The same situation reported again by Meta at another moment produces a different `notice_id`.
+
+## Order and repetition
+
+Delivery is **at least once** and arrival order is not guaranteed (see [Delivery and retries](/en/webhooks/delivery)):
+
+- discard repetitions by `id` (billing) or by `notice_id` (restriction);
+- order by `occurredAt` (billing) or by `moment` (restriction), not by arrival time.

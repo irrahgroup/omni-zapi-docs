@@ -1,0 +1,155 @@
+---
+title: "Eventos de facturación y de restricción de la cuenta"
+description: "Recibe en el webhook global los avisos de facturación y la restricción de la cuenta de WhatsApp Business en Meta"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Qué son
+
+Además de los eventos de plantilla y del [aviso de desconexión de canal](/es/webhooks/channel-disconnected), el webhook global del workspace puede recibir dos grupos de **eventos de cuenta**:
+
+- **Facturación:** pago rechazado, pago recuperado, suscripción cancelada, instancia suspendida e instancia liberada por falta de pago.
+- **Restricción de la cuenta en Meta (`ACCOUNT_RESTRICTION`):** Meta restringió la cuenta de WhatsApp Business (WABA), registró una infracción o programó su desactivación.
+
+Estos eventos no dependen de un canal. Llegan al webhook global, el [webhook de plantilla](/es/webhooks/template-webhooks), sin instancia.
+
+## Cómo suscribirse
+
+Incluye los eventos en `events` al [crear](/es/webhooks/create-template-webhook) o [actualizar](/es/webhooks/update-template-webhook) el webhook global:
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/webhooks \
+  -H "Authorization: Bearer <secret-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://cuenta.example.com/hook","events":["BILLING_PAYMENT_FAILED","BILLING_PAYMENT_RECOVERED","ACCOUNT_RESTRICTION"]}'
+```
+
+- **Solo en el webhook global.** El webhook de canal y el webhook por defecto de la instancia rechazan estos eventos con `422`.
+- **Solo en el formato `DEFAULT`.** El webhook global ya es `DEFAULT`.
+- **Cada evento es independiente.** Suscríbete solo a los que uses, junto o no con los eventos de plantilla y el `CHANNEL_DISCONNECTED`.
+- **En el panel**, suscribirse a un evento de facturación requiere el permiso **Ver la facturación** (Owner y Manager, consulta [Equipo y roles](/es/security/team)).
+- **El `PATCH` con `events` reemplaza la lista.** Para seguir recibiéndolos, envía de nuevo los eventos que ya estaban suscritos.
+
+## Eventos de facturación
+
+| Evento | Cuándo se envía |
+|---|---|
+| `BILLING_PAYMENT_FAILED` | Se rechazó un cobro de la suscripción. Se envía una vez por intento de cobro |
+| `BILLING_PAYMENT_RECOVERED` | Se pagó una factura que había fallado, o la suscripción salió del atraso con el pago (por ejemplo, un boleto pagado después del vencimiento) |
+| `BILLING_SUBSCRIPTION_CANCELED` | Se canceló la suscripción de una instancia, a pedido o por falta de pago. El cambio de plan no lo genera |
+| `BILLING_INSTANCE_SUSPENDED` | La instancia se suspendió por pago atrasado. El canal sigue vinculado y vuelve a funcionar cuando entra el pago |
+| `BILLING_INSTANCE_RELEASED` | La instancia se liberó por falta de pago. El vínculo con el canal se deshizo, y hay que reconectarlo |
+
+### Qué recibe tu servidor
+
+El cuerpo es el evento:
+
+```json
+{
+  "id": "6f1c0e8a-2b1d-5c3e-9a4f-1b2c3d4e5f60",
+  "type": "BILLING_PAYMENT_FAILED",
+  "occurredAt": "2026-10-28T13:00:00Z",
+  "data": {
+    "instanceIds": ["<id de la instancia>"],
+    "invoiceRef": "d51d88d9-762c-58ef-b018-66c2968dd84e",
+    "amount": "99.90",
+    "currency": "BRL",
+    "attemptCount": 1,
+    "failureCode": null,
+    "nextAttemptAt": "2026-11-01T13:00:00Z"
+  }
+}
+```
+
+| Campo | Descripción |
+|---|---|
+| `id` | Identificador del hecho. Las repeticiones del mismo hecho llegan con el mismo `id`: úsalo para descartarlas |
+| `type` | El evento, siempre empieza con `BILLING_` |
+| `occurredAt` | Cuándo ocurrió el hecho, en ISO-8601 UTC |
+| `data` | Los campos del evento, en la tabla de abajo |
+
+| Evento | Campos de `data` |
+|---|---|
+| `BILLING_PAYMENT_FAILED` | `instanceIds`, `invoiceRef`, `amount`, `currency`, `attemptCount`, `failureCode`, `nextAttemptAt` |
+| `BILLING_PAYMENT_RECOVERED` | `instanceIds`, `invoiceRef`, `amount`, `currency`, `recoveredAt` |
+| `BILLING_SUBSCRIPTION_CANCELED` | `instanceId`, `canceledAt`, `accessEndedAt`, `reason`: `REQUESTED`, `PAYMENT_FAILED`, `PAYMENT_DISPUTED` u `OTHER` |
+| `BILLING_INSTANCE_SUSPENDED` | `instanceId`, `reason`: `PAYMENT_OVERDUE` |
+| `BILLING_INSTANCE_RELEASED` | `instanceId`, `reason`: `PAYMENT_OVERDUE` |
+
+- **`instanceIds`** lista las instancias cubiertas por la factura. Una factura puede cubrir más de una.
+- **`invoiceRef`** identifica la factura y es el mismo en el fallo y en la recuperación. Con dos facturas fallando en el mismo workspace, indica cuál se pagó.
+- **`amount`** es texto decimal (`"99.90"`) y **`currency`** es el código ISO 4217 en mayúsculas. En el fallo, `amount` es el valor pendiente; en la recuperación, el valor pagado. Cuando la recuperación viene del cambio de estado de la suscripción, y no del pago de una factura, `amount` y `currency` llegan `null`, y también `invoiceRef`, si no hay factura.
+- **`attemptCount`** es el número del intento de cobro, y **`nextAttemptAt`** es el próximo intento automático, o `null` cuando no hay otro.
+
+<Warning>
+  **`failureCode` puede llegar `null`.** En el rechazo de tarjeta, el proveedor de pagos no siempre informa el motivo. No dependas de él para tratar el fallo.
+</Warning>
+
+<Note>
+  El cuerpo nunca trae datos de la tarjeta, ids del proveedor de pagos, enlace de la factura, correo electrónico ni nombre.
+</Note>
+
+## Restricción de la cuenta en Meta (`ACCOUNT_RESTRICTION`)
+
+Se envía cuando Meta avisa una de estas situaciones en la cuenta de WhatsApp Business (WABA) de tus canales:
+
+| `source_event` | Qué informó Meta |
+|---|---|
+| `ACCOUNT_RESTRICTION` | La cuenta fue restringida, por ejemplo para iniciar conversaciones o agregar números |
+| `ACCOUNT_VIOLATION` | La cuenta tuvo una infracción de las políticas |
+| `DISABLED_UPDATE` | Se programó la desactivación de la cuenta |
+
+La restricción **no desconecta el canal** y no cambia su estado en {projectName}. Cuando Meta desconecta la cuenta de hecho, también llega el [aviso de desconexión de canal](/es/webhooks/channel-disconnected), uno por canal.
+
+### Qué recibe tu servidor
+
+```json
+{
+  "waba_id": "102030405060708",
+  "notice_id": "9f2c6a1e0b8d4c7f3a5e6b9d1c2f4a7e8b0c3d5f6a9e1b2c4d7f8a0b3c5e6d9f",
+  "instances": ["<id de la instancia>", "<id de otra instancia>"],
+  "event": {
+    "channel_events": [
+      {
+        "type": "ACCOUNT_RESTRICTION",
+        "source_event": "ACCOUNT_RESTRICTION",
+        "moment": 1792090000123,
+        "meta_time": 1792089990,
+        "restriction_info": [
+          { "restriction_type": "RESTRICTED_BIZ_INITIATED_MESSAGING", "expiration": 1792694790 }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| Campo | Descripción |
+|---|---|
+| `waba_id` | La cuenta de WhatsApp Business restringida |
+| `notice_id` | Identificador del aviso. Las repeticiones del mismo aviso llegan con el mismo `notice_id`: úsalo para descartarlas |
+| `instances` | Las instancias **de tu workspace** en esa cuenta. Las instancias de otros workspaces nunca aparecen |
+| `event.channel_events[0].type` | Siempre `ACCOUNT_RESTRICTION` |
+| `event.channel_events[0].source_event` | El tipo de aviso de Meta (tabla de arriba) |
+| `event.channel_events[0].moment` | Cuándo {projectName} recibió el aviso, en milisegundos desde 1970 |
+| `event.channel_events[0].meta_time` | Cuándo Meta generó el aviso, en segundos desde 1970. Puede no llegar |
+| `event.channel_events[0].phone_number` | El número que cita Meta, cuando la restricción es de un número. Puede no llegar |
+| `event.channel_events[0].restriction_info`, `ban_info`, `violation_info` | El detalle de Meta, como lo envió. Solo llega el bloque que corresponde |
+
+<Note>
+  Los bloques `restriction_info`, `ban_info` y `violation_info` se reenvían **como Meta los envía**, sin traducción. Los valores posibles, como `restriction_type` y `waba_ban_state`, están en la documentación de Meta y pueden cambiar. El objeto `event` también puede traer otros campos de enrutamiento que no forman parte del contrato: ignora los que no están en esta tabla.
+</Note>
+
+### Un aviso por workspace
+
+- **Una cuenta, un aviso.** La restricción es de la cuenta, así que el workspace recibe **un aviso** con la lista `instances`, y no un aviso por canal.
+- **Por número.** Si Meta cita números diferentes (por ejemplo, restricciones de llamadas), se envía un aviso por número, cada uno con su `phone_number` y su `notice_id`.
+- **Repetición.** Un reenvío de Meta puede generar un segundo aviso con el mismo `notice_id`. La misma situación avisada de nuevo por Meta en otro momento genera otro `notice_id`.
+
+## Orden y repetición
+
+La entrega es **al menos una vez** y el orden de llegada no está garantizado (consulta [Entrega y reintentos](/es/webhooks/delivery)):
+
+- descarta las repeticiones por el `id` (facturación) o por el `notice_id` (restricción);
+- ordena por el `occurredAt` (facturación) o por el `moment` (restricción), y no por la hora de llegada.
