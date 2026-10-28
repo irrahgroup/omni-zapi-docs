@@ -1,38 +1,49 @@
 ---
 title: "Ventana de conversación"
-description: "Entiende cómo funciona la ventana de conversación de 24 horas de WhatsApp"
+description: "Entiende las dos ventanas de WhatsApp: la ventana de atención al cliente (24 h) y la ventana de entrada gratuita mediante anuncios"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
 ## ¿Cómo funciona?
 
-Cuando un cliente envía un mensaje a tu número de WhatsApp, se abre una **ventana de conversación de 24 horas**. Mientras esa ventana siga abierta, puedes enviar cualquier tipo de mensaje: texto, imagen, audio, vídeo, documento, etc.
+Cuando un cliente envía un mensaje o llama a tu número, Meta abre una **ventana de atención al cliente** (*Customer Service Window*) de **24 horas**.
 
-Si el cliente envía otro mensaje, el contador de 24 horas **se reinicia**. Es decir, mientras haya conversación activa, la ventana permanece abierta.
+Cada nuevo mensaje o llamada del cliente **reinicia** el contador a 24 horas.
+
+<Note>
+  La ventana define **lo que puedes enviar**, no si el mensaje es gratuito. El coste de cada mensaje depende de su **categoría**. Consulta [Facturación](/es/whatsapp-official/billing).
+</Note>
 
 ## Dentro de la ventana (24 h)
 
-Puedes enviar **cualquier mensaje** libremente usando los endpoints de [mensajes libres](/es/messages/introduction), sin necesidad de plantillas.
+Puedes enviar **mensajes libres** (texto, multimedia, audio, documentos, botones, listas) usando los endpoints de [mensajes libres](/es/messages/introduction), sin necesidad de plantillas.
 
-Los mensajes enviados dentro de la ventana se clasifican como **Service** y son **gratuitos e ilimitados**.
+Estos mensajes pertenecen a la categoría **Servicio**:
+
+- Cada número comercial tiene **1.000 mensajes de servicio gratuitos al mes**.
+- A partir del **1.001**, se cobra cada mensaje entregado.
 
 <Note>
-  Las plantillas de **Utility** enviadas dentro de la ventana de 24 h también son **gratuitas**.
+  Los organismos gubernamentales y las organizaciones sin ánimo de lucro elegibles siguen una regla propia. Consulta [Facturación](/es/whatsapp-official/billing).
 </Note>
 
-## Fuera de la ventana (después de 24 h)
+<Warning>
+  También puedes enviar **plantillas** con la ventana abierta, pero se **cobran según la categoría de la plantilla** (Marketing, Utilidad o Autenticación), incluso dentro de la ventana. La excepción es la [ventana de entrada gratuita](#entrada-gratuita-mediante-anuncios).
+</Warning>
 
-Cuando la ventana se cierra, la única forma de enviar un mensaje al cliente es mediante **plantillas aprobadas por Meta**, usando el endpoint [Enviar plantilla](/es/messages/send-template).
+## Fuera de la ventana
+
+Con la ventana cerrada, la única forma de enviar un mensaje al cliente es mediante **plantillas aprobadas por Meta**, usando el endpoint [Enviar plantilla](/es/messages/send-template).
 
 | Categoría | Cuándo usarla | Coste |
 |---|---|---|
-| **Marketing** | Promociones, campañas, ofertas | Se cobra por mensaje enviado |
-| **Utility** | Confirmaciones, actualizaciones de pedido, alertas | Gratuita dentro de la ventana, se cobra fuera |
-| **Authentication** | Código OTP, verificación de inicio de sesión | Se cobra por mensaje enviado |
+| **Marketing** | Promociones, campañas, ofertas | Se cobra por mensaje |
+| **Utilidad** | Confirmaciones, actualizaciones de pedido, alertas | Se cobra por mensaje |
+| **Autenticación** | Código OTP, verificación de inicio de sesión | Se cobra por mensaje |
 
 <Warning>
-  Sin una plantilla aprobada **no puedes** enviar mensajes fuera de la ventana de 24 h. WhatsApp bloquea el envío.
+  Los mensajes libres enviados fuera de la ventana son **rechazados por la API**. Recuerda también enviar mensajes solo a clientes que hayan **aceptado (opt-in)** recibir mensajes de tu empresa.
 </Warning>
 
 ## ¿Cómo reabrir la ventana?
@@ -40,25 +51,54 @@ Cuando la ventana se cierra, la única forma de enviar un mensaje al cliente es 
 Hay dos formas:
 
 <Steps>
-  <Step title="El cliente envía un mensaje">
-    La forma más sencilla. Cualquier mensaje del cliente abre inmediatamente una nueva ventana de 24 h.
+  <Step title="El cliente envía un mensaje o llama">
+    Se abre inmediatamente una nueva ventana de 24 h.
   </Step>
-  <Step title="Tú envías una plantilla">
-    Envía una [plantilla aprobada](/es/messages/send-template) (marketing, utility o authentication). Cuando el cliente **responda**, la ventana de 24 h se reabre y vuelves a poder enviar [mensajes libres](/es/messages/introduction).
+  <Step title="Tú envías una plantilla y el cliente responde">
+    Envía una [plantilla aprobada](/es/messages/send-template). Cuando el cliente **responda**, su respuesta abre la ventana de 24 h y vuelves a poder enviar [mensajes libres](/es/messages/introduction). La plantilla en sí se cobra según su categoría, excepto en la ventana de entrada gratuita.
   </Step>
 </Steps>
 
 ## Entrada gratuita mediante anuncios
 
-Cuando el cliente llega a través de **Click-to-WhatsApp** (un anuncio en Facebook) o del **botón de CTA de la página de Facebook**, la ventana se amplía a **72 horas** y todos los mensajes son **gratuitos** durante ese periodo, incluidas las plantillas de marketing.
+Cuando el cliente llega a través de un anuncio **Click-to-WhatsApp (CTWA)** usando la app de WhatsApp en **Android o iOS**, puede abrirse la **ventana de entrada gratuita**.
+
+<Note>
+  Los accesos desde WhatsApp **Desktop** o **Web** no cuentan para la ventana de entrada gratuita.
+</Note>
+
+<Steps>
+  <Step title="El cliente envía un mensaje desde el anuncio">
+    Su mensaje abre la ventana de atención al cliente normal de **24 h**.
+  </Step>
+  <Step title="Respondes dentro de las 24 h">
+    Tu respuesta (de Marketing, Utilidad, Autenticación o Servicio) es **gratuita** y abre la **ventana de entrada gratuita**.
+  </Step>
+  <Step title="Ventana de entrada gratuita abierta hasta 7 días">
+    Durante ese periodo, los mensajes de **Marketing**, **Utilidad**, **Autenticación** y **Servicio** son **gratuitos**. 7 días es el plazo máximo, no una garantía: Meta documenta que la ventana **puede** permanecer abierta hasta 7 días. Consulta [Ventana de 24 horas](/es/whatsapp-official/24h-window).
+  </Step>
+</Steps>
+
+<Warning>
+  La ventana de entrada gratuita cambia **el coste**, no **la regla de envío**. Los mensajes libres siguen dependiendo de que la ventana de 24 h esté abierta. Cuando se cierre, envía una plantilla, que será gratuita mientras la ventana de entrada gratuita siga abierta.
+</Warning>
+
+<Warning>
+  Los mensajes del **Meta Business Agent** se siguen **cobrando** en la ventana de entrada gratuita.
+</Warning>
+
+<Info>
+  La ventana de entrada gratuita se **comparte entre todas las cuentas** que envían desde el mismo número de teléfono comercial, no solo la cuenta que pagó el anuncio.
+</Info>
 
 ## Resumen visual
 
 | Situación | ¿Puedes enviar mensajes libres? | ¿Necesitas plantilla? | Coste |
 |---|---|---|---|
-| El cliente envió un mensaje (ventana abierta) | Sí | No | Gratuito |
-| Ventana cerrada (más de 24 h) | No | Sí | Depende de la categoría |
-| Mediante un anuncio Click-to-WhatsApp | Sí | No | Gratuito durante 72 h |
+| El cliente escribió en las últimas 24 h | Sí | No | Servicio: 1.000 gratis/mes por número, después se cobra |
+| Plantilla enviada con la ventana abierta | — | Sí | Se cobra según la categoría de la plantilla |
+| Ventana cerrada | No | Sí | Se cobra según la categoría de la plantilla |
+| Ventana de entrada gratuita abierta (llegó por un anuncio CTWA y respondiste en 24 h) | Sí, con la ventana de 24 h abierta | Sí, cuando la ventana de 24 h se cierre | Gratuito hasta 7 días (excepto Meta Business Agent) |
 
 ## Próximos pasos
 

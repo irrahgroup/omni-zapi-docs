@@ -1,38 +1,49 @@
 ---
 title: "Janela de conversa"
-description: "Entenda como funciona a janela de conversa de 24 horas do WhatsApp"
+description: "Entenda as duas janelas do WhatsApp: a janela de atendimento (24h) e a janela de entrada gratuita via anúncios"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
 ## Como funciona?
 
-Quando um cliente envia uma mensagem para o seu número do WhatsApp, uma **janela de conversa de 24 horas** se abre. Enquanto essa janela estiver aberta, você pode enviar qualquer tipo de mensagem: texto, imagem, áudio, vídeo, documento, etc.
+Quando um cliente envia uma mensagem ou liga para o seu número, a Meta abre uma **janela de atendimento ao cliente** (*Customer Service Window*) de **24 horas**.
 
-Se o cliente enviar outra mensagem, o timer de 24 horas **reinicia**. Ou seja, enquanto houver conversa ativa, a janela permanece aberta.
+Cada nova mensagem ou ligação do cliente **reinicia** o contador para 24 horas.
+
+<Note>
+  A janela define **o que você pode enviar**, e não se a mensagem é gratuita. O custo de cada mensagem depende da **categoria** dela. Veja [Cobrança](/whatsapp-official/billing).
+</Note>
 
 ## Dentro da janela (24h)
 
-Você pode enviar **qualquer mensagem** livremente usando os endpoints de [mensagens livres](/messages/introduction) — sem precisar de templates.
+Você pode enviar **mensagens livres** (texto, mídia, áudio, documento, botões, listas) pelos endpoints de [mensagens livres](/messages/introduction), sem precisar de template.
 
-As mensagens enviadas dentro da janela são classificadas como **Service** e são **gratuitas e ilimitadas**.
+Essas mensagens são da categoria **Serviço**:
+
+- Cada número comercial tem **1.000 mensagens de serviço gratuitas por mês**.
+- A partir da **1.001ª**, há cobrança por mensagem entregue.
 
 <Note>
-  Templates de **Utility** enviados dentro da janela de 24h também são **gratuitos**.
+  Órgãos de governo e organizações sem fins lucrativos elegíveis seguem uma regra própria. Veja [Cobrança](/whatsapp-official/billing).
 </Note>
 
-## Fora da janela (após 24h)
+<Warning>
+  Você também pode enviar **templates** com a janela aberta, mas eles são **cobrados pela categoria do template** (Marketing, Utilidade ou Autenticação), mesmo dentro da janela. A exceção é a [janela de entrada gratuita](#entrada-gratuita-via-anúncios).
+</Warning>
 
-Quando a janela fecha, a única forma de enviar mensagem ao cliente é através de **templates aprovados pela Meta** usando o endpoint [Enviar template](/messages/send-template).
+## Fora da janela
+
+Com a janela fechada, a única forma de enviar mensagem ao cliente é através de **templates aprovados pela Meta** usando o endpoint [Enviar template](/messages/send-template).
 
 | Categoria | Quando usar | Custo |
 |---|---|---|
-| **Marketing** | Promoções, campanhas, ofertas | Cobrado por mensagem enviada |
-| **Utility** | Confirmações, atualizações de pedido, alertas | Gratuito dentro da janela, cobrado fora |
-| **Authentication** | Código OTP, verificação de login | Cobrado por mensagem enviada |
+| **Marketing** | Promoções, campanhas, ofertas | Cobrado por mensagem |
+| **Utilidade** | Confirmações, atualizações de pedido, alertas | Cobrado por mensagem |
+| **Autenticação** | Código OTP, verificação de login | Cobrado por mensagem |
 
 <Warning>
-  Sem template aprovado, você **não consegue** enviar mensagens fora da janela de 24h. O WhatsApp bloqueia o envio.
+  Mensagens livres enviadas fora da janela são **rejeitadas pela API**. Lembre-se também de só enviar para clientes que **aceitaram (opt-in)** receber mensagens da sua empresa.
 </Warning>
 
 ## Como reabrir a janela?
@@ -40,25 +51,54 @@ Quando a janela fecha, a única forma de enviar mensagem ao cliente é através 
 Existem duas formas:
 
 <Steps>
-  <Step title="O cliente envia uma mensagem">
-    A forma mais simples. Qualquer mensagem do cliente abre uma nova janela de 24h imediatamente.
+  <Step title="O cliente envia uma mensagem ou liga">
+    Uma nova janela de 24h abre na hora.
   </Step>
-  <Step title="Você envia um template">
-    Envie um [template aprovado](/messages/send-template) (marketing, utility ou authentication). Quando o cliente **responder**, a janela de 24h reabre e você volta a poder enviar [mensagens livres](/messages/introduction).
+  <Step title="Você envia um template e o cliente responde">
+    Envie um [template aprovado](/messages/send-template). Quando o cliente **responder**, a resposta dele abre a janela de 24h e você volta a poder enviar [mensagens livres](/messages/introduction). O template em si é cobrado pela categoria, exceto na janela de entrada gratuita.
   </Step>
 </Steps>
 
 ## Entrada gratuita via anúncios
 
-Quando o cliente chega pelo **Click-to-WhatsApp** (anúncio no Facebook) ou pelo **botão de CTA da página do Facebook**, a janela é estendida para **72 horas** e todas as mensagens são **gratuitas** nesse período, incluindo templates de marketing.
+Quando o cliente chega por um anúncio **Click-to-WhatsApp (CTWA)** usando o app do WhatsApp no **Android ou iOS**, abre-se a possibilidade da **janela de entrada gratuita**.
+
+<Note>
+  Acessos pelo WhatsApp **Desktop** ou **Web** não contam para a janela de entrada gratuita.
+</Note>
+
+<Steps>
+  <Step title="O cliente envia a mensagem pelo anúncio">
+    A mensagem dele abre a janela de atendimento normal de **24h**.
+  </Step>
+  <Step title="Você responde dentro de 24h">
+    Sua resposta (de Marketing, Utilidade, Autenticação ou Serviço) é **gratuita** e abre a **janela de entrada gratuita**.
+  </Step>
+  <Step title="Janela de entrada gratuita aberta por até 7 dias">
+    Nesse período, mensagens de **Marketing**, **Utilidade**, **Autenticação** e **Serviço** são **gratuitas**. 7 dias é o prazo máximo, não uma garantia: a Meta documenta que a janela **pode** ficar aberta por até 7 dias. Veja [Janela de 24 horas](/whatsapp-official/24h-window).
+  </Step>
+</Steps>
+
+<Warning>
+  A janela de entrada gratuita muda **o custo**, não a **regra de envio**. Mensagens livres continuam dependendo da janela de 24h aberta. Quando ela fechar, envie um template, que será gratuito enquanto a janela de entrada gratuita estiver aberta.
+</Warning>
+
+<Warning>
+  Mensagens do **Meta Business Agent** continuam sendo **cobradas** na janela de entrada gratuita.
+</Warning>
+
+<Info>
+  A janela de entrada gratuita é **compartilhada entre todas as contas** que enviam pelo mesmo número de telefone comercial, não só a conta que pagou o anúncio.
+</Info>
 
 ## Resumo visual
 
 | Situação | Pode enviar mensagem livre? | Precisa de template? | Custo |
 |---|---|---|---|
-| Cliente enviou mensagem (janela aberta) | Sim | Não | Gratuito |
-| Janela fechada (mais de 24h) | Não | Sim | Depende da categoria |
-| Via anúncio Click-to-WhatsApp | Sim | Não | Gratuito por 72h |
+| Cliente falou nas últimas 24h | Sim | Não | Serviço: 1.000 grátis/mês por número, depois cobrado |
+| Template enviado com a janela aberta | — | Sim | Cobrado pela categoria do template |
+| Janela fechada | Não | Sim | Cobrado pela categoria do template |
+| Janela de entrada gratuita aberta (veio de anúncio CTWA e você respondeu em 24h) | Sim, com a janela de 24h aberta | Sim, depois que a janela de 24h fechar | Gratuito por até 7 dias (exceto Meta Business Agent) |
 
 ## Próximos passos
 

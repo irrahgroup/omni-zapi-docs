@@ -1,40 +1,111 @@
 ---
 title: "Facturación"
-description: "Entiende cómo funciona el modelo de facturación de la API Oficial de WhatsApp"
+description: "Entiende cómo cobra Meta por la API Oficial de WhatsApp"
 ---
 
-import { projectName, frontendUrl } from '/snippets/variables.mdx';
+import { projectName } from '/snippets/variables.mdx';
 
 ## ¿Cómo funciona la facturación?
 
-Meta cobra por el uso de la **API Oficial de WhatsApp** en función de las **plantillas de mensaje entregadas**. Los mensajes normales que se intercambian dentro de la ventana de atención no generan ningún cargo de Meta por conversación. Las tarifas varían según la categoría de la plantilla y el país del destinatario.
+Desde el **1 de julio de 2025**, Meta cobra **por mensaje entregado** (ya no por conversación). Solo se cobran los mensajes **de la empresa al cliente**; los mensajes del cliente nunca se cobran.
 
-## Qué genera cargos
+El precio depende de:
 
-Por norma general hay cargo cuando se envía una **plantilla aprobada**.
+- La **categoría** del mensaje
+- El **mercado**: el código de país del número del destinatario (p. ej., `+55` = Brasil)
+- El **volumen mensual**, solo para Utilidad y Autenticación (consulta [Niveles de volumen](#niveles-de-volumen-utilidad-y-autenticación))
 
-**Ejemplos:**
+## Las 5 categorías
 
-- Confirmación de pedido
-- Aviso de cobro
-- Recordatorio
-- Recuperación de una conversación
-- Campañas de marketing
-
-## Qué no genera cargos
-
-Una vez que el cliente responde y la ventana está abierta, Meta no cobra por los mensajes normales enviados durante ese periodo.
-
-**Ejemplos:**
-
-- Mensajes de texto
-- Respuestas del chatbot
-- Mensajes del agente
-- Envío de archivos multimedia
-- Mensajes de la IA
-- Plantillas de utilidad
-- Plantillas enviadas dentro de una ventana abierta a partir de una campaña de CTWA
+| Categoría | Qué es | Cómo se cobra |
+|---|---|---|
+| **Marketing** `MARKETING` | Plantilla promocional | Precio fijo por mensaje, según la tabla de Meta |
+| **Utilidad** `UTILITY` | Plantilla transaccional o informativa | Precio fijo por mensaje, con descuento por nivel de volumen |
+| **Autenticación** `AUTHENTICATION` | Plantilla de código OTP | Precio fijo por mensaje, con descuento por nivel de volumen; algunos mercados tienen tarifa de autenticación internacional |
+| **Servicio** | Mensaje libre dentro de la ventana de 24 h (agente humano, chatbot o IA de terceros) | 1.000 gratuitos al mes por número comercial; después, precio fijo por mensaje |
+| **Meta Business Agent** | Mensaje libre generado por el agente de IA de Meta (desde el 01/07/2026) | US$ 2,00 por 1 millón de tokens, tarifa única global |
 
 <Note>
-  Para entender mejor cuándo la ventana de atención está abierta o ha expirado, consulta la página sobre la [ventana de 24 horas](/es/whatsapp-official/24h-window).
+  Cada mensaje tiene **una única categoría** y genera **un único cobro**. Consulta el precio de cada categoría de plantilla en Brasil en [Plantillas de mensaje](/es/whatsapp-official/message-template).
 </Note>
+
+<Info>
+  En el **Meta Business Agent** se cobran los tokens de entrada y de salida. Según Meta, un mensaje suele consumir entre **20.000 y 25.000 tokens**, unos **4 a 5 céntimos de dólar** por mensaje. Esta categoría no tiene niveles de volumen ni mensajes gratuitos.
+</Info>
+
+## Qué no se cobra
+
+- Los mensajes del cliente a la empresa
+- Los primeros **1.000 mensajes de servicio del mes, por número comercial**. El saldo no se acumula y se reinicia a medianoche del día 1, en la zona horaria de la cuenta
+- Todos los mensajes de Marketing, Utilidad, Autenticación y Servicio en la **ventana de entrada gratuita** (cliente que llega por un anuncio Click-to-WhatsApp, hasta 7 días), excepto Meta Business Agent. Consulta [Ventana de conversación](/es/conversation-window)
+- Los mensajes que no se entregaron
+
+## Qué cambió el 1 de octubre de 2026
+
+- **Servicio vuelve a cobrarse** (era gratuito desde el 01/11/2024), con un nivel gratuito de 1.000 mensajes/mes por número comercial
+- **Utilidad dentro de la ventana de 24 h vuelve a cobrarse** (era gratuita desde el 01/07/2025)
+- Sin un [método de pago](/es/whatsapp-official/payment) registrado, Meta solo entrega los mensajes de servicio del nivel gratuito; a partir de ahí, dejan de entregarse
+
+<Info>
+  Los campos siguientes son del **webhook de estado de la Meta Cloud API**, no del webhook de {projectName} — consulta el evento [`MESSAGE_STATUS`](/es/webhooks/channel-webhooks). En el webhook de Meta, el campo `pricing.type` indica cómo se trató el mensaje:
+
+  | Valor | Significado |
+  |---|---|
+  | `regular` | Mensaje cobrado |
+  | `free_customer_service` | Mensaje de Servicio gratuito, dentro del nivel gratuito de 1.000 mensajes/mes del número |
+  | `free_entry_point` | Mensaje gratuito enviado en la ventana de entrada gratuita (`pricing.category` llega como `referral_conversion`) |
+  | `free_group_customer_service` | Mensaje de Servicio en grupo gratuito, dentro del nivel gratuito del número |
+
+  Hasta el 30/09/2026, `free_customer_service` indicaba cualquier mensaje de Utilidad o mensaje libre enviado dentro de la ventana de atención. Desde el 01/10/2026, estar dentro de la ventana **ya no hace que el mensaje sea gratuito**: los mensajes de Servicio que superan el nivel gratuito y los de Utilidad dentro de la ventana llegan como `regular`.
+</Info>
+
+<Note>
+  Los **organismos gubernamentales y las organizaciones sin ánimo de lucro elegibles** mantienen el servicio gratuito más allá de los 1.000 mensajes hasta el **31/12/2027**. La elegibilidad aparece en el campo `service_pricing_policy` (`PAID_EXEMPT`, `REGULAR` o `UNKNOWN`), y estos mensajes llegan en el webhook con `pricing.subtype` igual a `paid_exempt`.
+</Note>
+
+<Note>
+  Los cambios del 01/10/2026 en los mensajes de servicio **no se aplican a los proveedores de IA**, que siguen la [política de precios para proveedores de IA](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing/ai-providers) de Meta.
+</Note>
+
+## Niveles de volumen (Utilidad y Autenticación)
+
+Cuantos más mensajes de **Utilidad** o **Autenticación** envía el portfolio en el mes a un mismo mercado, **menor es la tarifa** de los mensajes siguientes.
+
+- El recuento suma **todas las cuentas del portfolio**, por par mercado–categoría
+- Solo cuentan los mensajes **cobrados**; los mensajes gratuitos (ventana de entrada gratuita) no se incluyen
+- El recuento **se reinicia cada mes**, a medianoche en la zona horaria de la cuenta
+- Los cambios de nivel se notifican mediante el webhook `account_update` **de Meta**, con `event` igual a `VOLUME_BASED_PRICING_TIER_UPDATE`
+
+## Brasil: facturación en reales
+
+<Steps>
+  <Step title="Desde el 01/07/2026">
+    Comenzó la habilitación de cuentas facturadas en **BRL** para empresas elegibles en Brasil. Desde el 16/07/2026, todas las empresas elegibles pueden crear cuentas en BRL.
+  </Step>
+  <Step title="Hasta el 30/06/2027">
+    Todas las cuentas de estos clientes deben **migrar a BRL**.
+  </Step>
+  <Step title="A partir del 01/07/2027">
+    Meta **deja de entregar** mensajes de cuentas en otra moneda.
+  </Step>
+</Steps>
+
+## Cuándo cambian los precios
+
+Meta solo modifica las tarifas el **día 1 de cada trimestre** (1/ene, 1/abr, 1/jul, 1/oct), con un aviso mínimo de:
+
+| Tipo de cambio | Aviso mínimo |
+|---|---|
+| Actualización de la tabla de precios (incluidos los niveles de volumen) | 1 mes |
+| Nuevas funciones del modelo de precios (p. ej., nuevos niveles de volumen) | 3 meses |
+| Cambio de modelo de precios | 6 meses |
+
+Consulta las tarifas vigentes en la [página de precios de Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing).
+
+## Fuentes
+
+- [Precios en la Plataforma de WhatsApp Business](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing) — Meta for Developers
+- [Webhook de estado de mensajes](https://developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages/status) — Meta for Developers
+- [Tabla de precios por mercado](https://whatsappbusiness.com/es-la/products/platform-pricing/) — WhatsApp Business
+- [Categorización de plantillas](https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/template-categorization) — Meta for Developers
+- [Política de precios para proveedores de IA](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing/ai-providers) — Meta for Developers

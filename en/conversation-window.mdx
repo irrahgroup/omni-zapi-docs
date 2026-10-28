@@ -1,38 +1,49 @@
 ---
 title: "Conversation window"
-description: "Understand how the WhatsApp 24-hour conversation window works"
+description: "Understand the two WhatsApp windows: the customer service window (24h) and the free entry point window for ads"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
 ## How does it work?
 
-When a customer sends a message to your WhatsApp number, a **24-hour conversation window** opens. While this window is open, you can send any type of message: text, image, audio, video, document, etc.
+When a customer sends a message or calls your number, Meta opens a **24-hour customer service window**.
 
-If the customer sends another message, the 24-hour timer **resets**. This means as long as there's an active conversation, the window stays open.
+Each new message or call from the customer **resets** the timer to 24 hours.
+
+<Note>
+  The window defines **what you can send**, not whether the message is free. The cost of each message depends on its **category**. See [Billing](/en/whatsapp-official/billing).
+</Note>
 
 ## Inside the window (24h)
 
-You can send **any message** freely using the [free messages](/en/messages/introduction) endpoints — no templates needed.
+You can send **free-form messages** (text, media, audio, documents, buttons, lists) using the [free messages](/en/messages/introduction) endpoints, with no template needed.
 
-Messages sent within the window are classified as **Service** and are **free and unlimited**.
+These messages belong to the **Service** category:
+
+- Each business phone number gets **1,000 free service messages per month**.
+- Starting with the **1,001st**, each delivered message is charged.
 
 <Note>
-  **Utility** templates sent within the 24h window are also **free**.
+  Eligible government and non-profit organizations follow a separate rule. See [Billing](/en/whatsapp-official/billing).
 </Note>
 
-## Outside the window (after 24h)
+<Warning>
+  You can also send **templates** while the window is open, but they are **charged by template category** (Marketing, Utility, or Authentication), even inside the window. The exception is the [free entry point window](#free-entry-via-ads).
+</Warning>
 
-When the window closes, the only way to message the customer is through **Meta-approved templates** using the [Send template](/en/messages/send-template) endpoint.
+## Outside the window
+
+When the window is closed, the only way to message the customer is through **Meta-approved templates** using the [Send template](/en/messages/send-template) endpoint.
 
 | Category | When to use | Cost |
 |---|---|---|
-| **Marketing** | Promotions, campaigns, offers | Charged per message sent |
-| **Utility** | Confirmations, order updates, alerts | Free within window, charged outside |
-| **Authentication** | OTP code, login verification | Charged per message sent |
+| **Marketing** | Promotions, campaigns, offers | Charged per message |
+| **Utility** | Confirmations, order updates, alerts | Charged per message |
+| **Authentication** | OTP code, login verification | Charged per message |
 
 <Warning>
-  Without an approved template, you **cannot** send messages outside the 24h window. WhatsApp blocks the send.
+  Free-form messages sent outside the window are **rejected by the API**. Also remember to only message customers who have **opted in** to receive messages from your business.
 </Warning>
 
 ## How to reopen the window?
@@ -40,25 +51,54 @@ When the window closes, the only way to message the customer is through **Meta-a
 There are two ways:
 
 <Steps>
-  <Step title="The customer sends a message">
-    The simplest way. Any message from the customer opens a new 24h window immediately.
+  <Step title="The customer sends a message or calls">
+    A new 24h window opens immediately.
   </Step>
-  <Step title="You send a template">
-    Send an [approved template](/en/messages/send-template) (marketing, utility, or authentication). When the customer **replies**, the 24h window reopens and you can send [free messages](/en/messages/introduction) again.
+  <Step title="You send a template and the customer replies">
+    Send an [approved template](/en/messages/send-template). When the customer **replies**, their reply opens the 24h window and you can send [free messages](/en/messages/introduction) again. The template itself is charged by category, except in the free entry point window.
   </Step>
 </Steps>
 
 ## Free entry via ads
 
-When the customer comes through **Click-to-WhatsApp** (Facebook ad) or a **Facebook Page CTA button**, the window extends to **72 hours** and all messages are **free** during that period, including marketing templates.
+When the customer comes through a **Click-to-WhatsApp (CTWA)** ad using the WhatsApp app on **Android or iOS**, a **free entry point window** can open.
+
+<Note>
+  Access through WhatsApp **Desktop** or **Web** does not count toward the free entry point window.
+</Note>
+
+<Steps>
+  <Step title="The customer sends a message from the ad">
+    Their message opens the regular **24h** customer service window.
+  </Step>
+  <Step title="You reply within 24h">
+    Your reply (Marketing, Utility, Authentication, or Service) is **free** and opens the **free entry point window**.
+  </Step>
+  <Step title="Free entry point window open for up to 7 days">
+    During this period, **Marketing**, **Utility**, **Authentication**, and **Service** messages are **free**. 7 days is the maximum, not a guarantee: Meta documents that the window **may** remain open for up to 7 days. See [24-hour window](/en/whatsapp-official/24h-window).
+  </Step>
+</Steps>
+
+<Warning>
+  The free entry point window changes **the cost**, not **the sending rule**. Free-form messages still require the 24h window to be open. Once it closes, send a template, which is free while the free entry point window is open.
+</Warning>
+
+<Warning>
+  **Meta Business Agent** messages are still **charged** in the free entry point window.
+</Warning>
+
+<Info>
+  The free entry point window is **shared across all accounts** sending from the same business phone number, not only the account that paid for the ad.
+</Info>
 
 ## Visual summary
 
-| Situation | Can send free messages? | Template required? | Cost |
+| Situation | Can send free-form messages? | Template required? | Cost |
 |---|---|---|---|
-| Customer sent a message (window open) | Yes | No | Free |
-| Window closed (over 24h) | No | Yes | Depends on category |
-| Via Click-to-WhatsApp ad | Yes | No | Free for 72h |
+| Customer messaged in the last 24h | Yes | No | Service: 1,000 free/month per number, then charged |
+| Template sent while the window is open | — | Yes | Charged by template category |
+| Window closed | No | Yes | Charged by template category |
+| Free entry point window open (came from a CTWA ad and you replied within 24h) | Yes, while the 24h window is open | Yes, after the 24h window closes | Free for up to 7 days (except Meta Business Agent) |
 
 ## Next steps
 

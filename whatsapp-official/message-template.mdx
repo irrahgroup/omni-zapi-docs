@@ -1,81 +1,108 @@
 ---
 title: "Templates de mensagem"
-description: "Entenda o que são os templates da API Oficial do WhatsApp, como funcionam e suas categorias"
+description: "Entenda o que são os templates, como a Meta classifica cada um e quanto isso impacta a cobrança"
 ---
 
-import { projectName, frontendUrl } from '/snippets/variables.mdx';
+import { projectName } from '/snippets/variables.mdx';
 
-## O que é um Template?
+## O que é um template?
 
-Um **Template** (Mensagem de Modelo) é uma mensagem previamente cadastrada e aprovada pela Meta. Ela serve para **iniciar ou retomar uma conversa** quando não existe uma janela aberta.
+Um **template** (mensagem de modelo) é uma mensagem cadastrada e **aprovada pela Meta**. Ele pode ser enviado a qualquer momento e é a **única forma** de iniciar ou retomar uma conversa com a [janela de 24h](/conversation-window) fechada.
 
-**Exemplos de uso:**
+Um template pode conter texto, imagem, vídeo, documento, botões e variáveis.
 
-- Confirmação de pedido
-- Lembrete de consulta
-- Aviso de entrega
-- Cobrança
-- Recuperação de atendimento
-- Confirmação de agendamento
+<Warning>
+  Todo template entregue é **cobrado pela sua categoria**, dentro ou fora da janela de 24h. A única exceção é a **janela de entrada gratuita** (anúncios Click-to-WhatsApp). Veja [Cobrança](/whatsapp-official/billing).
+</Warning>
 
-**Os templates podem conter:**
+## O que acontece após enviar um template?
 
-- Texto
-- Imagens
-- Vídeos
-- Documentos
-- Botões
-- Variáveis personalizadas
+| Situação | Resultado |
+|---|---|
+| O cliente **responde** | Abre uma nova janela de 24h e você volta a enviar [mensagens livres](/messages/introduction) |
+| O cliente **não responde** | A janela segue fechada; só outro template pode ser enviado |
 
-## O que acontece após enviar um Template?
-
-Depende da resposta do cliente.
-
-### Se o cliente responder
-
-Assim que o cliente responder ao template:
-
-- Uma nova janela de 24 horas é aberta
-- Sua empresa volta a poder enviar mensagens comuns normalmente
-
-```
-Janela encerrada
-       ↓
-Envio de Template
-       ↓
-Cliente responde
-       ↓
-Nova janela de 24 horas
-       ↓
-Mensagens livres novamente
-```
-
-### Se o cliente não responder
-
-Caso o cliente não responda:
-
-- A janela continua fechada
-- Você não poderá enviar mensagens comuns
-- Será necessário enviar outro template quando fizer sentido
+## Categorias
 
 <Note>
-  Para entender melhor o funcionamento da janela de atendimento, consulte a página sobre a [janela de 24 horas](/whatsapp-official/24h-window).
+  O nome em código é o valor do campo `category` na API. Veja [Templates](/templates/introduction) para criar e gerenciar os seus.
 </Note>
 
-## Categorias de Templates
+| Categoria | Para que serve | Exemplos | Regras principais |
+|---|---|---|---|
+| **Marketing** `MARKETING` | Promover, vender, reengajar | Cupom, carrinho abandonado, renovação de assinatura, aniversário, convite para baixar o app | Também vira Marketing todo template com conteúdo misto (utilidade + promoção) ou conteúdo vago, como só `{{1}}` ou "Parabéns!" |
+| **Utilidade** `UTILITY` | Responder a uma ação ou pedido do cliente | Confirmação de pedido, rastreio, boleto, lembrete de pagamento, pesquisa sobre um atendimento específico | Sem nenhum tom promocional e específico do cliente (pedido, conta, serviço) ou essencial (segurança, alerta público) |
+| **Autenticação** `AUTHENTICATION` | Verificar identidade com código de uso único (OTP) | "123456 é seu código de verificação" | Texto fixo da Template Library, sem personalização; botão de copiar código ou one-tap, ou zero-tap (só Android); sem URL, mídia ou emoji; variáveis de até 15 caracteres |
 
-Os templates pertencem a uma categoria definida pela Meta.
+<Note>
+  Templates de Autenticação podem incluir, de forma opcional, um aviso de segurança ("Para sua segurança, não compartilhe este código") e um aviso de expiração do código.
+</Note>
 
-<CardGroup cols={3}>
-  <Card title="Marketing" icon="bullhorn">
-    Usado para promoções, ofertas, divulgação de produtos e campanhas.
+<Note>
+  Mensagens livres enviadas dentro da janela **não são templates**: são da categoria **Serviço**, ou **Meta Business Agent** quando geradas pelo agente de IA da Meta.
+</Note>
 
-    **Exemplo:** "Aproveite 20% de desconto em toda a loja até domingo."
+## Quanto custa cada template
+
+Preço por mensagem entregue para números do **Brasil** (`+55`), conforme a tabela oficial da Meta:
+
+| Categoria | Preço em BRL | Preço em USD |
+|---|---|---|
+| **Marketing** | R$ 0,3217 | US$ 0,0625 |
+| **Utilidade** | R$ 0,0350 | US$ 0,0068 |
+| **Autenticação** | R$ 0,0350 | US$ 0,0068 |
+
+<Warning>
+  Esses valores foram consultados em **26/10/2026** e **podem mudar** a qualquer atualização de preços da Meta. Os valores de **Utilidade** e **Autenticação** são o preço de tabela e podem ficar menores conforme as faixas de volume do mês. Consulte sempre a [tabela de preços oficial da Meta](https://whatsappbusiness.com/pt-br/products/platform-pricing/).
+</Warning>
+
+<Note>
+  Mensagens de **Serviço** acima das 1.000 gratuitas do mês custam **R$ 0,0350** (US$ 0,0068) no Brasil. Veja [Cobrança](/whatsapp-official/billing).
+</Note>
+
+## Como a Meta classifica e reclassifica
+
+<Steps>
+  <Step title="Na criação">
+    Você escolhe a categoria e a Meta valida. Se você marcou **Utilidade** e o conteúdo é Marketing, o template é aprovado direto como **Marketing**. Em outras divergências, o template é **rejeitado** com o motivo `INCORRECT_CATEGORY`.
+  </Step>
+  <Step title="Revisão periódica">
+    Templates já aprovados são revisados periodicamente. Um Utilidade que deveria ser Marketing muda de categoria com **1 dia de aviso** e continua aprovado.
+  </Step>
+  <Step title="Templates que deveriam ser Autenticação">
+    Um Marketing ou Utilidade que deveria ser Autenticação **não muda de categoria**: ele é **rejeitado no 1º dia do mês seguinte** e deixa de poder ser enviado.
+  </Step>
+  <Step title="Pedido de revisão">
+    Você pode pedir revisão da categoria pelo **WhatsApp Manager** em até **60 dias** a partir da criação do template ou, se ele foi reclassificado, a partir da data da mudança.
+  </Step>
+</Steps>
+
+<Info>
+  Os avisos de reclassificação chegam por **e-mail**, por um **banner no WhatsApp Manager** e pelo webhook `template_category_update` da Meta, que o {projectName} repassa como [`UPDATE_TEMPLATE_CATEGORY`](/webhooks/template-payloads).
+</Info>
+
+## Restrições por uso indevido de Utilidade
+
+Se a conta classificar Marketing como Utilidade com frequência, a Meta aplica **restrições crescentes**:
+
+| Nível | O que acontece | Duração |
+|---|---|---|
+| **Aviso** | A troca Utilidade → Marketing passa a ser imediata, sem aviso prévio | Contínuo |
+| **Limite de envio** | O volume de Utilidade fica limitado em uma janela móvel de 24h; o excedente é rejeitado | No mínimo 7 dias |
+| **Restrição de Utilidade** | Todos os templates de Utilidade viram Marketing; criar novos templates de Utilidade e pedir revisão ficam bloqueados | 7 dias (30 em reincidência) |
+| **Restrição no portfólio** | A mesma regra vale para todas as contas do portfólio | 30 dias |
+
+<Warning>
+  Escolha a categoria correta já na criação. Classificar Marketing como Utilidade não reduz o custo: o template é reclassificado e a conta pode sofrer restrições.
+</Warning>
+
+## Próximos passos
+
+<CardGroup cols={2}>
+  <Card title="Enviar template" icon="file-lines" href="/messages/send-template">
+    Envie mensagens fora da janela usando templates.
   </Card>
-  <Card title="Utilidade" icon="bell">
-    Usado para informações solicitadas ou relacionadas a uma compra ou serviço, como confirmação de pedido, atualização de entrega, envio de boleto, confirmação de pagamento ou alteração de agendamento.
-  </Card>
-  <Card title="Autenticação" icon="lock">
-    Utilizado para validar a identidade do usuário, como código OTP, código de login ou autenticação em duas etapas.
+  <Card title="Cobrança" icon="receipt" href="/whatsapp-official/billing">
+    Entenda quanto custa cada categoria.
   </Card>
 </CardGroup>

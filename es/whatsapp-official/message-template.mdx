@@ -1,81 +1,108 @@
 ---
 title: "Plantillas de mensaje"
-description: "Entiende qué son las plantillas de la API Oficial de WhatsApp, cómo funcionan y qué categorías existen"
+description: "Entiende qué son las plantillas, cómo las clasifica Meta y cómo afecta eso a la facturación"
 ---
 
-import { projectName, frontendUrl } from '/snippets/variables.mdx';
+import { projectName } from '/snippets/variables.mdx';
 
 ## ¿Qué es una plantilla?
 
-Una **plantilla** (plantilla de mensaje) es un mensaje registrado previamente y aprobado por Meta. Sirve para **iniciar o reanudar una conversación** cuando no hay una ventana abierta.
+Una **plantilla** (mensaje de plantilla) es un mensaje registrado y **aprobado por Meta**. Puede enviarse en cualquier momento y es la **única forma** de iniciar o retomar una conversación cuando la [ventana de 24 h](/es/conversation-window) está cerrada.
 
-**Ejemplos de uso:**
+Una plantilla puede contener texto, imagen, vídeo, documento, botones y variables.
 
-- Confirmación de pedido
-- Recordatorio de cita
-- Aviso de entrega
-- Aviso de cobro
-- Recuperación de una conversación
-- Confirmación de una reserva
-
-**Las plantillas pueden contener:**
-
-- Texto
-- Imágenes
-- Vídeos
-- Documentos
-- Botones
-- Variables personalizadas
+<Warning>
+  Cada plantilla entregada **se cobra según su categoría**, dentro o fuera de la ventana de 24 h. La única excepción es la **ventana de entrada gratuita** (anuncios Click-to-WhatsApp). Consulta [Facturación](/es/whatsapp-official/billing).
+</Warning>
 
 ## ¿Qué ocurre después de enviar una plantilla?
 
-Depende de la respuesta del cliente.
+| Situación | Resultado |
+|---|---|
+| El cliente **responde** | Se abre una nueva ventana de 24 h y vuelves a poder enviar [mensajes libres](/es/messages/introduction) |
+| El cliente **no responde** | La ventana sigue cerrada; solo se puede enviar otra plantilla |
 
-### Si el cliente responde
-
-En cuanto el cliente responde a la plantilla:
-
-- Se abre una nueva ventana de 24 horas
-- Tu empresa vuelve a poder enviar mensajes normales con normalidad
-
-```
-Ventana cerrada
-       ↓
-Envío de la plantilla
-       ↓
-El cliente responde
-       ↓
-Nueva ventana de 24 horas
-       ↓
-Mensajes libres de nuevo
-```
-
-### Si el cliente no responde
-
-Si el cliente no responde:
-
-- La ventana sigue cerrada
-- No podrás enviar mensajes normales
-- Tendrás que enviar otra plantilla cuando tenga sentido hacerlo
+## Categorías
 
 <Note>
-  Para entender mejor cómo funciona la ventana de atención, consulta la página sobre la [ventana de 24 horas](/es/whatsapp-official/24h-window).
+  El nombre en código es el valor del campo `category` en la API. Consulta [Plantillas](/es/templates/introduction) para crear y gestionar las tuyas.
 </Note>
 
-## Categorías de plantillas
+| Categoría | Para qué sirve | Ejemplos | Reglas principales |
+|---|---|---|---|
+| **Marketing** `MARKETING` | Promocionar, vender, volver a captar | Cupón, carrito abandonado, renovación de suscripción, cumpleaños, invitación a descargar la app | También es Marketing toda plantilla con contenido mixto (utilidad + promoción) o contenido vago, como solo `{{1}}` o "¡Felicidades!" |
+| **Utilidad** `UTILITY` | Responder a una acción o solicitud del cliente | Confirmación de pedido, seguimiento, factura, recordatorio de pago, encuesta sobre una atención concreta | Sin ningún tono promocional y específica del cliente (pedido, cuenta, servicio) o esencial (seguridad, alerta pública) |
+| **Autenticación** `AUTHENTICATION` | Verificar la identidad con un código de un solo uso (OTP) | "123456 es tu código de verificación" | Texto fijo de la Template Library, sin personalización; botón de copiar código o one-tap, o zero-tap (solo Android); sin URL, multimedia ni emojis; variables de hasta 15 caracteres |
 
-Cada plantilla pertenece a una categoría definida por Meta.
+<Note>
+  Las plantillas de Autenticación pueden incluir, de forma opcional, un aviso de seguridad ("Por tu seguridad, no compartas este código") y un aviso de caducidad del código.
+</Note>
 
-<CardGroup cols={3}>
-  <Card title="Marketing" icon="bullhorn">
-    Se usa para promociones, ofertas, difusión de productos y campañas.
+<Note>
+  Los mensajes libres enviados dentro de la ventana **no son plantillas**: pertenecen a la categoría **Servicio**, o **Meta Business Agent** cuando los genera el agente de IA de Meta.
+</Note>
 
-    **Ejemplo:** «Aprovecha un 20 % de descuento en toda la tienda hasta el domingo.»
+## Cuánto cuesta cada plantilla
+
+Precio por mensaje entregado a números de **Brasil** (`+55`), según la tabla oficial de Meta:
+
+| Categoría | Precio en BRL | Precio en USD |
+|---|---|---|
+| **Marketing** | R$ 0,3217 | US$ 0,0625 |
+| **Utilidad** | R$ 0,0350 | US$ 0,0068 |
+| **Autenticación** | R$ 0,0350 | US$ 0,0068 |
+
+<Warning>
+  Estos valores se consultaron el **26/10/2026** y **pueden cambiar** con cualquier actualización de precios de Meta. Los valores de **Utilidad** y **Autenticación** son precios de tarifa y pueden ser menores según los niveles de volumen del mes. Consulta siempre la [tabla de precios oficial de Meta](https://whatsappbusiness.com/es-la/products/platform-pricing/).
+</Warning>
+
+<Note>
+  Los mensajes de **Servicio** que superan los 1.000 gratuitos del mes cuestan **R$ 0,0350** (US$ 0,0068) en Brasil. Consulta [Facturación](/es/whatsapp-official/billing).
+</Note>
+
+## Cómo clasifica y reclasifica Meta
+
+<Steps>
+  <Step title="En la creación">
+    Eliges la categoría y Meta la valida. Si marcaste **Utilidad** y el contenido es de Marketing, la plantilla se aprueba directamente como **Marketing**. En otras discrepancias, la plantilla se **rechaza** con el motivo `INCORRECT_CATEGORY`.
+  </Step>
+  <Step title="Revisión periódica">
+    Las plantillas ya aprobadas se revisan periódicamente. Una plantilla de Utilidad que debería ser de Marketing cambia de categoría con **1 día de aviso** y sigue aprobada.
+  </Step>
+  <Step title="Plantillas que deberían ser de Autenticación">
+    Una plantilla de Marketing o Utilidad que debería ser de Autenticación **no cambia de categoría**: se **rechaza el 1.er día del mes siguiente** y deja de poder enviarse.
+  </Step>
+  <Step title="Solicitud de revisión">
+    Puedes solicitar la revisión de la categoría en **WhatsApp Manager** en un plazo de **60 días** desde la creación de la plantilla o, si fue reclasificada, desde la fecha del cambio.
+  </Step>
+</Steps>
+
+<Info>
+  Los avisos de reclasificación llegan por **correo electrónico**, mediante un **banner en WhatsApp Manager** y a través del webhook `template_category_update` de Meta, que {projectName} reenvía como [`UPDATE_TEMPLATE_CATEGORY`](/es/webhooks/template-payloads).
+</Info>
+
+## Restricciones por uso indebido de Utilidad
+
+Si la cuenta clasifica Marketing como Utilidad con frecuencia, Meta aplica **restricciones progresivas**:
+
+| Nivel | Qué ocurre | Duración |
+|---|---|---|
+| **Aviso** | El cambio Utilidad → Marketing pasa a ser inmediato, sin aviso previo | Continuo |
+| **Límite de envío** | El volumen de Utilidad queda limitado en una ventana móvil de 24 h; el excedente se rechaza | Mínimo 7 días |
+| **Restricción de Utilidad** | Todas las plantillas de Utilidad pasan a Marketing; se bloquea crear nuevas plantillas de Utilidad y solicitar revisiones | 7 días (30 en caso de reincidencia) |
+| **Restricción en el portfolio** | La misma regla se aplica a todas las cuentas del portfolio | 30 días |
+
+<Warning>
+  Elige la categoría correcta desde la creación. Clasificar Marketing como Utilidad no reduce el coste: la plantilla se reclasifica y la cuenta puede sufrir restricciones.
+</Warning>
+
+## Próximos pasos
+
+<CardGroup cols={2}>
+  <Card title="Enviar plantilla" icon="file-lines" href="/es/messages/send-template">
+    Envía mensajes fuera de la ventana usando plantillas.
   </Card>
-  <Card title="Utilidad" icon="bell">
-    Se usa para información solicitada o relacionada con una compra o un servicio: confirmación de pedido, actualización de la entrega, envío de una factura, confirmación de pago o cambio de una cita.
-  </Card>
-  <Card title="Autenticación" icon="lock">
-    Se usa para validar la identidad del usuario: código OTP, código de inicio de sesión o autenticación en dos pasos.
+  <Card title="Facturación" icon="receipt" href="/es/whatsapp-official/billing">
+    Entiende cuánto cuesta cada categoría.
   </Card>
 </CardGroup>
