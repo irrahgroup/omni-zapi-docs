@@ -25,18 +25,20 @@ Authorization: Bearer <secret-key>
 
 ## Eventos de template aceitos
 
-Um webhook de template aceita **somente** eventos de conta: os de template e o aviso de desconexão de canal (`CHANNEL_DISCONNECTED`). Enviar um evento de canal resulta em `422`.
+Um webhook de template aceita **somente** eventos de conta: os de template, o aviso de desconexão de canal (`CHANNEL_DISCONNECTED`), os eventos de cobrança e a restrição da conta na Meta (`ACCOUNT_RESTRICTION`). Enviar um evento de canal resulta em `422`.
 
 | Valor (exato, SNAKE_CASE) | Significado |
 |---|---|
 | `UPDATE_TEMPLATE_STATUS` | Atualização de status de template (aprovado/rejeitado etc.) |
 | `UPDATE_TEMPLATE_CATEGORY` | Atualização de categoria de template |
 | `CHANNEL_DISCONNECTED` | Aviso de desconexão de canal, com o motivo em código. Veja [Aviso de desconexão de canal](/webhooks/channel-disconnected) |
+| `BILLING_PAYMENT_FAILED`, `BILLING_PAYMENT_RECOVERED`, `BILLING_SUBSCRIPTION_CANCELED`, `BILLING_INSTANCE_SUSPENDED`, `BILLING_INSTANCE_RELEASED` | Eventos de cobrança. Veja [Eventos de cobrança e de restrição da conta](/webhooks/account-events) |
+| `ACCOUNT_RESTRICTION` | Restrição da conta do WhatsApp Business na Meta. Veja [Eventos de cobrança e de restrição da conta](/webhooks/account-events) |
 
 ## Regras de negócio
 
 1. **Escopo dos eventos (obrigatório).**
-   - Webhook **de template** → só aceita eventos de conta (template e `CHANNEL_DISCONNECTED`). Evento de canal → `422`.
+   - Webhook **de template** → só aceita eventos de conta (template, `CHANNEL_DISCONNECTED`, cobrança e `ACCOUNT_RESTRICTION`). Evento de canal → `422`.
    - Webhook **de canal** → **não** pode assinar eventos de template → `422`.
 2. **`payloadFormat` é ignorado.** Para webhooks de template o formato é sempre `DEFAULT`. O campo pode ser omitido; se enviado (qualquer valor, inclusive `CHATWOOT`), é silenciosamente descartado e persistido como `DEFAULT`.
 3. **`instanceId` gravado como `null`** automaticamente — não há campo de instância nestas rotas. `channelId` também vem `null`.

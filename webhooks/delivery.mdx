@@ -66,3 +66,17 @@ Os eventos saem na ordem em que acontecem. Mas um evento que falhou é enviado d
 ## Quando o seu endpoint fica fora do ar
 
 Os eventos não se perdem: eles seguem as tentativas acima por até 23 horas. Quando o seu endpoint voltar, os eventos atrasados chegam junto com os novos. Prepare o endpoint para um volume maior por alguns minutos.
+
+## Aviso por e-mail quando o webhook falha
+
+Quando um webhook falha em sequência, o Owner e os Managers do workspace recebem um e-mail:
+
+| Aviso | Quando sai |
+|---|---|
+| 1º | Depois de pelo menos 3 falhas seguidas, cobrindo pelo menos 1 hora |
+| 2º | Pelo menos 1 hora depois do 1º, se o webhook continuar falhando, com 3 falhas novas |
+| 3º | Pelo menos 6 horas depois do 2º, se o webhook continuar falhando, com 3 falhas novas |
+
+- O e-mail traz a descrição do webhook, a URL com partes ocultas, o número de falhas e o último erro. Nunca traz o segredo, a credencial nem o corpo das entregas.
+- Uma entrega com sucesso encerra a sequência. Se o webhook voltar a falhar, um novo 1º aviso só sai 6 horas depois do anterior.
+- **O aviso não desativa o webhook.** Os envios continuam, com as tentativas descritas acima.

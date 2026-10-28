@@ -25,18 +25,20 @@ Authorization: Bearer <secret-key>
 
 ## Eventos de plantilla admitidos
 
-Un webhook de plantilla admite **únicamente** eventos de cuenta: los de plantilla y el aviso de desconexión de canal (`CHANNEL_DISCONNECTED`). Enviar un evento de canal devuelve `422`.
+Un webhook de plantilla admite **únicamente** eventos de cuenta: los de plantilla, el aviso de desconexión de canal (`CHANNEL_DISCONNECTED`), los eventos de facturación y la restricción de la cuenta en Meta (`ACCOUNT_RESTRICTION`). Enviar un evento de canal devuelve `422`.
 
 | Valor (exacto, SNAKE_CASE) | Significado |
 |---|---|
 | `UPDATE_TEMPLATE_STATUS` | Actualización del estado de una plantilla (aprobada, rechazada, etc.) |
 | `UPDATE_TEMPLATE_CATEGORY` | Actualización de la categoría de una plantilla |
 | `CHANNEL_DISCONNECTED` | Aviso de desconexión de canal, con el motivo en código. Consulta [Aviso de desconexión de canal](/es/webhooks/channel-disconnected) |
+| `BILLING_PAYMENT_FAILED`, `BILLING_PAYMENT_RECOVERED`, `BILLING_SUBSCRIPTION_CANCELED`, `BILLING_INSTANCE_SUSPENDED`, `BILLING_INSTANCE_RELEASED` | Eventos de facturación. Consulta [Eventos de facturación y de restricción de la cuenta](/es/webhooks/account-events) |
+| `ACCOUNT_RESTRICTION` | Restricción de la cuenta de WhatsApp Business en Meta. Consulta [Eventos de facturación y de restricción de la cuenta](/es/webhooks/account-events) |
 
 ## Reglas de negocio
 
 1. **Alcance de los eventos (obligatorio).**
-   - Webhook **de plantilla** → solo admite eventos de cuenta (plantilla y `CHANNEL_DISCONNECTED`). Un evento de canal → `422`.
+   - Webhook **de plantilla** → solo admite eventos de cuenta (plantilla, `CHANNEL_DISCONNECTED`, facturación y `ACCOUNT_RESTRICTION`). Un evento de canal → `422`.
    - Webhook **de canal** → **no** puede suscribirse a eventos de plantilla → `422`.
 2. **`payloadFormat` se ignora.** En los webhooks de plantilla el formato es siempre `DEFAULT`. El campo se puede omitir; si se envía (con cualquier valor, incluido `CHATWOOT`), se descarta de forma silenciosa y se persiste como `DEFAULT`.
 3. **`instanceId` se guarda como `null`** automáticamente: en estas rutas no hay campo de instancia. `channelId` también llega como `null`.

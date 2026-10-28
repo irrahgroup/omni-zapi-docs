@@ -66,3 +66,17 @@ Events are sent in the order they happen. But an event that failed is sent again
 ## When your endpoint is down
 
 Events are not lost: they follow the attempts above for up to 23 hours. When your endpoint comes back, the delayed events arrive together with the new ones. Prepare your endpoint for a higher volume for a few minutes.
+
+## Email notice when the webhook fails
+
+When a webhook fails repeatedly, the workspace Owner and Managers receive an email:
+
+| Notice | When it is sent |
+|---|---|
+| 1st | After at least 3 consecutive failures, spanning at least 1 hour |
+| 2nd | At least 1 hour after the 1st, if the webhook keeps failing, with 3 new failures |
+| 3rd | At least 6 hours after the 2nd, if the webhook keeps failing, with 3 new failures |
+
+- The email includes the webhook description, the URL with parts hidden, the number of failures and the last error. It never includes the secret, the credential or the delivery bodies.
+- A successful delivery ends the sequence. If the webhook fails again, a new 1st notice is only sent 6 hours after the previous one.
+- **The notice does not disable the webhook.** Deliveries continue, with the attempts described above.
