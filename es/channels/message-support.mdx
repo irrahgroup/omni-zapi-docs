@@ -56,15 +56,15 @@ lo descubras ahora y no en medio de una prueba.
 | Imagen | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Audio | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Video | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Documento | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Documento | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
 | Sticker | ✅ | ✅ | ⚠️ | ⚠️ | ✅ |
 | Ubicación | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Contacto | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Reacción (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
 | Encuesta | ❌ | ✅ | ❌ | ❌ | ✅ |
 
-Texto y multimedia son el terreno común: funcionan en los cinco, con el mismo cuerpo. Es de ahí para
-arriba que los canales empiezan a discrepar.
+Texto y multimedia son el terreno común: funcionan en los cinco, con el mismo cuerpo. La excepción es el
+documento, que en Instagram y Telegram tiene condición. Es de ahí para arriba que los canales empiezan a discrepar.
 
 ## Cuando el cliente responde con un toque
 
@@ -125,6 +125,33 @@ acepta solo enlace y respuesta, y el teclado de Telegram no tiene botón de tel�
 
 **Qué hacer**: cambia el botón de llamar por un botón de enlace con `tel:` como destino cuando el canal
 lo permita, o escribe el teléfono en el texto del mensaje.
+
+### Documento en Instagram y Telegram
+
+En **Instagram**, Meta acepta como archivo **solo PDF**, y solo por URL `https`. Decide por el
+`content-type` que devuelve tu servidor, no por la extensión: un PDF servido como
+`application/octet-stream` se rechaza. Planillas y Base64 también se rechazan. El archivo llega sin el
+nombre y sin la leyenda que enviaste.
+
+En **Telegram**, el documento va **solo por URL**: Base64 se rechaza. En PDF, ZIP y GIF, el propio
+Telegram descarga el archivo desde la URL y muestra el nombre que está al final de ella; `name` no
+cambia eso. En los demás formatos, como una planilla, aparece el nombre que enviaste.
+
+En los dos casos la API acepta la petición con `200`, y el rechazo llega después, en el webhook de
+estado del mensaje.
+
+**Qué hacer**: en Instagram, envía el PDF desde una dirección que responda `application/pdf` y escribe
+la leyenda en un mensaje de texto aparte. En Telegram, publica el archivo en una URL que ya termine con
+el nombre que quieres mostrar.
+
+Fuente: [envío de mensajes en Instagram](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/)
+y [`sendDocument` de Telegram](https://core.telegram.org/bots/api#senddocument).
+
+### Destinatario en Instagram
+
+El `recipient.identifier` es el identificador del contacto en Instagram (IGSID): el valor que llega en
+`sender.identifier` cuando escribe a tu perfil. En ese mismo mensaje, el `recipient.identifier` es tu
+propia cuenta, y no sirve como destino.
 
 ### Catálogo, producto y pedido en WhatsApp Web
 
@@ -189,6 +216,7 @@ expone esa edge. Más detalles en [Conectar Instagram](/es/connect/instagram).
 | Catálogo o producto | el enlace de tu tienda en un botón de acción |
 | Formulario (Flow) | tu propio formulario web, abierto con un botón de enlace |
 | Sticker | la misma imagen como foto |
+| Planilla u otro archivo en Instagram | el archivo en PDF, o su enlace en el texto |
 
 ## La ventana de 24 horas, en una frase
 

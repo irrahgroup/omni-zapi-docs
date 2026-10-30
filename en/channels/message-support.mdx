@@ -55,15 +55,15 @@ instead of in the middle of a test.
 | Image | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Audio | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Video | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Document | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Document | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
 | Sticker | ✅ | ✅ | ⚠️ | ⚠️ | ✅ |
 | Location | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Contact | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Reaction (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
 | Poll | ❌ | ✅ | ❌ | ❌ | ✅ |
 
-Text and media are the common ground: they work on all five, with the same body. It is from there up
-that the channels start to disagree.
+Text and media are the common ground: they work on all five, with the same body. The exception is the
+document, which has a condition on Instagram and Telegram. It is from there up that the channels start to disagree.
 
 ## When the customer answers with a tap
 
@@ -124,6 +124,33 @@ accepts only link and reply, and the Telegram keyboard has no phone button.
 
 **What to do**: swap the call button for a link button with `tel:` as the destination when the channel
 allows it, or write the phone number in the message text.
+
+### Document on Instagram and Telegram
+
+On **Instagram**, Meta accepts **only PDF** as a file, and only by an `https` URL. It decides by the
+`content-type` your server returns, not by the extension: a PDF served as `application/octet-stream`
+is refused. Spreadsheets and Base64 are refused too. The file arrives without the name and the caption
+you sent.
+
+On **Telegram**, the document goes **by URL only**: Base64 is refused. For PDF, ZIP and GIF, Telegram
+itself downloads the file from the URL and shows the name at the end of it; `name` does not change
+that. For other formats, like a spreadsheet, the name you sent is the one that shows.
+
+In both cases the API accepts the request with `200`, and the refusal comes later, in the message
+status webhook.
+
+**What to do**: on Instagram, send the PDF from an address that answers `application/pdf` and write the
+caption in a separate text message. On Telegram, publish the file at a URL that already ends with the
+name you want to show.
+
+Source: [sending messages on Instagram](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/)
+and [Telegram `sendDocument`](https://core.telegram.org/bots/api#senddocument).
+
+### Recipient on Instagram
+
+The `recipient.identifier` is the contact identifier on Instagram (IGSID): the value that arrives in
+`sender.identifier` when they write to your profile. In that same message, `recipient.identifier` is
+your own account, and it does not work as a destination.
 
 ### Catalog, product and order on WhatsApp Web
 
@@ -188,6 +215,7 @@ which does not expose that edge. Details in [Connect Instagram](/en/connect/inst
 | Catalog or product | your store link in an action button |
 | Form (Flow) | your own web form, opened by a link button |
 | Sticker | the same artwork as an image |
+| Spreadsheet or other file on Instagram | the file as a PDF, or its link in the text |
 
 ## The 24-hour window, in one sentence
 
