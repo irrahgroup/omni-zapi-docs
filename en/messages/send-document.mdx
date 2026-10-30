@@ -1,27 +1,25 @@
 ---
 title: "Send document"
-description: "Send a PDF, a spreadsheet or any file up to 100 MB"
+description: "Send a PDF, a spreadsheet or another file by URL or Base64"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
-  shape and plan the integration — the body below is what will apply when it ships.
-</Warning>
-
 ## Overview
 
-Sends a file to the contact. WhatsApp picks the icon from the extension and the name you provide.
+Sends a file to the contact. The `content.type` field is `DOCUMENT`.
 
-The `content.type` field will be `DOCUMENT`.
+The name the customer sees is built from `name` and `extension`: `"name": "invoice"` with `"extension": "pdf"`
+arrives as `invoice.pdf`, with the PDF icon.
 
 <WindowRule lang="en" template="with a document header" href="/en/templates/models/custom" />
 
 <ChannelSupport type="DOCUMENT" lang="en" />
 
 ## Request body
+
+By URL:
 
 ```json
 {
@@ -31,13 +29,42 @@ The `content.type` field will be `DOCUMENT`.
     "attachments": [
       {
         "url": "https://yourstore.com/invoice.pdf",
-        "fileName": "invoice.pdf",
+        "name": "invoice",
+        "extension": "pdf",
         "caption": "Here is your invoice"
       }
     ]
   }
 }
 ```
+
+By Base64, with the file type prefix in the `url` itself:
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "DOCUMENT",
+    "attachments": [
+      {
+        "url": "data:application/pdf;base64,JVBERi0xLjQK...",
+        "name": "invoice",
+        "extension": "pdf",
+        "caption": "Here is your invoice"
+      }
+    ]
+  }
+}
+```
+
+## Attachment fields
+
+| Field | Description |
+|---|---|
+| `url` | The `https` address of the file, or the Base64 content with the type prefix, like `data:application/pdf;base64,` |
+| `name` | File name, **without** the extension |
+| `extension` | Extension, without the dot: `pdf`, `xlsx`, `docx`. It is what defines the icon. Without it, the file arrives with no name |
+| `caption` | Caption, shown with the file |
 
 ## Rules
 
@@ -46,10 +73,19 @@ The `content.type` field will be `DOCUMENT`.
 | Size | up to 100 MB |
 | Types | PDF, Word, Excel, PowerPoint, text |
 | Caption | up to 1024 characters |
-| `fileName` | **with the extension** — it is what defines the icon the customer sees |
 
-<Warning>
-  The `fileName` goes with the extension, like `invoice.pdf`. There is a known defect in that field on the
-  Z-API compatibility layer today: with the extension the file arrives as `invoice.pdf.pdf`, and without it
-  it arrives as `invoice.null`.
-</Warning>
+## What changes on each channel
+
+| Channel | How the file goes |
+|---|---|
+| Meta Cloud API and WhatsApp Web | By URL or Base64. Name and caption arrive as you sent them |
+| Telegram | **URL only.** For PDF, ZIP and GIF, the name shown is the one at the end of the URL |
+| Instagram | **PDF only, URL only**, with no name and no caption |
+
+The conditions are explained in [what each channel accepts](/en/channels/message-support#document-on-instagram-and-telegram).
+
+## When the channel refuses the file
+
+The API answers `200` with the `messageId` as soon as it accepts the request. If the channel later refuses the
+file, for example a Base64 on Telegram or a spreadsheet on Instagram, the message does not arrive, and the
+failure comes in the message status webhook (`MESSAGE_STATUS`). See [channel webhooks](/en/webhooks/channel-webhooks).

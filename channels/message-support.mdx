@@ -57,15 +57,15 @@ descobrir agora e não no meio do teste.
 | Imagem | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Áudio | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Vídeo | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Documento | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Documento | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
 | Sticker | ✅ | ✅ | ⚠️ | ⚠️ | ✅ |
 | Localização | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Contato | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Reação (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
 | Enquete | ❌ | ✅ | ❌ | ❌ | ✅ |
 
-Texto e mídia são o chão comum: funcionam nos cinco, com o mesmo corpo. É daí para cima que os canais
-começam a discordar.
+Texto e mídia são o chão comum: funcionam nos cinco, com o mesmo corpo. A exceção é o documento, que no
+Instagram e no Telegram tem condição. É daí para cima que os canais começam a discordar.
 
 ## Quando o cliente responde tocando
 
@@ -126,6 +126,27 @@ aceita apenas link e resposta, e o teclado do Telegram não tem botão de telefo
 
 **O que fazer**: troque o botão de ligar por um botão de link com `tel:` no destino quando o canal
 permitir, ou escreva o telefone no texto da mensagem.
+
+### Documento no Instagram e no Telegram
+
+No **Instagram**, a Meta aceita como arquivo **só PDF**, e só por URL `https`. Ela decide pelo
+`content-type` que o seu servidor devolve, não pela extensão: um PDF servido como
+`application/octet-stream` é recusado. Planilha e Base64 também são recusados. O arquivo chega sem o
+nome e sem a legenda que você mandou.
+
+No **Telegram**, o documento vai **só por URL**: Base64 é recusado. Em PDF, ZIP e GIF, o próprio
+Telegram baixa o arquivo pela URL e mostra o nome que está no fim dela; o `name` não muda isso. Nos
+outros formatos, como planilha, o nome que você mandou é o que aparece.
+
+Nos dois casos a API aceita o pedido com `200`, e a recusa chega depois, no webhook de status da
+mensagem.
+
+**O que fazer**: no Instagram, mande PDF por um endereço que responda `application/pdf` e escreva a
+legenda numa mensagem de texto separada. No Telegram, publique o arquivo numa URL que já termine com o
+nome que você quer mostrar.
+
+Fonte: [envio de mensagens no Instagram](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/)
+e [`sendDocument` do Telegram](https://core.telegram.org/bots/api#senddocument).
 
 ### Catálogo, produto e pedido no WhatsApp Web
 
@@ -190,6 +211,7 @@ edge. Detalhes em [Conectar Instagram](/connect/instagram).
 | Catálogo ou produto | o link da sua loja num botão de ação |
 | Formulário (Flow) | um formulário web seu, aberto por botão de link |
 | Sticker | a mesma arte como imagem |
+| Planilha ou outro arquivo no Instagram | o arquivo em PDF, ou o link dele no texto |
 
 ## A janela de 24 horas, em uma frase
 

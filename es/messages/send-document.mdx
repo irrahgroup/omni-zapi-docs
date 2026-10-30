@@ -1,27 +1,25 @@
 ---
 title: "Enviar documento"
-description: "Envía un PDF, una planilla o cualquier archivo de hasta 100 MB"
+description: "Envía un PDF, una planilla u otro archivo por URL o Base64"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
-  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
-</Warning>
-
 ## Conceptos
 
-Envía un archivo al contacto. WhatsApp elige el ícono según la extensión y el nombre que informes.
+Envía un archivo al contacto. El campo `content.type` es `DOCUMENT`.
 
-El campo `content.type` será `DOCUMENT`.
+El nombre que ve el cliente se arma con `name` y `extension`: `"name": "factura"` con `"extension": "pdf"`
+llega como `factura.pdf`, con el ícono de PDF.
 
 <WindowRule lang="es" template="con encabezado de documento" href="/es/templates/models/custom" />
 
 <ChannelSupport type="DOCUMENT" lang="es" />
 
 ## Cuerpo de la petición
+
+Por URL:
 
 ```json
 {
@@ -31,13 +29,42 @@ El campo `content.type` será `DOCUMENT`.
     "attachments": [
       {
         "url": "https://tutienda.com/factura.pdf",
-        "fileName": "factura.pdf",
+        "name": "factura",
+        "extension": "pdf",
         "caption": "Aquí está tu factura"
       }
     ]
   }
 }
 ```
+
+Por Base64, con el prefijo del tipo de archivo en el propio `url`:
+
+```json
+{
+  "recipient": { "identifier": "5511999999999" },
+  "content": {
+    "type": "DOCUMENT",
+    "attachments": [
+      {
+        "url": "data:application/pdf;base64,JVBERi0xLjQK...",
+        "name": "factura",
+        "extension": "pdf",
+        "caption": "Aquí está tu factura"
+      }
+    ]
+  }
+}
+```
+
+## Campos del adjunto
+
+| Campo | Descripción |
+|---|---|
+| `url` | Dirección `https` del archivo, o el contenido en Base64 con el prefijo del tipo, como `data:application/pdf;base64,` |
+| `name` | Nombre del archivo, **sin** la extensión |
+| `extension` | Extensión, sin el punto: `pdf`, `xlsx`, `docx`. Es la que define el ícono. Sin ella, el archivo llega sin nombre |
+| `caption` | Leyenda, mostrada junto con el archivo |
 
 ## Reglas
 
@@ -46,10 +73,19 @@ El campo `content.type` será `DOCUMENT`.
 | Tamaño | hasta 100 MB |
 | Tipos | PDF, Word, Excel, PowerPoint, texto |
 | Leyenda | hasta 1024 caracteres |
-| `fileName` | **con la extensión** — es la que define el ícono que ve el cliente |
 
-<Warning>
-  El `fileName` va con la extensión, como `factura.pdf`. Hoy hay un defecto conocido en ese campo en la capa
-  de compatibilidad Z-API: con extensión el archivo llega como `factura.pdf.pdf`, y sin ella llega como
-  `factura.null`.
-</Warning>
+## Qué cambia en cada canal
+
+| Canal | Cómo va el archivo |
+|---|---|
+| Meta Cloud API y WhatsApp Web | Por URL o Base64. Nombre y leyenda llegan como los enviaste |
+| Telegram | **Solo por URL.** En PDF, ZIP y GIF, el nombre que aparece es el que está al final de la URL |
+| Instagram | **Solo PDF, solo por URL**, y sin nombre ni leyenda |
+
+Las condiciones están explicadas en [qué acepta cada canal](/es/channels/message-support#documento-en-instagram-y-telegram).
+
+## Cuando el canal rechaza el archivo
+
+La API responde `200` con el `messageId` en cuanto acepta la petición. Si después el canal rechaza el archivo,
+por ejemplo un Base64 en Telegram o una planilla en Instagram, el mensaje no llega, y el fallo viene en el
+webhook de estado del mensaje (`MESSAGE_STATUS`). Consulta [webhooks de canal](/es/webhooks/channel-webhooks).
