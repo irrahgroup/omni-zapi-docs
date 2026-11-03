@@ -100,15 +100,34 @@
             }
           },
           "422": {
-            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE",
+            "description": "Regla de negocio incumplida: cuenta sin el rol ENTERPRISE, o `type` `Z_API_WHATSAPP` en un workspace sin WhatsApp Web habilitado (la habilitación la hace el soporte).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ChannelTypeNotEnabledError"
+                    }
+                  ]
                 },
-                "example": {
-                  "error": 422,
-                  "message": "This action requires ENTERPRISE role"
+                "examples": {
+                  "enterpriseRequired": {
+                    "summary": "Cuenta sin el rol ENTERPRISE",
+                    "value": {
+                      "error": 422,
+                      "message": "This action requires ENTERPRISE role"
+                    }
+                  },
+                  "channelTypeNotEnabled": {
+                    "summary": "WhatsApp Web no habilitado en el workspace",
+                    "value": {
+                      "error": "channel_type_not_enabled",
+                      "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+                    }
+                  }
                 }
               }
             }
@@ -198,6 +217,26 @@
             "type": "string",
             "enum": [
               "channel_name_in_use"
+            ],
+            "description": "Código estable del rechazo"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto fijo, siempre en inglés"
+          }
+        }
+      },
+      "ChannelTypeNotEnabledError": {
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "channel_type_not_enabled"
             ],
             "description": "Código estable del rechazo"
           },
