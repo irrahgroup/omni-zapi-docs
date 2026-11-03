@@ -44,31 +44,7 @@ All payloads share the same fields in the `message` object, regardless of conten
 | `attachments` | array | Media attachments (image, audio, video, sticker) |
 | `webhook_processed` | boolean | Internal processing control flag |
 
-## Group messages (WhatsApp Web)
-
-On WhatsApp Web channels (`metadata.middleware` equal to `"Z_API_WHATSAPP"`), a message exchanged in a group carries the group identification in the `internal_information` of each item in `contents` and `attachments`:
-
-| Field | Type | Description |
-|---|---|---|
-| `internal_information.group_id` | string | Group ID, in the `120363430845284251-group` format. Older groups may come in the `556592929755-1499690308` format |
-| `internal_information.group_name` | string | Group name |
-| `internal_information.participant_lid` | string | LID of whoever sent the message in the group, when the platform provides it |
-
-In a message received from a group, `sender.identifier` is the phone of whoever wrote it, not the group's. Both group fields also appear when the message is sent to the group from the channel's own number (`metadata.from_me: true`). Individual messages have no `group_id` or `group_name`.
-
-```json
-"contents": [
-  {
-    "@class": ".TextContent",
-    "internal_information": {
-      "group_id": "120363430845284251-group",
-      "group_name": "Sales team"
-    },
-    "message": "Good morning, everyone!",
-    "type": "TEXT"
-  }
-]
-```
+## Group messages
 
 <Note>
   In Z-API format webhooks, sent to [Z-API Compatibility](/en/z-api/introduction) channels, a message received from a group follows the Z-API structure: `phone` and `chatName` identify the group, `participantPhone` and `participantLid` identify the sender, and the status callback carries `isGroup: true`.
