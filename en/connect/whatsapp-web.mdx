@@ -11,6 +11,7 @@ Channel of type `Z_API_WHATSAPP`. It connects through the **QR Code**, the way W
 
 ## Requirements
 
+- WhatsApp Web enabled in the workspace. Support enables it, and new workspaces start without it
 - A WhatsApp number with the app installed on a phone
 - Access to the phone to scan the QR Code
 - [`@omnizapi/connect`](https://www.npmjs.com/package/@omnizapi/connect) 1.1.1 or later
@@ -53,14 +54,16 @@ app.get('/api/omni/channels/:id/qr-code', requireSessionAndChannelOwnership, asy
   );
   const body = await response.json();
   if (!response.ok) {
-    // The API error comes in error.errors[0]; pass on only the text
-    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? null });
+    // The API error comes in error.errors[0] or, in the enablement 422, in message; pass on only the text
+    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? body?.message ?? null });
   }
   res.json({ qrcode: body.qrcode, connected: body.connected });
 });
 ```
 
 The API returns `qrcode`, the QR Code image, and `connected`, which is `true` when the number is already connected. Pass both on as they came.
+
+In a workspace without WhatsApp Web enabled, the API responds `422` with `error` `channel_type_not_enabled` and the text in `message`, outside `error.errors[0]`. The route above passes that text on too.
 
 <Warning>
   Check the user's session and that the channel belongs to them **before** calling the API. A route that hands out the QR Code of any channel lets someone link their own number to a channel that is not theirs.

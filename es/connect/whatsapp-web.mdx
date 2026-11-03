@@ -11,6 +11,7 @@ Canal de tipo `Z_API_WHATSAPP`. Se conecta mediante el **código QR**, igual que
 
 ## Requisitos
 
+- WhatsApp Web habilitado en el workspace. Lo habilita el soporte, y los workspaces nuevos empiezan sin él
 - Un número de WhatsApp con la app instalada en el móvil
 - Acceso al móvil para escanear el código QR
 - [`@omnizapi/connect`](https://www.npmjs.com/package/@omnizapi/connect) 1.1.1 o superior
@@ -53,14 +54,16 @@ app.get('/api/omni/channels/:id/qr-code', requireSessionAndChannelOwnership, asy
   );
   const body = await response.json();
   if (!response.ok) {
-    // El error de la API viene en error.errors[0]; reenvía solo el texto
-    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? null });
+    // El error de la API viene en error.errors[0] o, en el 422 de habilitación, en message; reenvía solo el texto
+    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? body?.message ?? null });
   }
   res.json({ qrcode: body.qrcode, connected: body.connected });
 });
 ```
 
 La API devuelve `qrcode`, la imagen del código QR, y `connected`, que es `true` cuando el número ya está conectado. Reenvía los dos tal como llegaron.
+
+En un workspace sin WhatsApp Web habilitado, la API responde `422` con `error` `channel_type_not_enabled` y el texto en `message`, fuera de `error.errors[0]`. La ruta de arriba también reenvía ese texto.
 
 <Warning>
   Comprueba la sesión del usuario y que el canal le pertenece **antes** de llamar a la API. Una ruta que entrega el código QR de cualquier canal permite que alguien vincule su propio número a un canal ajeno.

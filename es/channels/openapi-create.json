@@ -79,6 +79,20 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "El workspace no tiene WhatsApp Web habilitado y el `type` es `Z_API_WHATSAPP`. La habilitación la hace el soporte; los demás tipos no dependen de ella. Reconózcalo por el campo `error`, que es estable; `message` siempre está en inglés.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelTypeNotEnabledError"
+                },
+                "example": {
+                  "error": "channel_type_not_enabled",
+                  "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+                }
+              }
+            }
           }
         }
       }
@@ -161,6 +175,26 @@
             "type": "string",
             "enum": [
               "channel_name_in_use"
+            ],
+            "description": "Código estable del rechazo"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto fijo, siempre en inglés"
+          }
+        }
+      },
+      "ChannelTypeNotEnabledError": {
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "channel_type_not_enabled"
             ],
             "description": "Código estable del rechazo"
           },

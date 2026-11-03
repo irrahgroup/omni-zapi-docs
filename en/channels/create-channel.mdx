@@ -41,6 +41,24 @@ Error responses do not change and carry no token.
 | `META_MESSENGER` | Messenger |
 | `BOT_TELEGRAM` | Telegram |
 
+### WhatsApp Web requires enablement
+
+The `Z_API_WHATSAPP` type can only be created in a workspace with WhatsApp Web enabled. Support enables it. Workspaces created before this rule are already enabled; workspaces created after it start without WhatsApp Web.
+
+In a workspace without it, the creation is refused with `422`, and no channel is created:
+
+```json
+{
+  "error": "channel_type_not_enabled",
+  "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+}
+```
+
+- Other channel types do not require enablement.
+- The [QR Code](/en/connect/whatsapp-web) of a `Z_API_WHATSAPP` channel returns the same refusal when the workspace is not enabled.
+- Recognize the refusal by the `error` field, which is stable. The `message` is always in English.
+- To enable WhatsApp Web in the workspace, contact support.
+
 ### Unique name in the workspace
 
 The channel name is unique among the active channels of the workspace. If another active channel already uses the same name, the creation is refused with `409`, and no channel is created:

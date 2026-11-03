@@ -100,15 +100,34 @@
             }
           },
           "422": {
-            "description": "Regra de negócio violada — conta sem role ENTERPRISE",
+            "description": "Regra de negócio violada: conta sem role ENTERPRISE, ou `type` `Z_API_WHATSAPP` em workspace sem o WhatsApp Web habilitado (a habilitação é feita pelo suporte).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ChannelTypeNotEnabledError"
+                    }
+                  ]
                 },
-                "example": {
-                  "error": 422,
-                  "message": "This action requires ENTERPRISE role"
+                "examples": {
+                  "enterpriseRequired": {
+                    "summary": "Conta sem role ENTERPRISE",
+                    "value": {
+                      "error": 422,
+                      "message": "This action requires ENTERPRISE role"
+                    }
+                  },
+                  "channelTypeNotEnabled": {
+                    "summary": "WhatsApp Web não habilitado no workspace",
+                    "value": {
+                      "error": "channel_type_not_enabled",
+                      "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+                    }
+                  }
                 }
               }
             }
@@ -198,6 +217,26 @@
             "type": "string",
             "enum": [
               "channel_name_in_use"
+            ],
+            "description": "Código estável da recusa"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto fixo, sempre em inglês"
+          }
+        }
+      },
+      "ChannelTypeNotEnabledError": {
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "channel_type_not_enabled"
             ],
             "description": "Código estável da recusa"
           },
