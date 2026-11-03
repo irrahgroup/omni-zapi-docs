@@ -212,7 +212,7 @@ def snippet_matrix():
     matrix = {}
     for name, cells in re.findall(r"(\w+): \[([^\]]+)\],", source):
         values = [v.strip().strip("'") for v in cells.split(',')]
-        if len(values) == 5 and all(v in MARK for v in values):
+        if len(values) == 4 and all(v in MARK for v in values):
             matrix[name] = values
     return matrix
 
@@ -223,7 +223,7 @@ def check_channel_matrix():
 
     Antes cada pagina de endpoint declarava os canais na mao, e o snippet
     assumia "sim" para o que a pagina nao dissesse: a pagina do Flow prometia
-    envio pelo WhatsApp Web e pelo Telegram, que nao existe em nenhum dos dois.
+    envio pelo Telegram, que nao existe la.
     Aqui a matriz do snippet e conferida contra as tabelas de "O que cada canal
     aceita", que sao as mesmas publicadas no painel.
     """
@@ -255,7 +255,7 @@ def check_channel_matrix():
         if not line.startswith('|'):
             continue
         cells = [c.strip() for c in line.strip('|').split('|')]
-        if len(cells) != 6 or cells[0] not in OVERVIEW_ROW:
+        if len(cells) != 5 or cells[0] not in OVERVIEW_ROW:
             continue
         kind = OVERVIEW_ROW[cells[0]]
         seen.add(kind)
@@ -377,7 +377,7 @@ def check_method_status():
             fail('estado', f'{f}: {kind} ainda nao existe e a pagina tem playground')
 
 
-CHANNEL_KIND_ORDER = ['WHATSAPP_OFFICIAL', 'WHATSAPP_WEB', 'INSTAGRAM', 'MESSENGER', 'TELEGRAM']
+CHANNEL_KIND_ORDER = ['WHATSAPP_OFFICIAL', 'INSTAGRAM', 'MESSENGER', 'TELEGRAM']
 
 
 def panel_channels():
@@ -424,7 +424,7 @@ def check_matrix_vs_panel():
     (`caveats`) e nao aceita. A doc tem quatro marcas. Esta e a traducao entre
     os dois, e e o que impede a tabela publicada de dizer ✅ onde o playground
     diz "nao disponivel" — que foi exatamente como a pagina do Flow prometeu
-    envio pelo WhatsApp Web.
+    envio onde ele nao existe.
     """
     panel = panel_channels()
     if not panel:
