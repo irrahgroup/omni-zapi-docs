@@ -1,0 +1,68 @@
+---
+title: "Edit message"
+description: "Fix the text of a message you already sent, on channels that allow editing"
+---
+
+## Overview
+
+Replaces the text of a text message your channel already sent. The recipient sees the new text in place of the old one, with the app's edited mark. No new message is sent.
+
+```
+PUT /v1/channels/{channelId}/messages/{messageId}
+```
+
+- `channelId`: the channel that sent the message.
+- `messageId`: the `messageId` returned by the send. The `contents[].identifier` received in the webhook is also accepted.
+
+<Warning>
+  **No channel in this documentation allows editing today.** On WhatsApp Meta, Instagram, Messenger and Telegram, the API refuses the request with `422` and `subCode` `EDIT_NOT_SUPPORTED`, and nothing is sent to the contact. See [Limitations by channel](#limitations-by-channel).
+</Warning>
+
+## Request body
+
+```json
+{
+  "content": {
+    "type": "TEXT",
+    "body": { "message": "Fixed text" }
+  }
+}
+```
+
+Recipient and sender are not required: the original message's apply. Only text can be edited.
+
+## Response
+
+`200` with the edited message's `messageId`:
+
+```json
+{ "messageId": "01A0C92D0C957FE98B73C8BA0CACF741" }
+```
+
+The `200` confirms the edit was accepted and forwarded to the channel, not that the contact's app already shows the new text.
+
+## Errors
+
+| Status | `subCode` | When |
+|---|---|---|
+| `400` | — | missing or empty body, `content.type` other than `TEXT`, or empty `content.body.message` |
+| `404` | — | the `messageId` does not exist or does not belong to this channel |
+| `422` | `EDIT_NOT_SUPPORTED` | the channel does not allow editing |
+| `422` | `CHANNEL_DISCONNECTED` | the channel is disconnected |
+| `422` | `MESSAGE_NOT_EDITABLE` | the message is not text, was not sent by your channel, or was not yet accepted by the channel |
+| `422` | `EDIT_WINDOW_EXPIRED` | the time during which the channel accepts edits has passed |
+
+Handle refusals by `subCode`. The `message` text may change. The error body format is in [Send errors](/en/messages/introduction#send-errors).
+
+## Editing through the send endpoint
+
+A send (`POST /v1/channels/{channelId}/messages`) with `content.body.editMessageId` is also handled as an edit of the given message, with the same rules and refusals as this page. It never sends a new message. Prefer the `PUT`, which makes the intent explicit.
+
+## Limitations by channel
+
+| Channel | Editing through the API | Why |
+|---|---|---|
+| WhatsApp Meta (Cloud API) | ❌ refused with `EDIT_NOT_SUPPORTED` | Meta's Cloud API does not offer editing of messages sent by the business |
+| Instagram | ❌ refused with `EDIT_NOT_SUPPORTED` | the Instagram messaging API does not offer editing of sent messages |
+| Messenger | ❌ refused with `EDIT_NOT_SUPPORTED` | not implemented |
+| Telegram | ❌ refused with `EDIT_NOT_SUPPORTED` | Telegram allows editing through the Bot API, but Omni does not implement it yet |

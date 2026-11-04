@@ -1,0 +1,68 @@
+---
+title: "Editar mensaje"
+description: "Corrige el texto de un mensaje ya enviado, en los canales que permiten edición"
+---
+
+## Conceptualización
+
+Cambia el texto de un mensaje de texto que tu canal ya envió. El destinatario ve el texto nuevo en lugar del anterior, con la marca de editado de la aplicación. No se envía ningún mensaje nuevo.
+
+```
+PUT /v1/channels/{channelId}/messages/{messageId}
+```
+
+- `channelId`: el canal que envió el mensaje.
+- `messageId`: el `messageId` que devolvió el envío. También se acepta el `contents[].identifier` recibido en el webhook.
+
+<Warning>
+  **Ningún canal de esta documentación permite edición hoy.** En WhatsApp Meta, Instagram, Messenger y Telegram, la API rechaza la solicitud con `422` y `subCode` `EDIT_NOT_SUPPORTED`, y no se envía nada al contacto. Consulta [Limitaciones por canal](#limitaciones-por-canal).
+</Warning>
+
+## Cuerpo de la solicitud
+
+```json
+{
+  "content": {
+    "type": "TEXT",
+    "body": { "message": "Texto corregido" }
+  }
+}
+```
+
+No se piden destinatario ni remitente: valen los del mensaje original. Solo se puede editar texto.
+
+## Respuesta
+
+`200` con el `messageId` del mensaje editado:
+
+```json
+{ "messageId": "01A0C92D0C957FE98B73C8BA0CACF741" }
+```
+
+El `200` confirma que la edición fue aceptada y enviada al canal, no que la aplicación del contacto ya muestre el texto nuevo.
+
+## Errores
+
+| Status | `subCode` | Cuándo |
+|---|---|---|
+| `400` | — | cuerpo ausente o vacío, `content.type` distinto de `TEXT` o `content.body.message` vacío |
+| `404` | — | el `messageId` no existe o no es de este canal |
+| `422` | `EDIT_NOT_SUPPORTED` | el canal no permite edición |
+| `422` | `CHANNEL_DISCONNECTED` | el canal está desconectado |
+| `422` | `MESSAGE_NOT_EDITABLE` | el mensaje no es texto, no fue enviado por tu canal o el canal aún no lo aceptó |
+| `422` | `EDIT_WINDOW_EXPIRED` | pasó el plazo en que el canal acepta edición |
+
+Trata los rechazos por el `subCode`. El texto de `message` puede cambiar. El formato del cuerpo de error está en [Errores al enviar](/es/messages/introduction#errores-al-enviar).
+
+## Editar por el envío
+
+El envío (`POST /v1/channels/{channelId}/messages`) con `content.body.editMessageId` también se trata como edición del mensaje indicado, con las mismas reglas y rechazos de esta página. Nunca envía un mensaje nuevo. Prefiere el `PUT`, que deja la intención explícita.
+
+## Limitaciones por canal
+
+| Canal | Edición por la API | Por qué |
+|---|---|---|
+| WhatsApp Meta (Cloud API) | ❌ rechazada con `EDIT_NOT_SUPPORTED` | la Cloud API de Meta no ofrece edición de mensajes enviados por la empresa |
+| Instagram | ❌ rechazada con `EDIT_NOT_SUPPORTED` | la API de mensajes de Instagram no ofrece edición de mensajes enviados |
+| Messenger | ❌ rechazada con `EDIT_NOT_SUPPORTED` | no implementada |
+| Telegram | ❌ rechazada con `EDIT_NOT_SUPPORTED` | Telegram permite editar por la Bot API, pero Omni aún no lo implementa |
