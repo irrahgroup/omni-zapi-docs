@@ -674,6 +674,52 @@ The content is in `contents[0]` with `type: "INTERACTIVE_ACTION"`. Each button i
 
 ---
 
+## Status callbacks
+
+Message status events arrive in the same envelope, with the type in `contents[0].type` (`DeliveryCallback` or `MessageStatusCallback`) and the `_id` of the message they refer to. Two fields of the `message` object tell you which message the status belongs to:
+
+| Field | Description |
+|---|---|
+| `metadata.from_me` | Direction of the message the status refers to: `true` when the business sent it, `false` when it was received from the contact. It is the same value as in the message webhook |
+| `recipient.identifier` | Recipient of the message the status refers to. For a message sent by the business, it is the contact's phone number (country code + area code + number), the same as in the message webhook. If the contact's phone number is not known, you get the identifier the channel reported |
+
+Use `metadata.from_me` to know where the message came from and `recipient.identifier` to get the recipient's phone number. The `contents[0].phone` field carries the contact identifier as the channel reported it in the status, and it may not be the phone number.
+
+Delivery status example for a message sent through the API:
+
+```json
+{
+  "message": {
+    "_id": "019E6F1A93FE78DCB54332F9FF0CCAE7",
+    "channel_id": "019E4C54B1B375A28970B605CA9B03C3",
+    "metadata": {
+      "@class": ".Metadata",
+      "forwarded": false,
+      "from_api": false,
+      "from_me": true
+    },
+    "recipient": {
+      "@class": ".Recipient",
+      "identifier": "5511999990000",
+      "name": ""
+    },
+    "contents": [
+      {
+        "@class": ".StateItem",
+        "type": "MessageStatusCallback",
+        "state": { "@class": ".Received", "name": "RECEIVED" }
+      }
+    ]
+  }
+}
+```
+
+<Note>
+  **Change in the next version rollout.** Until then, on some channels, the status of a message sent by the business may arrive with `metadata.from_me: false` and, in `recipient.identifier`, a channel identifier instead of the phone number. From the rollout on, the status carries `from_me: true` and the phone number, as the message webhook does. On Instagram and Messenger channels, statuses of messages sent by the business also start carrying `from_me: true`. Z-API format webhooks, from [Z-API Compatibility](/en/z-api/introduction), do not change.
+</Note>
+
+---
+
 ## Type summary
 
 | `type` | Location | Key field(s) |

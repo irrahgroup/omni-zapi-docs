@@ -674,6 +674,52 @@ O conteúdo fica em `contents[0]` com `type: "INTERACTIVE_ACTION"`. Cada botão 
 
 ---
 
+## Callbacks de status
+
+Os eventos de status de uma mensagem chegam no mesmo envelope, com o tipo em `contents[0].type` (`DeliveryCallback` ou `MessageStatusCallback`) e o `_id` da mensagem a que se referem. Dois campos do objeto `message` dizem de qual mensagem é o status:
+
+| Campo | Descrição |
+|---|---|
+| `metadata.from_me` | Sentido da mensagem a que o status se refere: `true` quando ela foi enviada pelo negócio, `false` quando foi recebida do contato. É o mesmo valor do webhook da mensagem |
+| `recipient.identifier` | Destinatário da mensagem a que o status se refere. Em mensagem enviada pelo negócio, é o telefone do contato (DDI + DDD + número), o mesmo do webhook da mensagem. Se o telefone do contato não for conhecido, vem o identificador que o canal informou |
+
+Use `metadata.from_me` para saber a origem da mensagem e `recipient.identifier` para o telefone do destinatário. O campo `contents[0].phone` traz o identificador do contato como o canal o informou no status e pode não ser o telefone.
+
+Exemplo de status de entrega de uma mensagem enviada pela API:
+
+```json
+{
+  "message": {
+    "_id": "019E6F1A93FE78DCB54332F9FF0CCAE7",
+    "channel_id": "019E4C54B1B375A28970B605CA9B03C3",
+    "metadata": {
+      "@class": ".Metadata",
+      "forwarded": false,
+      "from_api": false,
+      "from_me": true
+    },
+    "recipient": {
+      "@class": ".Recipient",
+      "identifier": "5511999990000",
+      "name": ""
+    },
+    "contents": [
+      {
+        "@class": ".StateItem",
+        "type": "MessageStatusCallback",
+        "state": { "@class": ".Received", "name": "RECEIVED" }
+      }
+    ]
+  }
+}
+```
+
+<Note>
+  **Mudança na próxima virada de versão.** Até lá, em alguns canais, o status de uma mensagem enviada pelo negócio pode chegar com `metadata.from_me: false` e, no `recipient.identifier`, um identificador do canal no lugar do telefone. A partir da virada, o status traz `from_me: true` e o telefone, como o webhook da mensagem. Nos canais Instagram e Messenger, os status de mensagem enviada pelo negócio também passam a trazer `from_me: true`. Os webhooks no formato Z-API, da [Compatibilidade Z-API](/z-api/introduction), não mudam.
+</Note>
+
+---
+
 ## Resumo dos tipos
 
 | `type` | Localização | Campo chave |

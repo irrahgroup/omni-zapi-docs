@@ -674,6 +674,52 @@ El contenido está en `contents[0]` con `type: "INTERACTIVE_ACTION"`. Cada botó
 
 ---
 
+## Callbacks de estado
+
+Los eventos de estado de un mensaje llegan en el mismo envelope, con el tipo en `contents[0].type` (`DeliveryCallback` o `MessageStatusCallback`) y el `_id` del mensaje al que se refieren. Dos campos del objeto `message` indican de qué mensaje es el estado:
+
+| Campo | Descripción |
+|---|---|
+| `metadata.from_me` | Sentido del mensaje al que se refiere el estado: `true` cuando lo envió el negocio, `false` cuando se recibió del contacto. Es el mismo valor del webhook del mensaje |
+| `recipient.identifier` | Destinatario del mensaje al que se refiere el estado. En un mensaje enviado por el negocio, es el teléfono del contacto (código de país + código de área + número), el mismo del webhook del mensaje. Si no se conoce el teléfono del contacto, llega el identificador que informó el canal |
+
+Usa `metadata.from_me` para saber el origen del mensaje y `recipient.identifier` para obtener el teléfono del destinatario. El campo `contents[0].phone` trae el identificador del contacto tal como el canal lo informó en el estado y puede no ser el teléfono.
+
+Ejemplo de estado de entrega de un mensaje enviado mediante la API:
+
+```json
+{
+  "message": {
+    "_id": "019E6F1A93FE78DCB54332F9FF0CCAE7",
+    "channel_id": "019E4C54B1B375A28970B605CA9B03C3",
+    "metadata": {
+      "@class": ".Metadata",
+      "forwarded": false,
+      "from_api": false,
+      "from_me": true
+    },
+    "recipient": {
+      "@class": ".Recipient",
+      "identifier": "5511999990000",
+      "name": ""
+    },
+    "contents": [
+      {
+        "@class": ".StateItem",
+        "type": "MessageStatusCallback",
+        "state": { "@class": ".Received", "name": "RECEIVED" }
+      }
+    ]
+  }
+}
+```
+
+<Note>
+  **Cambio en la próxima actualización de versión.** Hasta entonces, en algunos canales, el estado de un mensaje enviado por el negocio puede llegar con `metadata.from_me: false` y, en `recipient.identifier`, un identificador del canal en lugar del teléfono. A partir de la actualización, el estado trae `from_me: true` y el teléfono, como el webhook del mensaje. En los canales Instagram y Messenger, los estados de mensajes enviados por el negocio también pasan a traer `from_me: true`. Los webhooks en formato Z-API, de la [Compatibilidad con Z-API](/es/z-api/introduction), no cambian.
+</Note>
+
+---
+
 ## Resumen de los tipos
 
 | `type` | Ubicación | Campo clave |
