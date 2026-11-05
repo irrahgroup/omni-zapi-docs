@@ -15,7 +15,7 @@ PUT /v1/channels/{channelId}/messages/{messageId}
 - `messageId`: o `messageId` que o envio devolveu. O `contents[].identifier` recebido no webhook também é aceito.
 
 <Warning>
-  **Nenhum canal desta documentação permite edição hoje.** Em WhatsApp Meta, Instagram, Messenger e Telegram, a API recusa o pedido com `422` e `subCode` `EDIT_NOT_SUPPORTED`, e nada é enviado ao contato. Veja [Limitações por canal](#limitações-por-canal).
+  **Só o Telegram permite edição nesta documentação.** Em WhatsApp Meta, Instagram e Messenger, a API recusa o pedido com `422` e `subCode` `EDIT_NOT_SUPPORTED`, e nada é enviado ao contato. Veja [Limitações por canal](#limitações-por-canal).
 </Warning>
 
 ## Corpo da requisição
@@ -29,7 +29,7 @@ PUT /v1/channels/{channelId}/messages/{messageId}
 }
 ```
 
-Destinatário e remetente não são pedidos: valem os da mensagem original. Só texto pode ser editado.
+Destinatário e remetente não são pedidos: valem os da mensagem original. Só texto pode ser editado: a legenda de imagem, vídeo ou documento não é editável e recebe `422` `MESSAGE_NOT_EDITABLE`.
 
 ## Resposta
 
@@ -39,7 +39,7 @@ Destinatário e remetente não são pedidos: valem os da mensagem original. Só 
 { "messageId": "01A0C92D0C957FE98B73C8BA0CACF741" }
 ```
 
-O `200` confirma que a edição foi aceita e encaminhada ao canal, não que o aplicativo do contato já mostra o texto novo.
+O `200` confirma que a edição foi aceita e encaminhada ao canal, não que o aplicativo do contato já mostra o texto novo. Se o canal recusar depois (por exemplo, o contato bloqueou o bot no Telegram ou a mensagem foi apagada), o texto do contato não muda e a API não envia aviso dessa recusa.
 
 ## Erros
 
@@ -49,7 +49,7 @@ O `200` confirma que a edição foi aceita e encaminhada ao canal, não que o ap
 | `404` | — | o `messageId` não existe ou não é deste canal |
 | `422` | `EDIT_NOT_SUPPORTED` | o canal não permite edição |
 | `422` | `CHANNEL_DISCONNECTED` | o canal está desconectado |
-| `422` | `MESSAGE_NOT_EDITABLE` | a mensagem não é texto, não foi enviada pelo seu canal ou ainda não foi aceita pelo canal |
+| `422` | `MESSAGE_NOT_EDITABLE` | a mensagem não é texto (inclusive legenda de mídia), não foi enviada pelo seu canal, ainda não foi aceita pelo canal ou falhou no envio |
 | `422` | `EDIT_WINDOW_EXPIRED` | passou o prazo em que o canal aceita edição |
 
 Trate as recusas pelo `subCode`. O texto de `message` pode mudar. O formato do corpo de erro está em [Erros no envio](/messages/introduction#erros-no-envio).
@@ -65,4 +65,6 @@ O envio (`POST /v1/channels/{channelId}/messages`) com `content.body.editMessage
 | WhatsApp Meta (Cloud API) | ❌ recusada com `EDIT_NOT_SUPPORTED` | a Cloud API da Meta não oferece edição de mensagem enviada pela empresa |
 | Instagram | ❌ recusada com `EDIT_NOT_SUPPORTED` | a API de mensagens do Instagram não oferece edição de mensagem enviada |
 | Messenger | ❌ recusada com `EDIT_NOT_SUPPORTED` | não implementada |
-| Telegram | ❌ recusada com `EDIT_NOT_SUPPORTED` | o Telegram permite editar pela Bot API, mas o Omni ainda não implementa |
+| Telegram | ✅ texto | sem prazo: o Telegram não limita a edição de mensagem enviada pelo bot. Só texto, até 4.096 caracteres; legenda de mídia recebe `MESSAGE_NOT_EDITABLE` |
+
+No Telegram, um texto acima de 4.096 caracteres também recebe `200`, mas o Telegram recusa a edição e o texto do contato não muda. Mantenha a edição dentro desse limite.

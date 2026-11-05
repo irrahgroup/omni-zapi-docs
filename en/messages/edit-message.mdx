@@ -15,7 +15,7 @@ PUT /v1/channels/{channelId}/messages/{messageId}
 - `messageId`: the `messageId` returned by the send. The `contents[].identifier` received in the webhook is also accepted.
 
 <Warning>
-  **No channel in this documentation allows editing today.** On WhatsApp Meta, Instagram, Messenger and Telegram, the API refuses the request with `422` and `subCode` `EDIT_NOT_SUPPORTED`, and nothing is sent to the contact. See [Limitations by channel](#limitations-by-channel).
+  **Only Telegram allows editing in this documentation.** On WhatsApp Meta, Instagram and Messenger, the API refuses the request with `422` and `subCode` `EDIT_NOT_SUPPORTED`, and nothing is sent to the contact. See [Limitations by channel](#limitations-by-channel).
 </Warning>
 
 ## Request body
@@ -29,7 +29,7 @@ PUT /v1/channels/{channelId}/messages/{messageId}
 }
 ```
 
-Recipient and sender are not required: the original message's apply. Only text can be edited.
+Recipient and sender are not required: the original message's apply. Only text can be edited: the caption of an image, video or document cannot be edited and gets `422` `MESSAGE_NOT_EDITABLE`.
 
 ## Response
 
@@ -39,7 +39,7 @@ Recipient and sender are not required: the original message's apply. Only text c
 { "messageId": "01A0C92D0C957FE98B73C8BA0CACF741" }
 ```
 
-The `200` confirms the edit was accepted and forwarded to the channel, not that the contact's app already shows the new text.
+The `200` confirms the edit was accepted and forwarded to the channel, not that the contact's app already shows the new text. If the channel refuses it later (for example, the contact blocked the bot on Telegram or the message was deleted), the contact's text does not change and the API sends no notice of that refusal.
 
 ## Errors
 
@@ -49,7 +49,7 @@ The `200` confirms the edit was accepted and forwarded to the channel, not that 
 | `404` | — | the `messageId` does not exist or does not belong to this channel |
 | `422` | `EDIT_NOT_SUPPORTED` | the channel does not allow editing |
 | `422` | `CHANNEL_DISCONNECTED` | the channel is disconnected |
-| `422` | `MESSAGE_NOT_EDITABLE` | the message is not text, was not sent by your channel, or was not yet accepted by the channel |
+| `422` | `MESSAGE_NOT_EDITABLE` | the message is not text (including a media caption), was not sent by your channel, was not yet accepted by the channel, or failed to send |
 | `422` | `EDIT_WINDOW_EXPIRED` | the time during which the channel accepts edits has passed |
 
 Handle refusals by `subCode`. The `message` text may change. The error body format is in [Send errors](/en/messages/introduction#send-errors).
@@ -65,4 +65,6 @@ A send (`POST /v1/channels/{channelId}/messages`) with `content.body.editMessage
 | WhatsApp Meta (Cloud API) | ❌ refused with `EDIT_NOT_SUPPORTED` | Meta's Cloud API does not offer editing of messages sent by the business |
 | Instagram | ❌ refused with `EDIT_NOT_SUPPORTED` | the Instagram messaging API does not offer editing of sent messages |
 | Messenger | ❌ refused with `EDIT_NOT_SUPPORTED` | not implemented |
-| Telegram | ❌ refused with `EDIT_NOT_SUPPORTED` | Telegram allows editing through the Bot API, but Omni does not implement it yet |
+| Telegram | ✅ text | no time limit: Telegram does not limit editing of messages sent by the bot. Text only, up to 4,096 characters; a media caption gets `MESSAGE_NOT_EDITABLE` |
+
+On Telegram, a text over 4,096 characters also gets `200`, but Telegram refuses the edit and the contact's text does not change. Keep edits within that limit.
