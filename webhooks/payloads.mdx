@@ -668,6 +668,56 @@ O conteúdo fica em `contents[0]` com `type: "INTERACTIVE_ACTION"`. Cada botão 
 
 ---
 
+## Callbacks de status
+
+Os eventos de status de uma mensagem trazem o tipo em `contents[0].type` (por exemplo, `DeliveryCallback`, `MessageStatusCallback` ou `ErrorCallback`) e o `_id` da mensagem a que se referem. Use o `_id` para ligar o status à mensagem. Quando a mensagem é encontrada, os campos abaixo dizem de qual mensagem é o status e como ler o destinatário:
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `metadata.from_me` | boolean | Sentido da mensagem a que o status se refere: `true` quando ela foi enviada pelo negócio, `false` quando foi recebida do contato. É o mesmo valor do webhook da mensagem |
+| `recipient.identifier` | string | Destinatário informado pelo canal. Em mensagem enviada pelo negócio, quando o canal informa o contato por um identificador interno, o status passa a trazer o `recipient.identifier` da mensagem: no WhatsApp, o telefone do contato (DDI + DDD + número) ou o id do grupo. Nos demais casos, vem o identificador que o canal informou |
+| `metadata.from_api` | boolean | Vem do canal e pode ser `false` mesmo em mensagem enviada pela API. Não use este campo para filtrar status |
+| `contents[0].phone` | string | Identificador do contato como o canal o informou no status. Pode não ser o telefone |
+
+Use `metadata.from_me` para saber a origem da mensagem e `recipient.identifier` para o destinatário. Se a mensagem não for encontrada, o status chega com os valores que o canal informou.
+
+Exemplo de status `RECEIVED` (mensagem entregue ao contato), com o identificador interno em `contents[0].phone` e o telefone em `recipient.identifier`:
+
+```json
+{
+  "message": {
+    "_id": "019E6F1B0C2A7D4E8F1A2B3C4D5E6F70",
+    "channel_id": "019E4C54B1B375A28970B605CA9B03C3",
+    "metadata": {
+      "@class": ".Metadata",
+      "forwarded": false,
+      "from_api": false,
+      "from_me": true
+    },
+    "recipient": {
+      "@class": ".Recipient",
+      "identifier": "5511999990000",
+      "name": ""
+    },
+    "contents": [
+      {
+        "@class": ".StateItem",
+        "type": "MessageStatusCallback",
+        "phone": "100000000000001@lid",
+        "moment": 1779980476000,
+        "state": { "@class": ".Received", "name": "RECEIVED" }
+      }
+    ]
+  }
+}
+```
+
+<Note>
+  **Mudança anunciada em 04/11/2026, válida a partir da virada de versão seguinte.** Até lá, em alguns canais, o status de uma mensagem enviada pelo negócio pode chegar com `metadata.from_me: false` e, no `recipient.identifier`, um identificador interno do canal no lugar do telefone. Depois da virada, o status traz `from_me: true` e o destinatário da mensagem. Nos canais Instagram e Messenger, os status de mensagem enviada pelo negócio também passam a trazer `from_me: true`. Os webhooks no formato Z-API, da [Compatibilidade Z-API](/z-api/introduction), não mudam.
+</Note>
+
+---
+
 ## Resumo dos tipos
 
 | `type` | Localização | Campo chave |
