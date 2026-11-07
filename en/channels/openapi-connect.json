@@ -46,7 +46,16 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": {
+            "description": "Channel already connected to the same `phoneId`, and Meta confirms the number is working. Nothing changes in the channel and the `code` is not used. To renew the connection of the same number, disconnect first. Recognize it by the `error` field, which is stable; `message` is always in English.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChannelAlreadyConnectedError" },
+                "example": { "error": "channel_already_connected", "message": "Channel already connected" }
+              }
+            }
+          }
         }
       }
     }
@@ -78,6 +87,14 @@
         "type": "object",
         "properties": {
           "success": { "type": "boolean", "description": "Indicates whether the operation was successful" }
+        }
+      },
+      "ChannelAlreadyConnectedError": {
+        "type": "object",
+        "required": ["error", "message"],
+        "properties": {
+          "error": { "type": "string", "enum": ["channel_already_connected"], "description": "Stable refusal code" },
+          "message": { "type": "string", "description": "Fixed text, always in English" }
         }
       },
       "Error": {
