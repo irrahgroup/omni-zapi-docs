@@ -681,13 +681,13 @@ Message status events carry the type in `contents[0].type` (for example, `Delive
 | Field | Type | Description |
 |---|---|---|
 | `metadata.from_me` | boolean | Direction of the message the status refers to: `true` when the business sent it, `false` when it was received from the contact. It is the same value as in the message webhook |
-| `recipient.identifier` | string | Recipient reported by the channel. For a message sent by the business, when the channel reports the contact through an internal identifier, the status carries the message's `recipient.identifier`: on WhatsApp, the contact's phone number (country code + area code + number) or the group ID. Otherwise, you get the identifier the channel reported |
+| `recipient.identifier` | string | Recipient reported by the channel. On WhatsApp Web, the status of a message sent by the business may report the contact as a LID (a WhatsApp identifier ending in `@lid`). In that case, the status carries the message's `recipient.identifier`: the contact's phone number (country code + area code + number) or the group ID. Otherwise, you get the identifier the channel reported |
 | `metadata.from_api` | boolean | Comes from the channel and may be `false` even for a message sent through the API. Do not use this field to filter statuses |
 | `contents[0].phone` | string | Contact identifier as the channel reported it in the status. It may not be the phone number |
 
 Use `metadata.from_me` to know where the message came from and `recipient.identifier` for the recipient. If the message is not found, the status arrives with the values the channel reported.
 
-`RECEIVED` status example (message delivered to the contact), with the internal identifier in `contents[0].phone` and the phone number in `recipient.identifier`:
+`RECEIVED` status example (message delivered to the contact) on a WhatsApp Web channel, with the LID in `contents[0].phone` and the phone number in `recipient.identifier`:
 
 ```json
 {
@@ -719,7 +719,7 @@ Use `metadata.from_me` to know where the message came from and `recipient.identi
 ```
 
 <Note>
-  **Change announced on November 4, 2026, effective from the following version rollout.** Until then, on some channels, the status of a message sent by the business may arrive with `metadata.from_me: false` and, in `recipient.identifier`, an internal channel identifier instead of the phone number. After the rollout, the status carries `from_me: true` and the message's recipient. On Instagram and Messenger channels, statuses of messages sent by the business also start carrying `from_me: true`. Z-API format webhooks, from [Z-API Compatibility](/en/z-api/introduction), do not change.
+  **Change in effect since November 9, 2026.** Before that date, on some channels, the status of a message sent by the business could arrive with `metadata.from_me: false`, and on WhatsApp Web the `recipient.identifier` could carry the contact's LID instead of the phone number. Since then, the status carries `from_me: true` and the message's recipient. On Instagram and Messenger channels, statuses of messages sent by the business also started carrying `from_me: true`.
 </Note>
 
 ---

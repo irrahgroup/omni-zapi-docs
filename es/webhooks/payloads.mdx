@@ -681,13 +681,13 @@ Los eventos de estado de un mensaje traen el tipo en `contents[0].type` (por eje
 | Campo | Tipo | Descripción |
 |---|---|---|
 | `metadata.from_me` | boolean | Sentido del mensaje al que se refiere el estado: `true` cuando lo envió el negocio, `false` cuando se recibió del contacto. Es el mismo valor del webhook del mensaje |
-| `recipient.identifier` | string | Destinatario informado por el canal. En un mensaje enviado por el negocio, cuando el canal informa el contacto mediante un identificador interno, el estado trae el `recipient.identifier` del mensaje: en WhatsApp, el teléfono del contacto (código de país + código de área + número) o el id del grupo. En los demás casos, llega el identificador que informó el canal |
+| `recipient.identifier` | string | Destinatario informado por el canal. En WhatsApp Web, el estado de un mensaje enviado por el negocio puede informar el contacto como LID (identificador de WhatsApp que termina en `@lid`). En ese caso, el estado trae el `recipient.identifier` del mensaje: el teléfono del contacto (código de país + código de área + número) o el id del grupo. En los demás casos, llega el identificador que informó el canal |
 | `metadata.from_api` | boolean | Viene del canal y puede ser `false` incluso en un mensaje enviado mediante la API. No uses este campo para filtrar estados |
 | `contents[0].phone` | string | Identificador del contacto tal como el canal lo informó en el estado. Puede no ser el teléfono |
 
 Usa `metadata.from_me` para saber el origen del mensaje y `recipient.identifier` para el destinatario. Si no se encuentra el mensaje, el estado llega con los valores que informó el canal.
 
-Ejemplo de estado `RECEIVED` (mensaje entregado al contacto), con el identificador interno en `contents[0].phone` y el teléfono en `recipient.identifier`:
+Ejemplo de estado `RECEIVED` (mensaje entregado al contacto) en un canal WhatsApp Web, con el LID en `contents[0].phone` y el teléfono en `recipient.identifier`:
 
 ```json
 {
@@ -719,7 +719,7 @@ Ejemplo de estado `RECEIVED` (mensaje entregado al contacto), con el identificad
 ```
 
 <Note>
-  **Cambio anunciado el 04/11/2026, vigente a partir de la siguiente actualización de versión.** Hasta entonces, en algunos canales, el estado de un mensaje enviado por el negocio puede llegar con `metadata.from_me: false` y, en `recipient.identifier`, un identificador interno del canal en lugar del teléfono. Después de la actualización, el estado trae `from_me: true` y el destinatario del mensaje. En los canales Instagram y Messenger, los estados de mensajes enviados por el negocio también pasan a traer `from_me: true`. Los webhooks en formato Z-API, de la [Compatibilidad con Z-API](/es/z-api/introduction), no cambian.
+  **Cambio vigente desde el 09/11/2026.** Antes de esa fecha, en algunos canales, el estado de un mensaje enviado por el negocio podía llegar con `metadata.from_me: false`, y en WhatsApp Web el `recipient.identifier` podía traer el LID del contacto en lugar del teléfono. Desde entonces, el estado trae `from_me: true` y el destinatario del mensaje. En los canales Instagram y Messenger, los estados de mensajes enviados por el negocio también pasaron a traer `from_me: true`.
 </Note>
 
 ---
