@@ -7,10 +7,6 @@ import { projectName } from '/snippets/variables.mdx';
 
 In {projectName}, each person on the team has a **role** in the workspace. The role defines what they see and what they can change in the dashboard. The team is in **Administration → Team**.
 
-<Frame>
-  <img src="/images/security-team.png" alt="Team screen in the Omni Z-API dashboard" />
-</Frame>
-
 ## Roles
 
 ### Owner
@@ -20,15 +16,17 @@ Workspace owner. Has access to **everything**, including what no other role can 
 - Manage billing: subscribe to channels, pay invoices and change the payment method.
 - Access the [Security](/en/security/introduction) menu: API credentials, IP restriction and SDK configuration.
 - Promote a Member to Manager or demote a Manager to Member.
+- Invite people directly as Manager.
+- Transfer ownership of the workspace to another person on the team.
 
-The Owner cannot be removed from the workspace or have their role changed.
+Each workspace has a single Owner. The Owner cannot be removed from the workspace, and their role only changes through an [ownership transfer](#transfer-ownership).
 
 ### Manager
 
 Runs the day-to-day operation, without access to billing and security:
 
 - Creates, edits and deletes channels and templates.
-- Invites people, resends and revokes invitations.
+- Invites people as Member, resends and cancels invitations.
 - Removes **only Members**. Cannot remove another Manager or the Owner.
 - Sees billing, without changing it, and checks the [Audit log](/en/security/audit).
 
@@ -46,64 +44,74 @@ Follows the operation, without changing anything:
 | See channels and templates | ✅ | ✅ | ✅ |
 | Create, edit and delete channels and templates | ✅ | ✅ | ❌ |
 | See the team and invitations | ✅ | ✅ | ❌ |
-| Invite, resend and revoke invitations | ✅ | ✅ | ❌ |
+| Invite as Member, resend and cancel invitations | ✅ | ✅ | ❌ |
+| Invite as Manager | ✅ | ❌ | ❌ |
 | Remove members | ✅ | Members only | ❌ |
 | Promote and demote roles | ✅ | ❌ | ❌ |
+| Transfer ownership of the workspace | ✅ | ❌ | ❌ |
 | See billing | ✅ | ✅ | ❌ |
 | Manage billing | ✅ | ❌ | ❌ |
 | See the Audit log | ✅ | ✅ | ❌ |
 | Access Security | ✅ | ❌ | ❌ |
 
 <Note>
-  Nobody can remove themselves or change their own role.
+  Nobody can remove themselves or change their own role. The exception is the Owner, who becomes a Manager when transferring ownership.
 </Note>
 
 ## Change a role
 
-Only the **Owner** changes roles. In **Administration → Team**, in the **Active** section, each person has the action buttons on their own row:
+Only the **Owner** changes roles. In **Administration → Team**, open the actions menu (⋮) on the person's row:
 
 - **Promote to manager:** turns a Member into a Manager.
-
-<Frame>
-  <img src="/images/security-team-member.png" alt="Member with the Promote to manager button" />
-</Frame>
-
 - **Relegate to member:** turns a Manager into a Member.
 
-<Frame>
-  <img src="/images/security-team-manager.png" alt="Manager with the Relegate to member button" />
-</Frame>
-
-The change takes effect immediately, with no confirmation step, and is recorded in the [Audit log](/en/security/audit). To take the person out of the workspace, use **Remove**.
+Before the change, the dashboard asks for confirmation and shows what the person will be able to do with the new role. The change takes effect as soon as you confirm and is recorded in the [Audit log](/en/security/audit). To take the person out of the workspace, use **Remove**, in the same menu.
 
 <Note>
-  The Owner has no action buttons: their role cannot be changed or removed.
+  The Owner's row has no actions menu: nobody changes their role or removes them.
 </Note>
+
+## Transfer ownership
+
+The Owner can hand the workspace over to a Manager or a Member of the team:
+
+1. In **Administration → Team**, open the actions menu (⋮) on the person's row and click **Transfer ownership**.
+2. Review what changes and type the workspace name to confirm.
+
+With the transfer:
+
+- The chosen person becomes the Owner of the workspace, with access to billing and the team.
+- You become a Manager.
+- The connected apps you authorized in this workspace with write or send permission are disconnected.
+- You both receive an email.
 
 ## Invite people
 
 1. In the dashboard, open **Administration → Team** and click **Invite people**.
 2. Enter the emails. Separate them with commas to invite several people at once.
-3. Click **Continue**, review the list and click **Send invitations**.
+3. Choose the **Role**: **Member**, selected by default, or **Manager**. The Manager option only appears for the Owner.
+4. Click **Continue**, review the list and the role, and click **Send invitations**.
 
-Each person receives their own link by email. The invitation:
+All emails in the same batch get the same role. Each person receives their own link by email. The invitation:
 
 - **Expires in 7 days.** After that, send a new one.
-- Joins the workspace with the **Member** role. The Owner can promote them to Manager later.
+- Carries the chosen role: the person joins the workspace with it.
 - Is not sent to people who are already in the workspace or already have a pending invitation.
 
 ## Track invitations
 
-On the **Team** screen, invitations are grouped into:
+On the **Team** screen, filter the list by status (**All**, **Active**, **Invited** and **Expired**) or by role. Each invitation shows the role it was sent with and how many days are left before it expires.
 
-- **Active:** people with access.
-- **Pending invitations:** waiting for acceptance. You can **Resend** or **Revoke**.
-- **Closed:** expired or revoked invitations, kept as history.
+In the actions menu (⋮) of each invitation:
+
+- **Resend invite:** sends a new link. The previous link stops working.
+- **Cancel invite:** on a pending invitation, the link that was sent stops working.
+- **Delete invite:** on an expired invitation, removes it from the list.
 
 ## Accept an invitation
 
-The invited person opens the link in the email or, in the dashboard, the **profile menu → Invitations**, and clicks **Accept** or **Decline**. After accepting, the workspace appears in the workspace selector.
+The invited person opens the link in the email or, in the dashboard, the **profile menu → Invitations**, and clicks **Accept** or **Decline**. The invitation shows the role the person will join with. After accepting, the workspace appears in the workspace selector.
 
 <Info>
-  Everyone who accepts an invitation joins the workspace as a **Member**, always. You cannot choose another role in the invitation. If they need more access, the Owner promotes them to Manager afterwards, in [Change a role](#change-a-role).
+  The person joins the workspace with the role in the invitation. If they need a different role later, the Owner changes it in [Change a role](#change-a-role).
 </Info>

@@ -7,10 +7,6 @@ import { projectName } from '/snippets/variables.mdx';
 
 No {projectName}, cada pessoa do time tem um **papel** no workspace. O papel define o que ela vê e o que pode alterar no painel. O time fica em **Administração → Time**.
 
-<Frame>
-  <img src="/images/security-team.png" alt="Tela Time do painel do Omni Z-API" />
-</Frame>
-
 ## Papéis
 
 ### Owner
@@ -20,15 +16,17 @@ Dono do workspace. Tem acesso a **tudo**, inclusive o que nenhum outro papel faz
 - Gerenciar a cobrança: assinar canais, pagar faturas e trocar a forma de pagamento.
 - Acessar o menu [Segurança](/security/introduction): credenciais da API, restrição de IP e configurações da SDK.
 - Promover um Membro a Manager ou rebaixar um Manager a Membro.
+- Convidar pessoas já como Manager.
+- Transferir a posse do workspace para outra pessoa do time.
 
-O Owner não pode ser removido do workspace nem ter o papel alterado.
+Cada workspace tem um único Owner. Ele não pode ser removido do workspace, e o papel dele só muda pela [transferência de posse](#transferir-a-posse).
 
 ### Manager
 
 Administra a operação do dia a dia, sem acesso a cobrança e segurança:
 
 - Cria, edita e exclui canais e templates.
-- Convida pessoas, reenvia e revoga convites.
+- Convida pessoas como Membro, reenvia e cancela convites.
 - Remove **apenas Membros**. Não remove outro Manager nem o Owner.
 - Vê a cobrança, sem alterar, e consulta a [Auditoria](/security/audit).
 
@@ -46,64 +44,74 @@ Acompanha a operação, sem alterar nada:
 | Ver canais e templates | ✅ | ✅ | ✅ |
 | Criar, editar e excluir canais e templates | ✅ | ✅ | ❌ |
 | Ver o time e os convites | ✅ | ✅ | ❌ |
-| Convidar, reenviar e revogar convites | ✅ | ✅ | ❌ |
+| Convidar como Membro, reenviar e cancelar convites | ✅ | ✅ | ❌ |
+| Convidar como Manager | ✅ | ❌ | ❌ |
 | Remover membros | ✅ | Só Membros | ❌ |
 | Promover e rebaixar papéis | ✅ | ❌ | ❌ |
+| Transferir a posse do workspace | ✅ | ❌ | ❌ |
 | Ver a cobrança | ✅ | ✅ | ❌ |
 | Gerenciar a cobrança | ✅ | ❌ | ❌ |
 | Ver a Auditoria | ✅ | ✅ | ❌ |
 | Acessar Segurança | ✅ | ❌ | ❌ |
 
 <Note>
-  Ninguém pode remover a si mesmo nem alterar o próprio papel.
+  Ninguém pode remover a si mesmo nem alterar o próprio papel. A exceção é o Owner, que passa a Manager quando transfere a posse.
 </Note>
 
 ## Alterar o papel
 
-Só o **Owner** altera papéis. Em **Administração → Time**, na seção **Ativos**, cada pessoa tem os botões de ação na própria linha:
+Só o **Owner** altera papéis. Em **Administração → Time**, abra o menu de ações (⋮) na linha da pessoa:
 
 - **Promover a manager:** transforma um Membro em Manager.
-
-<Frame>
-  <img src="/images/security-team-member.png" alt="Membro com o botão Promover a manager" />
-</Frame>
-
 - **Rebaixar para membro:** transforma um Manager em Membro.
 
-<Frame>
-  <img src="/images/security-team-manager.png" alt="Manager com o botão Rebaixar para membro" />
-</Frame>
-
-A troca vale na hora, sem etapa de confirmação, e fica registrada na [Auditoria](/security/audit). Para tirar a pessoa do workspace, use **Remover**.
+Antes da troca, o painel pede confirmação e mostra o que a pessoa passa a poder fazer com o papel novo. A troca vale assim que você confirma e fica registrada na [Auditoria](/security/audit). Para tirar a pessoa do workspace, use **Remover**, no mesmo menu.
 
 <Note>
-  O Owner não aparece com botões de ação: o papel dele não pode ser alterado nem removido.
+  A linha do Owner não tem menu de ações: ninguém altera o papel dele nem o remove.
 </Note>
+
+## Transferir a posse
+
+O Owner pode passar a posse do workspace para um Manager ou um Membro do time:
+
+1. Em **Administração → Time**, abra o menu de ações (⋮) na linha da pessoa e clique em **Transferir posse**.
+2. Confira o que muda e digite o nome do workspace para confirmar.
+
+Com a transferência:
+
+- A pessoa escolhida passa a ser Owner do workspace, com acesso à cobrança e ao time.
+- Você passa a Manager.
+- Os apps conectados que você autorizou neste workspace com permissão de escrita ou de envio são desconectados.
+- Vocês dois recebem um e-mail.
 
 ## Convidar pessoas
 
 1. No painel, abra **Administração → Time** e clique em **Convidar pessoas**.
 2. Informe os e-mails. Separe por vírgula para convidar várias pessoas de uma vez.
-3. Clique em **Continuar**, revise a lista e clique em **Enviar convites**.
+3. Escolha o **Papel**: **Membro**, que já vem marcado, ou **Manager**. A opção Manager só aparece para o Owner.
+4. Clique em **Continuar**, revise a lista e o papel e clique em **Enviar convites**.
 
-Cada pessoa recebe um link próprio por e-mail. O convite:
+Todos os e-mails do mesmo envio recebem o mesmo papel. Cada pessoa recebe um link próprio por e-mail. O convite:
 
 - **Expira em 7 dias.** Depois disso, envie um novo.
-- Entra no workspace com o papel **Membro**. O Owner pode promovê-la a Manager depois.
+- Leva o papel escolhido: a pessoa entra no workspace com ele.
 - Não é enviado para quem já faz parte do workspace ou já tem convite pendente.
 
 ## Acompanhar os convites
 
-Na tela **Time**, os convites ficam separados em:
+Na tela **Time**, filtre a lista pela situação (**Todos**, **Ativos**, **Convidados** e **Expirados**) ou pelo papel. Cada convite mostra o papel com que foi enviado e em quantos dias expira.
 
-- **Ativos:** pessoas com acesso liberado.
-- **Convites pendentes:** aguardando o aceite. Você pode **Reenviar** ou **Revogar**.
-- **Encerrados:** convites expirados ou revogados, mantidos como histórico.
+No menu de ações (⋮) de cada convite:
+
+- **Reenviar convite:** manda um link novo. O link anterior deixa de valer.
+- **Cancelar convite:** no convite pendente, o link enviado deixa de funcionar.
+- **Apagar convite:** no convite expirado, tira o convite da lista.
 
 ## Aceitar um convite
 
-Quem foi convidado abre o link do e-mail ou, no painel, o **menu do perfil → Convites**, e clica em **Aceitar** ou **Recusar**. Ao aceitar, o workspace passa a aparecer no seletor de workspaces.
+Quem foi convidado abre o link do e-mail ou, no painel, o **menu do perfil → Convites**, e clica em **Aceitar** ou **Recusar**. O convite mostra o papel com que a pessoa vai entrar. Ao aceitar, o workspace passa a aparecer no seletor de workspaces.
 
 <Info>
-  Toda pessoa que aceita um convite entra no workspace como **Membro**, sempre. Não é possível escolher outro papel no convite. Se ela precisar de mais acesso, o Owner a promove a Manager depois, em [Alterar o papel](#alterar-o-papel).
+  A pessoa entra no workspace com o papel do convite. Se precisar de outro papel depois, o Owner faz a troca em [Alterar o papel](#alterar-o-papel).
 </Info>

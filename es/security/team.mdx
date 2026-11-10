@@ -7,10 +7,6 @@ import { projectName } from '/snippets/variables.mdx';
 
 En {projectName}, cada persona del equipo tiene un **rol** en el workspace. El rol define qué ve y qué puede cambiar en el panel. El equipo está en **Administración → Equipo**.
 
-<Frame>
-  <img src="/images/security-team.png" alt="Pantalla Equipo del panel de Omni Z-API" />
-</Frame>
-
 ## Roles
 
 ### Owner
@@ -20,15 +16,17 @@ Dueño del workspace. Tiene acceso a **todo**, incluso lo que ningún otro rol p
 - Gestionar la facturación: suscribir canales, pagar facturas y cambiar la forma de pago.
 - Acceder al menú [Seguridad](/es/security/introduction): credenciales de la API, restricción de IP y configuración del SDK.
 - Promover un Miembro a Manager o degradar un Manager a Miembro.
+- Invitar personas directamente como Manager.
+- Transferir la propiedad del workspace a otra persona del equipo.
 
-El Owner no puede ser eliminado del workspace ni cambiar de rol.
+Cada workspace tiene un único Owner. No se lo puede quitar del workspace, y su rol solo cambia con la [transferencia de la propiedad](#transferir-la-propiedad).
 
 ### Manager
 
 Gestiona la operación diaria, sin acceso a facturación ni seguridad:
 
 - Crea, edita y elimina canales y plantillas.
-- Invita personas, reenvía y revoca invitaciones.
+- Invita personas como Miembro, reenvía y cancela invitaciones.
 - Elimina **solo Miembros**. No elimina a otro Manager ni al Owner.
 - Ve la facturación, sin cambiarla, y consulta la [Auditoría](/es/security/audit).
 
@@ -46,64 +44,74 @@ Acompaña la operación, sin cambiar nada:
 | Ver canales y plantillas | ✅ | ✅ | ✅ |
 | Crear, editar y eliminar canales y plantillas | ✅ | ✅ | ❌ |
 | Ver el equipo y las invitaciones | ✅ | ✅ | ❌ |
-| Invitar, reenviar y revocar invitaciones | ✅ | ✅ | ❌ |
+| Invitar como Miembro, reenviar y cancelar invitaciones | ✅ | ✅ | ❌ |
+| Invitar como Manager | ✅ | ❌ | ❌ |
 | Eliminar miembros | ✅ | Solo Miembros | ❌ |
 | Promover y degradar roles | ✅ | ❌ | ❌ |
+| Transferir la propiedad del workspace | ✅ | ❌ | ❌ |
 | Ver la facturación | ✅ | ✅ | ❌ |
 | Gestionar la facturación | ✅ | ❌ | ❌ |
 | Ver la Auditoría | ✅ | ✅ | ❌ |
 | Acceder a Seguridad | ✅ | ❌ | ❌ |
 
 <Note>
-  Nadie puede eliminarse a sí mismo ni cambiar su propio rol.
+  Nadie puede eliminarse a sí mismo ni cambiar su propio rol. La excepción es el Owner, que pasa a Manager cuando transfiere la propiedad.
 </Note>
 
 ## Cambiar el rol
 
-Solo el **Owner** cambia roles. En **Administración → Equipo**, en la sección **Activos**, cada persona tiene los botones de acción en su propia fila:
+Solo el **Owner** cambia roles. En **Administración → Equipo**, abre el menú de acciones (⋮) en la fila de la persona:
 
 - **Ascender a manager:** convierte a un Miembro en Manager.
-
-<Frame>
-  <img src="/images/security-team-member.png" alt="Miembro con el botón Ascender a manager" />
-</Frame>
-
 - **Bajar a miembro:** convierte a un Manager en Miembro.
 
-<Frame>
-  <img src="/images/security-team-manager.png" alt="Manager con el botón Bajar a miembro" />
-</Frame>
-
-El cambio vale de inmediato, sin paso de confirmación, y queda registrado en la [Auditoría](/es/security/audit). Para sacar a la persona del workspace, usa **Quitar**.
+Antes del cambio, el panel pide confirmación y muestra lo que la persona podrá hacer con el rol nuevo. El cambio vale en cuanto confirmas y queda registrado en la [Auditoría](/es/security/audit). Para sacar a la persona del workspace, usa **Quitar**, en el mismo menú.
 
 <Note>
-  El Owner no tiene botones de acción: su rol no se puede cambiar ni eliminar.
+  La fila del Owner no tiene menú de acciones: nadie cambia su rol ni lo quita.
 </Note>
+
+## Transferir la propiedad
+
+El Owner puede pasar la propiedad del workspace a un Manager o a un Miembro del equipo:
+
+1. En **Administración → Equipo**, abre el menú de acciones (⋮) en la fila de la persona y haz clic en **Transferir la propiedad**.
+2. Revisa lo que cambia y escribe el nombre del workspace para confirmar.
+
+Con la transferencia:
+
+- La persona elegida pasa a ser Owner del workspace, con acceso a la facturación y al equipo.
+- Tú pasas a Manager.
+- Las apps conectadas que autorizaste en este workspace con permiso de escritura o envío se desconectan.
+- Los dos reciben un correo.
 
 ## Invitar personas
 
 1. En el panel, abre **Administración → Equipo** y haz clic en **Invitar personas**.
 2. Ingresa los correos. Sepáralos con comas para invitar a varias personas a la vez.
-3. Haz clic en **Continuar**, revisa la lista y haz clic en **Enviar las invitaciones**.
+3. Elige el **Rol**: **Miembro**, que ya viene marcado, o **Manager**. La opción Manager solo aparece para el Owner.
+4. Haz clic en **Continuar**, revisa la lista y el rol y haz clic en **Enviar las invitaciones**.
 
-Cada persona recibe su propio enlace por correo. La invitación:
+Todos los correos del mismo envío reciben el mismo rol. Cada persona recibe su propio enlace por correo. La invitación:
 
 - **Vence en 7 días.** Después, envía una nueva.
-- Entra al workspace con el rol **Miembro**. El Owner puede promoverla a Manager después.
+- Lleva el rol elegido: la persona entra al workspace con él.
 - No se envía a quien ya forma parte del workspace o ya tiene una invitación pendiente.
 
 ## Seguir las invitaciones
 
-En la pantalla **Equipo**, las invitaciones se agrupan en:
+En la pantalla **Equipo**, filtra la lista por estado (**Todos**, **Activos**, **Invitados** y **Vencidas**) o por rol. Cada invitación muestra el rol con que se envió y en cuántos días vence.
 
-- **Activos:** personas con acceso.
-- **Invitaciones pendientes:** esperando la aceptación. Puedes **Reenviar** o **Revocar**.
-- **Cerradas:** invitaciones vencidas o revocadas, guardadas como historial.
+En el menú de acciones (⋮) de cada invitación:
+
+- **Reenviar invitación:** envía un enlace nuevo. El enlace anterior deja de valer.
+- **Cancelar invitación:** en una invitación pendiente, el enlace enviado deja de funcionar.
+- **Eliminar invitación:** en una invitación vencida, la saca de la lista.
 
 ## Aceptar una invitación
 
-La persona invitada abre el enlace del correo o, en el panel, el **menú del perfil → Invitaciones**, y hace clic en **Aceptar** o **Rechazar**. Al aceptar, el workspace aparece en el selector de workspaces.
+La persona invitada abre el enlace del correo o, en el panel, el **menú del perfil → Invitaciones**, y hace clic en **Aceptar** o **Rechazar**. La invitación muestra el rol con que la persona va a entrar. Al aceptar, el workspace aparece en el selector de workspaces.
 
 <Info>
-  Toda persona que acepta una invitación entra al workspace como **Miembro**, siempre. No es posible elegir otro rol en la invitación. Si necesita más acceso, el Owner la asciende a Manager después, en [Cambiar el rol](#cambiar-el-rol).
+  La persona entra al workspace con el rol de la invitación. Si después necesita otro rol, el Owner lo cambia en [Cambiar el rol](#cambiar-el-rol).
 </Info>
