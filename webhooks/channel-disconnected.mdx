@@ -58,7 +58,7 @@ O corpo é o evento:
 | `type` | string | Sempre `CHANNEL_DISCONNECTED` | não |
 | `occurredAt` | string | Igual a `data.disconnectedAt` | não |
 | `data.instanceId` | string | O canal desconectado | não |
-| `data.channelType` | string | `META_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER` ou `BOT_TELEGRAM` | não |
+| `data.channelType` | string | `META_WHATSAPP`, `Z_API_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER` ou `BOT_TELEGRAM` | não |
 | `data.reasonCode` | string | O motivo em código (veja "Códigos do motivo", abaixo) | sim |
 | `data.reason` | string | O texto do motivo, como o provedor o descreveu. Pode mudar sem aviso: para automatizar, use `reasonCode` | sim |
 | `data.origin` | string | Quem desconectou: `USER`, `BILLING` ou `EXTERNAL` (veja "Origem", abaixo) | não |
@@ -66,7 +66,7 @@ O corpo é o evento:
 | `data.disconnectedAt` | string | Quando a desconexão aconteceu, em ISO-8601 UTC | não |
 
 <Note>
-  O corpo nunca traz telefone, id do número ou da conta no provedor, token nem credencial. O `reason` vai como o provedor escreveu e pode conter o número do canal (por exemplo, `Disconnected from <número>`): é o mesmo texto que o painel e o `DISCONNECTED` do canal já mostram.
+  O corpo nunca traz telefone, id do número ou da conta no provedor, token nem credencial. O `reason` vai como o provedor escreveu e pode conter o número do canal (por exemplo, `Disconnected from <número>` no Z-API): é o mesmo texto que o painel e o `DISCONNECTED` do canal já mostram.
 </Note>
 
 ## Origem
@@ -93,7 +93,7 @@ O aviso sai para as três origens. Com `origin` `USER` ou `BILLING`, o `reasonCo
 | `REPEATED_SEND_FAILURE` | O canal foi desconectado depois de falhas de envio repetidas. Reservado: ainda não é enviado |
 
 <Warning>
-  **`reasonCode` pode vir `null`.** Isso acontece quando o motivo não tem código e sempre que `origin` é `USER` ou `BILLING`. Nesses casos, use `origin` e, se precisar, o texto de `reason`.
+  **`reasonCode` pode vir `null`.** Isso acontece quando o motivo não tem código, por exemplo numa queda de sessão do WhatsApp Web, e sempre que `origin` é `USER` ou `BILLING`. Nesses casos, use `origin` e, se precisar, o texto de `reason`.
 </Warning>
 
 <Warning>
@@ -134,3 +134,4 @@ Não há ordem garantida entre o evento de cobrança e o `CHANNEL_DISCONNECTED`.
 
 - O código do motivo aparece só neste aviso. A leitura do canal pela API (`GET /v1/channels/{id}`) não o traz.
 - Não há aviso retroativo. Um canal que já estava desconectado quando o aviso entrou no ar só gera aviso na próxima queda, depois de reconectar.
+- Algumas desconexões não passam pelo fluxo de eventos do provedor e não geram aviso: por exemplo, a desconexão do WhatsApp Web confirmada pelo provedor sem evento de retorno, e o corte por cobrança de um canal do WhatsApp Web sem assinatura ativa.

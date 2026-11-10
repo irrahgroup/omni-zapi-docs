@@ -44,6 +44,32 @@ Todos los payloads comparten los mismos campos dentro del objeto `message`, con 
 | `attachments` | array | Adjuntos multimedia (imagen, audio, vídeo, sticker) |
 | `webhook_processed` | boolean | Control interno de procesamiento |
 
+## Mensajes de grupo (WhatsApp Web)
+
+En los canales WhatsApp Web (`metadata.middleware` igual a `"Z_API_WHATSAPP"`), un mensaje intercambiado en un grupo trae la identificación del grupo en el `internal_information` de cada elemento de `contents` y `attachments`:
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `internal_information.group_id` | string | ID del grupo, en el formato `120363430845284251-group`. Los grupos antiguos pueden venir en el formato `556592929755-1499690308` |
+| `internal_information.group_name` | string | Nombre del grupo |
+| `internal_information.participant_lid` | string | LID de quien envió el mensaje en el grupo, cuando la plataforma lo informa |
+
+En un mensaje recibido de un grupo, `sender.identifier` es el teléfono de quien escribió, no el del grupo. Los dos campos de grupo también aparecen cuando el mensaje se envía al grupo desde el propio número del canal (`metadata.from_me: true`). Los mensajes individuales no tienen `group_id` ni `group_name`.
+
+```json
+"contents": [
+  {
+    "@class": ".TextContent",
+    "internal_information": {
+      "group_id": "120363430845284251-group",
+      "group_name": "Equipo de ventas"
+    },
+    "message": "¡Buenos días a todos!",
+    "type": "TEXT"
+  }
+]
+```
+
 ## Tipos de contenido
 
 El campo que diferencia el tipo de mensaje es `@class`, dentro de cada elemento de `contents` o `attachments`, combinado con el campo `type`.
