@@ -58,7 +58,7 @@ The body is the event:
 | `type` | string | Always `CHANNEL_DISCONNECTED` | no |
 | `occurredAt` | string | Same as `data.disconnectedAt` | no |
 | `data.instanceId` | string | The disconnected channel | no |
-| `data.channelType` | string | `META_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER` or `BOT_TELEGRAM` | no |
+| `data.channelType` | string | `META_WHATSAPP`, `Z_API_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER` or `BOT_TELEGRAM` | no |
 | `data.reasonCode` | string | The reason as a code (see "Reason codes", below) | yes |
 | `data.reason` | string | The reason text, as the provider described it. It may change without notice: to automate, use `reasonCode` | yes |
 | `data.origin` | string | Who disconnected: `USER`, `BILLING` or `EXTERNAL` (see "Origin", below) | no |
@@ -66,7 +66,7 @@ The body is the event:
 | `data.disconnectedAt` | string | When the disconnection happened, in ISO-8601 UTC | no |
 
 <Note>
-  The body never carries a phone number, the provider's number or account id, a token or a credential. `reason` is sent as the provider wrote it and may contain the channel's number (for example, `Disconnected from <number>`): it is the same text the dashboard and the channel's `DISCONNECTED` already show.
+  The body never carries a phone number, the provider's number or account id, a token or a credential. `reason` is sent as the provider wrote it and may contain the channel's number (for example, `Disconnected from <number>` on WhatsApp Web): it is the same text the dashboard and the channel's `DISCONNECTED` already show.
 </Note>
 
 ## Origin
@@ -93,7 +93,7 @@ The notice is sent for all three origins. When `origin` is `USER` or `BILLING`, 
 | `REPEATED_SEND_FAILURE` | The channel was disconnected after repeated send failures. Reserved: not sent yet |
 
 <Warning>
-  **`reasonCode` can be `null`.** This happens when the reason has no code and whenever `origin` is `USER` or `BILLING`. In those cases, use `origin` and, if needed, the `reason` text.
+  **`reasonCode` can be `null`.** This happens when the reason has no code, for example a WhatsApp Web session drop, and whenever `origin` is `USER` or `BILLING`. In those cases, use `origin` and, if needed, the `reason` text.
 </Warning>
 
 <Warning>
@@ -134,3 +134,4 @@ There is no guaranteed order between the billing event and `CHANNEL_DISCONNECTED
 
 - The reason code appears only in this notice. Reading the channel through the API (`GET /v1/channels/{id}`) does not return it.
 - There is no retroactive notice. A channel that was already disconnected when the notice went live only generates a notice on its next drop, after it reconnects.
+- Some disconnections don't go through the provider event flow and generate no notice: for example, a WhatsApp Web disconnection confirmed by the provider without a return event, and a billing cut-off of a WhatsApp Web channel without an active subscription.

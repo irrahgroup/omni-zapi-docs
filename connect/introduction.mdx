@@ -1,11 +1,11 @@
 ---
 title: "Conectar um canal"
-description: "O mesmo código conecta os quatro canais — o SDK descobre o tipo e cuida do resto"
+description: "O mesmo código conecta os cinco canais — o SDK descobre o tipo e cuida do resto"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
-## Um código, quatro canais
+## Um código, cinco canais
 
 Você **não** escreve um fluxo por canal. O SDK lê o tipo do canal e despacha o fluxo certo sozinho:
 
@@ -14,7 +14,7 @@ import OmniZapi from '@omnizapi/connect';
 
 const client = OmniZapi.newClient({ publicKey: 'SUA_PUBLIC_KEY' });
 
-// Igual para WhatsApp, Instagram, Messenger e Telegram
+// Igual para WhatsApp, Instagram, Messenger e Telegram; o WhatsApp Web pede também o getQRCode
 const response = await client.connect({ channelId: 'ID_DO_CANAL' });
 
 if (response.success) {
@@ -26,6 +26,10 @@ if (response.success) {
 }
 ```
 
+<Note>
+  O WhatsApp Web pede também a função `getQRCode`, que busca o QR Code no seu backend. Os outros canais a ignoram, então você pode passá-la sempre. Veja [WhatsApp Web](/connect/whatsapp-web).
+</Note>
+
 O tipo vem do canal, não da chamada. Você define o tipo em [Criar canal](/channels/create-channel) e o SDK resolve o resto.
 
 ## O que acontece por dentro
@@ -35,7 +39,7 @@ O tipo vem do canal, não da chamada. Você define o tipo em [Criar canal](/chan
     Ele chama [`GET /instances/{channelId}/sdk-info`](/channels/sdk-info) para descobrir o tipo do canal, o app da Meta correspondente e as [origens liberadas](/channels/sdk-info).
   </Step>
   <Step title="Despacha o fluxo do tipo">
-    Cada tipo tem um caminho próprio de autorização — OAuth da Meta ou token de bot.
+    Cada tipo tem um caminho próprio de autorização — OAuth da Meta, QR Code ou token de bot.
   </Step>
   <Step title="Devolve os dados da conexão">
     O objeto de retorno muda conforme o canal. Veja a tabela abaixo.
@@ -50,6 +54,7 @@ O tipo vem do canal, não da chamada. Você define o tipo em [Criar canal](/chan
 | Canal | Como autoriza | Página |
 |---|---|---|
 | **Meta Cloud API** | Embedded Signup da Meta | [Meta WhatsApp](/connect/meta-whatsapp) |
+| **WhatsApp Web** | QR Code | [WhatsApp Web](/connect/whatsapp-web) |
 | **Instagram** | OAuth do Instagram | [Instagram](/connect/instagram) |
 | **Messenger** | OAuth do Facebook + escolha da página | [Messenger](/connect/messenger) |
 | **Telegram** | Token do bot | [Telegram](/connect/telegram) |
@@ -58,15 +63,15 @@ O tipo vem do canal, não da chamada. Você define o tipo em [Criar canal](/chan
 
 Todos devolvem `success` e `channelId`. O resto depende do tipo:
 
-| Campo | Meta Cloud API | Instagram | Messenger | Telegram |
-|---|:---:|:---:|:---:|:---:|
-| `code` | ✅ | ✅ | ✅ | — |
-| `wabaId` | ✅ | — | — | — |
-| `phoneId` | ✅ | — | — | — |
-| `coexistence` | ✅ | — | — | — |
-| `accessToken` | — | ✅ | ✅ | — |
-| `pageId` | — | — | ✅ | — |
-| `botToken` | — | — | — | ✅ |
+| Campo | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| `code` | ✅ | — | ✅ | ✅ | — |
+| `wabaId` | ✅ | — | — | — | — |
+| `phoneId` | ✅ | — | — | — | — |
+| `coexistence` | ✅ | — | — | — | — |
+| `accessToken` | — | — | ✅ | ✅ | — |
+| `pageId` | — | — | — | ✅ | — |
+| `botToken` | — | — | — | — | ✅ |
 
 <Note>
   Não trate esses campos manualmente. Mande o objeto inteiro para o seu backend e repasse como veio ao endpoint de conexão — ele sabe o que fazer com cada tipo.

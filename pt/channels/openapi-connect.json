@@ -46,7 +46,16 @@
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": {
+            "description": "Canal já conectado ao mesmo `phoneId`, e a Meta confirma que o número funciona. Nada muda no canal e o `code` não é usado. Para renovar a conexão do mesmo número, desconecte antes. Reconheça pelo campo `error`, que é estável; `message` é sempre em inglês.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChannelAlreadyConnectedError" },
+                "example": { "error": "channel_already_connected", "message": "Channel already connected" }
+              }
+            }
+          }
         }
       }
     }
@@ -78,6 +87,14 @@
         "type": "object",
         "properties": {
           "success": { "type": "boolean", "description": "Indica se a operação foi realizada com sucesso" }
+        }
+      },
+      "ChannelAlreadyConnectedError": {
+        "type": "object",
+        "required": ["error", "message"],
+        "properties": {
+          "error": { "type": "string", "enum": ["channel_already_connected"], "description": "Código estável da recusa" },
+          "message": { "type": "string", "description": "Texto fixo, sempre em inglês" }
         }
       },
       "Error": {

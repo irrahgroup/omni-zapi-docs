@@ -47,12 +47,12 @@ All payloads share the same fields in the `message` object, regardless of conten
 
 ## Conversation identifier (`chat_id`)
 
-On WhatsApp channels of the official Meta API, received messages, messages sent from the business phone, and status callbacks carry the `chat_id` field, which identifies the conversation between the channel and the contact.
+On WhatsApp channels of the official Meta API, received messages, messages sent from the business phone, and status callbacks carry the `chat_id` field, made of the channel and the conversation participant.
 
 | Part | Value |
 |---|---|
 | Before the `=` | The channel's `channel_id`, the same `channel_id` field found in the payload and in the API |
-| After the `=` | The identifier of the conversation participant. In status callbacks, it is the contact's phone number (country code + area code + number), equal to `recipient.identifier` |
+| After the `=` | The identifier of the conversation participant. In messages sent from the business phone and in status callbacks, it is the contact's phone number (country code + area code + number), equal to `recipient.identifier`. In received messages, it is the channel's number |
 
 Status callback example:
 
@@ -78,19 +78,35 @@ Status callback example:
 }
 ```
 
-- On received messages, `chat_id` does not identify the conversation yet: today, the part after the `=` is the channel's number, so it is the same on every message the channel receives. This part will change once this is fixed. Do not group received messages by `chat_id`; use `sender.identifier`.
+- On received messages, `chat_id` is the same on every message the channel receives, because the part after the `=` is the channel's number. Do not group received messages by `chat_id`; use `sender.identifier`.
 - The field is not present on every event. Messages sent through the API, for example, have no `chat_id`.
 - To get the contact's phone number, use `recipient.identifier` (sent messages and status) or `sender.identifier` (received messages). Do not parse the phone number out of `chat_id`.
 
-<Note>
-  Before this update, the part before the `=` was an internal channel identifier. It is now the `channel_id`. If you group conversations by `chat_id`, the same conversation gets a new key from this change on.
-</Note>
+## Group messages (WhatsApp Web)
 
-## Group messages
+On WhatsApp Web channels (`metadata.middleware` equal to `"Z_API_WHATSAPP"`), a message exchanged in a group carries the group identification in the `internal_information` of each item in `contents` and `attachments`:
 
-<Note>
-  In Z-API format webhooks, sent to [Z-API Compatibility](/en/z-api/introduction) channels, a message received from a group follows the Z-API structure: `phone` and `chatName` identify the group, `participantPhone` and `participantLid` identify the sender, and the status callback carries `isGroup: true`.
-</Note>
+| Field | Type | Description |
+|---|---|---|
+| `internal_information.group_id` | string | Group ID, in the `120363430845284251-group` format. Older groups may come in the `556592929755-1499690308` format |
+| `internal_information.group_name` | string | Group name |
+| `internal_information.participant_lid` | string | LID of whoever sent the message in the group, when the platform provides it |
+
+In a message received from a group, `sender.identifier` is the phone of whoever wrote it, not the group's. Both group fields also appear when the message is sent to the group from the channel's own number (`metadata.from_me: true`). Individual messages have no `group_id` or `group_name`.
+
+```json
+"contents": [
+  {
+    "@class": ".TextContent",
+    "internal_information": {
+      "group_id": "120363430845284251-group",
+      "group_name": "Sales team"
+    },
+    "message": "Good morning, everyone!",
+    "type": "TEXT"
+  }
+]
+```
 
 ## Content types
 
@@ -711,6 +727,52 @@ The content is in `contents[0]` with `type: "INTERACTIVE_ACTION"`. Each button i
     "webhook_processed": false
   },
   "messageEventType": "NEW_MESSAGE"
+}
+```
+
+---
+
+## Status callbacks
+
+Message status events carry the type in `contents[0].type` (for example, `DeliveryCallback`, `MessageStatusCallback` or `ErrorCallback`) and the `_id` of the message they refer to. Use the `_id` to link the status to the message. When the message is found, the fields below tell you which message the status belongs to and how to read the recipient:
+
+| Field | Type | Description |
+|---|---|---|
+| `metadata.from_me` | boolean | Direction of the message the status refers to: `true` when the business sent it, `false` when it was received from the contact. It is the same value as in the message webhook |
+| `recipient.identifier` | string | Recipient reported by the channel. On WhatsApp Web, the status of a message sent by the business may report the contact as a LID (a WhatsApp identifier ending in `@lid`). In that case, the status carries the message's `recipient.identifier`: the contact's phone number (country code + area code + number) or the group ID. Otherwise, you get the identifier the channel reported |
+| `metadata.from_api` | boolean | Comes from the channel and may be `false` even for a message sent through the API. Do not use this field to filter statuses |
+| `contents[0].phone` | string | Contact identifier as the channel reported it in the status. It may not be the phone number |
+
+Use `metadata.from_me` to know where the message came from and `recipient.identifier` for the recipient. If the message is not found, the status arrives with the values the channel reported.
+
+`RECEIVED` status example (message delivered to the contact) on a WhatsApp Web channel, with the LID in `contents[0].phone` and the phone number in `recipient.identifier`:
+
+```json
+{
+  "message": {
+    "_id": "019E6F1B0C2A7D4E8F1A2B3C4D5E6F70",
+    "channel_id": "019E4C54B1B375A28970B605CA9B03C3",
+    "metadata": {
+      "@class": ".Metadata",
+      "forwarded": false,
+      "from_api": false,
+      "from_me": true
+    },
+    "recipient": {
+      "@class": ".Recipient",
+      "identifier": "5511999990000",
+      "name": ""
+    },
+    "contents": [
+      {
+        "@class": ".StateItem",
+        "type": "MessageStatusCallback",
+        "phone": "100000000000001@lid",
+        "moment": 1779980476000,
+        "state": { "@class": ".Received", "name": "RECEIVED" }
+      }
+    ]
+  }
 }
 ```
 

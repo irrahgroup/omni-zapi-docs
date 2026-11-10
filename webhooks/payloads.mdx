@@ -47,12 +47,12 @@ Todos os payloads compartilham os mesmos campos no objeto `message`, independent
 
 ## Identificação da conversa (`chat_id`)
 
-Nos canais WhatsApp da API oficial da Meta, a mensagem recebida, a mensagem enviada pelo celular do negócio e os callbacks de status trazem o campo `chat_id`, que identifica a conversa entre o canal e o contato.
+Nos canais WhatsApp da API oficial da Meta, a mensagem recebida, a mensagem enviada pelo celular do negócio e os callbacks de status trazem o campo `chat_id`, formado pelo canal e pelo participante da conversa.
 
 | Parte | Valor |
 |---|---|
 | Antes do `=` | O `channel_id` do canal, o mesmo campo `channel_id` do payload e da API |
-| Depois do `=` | O identificador do participante da conversa. Nos callbacks de status, é o telefone do contato (DDI + DDD + número), igual a `recipient.identifier` |
+| Depois do `=` | O identificador do participante da conversa. Na mensagem enviada pelo celular do negócio e nos callbacks de status, é o telefone do contato (DDI + DDD + número), igual a `recipient.identifier`. Na mensagem recebida, é o número do canal |
 
 Exemplo de callback de status:
 
@@ -78,19 +78,35 @@ Exemplo de callback de status:
 }
 ```
 
-- Na mensagem recebida, o `chat_id` ainda não identifica a conversa: hoje, a parte depois do `=` é o número do canal, e por isso é a mesma em todas as mensagens recebidas pelo canal. Essa parte vai mudar quando isso for corrigido. Não agrupe mensagens recebidas pelo `chat_id`; use `sender.identifier`.
+- Na mensagem recebida, o `chat_id` é o mesmo em todas as mensagens do canal, porque a parte depois do `=` é o número do canal. Não agrupe mensagens recebidas pelo `chat_id`; use `sender.identifier`.
 - O campo não vem em todos os eventos. A mensagem enviada pela API, por exemplo, não traz `chat_id`.
 - Para obter o telefone do contato, prefira `recipient.identifier` (mensagem enviada e status) ou `sender.identifier` (mensagem recebida). Não extraia o telefone do `chat_id`.
 
-<Note>
-  Antes desta atualização, a parte antes do `=` era um identificador interno do canal. Agora ela é o `channel_id`. Se você agrupa conversas pelo `chat_id`, a mesma conversa passa a ter uma chave nova a partir dessa mudança.
-</Note>
+## Mensagens de grupo (WhatsApp Web)
 
-## Mensagens de grupo
+Em canais WhatsApp Web (`metadata.middleware` igual a `"Z_API_WHATSAPP"`), uma mensagem trocada em grupo traz a identificação do grupo em `internal_information` de cada item de `contents` e `attachments`:
 
-<Note>
-  Nos webhooks no formato Z-API, enviados aos canais da [Compatibilidade Z-API](/z-api/introduction), a mensagem recebida de grupo segue a estrutura da Z-API: `phone` e `chatName` identificam o grupo, `participantPhone` e `participantLid` identificam quem enviou, e o callback de status traz `isGroup: true`.
-</Note>
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `internal_information.group_id` | string | ID do grupo, no formato `120363430845284251-group`. Grupos antigos podem vir no formato `556592929755-1499690308` |
+| `internal_information.group_name` | string | Nome do grupo |
+| `internal_information.participant_lid` | string | LID de quem enviou a mensagem no grupo, quando a plataforma informa |
+
+Em mensagem recebida de grupo, `sender.identifier` é o telefone de quem escreveu, não o do grupo. Os dois campos de grupo aparecem também quando a mensagem é enviada ao grupo pelo próprio número (`metadata.from_me: true`). Mensagens individuais não têm `group_id` nem `group_name`.
+
+```json
+"contents": [
+  {
+    "@class": ".TextContent",
+    "internal_information": {
+      "group_id": "120363430845284251-group",
+      "group_name": "Equipe de vendas"
+    },
+    "message": "Bom dia, pessoal!",
+    "type": "TEXT"
+  }
+]
+```
 
 ## Tipos de conteúdo
 
@@ -711,6 +727,52 @@ O conteúdo fica em `contents[0]` com `type: "INTERACTIVE_ACTION"`. Cada botão 
     "webhook_processed": false
   },
   "messageEventType": "NEW_MESSAGE"
+}
+```
+
+---
+
+## Callbacks de status
+
+Os eventos de status de uma mensagem trazem o tipo em `contents[0].type` (por exemplo, `DeliveryCallback`, `MessageStatusCallback` ou `ErrorCallback`) e o `_id` da mensagem a que se referem. Use o `_id` para ligar o status à mensagem. Quando a mensagem é encontrada, os campos abaixo dizem de qual mensagem é o status e como ler o destinatário:
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `metadata.from_me` | boolean | Sentido da mensagem a que o status se refere: `true` quando ela foi enviada pelo negócio, `false` quando foi recebida do contato. É o mesmo valor do webhook da mensagem |
+| `recipient.identifier` | string | Destinatário informado pelo canal. No WhatsApp Web, o status de uma mensagem enviada pelo negócio pode informar o contato em LID (identificador do WhatsApp terminado em `@lid`). Nesse caso, o status traz o `recipient.identifier` da mensagem: o telefone do contato (DDI + DDD + número) ou o id do grupo. Nos demais casos, vem o identificador que o canal informou |
+| `metadata.from_api` | boolean | Vem do canal e pode ser `false` mesmo em mensagem enviada pela API. Não use este campo para filtrar status |
+| `contents[0].phone` | string | Identificador do contato como o canal o informou no status. Pode não ser o telefone |
+
+Use `metadata.from_me` para saber a origem da mensagem e `recipient.identifier` para o destinatário. Se a mensagem não for encontrada, o status chega com os valores que o canal informou.
+
+Exemplo de status `RECEIVED` (mensagem entregue ao contato) num canal WhatsApp Web, com o LID em `contents[0].phone` e o telefone em `recipient.identifier`:
+
+```json
+{
+  "message": {
+    "_id": "019E6F1B0C2A7D4E8F1A2B3C4D5E6F70",
+    "channel_id": "019E4C54B1B375A28970B605CA9B03C3",
+    "metadata": {
+      "@class": ".Metadata",
+      "forwarded": false,
+      "from_api": false,
+      "from_me": true
+    },
+    "recipient": {
+      "@class": ".Recipient",
+      "identifier": "5511999990000",
+      "name": ""
+    },
+    "contents": [
+      {
+        "@class": ".StateItem",
+        "type": "MessageStatusCallback",
+        "phone": "100000000000001@lid",
+        "moment": 1779980476000,
+        "state": { "@class": ".Received", "name": "RECEIVED" }
+      }
+    ]
+  }
 }
 ```
 

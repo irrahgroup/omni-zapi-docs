@@ -67,6 +67,20 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Canal ya conectado al mismo `phoneId`, y Meta confirma que el número funciona. Nada cambia en el canal y el `code` no se usa. Para renovar la conexión del mismo número, desconecte antes. Reconózcalo por el campo `error`, que es estable; `message` siempre está en inglés.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelAlreadyConnectedError"
+                },
+                "example": {
+                  "error": "channel_already_connected",
+                  "message": "Channel already connected"
+                }
+              }
+            }
           }
         }
       }
@@ -134,6 +148,26 @@
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "ChannelAlreadyConnectedError": {
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "channel_already_connected"
+            ],
+            "description": "Código estable del rechazo"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto fijo, siempre en inglés"
           }
         }
       }
