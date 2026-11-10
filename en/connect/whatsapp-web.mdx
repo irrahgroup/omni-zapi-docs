@@ -1,0 +1,86 @@
+---
+title: "Connect WhatsApp Web"
+description: "Connect a number by scanning the QR Code, without going through Meta"
+---
+
+Channel of type `Z_API_WHATSAPP`. It connects through the **QR Code**, the way WhatsApp Web does — no Meta, no approval, no templates.
+
+<Note>
+  It is the highest-volume channel on the platform. If you come from Z-API, this is the model you already use.
+</Note>
+
+## Requirements
+
+- A WhatsApp number with the app installed on a phone
+- Access to the phone to scan the QR Code
+- [`@omnizapi/connect`](https://www.npmjs.com/package/@omnizapi/connect) 1.1.1 or later
+- A route in your backend that fetches the QR Code with the Secret Key
+
+## Connecting
+
+Besides the `channelId`, WhatsApp Web needs the `getQRCode` function. The SDK opens the connection window, the window asks your page for the QR Code, and the SDK calls your `getQRCode` to answer it. The user scans the QR Code from WhatsApp on the phone, under **Linked devices**.
+
+```javascript
+const client = OmniZapi.newClient({ publicKey: 'YOUR_PUBLIC_KEY' });
+const channelId = 'CHANNEL_ID';
+
+const response = await client.connect({
+  channelId,
+  getQRCode: async () => {
+    const res = await fetch(`/api/omni/channels/${encodeURIComponent(channelId)}/qr-code`, { credentials: 'include' });
+    const body = await res.json();
+    // Reject with status and message: the window shows the message when the status is 4xx
+    if (!res.ok) throw { status: res.status, message: body.message ?? null };
+    // With no value and no connected: true, the window takes it that the QR Code is not ready yet
+    return { connected: body.connected === true, value: body.qrcode ?? undefined };
+  },
+});
+```
+
+Without `getQRCode`, `connect` rejects with an `OmnizapiError` with code `INVALID_OPTIONS` and closes the window before the connection loads. The other channels ignore `getQRCode`, so you can always pass it.
+
+Your page's domain must be in the [SDK authorized domains](/en/security/sdk-domains). Those are the domains the window sends the QR Code request to.
+
+### The route in your backend
+
+The QR Code comes from `GET /v1/channels/{id}/zapi/qr-code/image`, which requires the Secret Key. That is why the fetch happens in your backend, and the key never reaches the browser.
+
+```javascript
+app.get('/api/omni/channels/:id/qr-code', requireSessionAndChannelOwnership, async (req, res) => {
+  const response = await fetch(
+    `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(req.params.id)}/zapi/qr-code/image`,
+    { headers: { Authorization: `Bearer ${process.env.OMNI_SECRET_KEY}` } },
+  );
+  const body = await response.json();
+  if (!response.ok) {
+    // The API error comes in error.errors[0]; pass on only the text
+    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? null });
+  }
+  res.json({ qrcode: body.qrcode, connected: body.connected });
+});
+```
+
+The API returns `qrcode`, the QR Code image, and `connected`, which is `true` when the number is already connected. Pass both on as they came.
+
+<Warning>
+  Check the user's session and that the channel belongs to them **before** calling the API. A route that hands out the QR Code of any channel lets someone link their own number to a channel that is not theirs.
+</Warning>
+
+<Note>
+  Up to version 1.0.4, the SDK only delivered the QR Code to the window inside the panel itself. On any other domain, the window closed right after opening and `connect` returned `success: false` with `reason: "not_completed"`. Upgrade to 1.1.1 or later.
+</Note>
+
+## What is different on WhatsApp Web
+
+| Detail | Value |
+|---|---|
+| Contact identifier | phone with country code |
+| Conversation window | **does not exist** — send at any time |
+| Templates and Flows | do not exist, and are not needed |
+| Poll | **supported** |
+| Location and contact | supported |
+| Meta approval | not required |
+
+<Note>
+  Need features only the Official API has — templates, Flows, the 24-hour window, lower blocking risk? See [Meta WhatsApp](/en/connect/meta-whatsapp).
+</Note>

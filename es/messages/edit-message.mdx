@@ -15,7 +15,7 @@ PUT /v1/channels/{channelId}/messages/{messageId}
 - `messageId`: el `messageId` que devolvió el envío. También se acepta el `contents[].identifier` recibido en el webhook.
 
 <Warning>
-  **Solo Telegram permite edición en esta documentación.** En WhatsApp Meta, Instagram y Messenger, la API rechaza la solicitud con `422` y `subCode` `EDIT_NOT_SUPPORTED`, y no se envía nada al contacto. Consulta [Limitaciones por canal](#limitaciones-por-canal).
+  **Solo WhatsApp Web y Telegram permiten edición.** En WhatsApp Meta, Instagram y Messenger, la API rechaza la solicitud con `422` y `subCode` `EDIT_NOT_SUPPORTED`, y no se envía nada al contacto. Consulta [Limitaciones por canal](#limitaciones-por-canal).
 </Warning>
 
 ## Cuerpo de la solicitud
@@ -63,6 +63,7 @@ El envío (`POST /v1/channels/{channelId}/messages`) con `content.body.editMessa
 | Canal | Edición por la API | Por qué |
 |---|---|---|
 | WhatsApp Meta (Cloud API) | ❌ rechazada con `EDIT_NOT_SUPPORTED` | la Cloud API de Meta no ofrece edición de mensajes enviados por la empresa |
+| WhatsApp Web | ✅ texto | hasta 15 minutos después del envío, el plazo de WhatsApp. Después de eso, recibe `EDIT_WINDOW_EXPIRED`. El pie de foto de un medio recibe `MESSAGE_NOT_EDITABLE` |
 | Instagram | ❌ rechazada con `EDIT_NOT_SUPPORTED` | la API de mensajes de Instagram no ofrece edición de mensajes enviados |
 | Messenger | ❌ rechazada con `EDIT_NOT_SUPPORTED` | no implementada |
 | Telegram | ✅ texto | sin plazo: Telegram no limita la edición de mensajes enviados por el bot. Solo texto, hasta 4.096 caracteres; el pie de foto de un medio recibe `MESSAGE_NOT_EDITABLE` |

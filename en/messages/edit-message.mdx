@@ -15,7 +15,7 @@ PUT /v1/channels/{channelId}/messages/{messageId}
 - `messageId`: the `messageId` returned by the send. The `contents[].identifier` received in the webhook is also accepted.
 
 <Warning>
-  **Only Telegram allows editing in this documentation.** On WhatsApp Meta, Instagram and Messenger, the API refuses the request with `422` and `subCode` `EDIT_NOT_SUPPORTED`, and nothing is sent to the contact. See [Limitations by channel](#limitations-by-channel).
+  **Only WhatsApp Web and Telegram allow editing.** On WhatsApp Meta, Instagram and Messenger, the API refuses the request with `422` and `subCode` `EDIT_NOT_SUPPORTED`, and nothing is sent to the contact. See [Limitations by channel](#limitations-by-channel).
 </Warning>
 
 ## Request body
@@ -63,6 +63,7 @@ A send (`POST /v1/channels/{channelId}/messages`) with `content.body.editMessage
 | Channel | Editing through the API | Why |
 |---|---|---|
 | WhatsApp Meta (Cloud API) | ❌ refused with `EDIT_NOT_SUPPORTED` | Meta's Cloud API does not offer editing of messages sent by the business |
+| WhatsApp Web | ✅ text | up to 15 minutes after sending, WhatsApp's limit. After that, you get `EDIT_WINDOW_EXPIRED`. A media caption gets `MESSAGE_NOT_EDITABLE` |
 | Instagram | ❌ refused with `EDIT_NOT_SUPPORTED` | the Instagram messaging API does not offer editing of sent messages |
 | Messenger | ❌ refused with `EDIT_NOT_SUPPORTED` | not implemented |
 | Telegram | ✅ text | no time limit: Telegram does not limit editing of messages sent by the bot. Text only, up to 4,096 characters; a media caption gets `MESSAGE_NOT_EDITABLE` |

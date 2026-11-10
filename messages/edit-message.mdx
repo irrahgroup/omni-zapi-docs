@@ -15,7 +15,7 @@ PUT /v1/channels/{channelId}/messages/{messageId}
 - `messageId`: o `messageId` que o envio devolveu. O `contents[].identifier` recebido no webhook também é aceito.
 
 <Warning>
-  **Só o Telegram permite edição nesta documentação.** Em WhatsApp Meta, Instagram e Messenger, a API recusa o pedido com `422` e `subCode` `EDIT_NOT_SUPPORTED`, e nada é enviado ao contato. Veja [Limitações por canal](#limitações-por-canal).
+  **Só o WhatsApp Web e o Telegram permitem edição.** Em WhatsApp Meta, Instagram e Messenger, a API recusa o pedido com `422` e `subCode` `EDIT_NOT_SUPPORTED`, e nada é enviado ao contato. Veja [Limitações por canal](#limitações-por-canal).
 </Warning>
 
 ## Corpo da requisição
@@ -63,6 +63,7 @@ O envio (`POST /v1/channels/{channelId}/messages`) com `content.body.editMessage
 | Canal | Edição pela API | Por quê |
 |---|---|---|
 | WhatsApp Meta (Cloud API) | ❌ recusada com `EDIT_NOT_SUPPORTED` | a Cloud API da Meta não oferece edição de mensagem enviada pela empresa |
+| WhatsApp Web | ✅ texto | até 15 minutos depois do envio, o prazo do WhatsApp. Depois disso, recebe `EDIT_WINDOW_EXPIRED`. Legenda de mídia recebe `MESSAGE_NOT_EDITABLE` |
 | Instagram | ❌ recusada com `EDIT_NOT_SUPPORTED` | a API de mensagens do Instagram não oferece edição de mensagem enviada |
 | Messenger | ❌ recusada com `EDIT_NOT_SUPPORTED` | não implementada |
 | Telegram | ✅ texto | sem prazo: o Telegram não limita a edição de mensagem enviada pelo bot. Só texto, até 4.096 caracteres; legenda de mídia recebe `MESSAGE_NOT_EDITABLE` |
