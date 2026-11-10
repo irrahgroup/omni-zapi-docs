@@ -31,6 +31,7 @@ All payloads share the same fields in the `message` object, regardless of conten
 | `tenant` | string | Workspace ID |
 | `tenant_owner` | string | Workspace owner email |
 | `channel_id` | string | ID of the channel that received/sent the message |
+| `chat_id` | string | Conversation identifier in the channel, in the `<channel_id>=<identifier>` format. Present on WhatsApp channels of the official Meta API. See the Conversation identifier section |
 | `created_by` | string | Internal message origin |
 | `created` | number | Creation timestamp (epoch ms) |
 | `metadata.from_api` | boolean | `true` when sent via API |
@@ -43,6 +44,43 @@ All payloads share the same fields in the `message` object, regardless of conten
 | `contents` | array | Text and interactive message contents |
 | `attachments` | array | Media attachments (image, audio, video, sticker) |
 | `webhook_processed` | boolean | Internal processing control flag |
+
+## Conversation identifier (`chat_id`)
+
+On WhatsApp channels of the official Meta API, received messages, messages sent from the business phone, and status callbacks carry the `chat_id` field, made of the channel and the conversation participant.
+
+| Part | Value |
+|---|---|
+| Before the `=` | The channel's `channel_id`, the same `channel_id` field found in the payload and in the API |
+| After the `=` | The identifier of the conversation participant. In messages sent from the business phone and in status callbacks, it is the contact's phone number (country code + area code + number), equal to `recipient.identifier`. In received messages, it is the channel's number |
+
+Status callback example:
+
+```json
+{
+  "message": {
+    "_id": "019E6F1A93FE78DCB54332F9FF0CCAE7",
+    "channel_id": "019E4C54B1B375A28970B605CA9B03C3",
+    "chat_id": "019E4C54B1B375A28970B605CA9B03C3=5511999990000",
+    "recipient": {
+      "@class": ".Recipient",
+      "identifier": "5511999990000",
+      "name": "5511999990000"
+    },
+    "contents": [
+      {
+        "type": "MessageStatusCallback",
+        "phone": "5511999990000",
+        "state": { "@class": ".Sent", "name": "SENT" }
+      }
+    ]
+  }
+}
+```
+
+- On received messages, `chat_id` is the same on every message the channel receives, because the part after the `=` is the channel's number. Do not group received messages by `chat_id`; use `sender.identifier`.
+- The field is not present on every event. Messages sent through the API, for example, have no `chat_id`.
+- To get the contact's phone number, use `recipient.identifier` (sent messages and status) or `sender.identifier` (received messages). Do not parse the phone number out of `chat_id`.
 
 ## Group messages (WhatsApp Web)
 
