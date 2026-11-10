@@ -88,6 +88,26 @@ The flow has 3 steps:
   </Step>
 </Steps>
 
+## Channel already connected
+
+If the channel is already connected to the **same number** (`phoneId`) and Meta confirms that the number is working, `connect` is refused with `409`. Nothing changes in the channel, and the `code` is not used:
+
+```json
+{
+  "error": "channel_already_connected",
+  "message": "Channel already connected"
+}
+```
+
+- Recognize the refusal by the `error` field, which is stable. `message` is always in English.
+- **To renew the connection of the same number**, disconnect first with [`PUT /v1/channels/{channelId}/disconnect`](/en/channels/disconnect), then call `connect` with a new `code` from the SDK. The channel is offline between the two calls.
+- If the number went down on Meta, `connect` proceeds normally and reconnects the channel.
+- If you send a different `phoneId`, `connect` switches the number, as before.
+
+<Note>
+  **Different shapes per channel.** On the official WhatsApp, an already connected channel answers `409` with `channel_already_connected`. On Instagram, Messenger and Telegram, activating a channel that is already active still answers `422`, with the provider error in the `error` field (for example, `INSTAGRAM_META_IS_ALREADY_ACTIVATED`).
+</Note>
+
 ## Flow summary
 
 ```
