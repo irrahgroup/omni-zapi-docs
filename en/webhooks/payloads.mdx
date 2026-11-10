@@ -694,6 +694,52 @@ The content is in `contents[0]` with `type: "INTERACTIVE_ACTION"`. Each button i
 
 ---
 
+## Status callbacks
+
+Message status events carry the type in `contents[0].type` (for example, `DeliveryCallback`, `MessageStatusCallback` or `ErrorCallback`) and the `_id` of the message they refer to. Use the `_id` to link the status to the message. When the message is found, the fields below tell you which message the status belongs to and how to read the recipient:
+
+| Field | Type | Description |
+|---|---|---|
+| `metadata.from_me` | boolean | Direction of the message the status refers to: `true` when the business sent it, `false` when it was received from the contact. It is the same value as in the message webhook |
+| `recipient.identifier` | string | Recipient reported by the channel. On WhatsApp Web, the status of a message sent by the business may report the contact as a LID (a WhatsApp identifier ending in `@lid`). In that case, the status carries the message's `recipient.identifier`: the contact's phone number (country code + area code + number) or the group ID. Otherwise, you get the identifier the channel reported |
+| `metadata.from_api` | boolean | Comes from the channel and may be `false` even for a message sent through the API. Do not use this field to filter statuses |
+| `contents[0].phone` | string | Contact identifier as the channel reported it in the status. It may not be the phone number |
+
+Use `metadata.from_me` to know where the message came from and `recipient.identifier` for the recipient. If the message is not found, the status arrives with the values the channel reported.
+
+`RECEIVED` status example (message delivered to the contact) on a WhatsApp Web channel, with the LID in `contents[0].phone` and the phone number in `recipient.identifier`:
+
+```json
+{
+  "message": {
+    "_id": "019E6F1B0C2A7D4E8F1A2B3C4D5E6F70",
+    "channel_id": "019E4C54B1B375A28970B605CA9B03C3",
+    "metadata": {
+      "@class": ".Metadata",
+      "forwarded": false,
+      "from_api": false,
+      "from_me": true
+    },
+    "recipient": {
+      "@class": ".Recipient",
+      "identifier": "5511999990000",
+      "name": ""
+    },
+    "contents": [
+      {
+        "@class": ".StateItem",
+        "type": "MessageStatusCallback",
+        "phone": "100000000000001@lid",
+        "moment": 1779980476000,
+        "state": { "@class": ".Received", "name": "RECEIVED" }
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## Type summary
 
 | `type` | Location | Key field(s) |
