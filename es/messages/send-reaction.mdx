@@ -1,43 +1,27 @@
 ---
 title: "Enviar reacción"
 description: "Reacciona con un emoji a un mensaje de la conversación"
+openapi: "/es/messages/openapi-reaction.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
-  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
-</Warning>
-
 ## Conceptos
 
-Aplica un emoji a un mensaje que ya está en la conversación. Para quitarlo, manda la misma reacción con el
-emoji vacío.
+Aplica un emoji a un mensaje que ya está en la conversación, enviado por ti o recibido del cliente. El campo
+`content.type` debe ser `REACTION`.
 
-El campo `content.type` será `REACTION`.
+| Campo | Qué va en él |
+|---|---|
+| `body.id` | El `messageId` del mensaje objetivo: el que la API devolvió en el envío, o el `message._id` que llegó en el [webhook](/es/webhooks/payloads) del mensaje recibido |
+| `body.message` | El emoji, uno solo |
 
 <WindowRule lang="es" />
 
 <ChannelSupport type="REACTION" lang="es" />
 
-## Cuerpo de la petición
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "REACTION",
-    "messageId": "wamid.HBgNNTUxMTk5OTk5OTk5ORUCABIYFjNBMDI...",
-    "emoji": "👍"
-  }
-}
-```
-
-Para quitarla, manda `"emoji": ""`.
-
-## Reglas
+## Reglas de Meta Cloud API
 
 | Regla | Valor |
 |---|---|
@@ -46,7 +30,10 @@ Para quitarla, manda `"emoji": ""`.
 | Reaccionar a una reacción | no se acepta |
 | Mensaje borrado | no se acepta |
 
+<Warning>
+  El `body.id` es obligatorio. Sin él, la API acepta la llamada con `200`, pero la reacción no se envía.
+</Warning>
+
 <Note>
-  La reacción solo genera webhook de **enviado**. No hay confirmación de entrega ni de lectura. Un objetivo
-  inválido vuelve con el código `131009`.
+  Con el canal desconectado, la API rechaza el envío con `422` y `subCode` `CHANNEL_DISCONNECTED`, y el mensaje no se envía. Consulta [Errores al enviar](/es/messages/introduction#errores-al-enviar).
 </Note>
