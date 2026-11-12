@@ -1,0 +1,322 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Send Flow",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Send a flow",
+        "description": "Sends a published WhatsApp flow, without a template.",
+        "operationId": "sendFlowMessage",
+        "tags": [
+          "Messages"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "YOUR_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendFlowRequest"
+              },
+              "examples": {
+                "full": {
+                  "summary": "With title and footer",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_FLOW",
+                      "header": {
+                        "message": "Booking"
+                      },
+                      "body": {
+                        "message": "Pick the best time for you."
+                      },
+                      "footer": {
+                        "message": "Takes less than a minute"
+                      },
+                      "action": {
+                        "name": "flow",
+                        "version": "3",
+                        "id": "1234567890123456",
+                        "cta": "Book"
+                      }
+                    }
+                  }
+                },
+                "minimal": {
+                  "summary": "Required fields only",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_FLOW",
+                      "body": {
+                        "message": "Pick the best time for you."
+                      },
+                      "action": {
+                        "name": "flow",
+                        "version": "3",
+                        "id": "1234567890123456",
+                        "cta": "Book"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Message sent successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Invalid or missing token.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Channel disconnected. The message was not sent: reconnect the channel and send it again.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendFlowRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Recipient phone number (country code + area code + number)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body",
+              "action"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Message type",
+                "enum": [
+                  "INTERACTIVE_FLOW"
+                ]
+              },
+              "body": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Message text, above the button"
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              },
+              "header": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Text title"
+                  }
+                }
+              },
+              "footer": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Footer"
+                  }
+                }
+              },
+              "action": {
+                "type": "object",
+                "description": "The flow and the button that opens it",
+                "required": [
+                  "name",
+                  "version",
+                  "id",
+                  "cta"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Always `flow`",
+                    "enum": [
+                      "flow"
+                    ]
+                  },
+                  "version": {
+                    "type": "string",
+                    "description": "Flow message version at Meta: `3`",
+                    "enum": [
+                      "3"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "The `id` of a published flow in the same account as the channel, as returned by List flows"
+                  },
+                  "cta": {
+                    "type": "string",
+                    "description": "Button text, up to 30 characters",
+                    "maxLength": 30
+                  },
+                  "mode": {
+                    "type": "string",
+                    "description": "Flow state. Without it, `published` applies",
+                    "enum": [
+                      "published"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "Sent message ID — 32-character uppercase hexadecimal string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the refusal, in UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error category",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Case code. Present only when the case has its own code",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error description. The text may change: handle the error by `code` and `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in the Omni Z-API Security panel"
+      }
+    }
+  }
+}

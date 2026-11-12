@@ -1,43 +1,27 @@
 ---
 title: "Send reaction"
 description: "React with an emoji to a message in the conversation"
+openapi: "/en/messages/openapi-reaction.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
-  shape and plan the integration — the body below is what will apply when it ships.
-</Warning>
-
 ## Overview
 
-Applies an emoji to a message already in the conversation. To remove it, send the same reaction with an
-empty emoji.
+Applies an emoji to a message already in the conversation, sent by you or received from the customer. The
+`content.type` field must be `REACTION`.
 
-The `content.type` field will be `REACTION`.
+| Field | What goes in it |
+|---|---|
+| `body.id` | The `messageId` of the target message: the one the API returned when sending, or the `message._id` that came in the [webhook](/en/webhooks/payloads) of the received message |
+| `body.message` | The emoji, a single one |
 
 <WindowRule lang="en" />
 
 <ChannelSupport type="REACTION" lang="en" />
 
-## Request body
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "REACTION",
-    "messageId": "wamid.HBgNNTUxMTk5OTk5OTk5ORUCABIYFjNBMDI...",
-    "emoji": "👍"
-  }
-}
-```
-
-To remove it, send `"emoji": ""`.
-
-## Rules
+## Meta Cloud API rules
 
 | Rule | Value |
 |---|---|
@@ -46,7 +30,10 @@ To remove it, send `"emoji": ""`.
 | Reacting to a reaction | not accepted |
 | Deleted message | not accepted |
 
+<Warning>
+  `body.id` is required. Without it, the API accepts the call with `200`, but the reaction is not sent.
+</Warning>
+
 <Note>
-  A reaction only generates a **sent** webhook. There is no delivery or read confirmation. An invalid target
-  comes back with code `131009`.
+  If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
 </Note>
