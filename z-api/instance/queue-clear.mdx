@@ -1,0 +1,30 @@
+---
+title: "Apagar a fila"
+description: "Recusa apagar a fila: nada é removido"
+openapi: "/pt/z-api/openapi.json DELETE /queue"
+---
+
+## Conceituação
+
+Responde `422` e não remove nada: uma mensagem enviada já foi entregue à API oficial e não pode ser retirada.
+
+```json
+{
+  "error": "messages are not queued on META_WHATSAPP channels: they are handed to the official API when sent and cannot be removed"
+}
+```
+
+### Erros
+
+| Status | Resposta `error` | Quando |
+|---|---|---|
+| `422` | `messages are not queued on META_WHATSAPP channels: they are handed to the official API when sent and cannot be removed` | Sempre |
+| `404` | `instance not found` | O `id` ou o `token` do path não existe |
+| `422` | `queue route is not available through this compatibility route for Z_API_WHATSAPP instances yet` | O canal é do tipo `Z_API_WHATSAPP` |
+
+Os erros de [autenticação](/z-api/authentication) valem aqui também.
+
+## Veja também
+
+- [Status da instância](/z-api/instance/status)
+- [Limitações e recusas](/z-api/limitations)

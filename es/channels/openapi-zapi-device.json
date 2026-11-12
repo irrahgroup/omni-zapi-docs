@@ -1,0 +1,192 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Datos del dispositivo de WhatsApp Web",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/zapi/device": {
+      "get": {
+        "summary": "Consultar dispositivo",
+        "description": "Devuelve los datos del número y del dispositivo conectados a un canal `Z_API_WHATSAPP`. No requiere ENTERPRISE.",
+        "operationId": "zapiDevice",
+        "tags": [
+          "Canales"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal (obtenido en Crear canal o Listar canales)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos del dispositivo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZapiDevice"
+                },
+                "example": {
+                  "phone": "5511999999999",
+                  "imgUrl": "https://pps.whatsapp.net/v/t61.24694-24/foto.jpg",
+                  "name": "Loja",
+                  "device": {
+                    "sessionName": "Z-API Omni",
+                    "deviceModel": "iPhone 15"
+                  },
+                  "originalDevice": "iphone",
+                  "sessionId": 0,
+                  "isBusiness": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Secret Key ausente, mal formada o inexistente, IP fuera de la lista de IPs permitidas o solicitud inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fuera de la lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente o de otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falla de integración. La operación no se completó; vuelve a intentarlo en unos instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo del error"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estable del error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto del error, en inglés"
+          }
+        }
+      },
+      "ZapiDevice": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Número conectado, con código de país"
+          },
+          "imgUrl": {
+            "type": "string",
+            "description": "URL de la foto de perfil"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre del perfil en WhatsApp"
+          },
+          "device": {
+            "type": "object",
+            "description": "Datos de la sesión y del dispositivo",
+            "properties": {
+              "sessionName": {
+                "type": "string",
+                "description": "Nombre de la sesión en Dispositivos vinculados"
+              },
+              "deviceModel": {
+                "type": "string",
+                "description": "Modelo del celular"
+              }
+            }
+          },
+          "originalDevice": {
+            "type": "string",
+            "description": "Informativo"
+          },
+          "sessionId": {
+            "type": "integer",
+            "description": "Informativo"
+          },
+          "isBusiness": {
+            "type": "boolean",
+            "description": "`true` cuando el número es de WhatsApp Business"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en Seguridad, en el panel de Z-API Omni. El prefijo `Bearer` es opcional."
+      }
+    }
+  }
+}

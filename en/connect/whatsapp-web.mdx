@@ -53,14 +53,25 @@ app.get('/api/omni/channels/:id/qr-code', requireSessionAndChannelOwnership, asy
   );
   const body = await response.json();
   if (!response.ok) {
-    // The API error comes in error.errors[0]; pass on only the text
-    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? null });
+    // The error text comes in error.errors[0].description or in message; pass on only the text
+    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? body?.message ?? null });
   }
   res.json({ qrcode: body.qrcode, connected: body.connected });
 });
 ```
 
-The API returns `qrcode`, the QR Code image, and `connected`, which is `true` when the number is already connected. Pass both on as they came.
+The API returns `qrcode`, the QR Code image, and `connected`, which is `true` when the number is already connected. Pass both on as they came. See [Get QR Code](/en/channels/zapi-qr-code).
+
+If WhatsApp Web is not enabled for the workspace, the API answers `422`, and the text comes in `message`:
+
+```json
+{
+  "error": "channel_type_not_enabled",
+  "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+}
+```
+
+After the user scans the QR Code, check the connection with [Get WhatsApp Web status](/en/channels/zapi-status). To see the connected number and device, use [Get device](/en/channels/zapi-device); to disconnect, [Disconnect WhatsApp Web](/en/channels/zapi-disconnect).
 
 <Warning>
   Check the user's session and that the channel belongs to them **before** calling the API. A route that hands out the QR Code of any channel lets someone link their own number to a channel that is not theirs.

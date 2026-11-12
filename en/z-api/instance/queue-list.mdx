@@ -1,0 +1,29 @@
+---
+title: "List the queue"
+description: "Lists the messages in the queue, always empty"
+openapi: "/en/z-api/openapi.json GET /queue"
+---
+
+## Overview
+
+On Z-API, the queue holds the messages that have not gone out yet. On WhatsApp Official, the message is handed to the official API at send time, so there is no per-channel queue. This route exists so your Z-API code keeps working and it always answers empty.
+
+```json
+{
+  "messages": []
+}
+```
+
+### Errors
+
+| Status | `error` response | When |
+|---|---|---|
+| `404` | `instance not found` | The `id` or `token` in the path does not exist |
+| `422` | `queue route is not available through this compatibility route for Z_API_WHATSAPP instances yet` | The channel is of type `Z_API_WHATSAPP` |
+
+[Authentication](/en/z-api/authentication) errors apply here too.
+
+## See also
+
+- [Instance status](/en/z-api/instance/status)
+- [Limitations and refusals](/en/z-api/limitations)

@@ -1,0 +1,67 @@
+---
+title: "Reenviar entrega"
+description: "Faça uma tentativa nova de uma entrega de webhook"
+openapi: "/pt/webhooks/openapi-central.json POST /v1/webhooks/deliveries/{deliveryId}/resend"
+---
+
+## Conceituação
+
+Faz **uma** tentativa nova da entrega. O pedido não tem corpo.
+
+O reenvio:
+
+- vai para a URL, a autenticação e o segredo **atuais** do webhook. Se você corrigiu a URL ou a credencial depois da falha, o reenvio já usa o valor novo;
+- leva o corpo guardado da entrega, no formato em que ela foi entregue (`DEFAULT` ou `Z_API`);
+- leva os mesmos `X-Webhook-Event-Id` e `X-Webhook-Delivery-Id` das tentativas anteriores;
+- leva um `X-Webhook-Attempt` sempre maior que o da tentativa anterior. É o `attemptNumber` da resposta.
+
+A resposta é `202` com `{"deliveryId": "...", "attemptNumber": 8}`. Enquanto o resultado não chega, a entrega aparece com `status` `RESENT`, por no máximo 1 hora. Depois, o resultado aparece no [detalhe da entrega](/webhooks/get-delivery) como uma tentativa nova, com `origin` `MANUAL_RESEND`.
+
+Se a confirmação do envio demorar, a resposta `202` traz também `message`: o reenvio pode ter sido enviado, e o resultado deve ser conferido em alguns minutos. Não peça de novo antes de conferir.
+
+<Warning>
+  O reenvio de uma entrega que já tinha dado certo chega com o **mesmo** `X-Webhook-Delivery-Id`. Se você deduplica só por ele, o reenvio será descartado. Aceite a entrega já vista quando o `X-Webhook-Attempt` for maior que o último processado.
+</Warning>
+
+### Limite
+
+1 reenvio por minuto por entrega. Acima disso, `429`.
+
+### Quando o reenvio é recusado
+
+O `422` traz o motivo em `error.details.reason`:
+
+| `details.reason` | Quando | O que fazer |
+|---|---|---|
+| `TRUNCATED` | O corpo da entrega passou do limite guardado e foi cortado | Não é possível reenviar |
+| `WEBHOOK_SUSPENDED` | O envio do webhook está suspenso | [Reative o webhook](/webhooks/reactivate-webhook) antes |
+| `WEBHOOK_DISABLED` | O webhook está desabilitado | Habilite o webhook antes, com `status` `ENABLED` no `PATCH` |
+| `UNREADABLE_BODY` | O corpo guardado não pode ser lido | Não é possível reenviar |
+
+Exemplo:
+
+```json
+{
+  "error": {
+    "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+    "message": "O webhook esta desabilitado. Habilite o webhook antes de reenviar.",
+    "details": { "reason": "WEBHOOK_DISABLED" }
+  }
+}
+```
+
+### Erros
+
+| Caso | Resposta |
+|---|---|
+| `deliveryId` que não é UUID | `400` com `{"error": {"message": "deliveryId invalido"}}` |
+| Entrega inexistente, expirada, de webhook excluído ou de outro workspace | `404` |
+| Entrega que não pode ser reenviada | `422`, com o motivo na tabela acima |
+| Mais de 1 reenvio por minuto, ou outro reenvio da mesma entrega em andamento | `429` |
+| O reenvio não foi enviado | `503` com `{"error": "O reenvio nao foi enviado; tente de novo."}`. Tente de novo |
+
+Os erros de autenticação, de IP e de workspace inativo estão em [Central de webhooks](/webhooks/central#erros-comuns-a-todas-as-rotas).
+
+## Veja também
+
+- [Central de webhooks](/webhooks/central)

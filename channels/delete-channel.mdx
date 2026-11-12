@@ -6,25 +6,25 @@ openapi: "/pt/channels/openapi-delete.json DELETE /v1/channels/{channelId}"
 
 import { EnterpriseText } from '/snippets/notes.mdx';
 
-## Conceituação
-
-Exclui um canal. Depois de excluído, o canal deixa de poder ser usado, e não é possível desfazer a exclusão pela API.
-
 <Warning>
   <EnterpriseText lang="pt" />
 </Warning>
 
+## Conceituação
+
+Exclui um canal. Depois de excluído, o canal deixa de poder ser usado, e não é possível desfazer a exclusão pela API.
+
 ### Condições para exclusão
 
-A exclusão só é permitida quando o canal está [desconectado](/channels/disconnect) e não possui assinatura ativa. Com o canal conectado, a API responde `422` com `INSTANCE_STILL_CONNECTED`. A tabela abaixo descreve o comportamento por status:
+A exclusão só é permitida quando o canal está [desconectado](/channels/disconnect) e não possui assinatura ativa. Com o canal conectado, a API responde `422` com `{"error":{"type":"INSTANCE_STILL_CONNECTED", ...}}`; o código vem em `error.type`. A tabela abaixo descreve o comportamento por status:
 
 | Status | Exclusão permitida | Observação |
 |---|---|---|
-| Trial | Sim | — |
+| Trial | Sim | Nenhuma |
 | Pendente | Sim | Se houver fatura aberta, ela será cancelada automaticamente |
 | Pago | Não | O canal deve ser cancelado antes de ser excluído |
 | Em processo de cancelamento | Não | O canal deve ser cancelado antes de ser excluído |
-| Cancelado | Sim | — |
+| Cancelado | Sim | Nenhuma |
 
 <Warning>
   A exclusão não pode ser desfeita pela API. Para excluir um canal com assinatura ativa, primeiro cancele a assinatura via [Cancelar assinatura](/channels/cancel-subscription) e aguarde o status `CANCELED`.
@@ -44,3 +44,7 @@ Se a exclusão falhar no serviço interno, a API responde `502` com o corpo abai
 <Note>
   O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel).
 </Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

@@ -1,6 +1,6 @@
 ---
 title: "Authentication"
-description: "How to generate and use your API credentials in Omni Z-API"
+description: "How to generate and use your API credentials in Z-API Omni"
 ---
 
 import { projectName, frontendUrl } from '/snippets/variables.mdx';
@@ -18,6 +18,8 @@ The Public Key is used by the channel connection SDK ([`@omnizapi/connect`](http
 <Note>
   The Public Key can be exposed in your application's frontend, as it has limited permissions for channel connection only.
 </Note>
+
+Two API routes accept the Public Key: [SDK origins](/en/channels/sdk-info) and [List Messenger pages](/en/channels/list-messenger-pages). On the others, use the Secret Key.
 
 Example usage:
 
@@ -47,6 +49,27 @@ curl -X GET https://api.omni.z-api.io/whatsapp/businesses \
 ```
 
 ---
+
+## Common errors
+
+These errors apply to the API routes, in any product area (channels, templates, messages, webhooks). The body is `{"error": "<text>"}`. When the error comes from an internal service in JSON, the `error` field carries that object.
+
+| Status | `error` response | When |
+|---|---|---|
+| `400` | `Authorization invalid` | `Authorization` header missing, or key malformed or nonexistent |
+| `400` | `<ip> not allowed` | The source IP is not on the workspace [IP list](/en/security/ip-restriction). When the source IP cannot be identified: `ip not allowed` |
+| `400` | `Required request body is missing` | Body missing or unreadable on a route that requires a body |
+| `404` | `Instance not found` (`instance not found` on the message routes) | The channel does not exist or belongs to another workspace |
+| `422` | `instance is not provisioned` | Message routes: the channel has not finished being provisioned |
+| `422` | `instance subscription is not active` | Message routes: the channel has no active subscription |
+| `422` | `You are blocked, contact support.` | Message routes: the workspace is blocked |
+| `422` | `operation not supported for this instance` | Message routes: the channel type does not accept the operation |
+| `502` | `integration_unavailable` | Failure in an internal service. The response carries `message`. Try again in a few moments |
+| `504` | `integration_timeout` | The service did not answer in time. On a read, repeating is safe |
+| `504` | `outcome_unknown` | The deadline passed on an operation that changes data. Check the state before repeating |
+| `504` | `template_sync_timeout` | The template synchronization with Meta passed the deadline and is still running. List the templates again in a few moments |
+
+The [message](/en/messages/introduction) routes and the [Z-API compatibility](/en/z-api/limitations) have their own errors, described in each section.
 
 ## Summary
 

@@ -1,0 +1,271 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Código QR de WhatsApp Web",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/zapi/qr-code/image": {
+      "get": {
+        "summary": "Obtener código QR",
+        "description": "Devuelve el código QR de conexión de un canal `Z_API_WHATSAPP` como imagen base64, lista para mostrar. Llámalo desde tu backend, con la Secret Key. No requiere ENTERPRISE.",
+        "operationId": "zapiQrCodeImage",
+        "tags": [
+          "Canales"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal (obtenido en Crear canal o Listar canales)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Código QR, o indicación de que el número ya está conectado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QrCode"
+                },
+                "example": {
+                  "qrcode": "<imagen del código QR en base64>",
+                  "connected": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Secret Key ausente, mal formada o inexistente, IP fuera de la lista de IPs permitidas o solicitud inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fuera de la lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente o de otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "WhatsApp Web no está habilitado en el workspace. Contacta al soporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "channel_type_not_enabled",
+                  "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falla de integración. La operación no se completó; vuelve a intentarlo en unos instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/zapi/qr-code": {
+      "get": {
+        "summary": "Obtener código QR",
+        "description": "Devuelve el valor del código QR de conexión de un canal `Z_API_WHATSAPP`, para que generes la imagen por tu cuenta. Llámalo desde tu backend, con la Secret Key. No requiere ENTERPRISE.",
+        "operationId": "zapiQrCode",
+        "tags": [
+          "Canales"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal (obtenido en Crear canal o Listar canales)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Código QR, o indicación de que el número ya está conectado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QrCode"
+                },
+                "example": {
+                  "qrcode": "<valor del código QR>",
+                  "connected": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Secret Key ausente, mal formada o inexistente, IP fuera de la lista de IPs permitidas o solicitud inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fuera de la lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente o de otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "WhatsApp Web no está habilitado en el workspace. Contacta al soporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "channel_type_not_enabled",
+                  "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falla de integración. La operación no se completó; vuelve a intentarlo en unos instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo del error"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estable del error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto del error, en inglés"
+          }
+        }
+      },
+      "QrCode": {
+        "type": "object",
+        "properties": {
+          "qrcode": {
+            "type": "string",
+            "description": "Código QR para que el usuario lo escanee. No viene cuando el número ya está conectado."
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "`true` cuando el número ya está conectado"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en Seguridad, en el panel de Z-API Omni. El prefijo `Bearer` es opcional."
+      }
+    }
+  }
+}

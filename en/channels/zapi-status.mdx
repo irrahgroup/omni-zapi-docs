@@ -1,0 +1,44 @@
+---
+title: "Get WhatsApp Web status"
+description: "Check whether a WhatsApp Web channel is connected"
+openapi: "/en/channels/openapi-zapi-status.json GET /v1/channels/{channelId}/zapi/status"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="WEB_ROUTES" lang="en" />
+
+## Overview
+
+Tells whether a `Z_API_WHATSAPP` (WhatsApp Web) channel is connected. Use it after the user scans the [QR Code](/en/channels/zapi-qr-code), to confirm the connection, and whenever you need to know whether the channel is up.
+
+Use the Secret Key, from your backend. Does not require ENTERPRISE.
+
+```json
+{"connected": true, "session": true, "created": 1762790400000, "error": null, "smartphoneConnected": true}
+```
+
+| Field | What it tells |
+|---|---|
+| `connected` | `true` when the number is connected to the channel |
+| `smartphoneConnected` | `true` when the number's phone is online |
+| `session`, `created`, `error` | Informative |
+
+With `connected: false`, generate a new QR Code in [Get QR Code](/en/channels/zapi-qr-code) for the user to scan.
+
+### Errors
+
+| Status | Body | When |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key missing, malformed or unknown |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP outside the [IP list](/en/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Channel does not exist or belongs to another workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Integration failure; try again in a few moments |
+
+<Note>
+  The `channelId` comes from the [Create channel](/en/channels/create-channel) endpoint or from [List channels](/en/channels/list-channels).
+</Note>
+
+## See also
+
+- [Introduction](/en/channels/introduction)

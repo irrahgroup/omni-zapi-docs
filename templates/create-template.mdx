@@ -1,14 +1,18 @@
 ---
-title: "Referência da API"
+title: "Criar template"
 description: "A chamada que cria o template: rota, autenticação, respostas e erros"
 openapi: "/pt/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates"
 ---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
 
 Esta é a chamada única de criação. **O corpo dela é o JSON do modelo** que você escolheu — não existe rota separada por modelo, e mandar o payload de [Modelos](/templates/models/overview) já cria o template.
 
 Aqui ficam a mecânica e o retorno: a rota, o `wabaId`, o schema campo a campo e o que volta em cada caso. O playground acima dispara a chamada de verdade.
 
-O template nasce com status `PENDING` e passa a `APPROVED` ou `REJECTED` depois da revisão da Meta. Use [Sincronizar templates](/templates/sync-templates) para forçar a atualização do status.
+O template nasce com status `PENDING` e passa a `APPROVED` ou `REJECTED` depois da revisão da Meta. O caminho preferido para saber do resultado é o [webhook de template](/webhooks/template-webhooks), que não depende de canal, assinado no evento `UPDATE_TEMPLATE_STATUS`: a plataforma avisa quando a Meta decide. Para conferir um template específico, use [Consultar template](/templates/get-template) com o `id` devolvido aqui. Se o status parecer desatualizado, [Sincronizar templates](/templates/sync-templates) força a atualização com a Meta.
+
+A Meta recusa o template com `422`, e o corpo traz a recusa original em `error.errors[]`. Os `400` são só da plataforma: autenticação recusada, corpo ausente ou template vazio.
 
 <Note>
   O `wabaId` sai do endpoint de [Listar WABAs](/templates/list-businesses).
@@ -18,11 +22,7 @@ O template nasce com status `PENDING` e passa a `APPROVED` ou `REJECTED` depois 
   O nome vai em `snake_case`, sem espaço nem caractere especial, e **não pode ser alterado** depois de criado.
 </Warning>
 
-<Warning>
-  Este endpoint é escopado por **WABA**, então hoje cobre só o **Meta Cloud API**.
-
-  Instagram e Messenger também têm template pré-aprovado — o **Utility Template**, escopado por página. O suporte a eles no Omni Z-API está **em implementação**. Veja a [comparação dos três tipos de template](/templates/introduction).
-</Warning>
+<ChannelSupport type="TEMPLATES_API" lang="pt" />
 
 <CardGroup cols={3}>
   <Card title="Escolher o modelo" icon="layer-group" href="/templates/models/overview">
@@ -35,3 +35,7 @@ O template nasce com status `PENDING` e passa a `APPROVED` ou `REJECTED` depois 
     O que a Meta recusa
   </Card>
 </CardGroup>
+
+## Veja também
+
+- [Introdução](/templates/introduction)

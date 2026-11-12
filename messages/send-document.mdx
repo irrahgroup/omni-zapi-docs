@@ -1,10 +1,18 @@
 ---
 title: "Enviar documento"
 description: "Envie PDF, planilha ou outro arquivo por URL ou Base64"
+openapi: "/pt/messages/openapi-document.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
+import { MediaLimits } from '/snippets/media-limits.mdx';
+
+<WindowRule lang="pt" template="com cabeçalho de documento" href="/templates/models/custom" />
+
+<ChannelSupport type="DOCUMENT" lang="pt" />
+
+<MediaLimits lang="pt" />
 
 ## Conceituação
 
@@ -13,60 +21,9 @@ Envia um arquivo para o contato. O campo `content.type` é `DOCUMENT`.
 O nome que o cliente vê é montado com `name` e `extension`: `"name": "nota-fiscal"` com `"extension": "pdf"`
 chega como `nota-fiscal.pdf`, com o ícone de PDF.
 
-<WindowRule lang="pt" template="com cabeçalho de documento" href="/templates/models/custom" />
-
-<ChannelSupport type="DOCUMENT" lang="pt" />
-
-## Corpo da requisição
-
-Por URL:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "https://sualoja.com/nota-fiscal.pdf",
-        "name": "nota-fiscal",
-        "extension": "pdf",
-        "caption": "Segue a sua nota fiscal"
-      }
-    ]
-  }
-}
-```
-
-Por Base64, com o prefixo do tipo do arquivo no próprio `url`:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "data:application/pdf;base64,JVBERi0xLjQK...",
-        "name": "nota-fiscal",
-        "extension": "pdf",
-        "caption": "Segue a sua nota fiscal"
-      }
-    ]
-  }
-}
-```
-
-## Campos do anexo
-
-| Campo | Descrição |
-|---|---|
-| `url` | Endereço `https` do arquivo, ou o conteúdo em Base64 com o prefixo do tipo, como `data:application/pdf;base64,` |
-| `name` | Nome do arquivo, **sem** a extensão |
-| `extension` | Extensão, sem o ponto: `pdf`, `xlsx`, `docx`. É ela que define o ícone. Sem ela, o arquivo chega sem nome |
-| `caption` | Legenda, mostrada junto com o arquivo |
-
 ## Regras
+
+O campo `content.attachments` é obrigatório: sem ele, a API responde `400` com `VALIDATION_ERROR`. Sem `name`, o arquivo chega sem nome.
 
 | Regra | Valor |
 |---|---|
@@ -74,18 +31,12 @@ Por Base64, com o prefixo do tipo do arquivo no próprio `url`:
 | Tipos | PDF, Word, Excel, PowerPoint, texto |
 | Legenda | até 1024 caracteres |
 
-## O que muda em cada canal
-
-| Canal | Como o arquivo vai |
-|---|---|
-| Meta Cloud API e WhatsApp Web | Por URL ou Base64. Nome e legenda chegam como você mandou |
-| Telegram | **Só por URL.** Em PDF, ZIP e GIF, o nome que aparece é o que está no fim da URL |
-| Instagram | **Só PDF, só por URL**, e sem nome nem legenda |
-
-As condições estão explicadas em [o que cada canal aceita](/channels/message-support#documento-no-instagram-e-no-telegram).
-
 ## Quando o canal recusa o arquivo
 
 A API responde `200` com o `messageId` assim que aceita o pedido. Se depois o canal recusar o arquivo, por
 exemplo um Base64 no Telegram ou uma planilha no Instagram, a mensagem não chega, e a falha vem no
 webhook de status da mensagem (`MESSAGE_STATUS`). Veja [webhooks de canal](/webhooks/channel-webhooks).
+
+## Veja também
+
+- [Introdução](/messages/introduction)

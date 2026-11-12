@@ -1,0 +1,60 @@
+---
+title: "Ativar Messenger"
+description: "Finalize no backend a conexão de um canal META_MESSENGER com a página escolhida"
+openapi: "/pt/channels/openapi-activate-messenger.json POST /v1/channels/{channelId}/activate-messenger"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_MESSENGER" lang="pt" />
+
+## Conceituação
+
+Finaliza a conexão de um canal `META_MESSENGER` com a página que o usuário escolheu. É o último passo de [Conectar Messenger](/connect/messenger).
+
+Antes, chame [Listar páginas do Messenger](/channels/list-messenger-pages): ela devolve o `pageId` e o `accessToken` de cada página. A `redirectUri` vem do retorno do SDK.
+
+Use a Secret Key, do seu backend. Não exige ENTERPRISE.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-messenger \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{"pageId": "102938475601234", "accessToken": "EAAG...", "redirectUri": "https://app.omni.z-api.io/oauth/proxy-messenger"}'
+```
+
+Com sucesso, a resposta traz a página vinculada:
+
+```json
+{"pageId": "102938475601234", "connected": true, "pageName": "Minha Loja", "pageCategory": "Shopping", "displayName": "Minha Loja"}
+```
+
+### Reconexão automática
+
+Se a conta já estiver ativa no provedor e o canal estiver desconectado com assinatura ativa (`PAID`, `TRIAL`, `BOLETO_PENDING` ou `CANCELLATION_PROCESS`), o Z-API Omni desfaz a conexão anterior e ativa de novo sozinho. Caso contrário, a API responde `422` com o erro do provedor em `error`.
+
+A ativação tem prazo de 50 segundos. Se passar, a API responde `504`: com `integration_timeout`, nada mudou e você pode repetir; com `outcome_unknown`, a conexão anterior já foi desfeita, então confira o canal com [Consultar canal](/channels/get-channel) antes de repetir.
+
+### Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, malformada ou inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fora da [lista de IPs](/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `422` | `{"error":{...}}` | O provedor recusou a ativação; o erro do provedor vem em `error` |
+| `502` | `{"error":"integration_unavailable", ...}` | Falha de integração; tente de novo em alguns instantes |
+| `504` | `{"error":"integration_timeout", ...}` | Passou do prazo de 50 segundos e nada mudou no canal; pode repetir |
+| `504` | `{"error":"outcome_unknown", ...}` | Passou do prazo depois de desfazer a conexão anterior; confira com [Consultar canal](/channels/get-channel) antes de repetir |
+
+### Depois da ativação
+
+Confira o canal com [Consultar canal](/channels/get-channel). Para trocar de página depois, desative com [Desativar Messenger](/channels/deactivate-messenger) e conecte de novo.
+
+<Note>
+  O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel) ou de [Listar canais](/channels/list-channels).
+</Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

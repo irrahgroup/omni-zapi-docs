@@ -1,71 +1,37 @@
 ---
 title: "Edit message"
 description: "Fix the text of a message you already sent, on channels that allow editing"
+openapi: "/en/messages/openapi-edit.json PUT /v1/channels/{channelId}/messages/{messageId}"
 ---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="EDIT" lang="en" />
 
 ## Overview
 
 Replaces the text of a text message your channel already sent. The recipient sees the new text in place of the old one, with the app's edited mark. No new message is sent.
 
-```
-PUT /v1/channels/{channelId}/messages/{messageId}
-```
+The `messageId` in the path is the one the send returned. The `contents[].identifier` received in the webhook is also accepted. Recipient and sender are not asked for: those of the original message apply. Only text can be edited: the caption of an image, video or document gets `422` `MESSAGE_NOT_EDITABLE`.
 
-- `channelId`: the channel that sent the message.
-- `messageId`: the `messageId` returned by the send. The `contents[].identifier` received in the webhook is also accepted.
-
-<Warning>
-  **Only WhatsApp Web and Telegram allow editing.** On WhatsApp Meta, Instagram and Messenger, the API refuses the request with `422` and `subCode` `EDIT_NOT_SUPPORTED`, and nothing is sent to the contact. See [Limitations by channel](#limitations-by-channel).
-</Warning>
-
-## Request body
-
-```json
-{
-  "content": {
-    "type": "TEXT",
-    "body": { "message": "Fixed text" }
-  }
-}
-```
-
-Recipient and sender are not required: the original message's apply. Only text can be edited: the caption of an image, video or document cannot be edited and gets `422` `MESSAGE_NOT_EDITABLE`.
-
-## Response
-
-`200` with the edited message's `messageId`:
-
-```json
-{ "messageId": "01A0C92D0C957FE98B73C8BA0CACF741" }
-```
-
-The `200` confirms the edit was accepted and forwarded to the channel, not that the contact's app already shows the new text. If the channel refuses it later (for example, the contact blocked the bot on Telegram or the message was deleted), the contact's text does not change and the API sends no notice of that refusal.
+<Note>
+  The `200` confirms the edit was accepted and forwarded to the channel, not that the contact's app already shows the new text. If the channel refuses later, for example if the contact blocked the bot on Telegram or the message was deleted, the contact's text does not change and the API sends no notice of that refusal.
+</Note>
 
 ## Errors
 
-| Status | `subCode` | When |
-|---|---|---|
-| `400` | — | missing or empty body, `content.type` other than `TEXT`, or empty `content.body.message` |
-| `404` | — | the `messageId` does not exist or does not belong to this channel |
-| `422` | `EDIT_NOT_SUPPORTED` | the channel does not allow editing |
-| `422` | `CHANNEL_DISCONNECTED` | the channel is disconnected |
-| `422` | `MESSAGE_NOT_EDITABLE` | the message is not text (including a media caption), was not sent by your channel, was not yet accepted by the channel, or failed to send |
-| `422` | `EDIT_WINDOW_EXPIRED` | the time during which the channel accepts edits has passed |
+| Status | When |
+|---|---|
+| 400 | missing or empty body, `content.type` other than `TEXT`, or empty `content.body.message` |
+| 404 | the `messageId` does not exist or is not from this channel |
+| 422 `EDIT_NOT_SUPPORTED` | the channel does not allow editing |
+| 422 `CHANNEL_DISCONNECTED` | the channel is disconnected |
+| 422 `MESSAGE_NOT_EDITABLE` | the message is not text (including a media caption), was not sent by your channel, was not accepted by the channel yet or failed to send |
+| 422 `EDIT_WINDOW_EXPIRED` | the period in which the channel accepts editing has passed |
 
-Handle refusals by `subCode`. The `message` text may change. The error body format is in [Send errors](/en/messages/introduction#send-errors).
+Handle refusals by `subCode`. The `message` text may change.
 
-## Editing through the send endpoint
+## See also
 
-A send (`POST /v1/channels/{channelId}/messages`) with `content.body.editMessageId` is also handled as an edit of the given message, with the same rules and refusals as this page. It never sends a new message. Prefer the `PUT`, which makes the intent explicit.
-
-## Limitations by channel
-
-| Channel | Editing through the API | Why |
-|---|---|---|
-| WhatsApp Meta (Cloud API) | ❌ refused with `EDIT_NOT_SUPPORTED` | Meta's Cloud API does not offer editing of messages sent by the business |
-| WhatsApp Web | ✅ text | up to 15 minutes after sending, WhatsApp's limit. After that, you get `EDIT_WINDOW_EXPIRED`. A media caption gets `MESSAGE_NOT_EDITABLE` |
-| Instagram | ❌ refused with `EDIT_NOT_SUPPORTED` | the Instagram messaging API does not offer editing of sent messages |
-| Messenger | ❌ refused with `EDIT_NOT_SUPPORTED` | not implemented |
-| Telegram | ✅ text | no time limit: Telegram does not limit editing of messages sent by the bot. Text only, up to 4,096 characters; a media caption gets `MESSAGE_NOT_EDITABLE` |
-
-On Telegram, a text over 4,096 characters also gets `200`, but Telegram refuses the edit and the contact's text does not change. Keep edits within that limit.
+- [Send errors](/en/messages/introduction#send-errors)
+- [Send text](/en/messages/send-text)

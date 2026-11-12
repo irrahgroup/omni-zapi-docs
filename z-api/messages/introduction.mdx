@@ -1,66 +1,83 @@
 ---
 title: "Introdução"
-description: "Conceitos básicos sobre envio de mensagens na API do Omni Z-API"
+description: "Como enviar mensagens pela compatibilidade com a Z-API"
 ---
-
-import { projectName } from '/snippets/variables.mdx';
 
 ## Conceituação
 
-Os endpoints de mensagens desta seção permitem enviar mensagens **somente quando a janela de conversa do WhatsApp estiver aberta** (dentro do período de 24 horas). Isso é uma regra da API oficial do WhatsApp Business.
+As rotas desta seção enviam mensagens pelo formato da Z-API, por canais WhatsApp Oficial (`META_WHATSAPP`) com assinatura ativa. Um canal de outro tipo ou sem assinatura ativa recebe `422`.
 
 <Warning>
-  A janela de conversa de 24 horas é aberta quando o **cliente envia uma mensagem para você**. Fora dessa janela, só é possível enviar mensagens utilizando **templates aprovados pela Meta**. As mensagens desta seção **não funcionam** fora da janela de conversa.
+  Pela API oficial do WhatsApp, uma mensagem livre só pode ser enviada com a janela de conversa de 24 horas aberta. A janela abre quando o **cliente envia uma mensagem para você**. Fora dela, a conversa só começa com um [template aprovado pela Meta](/z-api/messages/send-template). Veja [Janela de conversa](/conversation-window).
 </Warning>
 
-### Dentro da janela (24h)
+## Formato da requisição
 
-O cliente enviou uma mensagem para você? Ótimo, a janela está aberta. Você pode usar qualquer endpoint desta seção para responder com texto, imagem, áudio, vídeo, documento, etc.
-
-### Fora da janela (após 24h)
-
-Se o cliente **não** enviou uma mensagem nas últimas 24 horas, a única forma de iniciar uma conversa é enviando um **template de mensagem** previamente aprovado pela Meta. Templates são mensagens pré-definidas que você cria e submete para aprovação no painel da Meta.
-
-<Info>
-  Na Z-API (conexão não oficial) essa limitação não existia — você podia enviar mensagens a qualquer momento. Na API oficial, essa regra é obrigatória e não pode ser contornada.
-</Info>
-
----
-
-Para enviar uma mensagem, você precisa do **número do telefone** do contato destinatário, incluindo o código do país.
-
-| Formato | Exemplo |
-|---|---|
-| Código do país + DDD + número | `5511999999999` |
+- O corpo é JSON (`Content-Type: application/json`) ou `application/x-www-form-urlencoded`.
+- `phone` é obrigatório em todo envio: o telefone do destinatário, com DDI e DDD, por exemplo `5511999999999`.
+- `delayMessage` e `delayTyping` aceitam até 15. Um valor maior vale 15.
+- `customId` é um identificador seu, devolvido na resposta.
 
 ## Resposta da API
 
-Ao enviar uma mensagem, a API retorna a mesma estrutura de resposta que você já conhece da Z-API. Isso significa que **nenhuma adaptação é necessária** no seu código que processa os retornos — os campos, tipos e formatos são idênticos.
-
-Exemplo de resposta ao enviar uma mensagem:
+Um envio aceito responde `200` com a mesma estrutura da Z-API:
 
 ```json
 {
   "zaapId": "3999984263738042930CD6ECDE9VDWSA",
-  "messageId": "D241XXXX732339502B68"
+  "messageId": "D241XXXX732339502B68",
+  "id": "D241XXXX732339502B68"
 }
 ```
 
+O `customId` vem na resposta quando você o envia. `id` tem o mesmo valor de `messageId`.
+
 <Note>
-  Mantemos a compatibilidade total com a estrutura de resposta da Z-API. Se a sua aplicação já trata esses campos, ela continuará funcionando sem alterações.
+  A estrutura da resposta é a da Z-API: o código que já processa esses campos continua funcionando.
 </Note>
 
 ### Armazene o messageId
 
-É muito importante que você **armazene o `messageId`** retornado, pois ele é necessário para operações futuras como marcar como lida.
+Guarde o `messageId` devolvido: ele é o identificador da mensagem nas operações que se referem a ela, como [enviar reação](/z-api/messages/send-reaction).
 
-<Warning>
-  Sem o `messageId`, você não conseguirá referenciar a mensagem posteriormente para reagir.
-</Warning>
+## Erros comuns
+
+Valem para toda rota de envio. As rotas de [instância](/z-api/instance/status) e as recusas de rota seguem o mesmo corpo `{"error": "<texto>"}`.
+
+| Status | Resposta `error` | Quando |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente ou vazio |
+| `400` | `invalid image: must be a valid URL or base64 data URI` | O campo de mídia não é uma URL `http`/`https` nem um Base64 com prefixo `data:`. O mesmo vale para `invalid video`, `invalid ptv`, `invalid audio` e `invalid document` |
+| `400` | `Authorization invalid` ou `<ip> not allowed` | Falha de [autenticação](/z-api/authentication) |
+| `400` | `ec2Id is empty for this instance` | O canal ainda não terminou de ser provisionado |
+| `404` | `instance not found` | O `id` ou o `token` do path não existe |
+| `422` | `instance middleware is not META_WHATSAPP` | O canal não é WhatsApp Oficial |
+| `422` | `instance subscription is not active` | O canal está sem assinatura ativa |
+| `422` | `Authorization invalid` ou `You are blocked, contact support.` | Falha de [autenticação](/z-api/authentication) |
+| `422` | `message has no content this route can send` | O corpo não gera nenhuma mensagem que a rota envie |
+| `422` | `this channel does not support sending messages yet` | O tipo do canal ainda não tem entrega |
+| `502` | `failed to send message` | A plataforma de mensagens não aceitou o envio. Tente de novo em alguns instantes |
+
+## Rotas de envio
+
+| Rota | O que acontece |
+|---|---|
+| [`send-text`](/z-api/messages/send-text), [`send-image`](/z-api/messages/send-image), [`send-audio`](/z-api/messages/send-audio), [`send-video`](/z-api/messages/send-video), [`send-document/{extension}`](/z-api/messages/send-document), [`send-sticker`](/z-api/messages/send-sticker) | Enviam |
+| [`send-gif`](/z-api/messages/send-gif) | Envia como imagem |
+| [`send-ptv`](/z-api/messages/send-ptv) | Envia como vídeo comum |
+| [`send-link`](/z-api/messages/send-link), [`send-contact`](/z-api/messages/send-contact), [`send-contacts`](/z-api/messages/send-contacts), [`send-location`](/z-api/messages/send-location), [`send-template`](/z-api/messages/send-template), [`send-messages`](/z-api/messages/send-messages) | Enviam |
+| [`send-button-list`](/z-api/messages/send-button-list), [`send-button-actions`](/z-api/messages/send-button-actions), [`send-button-otp`](/z-api/messages/send-button-otp) | Enviam |
+| [`send-reaction`](/z-api/messages/send-reaction), [`send-remove-reaction`](/z-api/messages/send-remove-reaction) | Enviam |
+| [`send-button-pix`](/z-api/messages/send-button-pix), [`send-carousel`](/z-api/messages/send-carousel), [`send-catalog`](/z-api/messages/send-catalog), [`send-product`](/z-api/messages/send-product) | Respondem `422` |
+| `send-option-list`, `send-option-multi-list`, `send-link-list`, `send-poll`, `send-order` | Respondem `422` |
+| `send-text-status`, `send-image-status`, `send-video-status` | Respondem `422` |
+| `send-poll-vote`, `send-call`, `send-chat-expiration`, `send-event`, `send-edit-event`, `send-event-response`, `send-comment`, `send-request-payment`, `order-status-update`, `order-payment-update`, `send-newsletter-admin-invite` | Respondem `422` |
+
+O motivo de cada recusa está em [Limitações e recusas](/z-api/limitations#envio-recusado).
 
 ## Formatação de texto
 
-Você pode formatar o texto das mensagens utilizando caracteres especiais do WhatsApp:
+Você pode formatar o texto das mensagens com os caracteres especiais do WhatsApp:
 
 | Formatação | Sintaxe | Resultado |
 |---|---|---|

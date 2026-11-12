@@ -1,0 +1,65 @@
+---
+title: "Reenviar entregas em lote"
+description: "Reenvie as entregas que falharam no episódio atual de falha de um webhook"
+openapi: "/pt/webhooks/openapi-central.json POST /v1/webhooks/deliveries/resend"
+---
+
+## Conceituação
+
+Reenvia as entregas que falharam no **episódio atual de falha** de um webhook. O corpo é sempre:
+
+```json
+{ "webhookId": "A1B2C3D4E5F6789012345678901234AB", "episode": "current" }
+```
+
+O lote pega as entregas `FAILED`, `NOT_SENT`, `EXPIRED` e `UNKNOWN` do webhook cuja última tentativa é a partir da primeira falha da sequência, inclusive as que chegaram depois dela. As entregas com reenvio em andamento ficam de fora. Cada entrega é reenviada como em [Reenviar entrega](/webhooks/resend-delivery): para a URL, a autenticação e o segredo atuais do webhook, com o mesmo `X-Webhook-Delivery-Id` e um `X-Webhook-Attempt` maior.
+
+Não há lote por filtro: sem `webhookId`, ou com `episode` diferente de `current`, a resposta é `400`.
+
+### Resposta
+
+A resposta é `202`:
+
+| Campo | O que significa |
+|---|---|
+| `queued` | Entregas colocadas na fila por este pedido, até 1.000 |
+| `remaining` | Entregas do episódio que ainda faltam. Uma entrega cujo reenvio falhou volta a contar aqui |
+| `skippedTruncated` | Entregas puladas porque o corpo foi cortado |
+| `skippedNotResendable` | Entregas puladas por outro motivo de recusa |
+| `dailyRemaining` | Quantos reenvios ainda cabem no teto do dia deste webhook |
+| `oldestExpiresAt` | Quando as entregas retidas mais antigas saem da retenção do plano. O que não for reenviado até lá se perde |
+
+### Como reenviar tudo
+
+1. Corrija o seu servidor antes: o lote usa a configuração atual do webhook.
+2. Peça o lote.
+3. Enquanto `remaining` for maior que zero, peça o próximo lote 2 minutos depois, antes de `oldestExpiresAt`.
+4. Acompanhe o resultado em [Listar entregas](/webhooks/list-deliveries) com `webhookId` e `status=RESENT` ou `status=FAILED`.
+
+### Limites
+
+| O quê | Limite |
+|---|---|
+| Entregas por pedido | 1.000 |
+| Lotes por webhook | 1 a cada 2 minutos |
+| Reenvios por webhook por dia | 50.000, somando reenvios individuais e em lote |
+
+Acima de um limite, a resposta é `429`.
+
+### Erros
+
+| Caso | Resposta |
+|---|---|
+| Sem `webhookId` | `400` com `{"error": {"message": "webhookId e obrigatorio"}}` |
+| `episode` diferente de `current` | `400` com `{"error": {"message": "o reenvio em lote exige episode=current"}}` |
+| Webhook inexistente ou de outro workspace | `404` |
+| Webhook suspenso ou desabilitado | `422` com `details.reason` `WEBHOOK_SUSPENDED` ou `WEBHOOK_DISABLED` |
+| Menos de 2 minutos desde o lote anterior | `429` com `{"error": {"message": "O proximo lote deste webhook pode ser pedido em ate 2 minutos."}}` |
+| Teto do dia atingido | `429` |
+| A consulta passou de 5 segundos | `503`. Tente de novo |
+
+Os erros de autenticação, de IP e de workspace inativo estão em [Central de webhooks](/webhooks/central#erros-comuns-a-todas-as-rotas).
+
+## Veja também
+
+- [Central de webhooks](/webhooks/central)

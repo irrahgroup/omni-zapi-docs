@@ -1,0 +1,44 @@
+---
+title: "Consultar status do WhatsApp Web"
+description: "Confira se um canal WhatsApp Web está conectado"
+openapi: "/pt/channels/openapi-zapi-status.json GET /v1/channels/{channelId}/zapi/status"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="WEB_ROUTES" lang="pt" />
+
+## Conceituação
+
+Diz se um canal `Z_API_WHATSAPP` (WhatsApp Web) está conectado. Use depois que o usuário lê o [QR Code](/channels/zapi-qr-code), para confirmar a conexão, e sempre que precisar saber se o canal está em pé.
+
+Use a Secret Key, do seu backend. Não exige ENTERPRISE.
+
+```json
+{"connected": true, "session": true, "created": 1762790400000, "error": null, "smartphoneConnected": true}
+```
+
+| Campo | O que diz |
+|---|---|
+| `connected` | `true` quando o número está conectado ao canal |
+| `smartphoneConnected` | `true` quando o celular do número está online |
+| `session`, `created`, `error` | Informativos |
+
+Com `connected: false`, gere um novo QR Code em [Gerar QR Code](/channels/zapi-qr-code) para o usuário ler.
+
+### Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, malformada ou inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fora da [lista de IPs](/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Falha de integração; tente de novo em alguns instantes |
+
+<Note>
+  O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel) ou de [Listar canais](/channels/list-channels).
+</Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

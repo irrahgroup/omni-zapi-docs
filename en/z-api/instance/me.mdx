@@ -1,0 +1,43 @@
+---
+title: "Instance data"
+description: "Get the channel data in the Z-API format"
+openapi: "/en/z-api/openapi.json GET /me"
+---
+
+## Overview
+
+Returns the channel data in the Z-API format. Only the fields Z-API Omni has come back: a field without a value is omitted, never made up.
+
+```json
+{
+  "id": "019E4C54B1B375A28970B605CA9B03C3",
+  "token": "F1B29C3D4E5A6B7C8D9E0F1A2B3C4D5E",
+  "name": "Store",
+  "connected": true,
+  "paymentStatus": "PAID"
+}
+```
+
+| Field | What it is |
+|---|---|
+| `id` | Channel `id` |
+| `token` | Channel `token` |
+| `name` | Channel name, when it exists |
+| `due` | Due date, when it exists |
+| `connected` | `true` when the channel is connected |
+| `paymentStatus` | Payment status, when it exists |
+| `created` | Creation date, when it exists |
+
+### Errors
+
+| Status | `error` response | When |
+|---|---|---|
+| `404` | `instance not found` | The `id` or `token` in the path does not exist |
+| `422` | `instance data route is not available through this compatibility route for Z_API_WHATSAPP instances yet` | The channel is of type `Z_API_WHATSAPP` |
+| `502` | `failed to read instance data` | The platform did not answer. Try again |
+
+[Authentication](/en/z-api/authentication) errors apply here too.
+
+## See also
+
+- [Z-API Compatibility](/en/z-api/introduction)

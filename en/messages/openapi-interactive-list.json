@@ -1,0 +1,363 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Send option list",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Send option list",
+        "description": "Sends a list of options grouped in sections.",
+        "operationId": "sendInteractiveListMessage",
+        "tags": [
+          "Messages"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "YOUR_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendInteractiveListRequest"
+              },
+              "examples": {
+                "list": {
+                  "summary": "List with two sections",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_LIST",
+                      "header": {
+                        "message": "Cardápio"
+                      },
+                      "body": {
+                        "message": "Escolha uma opção"
+                      },
+                      "footer": {
+                        "message": "Entrega em 40 min"
+                      },
+                      "action": {
+                        "message": "Ver opções"
+                      },
+                      "attachments": [
+                        {
+                          "title": "Pizzas",
+                          "list": [
+                            {
+                              "id": "pizza_marg",
+                              "title": "Margherita",
+                              "description": "Molho, muçarela e manjericão"
+                            },
+                            {
+                              "id": "pizza_pep",
+                              "title": "Pepperoni",
+                              "description": "Molho, muçarela e pepperoni"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "Bebidas",
+                          "list": [
+                            {
+                              "id": "refri_lata",
+                              "title": "Refrigerante lata",
+                              "description": "350 ml"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Message sent successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Secret Key missing, malformed or nonexistent (`Authorization invalid`), IP outside the IP list (`<ip> not allowed`) or a body that does not fit the message type (`code` `VALIDATION_ERROR`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorText"
+                },
+                {
+                  "$ref": "#/components/schemas/SendError"
+                }
+              ]
+            },
+            "examples": {
+              "authorization": {
+                "summary": "Invalid Secret Key",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "validation": {
+                "summary": "Invalid body",
+                "value": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.body': is required for message type INTERACTIVE_LIST"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Channel disconnected. The message was not sent: connect the channel again and repeat the send.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendInteractiveListRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Recipient phone (country code + area code + number)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body",
+              "action",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Message type",
+                "enum": [
+                  "INTERACTIVE_LIST"
+                ]
+              },
+              "header": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Header text. Optional"
+                  }
+                }
+              },
+              "body": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Message text"
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              },
+              "footer": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Footer text. Optional"
+                  }
+                }
+              },
+              "action": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Text of the button that opens the list"
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              },
+              "attachments": {
+                "type": "array",
+                "description": "List sections",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "description": "Section title"
+                    },
+                    "list": {
+                      "type": "array",
+                      "description": "Section rows",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Row ID, chosen by you"
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Row title"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "Row description"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "list"
+                  ]
+                }
+              },
+              "messageIdReply": {
+                "type": "string",
+                "description": "ID of the message being replied to, with a quote. Optional"
+              },
+              "messageIdForwarded": {
+                "type": "string",
+                "description": "ID of the forwarded message. Optional"
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID of the sent message: 32 uppercase hexadecimal characters"
+          }
+        }
+      },
+      "ErrorText": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error text"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the refusal, in UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error category",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Case code. Only present when the case has its own code",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error description. The text may change: handle the error by `code` and `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in the Z-API Omni Security panel"
+      }
+    }
+  }
+}

@@ -1,10 +1,18 @@
 ---
 title: "Enviar documento"
 description: "Envía un PDF, una planilla u otro archivo por URL o Base64"
+openapi: "/es/messages/openapi-document.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
+import { MediaLimits } from '/snippets/media-limits.mdx';
+
+<WindowRule lang="es" template="con encabezado de documento" href="/es/templates/models/custom" />
+
+<ChannelSupport type="DOCUMENT" lang="es" />
+
+<MediaLimits lang="es" />
 
 ## Conceptos
 
@@ -13,60 +21,9 @@ Envía un archivo al contacto. El campo `content.type` es `DOCUMENT`.
 El nombre que ve el cliente se arma con `name` y `extension`: `"name": "factura"` con `"extension": "pdf"`
 llega como `factura.pdf`, con el ícono de PDF.
 
-<WindowRule lang="es" template="con encabezado de documento" href="/es/templates/models/custom" />
-
-<ChannelSupport type="DOCUMENT" lang="es" />
-
-## Cuerpo de la petición
-
-Por URL:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "https://tutienda.com/factura.pdf",
-        "name": "factura",
-        "extension": "pdf",
-        "caption": "Aquí está tu factura"
-      }
-    ]
-  }
-}
-```
-
-Por Base64, con el prefijo del tipo de archivo en el propio `url`:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "data:application/pdf;base64,JVBERi0xLjQK...",
-        "name": "factura",
-        "extension": "pdf",
-        "caption": "Aquí está tu factura"
-      }
-    ]
-  }
-}
-```
-
-## Campos del adjunto
-
-| Campo | Descripción |
-|---|---|
-| `url` | Dirección `https` del archivo, o el contenido en Base64 con el prefijo del tipo, como `data:application/pdf;base64,` |
-| `name` | Nombre del archivo, **sin** la extensión |
-| `extension` | Extensión, sin el punto: `pdf`, `xlsx`, `docx`. Es la que define el ícono. Sin ella, el archivo llega sin nombre |
-| `caption` | Leyenda, mostrada junto con el archivo |
-
 ## Reglas
+
+El campo `content.attachments` es obligatorio: sin él, la API responde `400` con `VALIDATION_ERROR`. Sin `name`, el archivo llega sin nombre.
 
 | Regla | Valor |
 |---|---|
@@ -74,18 +31,12 @@ Por Base64, con el prefijo del tipo de archivo en el propio `url`:
 | Tipos | PDF, Word, Excel, PowerPoint, texto |
 | Leyenda | hasta 1024 caracteres |
 
-## Qué cambia en cada canal
-
-| Canal | Cómo va el archivo |
-|---|---|
-| Meta Cloud API y WhatsApp Web | Por URL o Base64. Nombre y leyenda llegan como los enviaste |
-| Telegram | **Solo por URL.** En PDF, ZIP y GIF, el nombre que aparece es el que está al final de la URL |
-| Instagram | **Solo PDF, solo por URL**, y sin nombre ni leyenda |
-
-Las condiciones están explicadas en [qué acepta cada canal](/es/channels/message-support#documento-en-instagram-y-telegram).
-
 ## Cuando el canal rechaza el archivo
 
 La API responde `200` con el `messageId` en cuanto acepta la petición. Si después el canal rechaza el archivo,
 por ejemplo un Base64 en Telegram o una planilla en Instagram, el mensaje no llega, y el fallo viene en el
 webhook de estado del mensaje (`MESSAGE_STATUS`). Consulta [webhooks de canal](/es/webhooks/channel-webhooks).
+
+## Véase también
+
+- [Introducción](/es/messages/introduction)

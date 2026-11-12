@@ -1,0 +1,30 @@
+---
+title: "Clear the queue"
+description: "Refuses to clear the queue: nothing is removed"
+openapi: "/en/z-api/openapi.json DELETE /queue"
+---
+
+## Overview
+
+Answers `422` and removes nothing: a sent message was already handed to the official API and cannot be taken back.
+
+```json
+{
+  "error": "messages are not queued on META_WHATSAPP channels: they are handed to the official API when sent and cannot be removed"
+}
+```
+
+### Errors
+
+| Status | `error` response | When |
+|---|---|---|
+| `422` | `messages are not queued on META_WHATSAPP channels: they are handed to the official API when sent and cannot be removed` | Always |
+| `404` | `instance not found` | The `id` or `token` in the path does not exist |
+| `422` | `queue route is not available through this compatibility route for Z_API_WHATSAPP instances yet` | The channel is of type `Z_API_WHATSAPP` |
+
+[Authentication](/en/z-api/authentication) errors apply here too.
+
+## See also
+
+- [Instance status](/en/z-api/instance/status)
+- [Limitations and refusals](/en/z-api/limitations)

@@ -1,21 +1,32 @@
 ---
 title: "Enviar lista de botões"
-description: "Envie mensagens com botões de seleção rápida"
-openapi: "POST /send-button-list"
+description: "Envie mensagens com botões de resposta rápida"
+openapi: "/pt/z-api/openapi.json POST /send-button-list"
 ---
 
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Conceituação
-
-Método para envio de mensagens com botões de seleção rápida. O destinatário pode escolher entre as opções apresentadas, que funcionam como resposta à mensagem.
-
-Opcionalmente, você pode incluir uma **imagem** ou **vídeo** junto aos botões adicionando o campo `image` ou `video` dentro de `buttonList`.
-
-<Warning>
-  Envie apenas `image` ou `video`, nunca os dois ao mesmo tempo.
-</Warning>
+Envia uma mensagem com até 3 botões de resposta rápida. O destinatário escolhe um, e a escolha chega como resposta.
 
 <Note>
   <ZapiResponseText lang="pt" />
 </Note>
+
+Os limites de tamanho vêm do WhatsApp: mensagem de até 1024 caracteres, 3 botões, texto do botão de até 20 caracteres e `id` de até 256. Quando um limite é excedido, a resposta é `422` com o texto do campo, como `message must be at most 1024 characters in a button list` ou `buttonList.buttons[0].label must be at most 20 characters`. O corpo precisa trazer `label` em cada botão: o nome antigo `text` não é lido.
+
+### Erros
+
+| Status | Resposta `error` | Quando |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente ou vazio |
+| `422` | `message is required for a button list` | `message` ausente ou vazio |
+| `422` | `buttonList.buttons is required` | `buttonList.buttons` ausente ou vazio |
+| `422` | `buttonList.buttons must have at most 3 buttons` | Mais de 3 botões |
+| `422` | `buttonList.buttons[0].label is required` | Botão sem `label` (o número entre colchetes é a posição do botão) |
+| `422` | `buttonList.buttons labels must be unique` | Dois botões com o mesmo `label` (vale também para `id`: `buttonList.buttons ids must be unique`) |
+| `422` | `buttonList accepts headerImage or headerVideo, not both` | `headerImage` e `headerVideo` juntos |
+
+## Veja também
+
+- [Mensagens: erros comuns](/z-api/messages/introduction#erros-comuns)
+- [Limitações e recusas](/z-api/limitations)

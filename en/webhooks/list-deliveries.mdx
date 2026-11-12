@@ -1,0 +1,54 @@
+---
+title: "List deliveries"
+description: "List the event deliveries to the workspace webhooks"
+openapi: "/en/webhooks/openapi-central.json GET /v1/webhooks/deliveries"
+---
+
+## Overview
+
+Lists the event deliveries to the webhooks of the Secret Key's workspace, newest first. The response has no total: when there are more items, it carries `nextCursor`; on the last page, `nextCursor` is `null`.
+
+### Filters
+
+Every filter is optional.
+
+| Parameter | Value |
+|---|---|
+| `webhookId` | Webhook ID |
+| `status` | `SUCCEEDED`, `RETRYING`, `FAILED`, `NOT_SENT`, `EXPIRED`, `UNKNOWN` or `RESENT`. See [Delivery statuses](/en/webhooks/central#delivery-statuses) |
+| `eventType` | A channel webhook event (`MESSAGE_RECEIVED`, `MESSAGE_DELIVERY`, `MESSAGE_STATUS`, `RECEIVED_STATUS`, `RECEIVED_AND_DELIVERY`, `CONNECTED`, `DISCONNECTED`, `PRESENCE_CHAT`, `INITIAL_DATA`, `BLOCK`) or `UPDATE_TEMPLATE_STATUS` and `UPDATE_TEMPLATE_CATEGORY`. Accepted in any letter case |
+| `eventId` | Event ID (UUID), the same as the `x-webhook-event-id` header |
+| `from`, `to` | Period, in ISO-8601 UTC. Default: the last 24 hours |
+| `limit` | Items per page. Default 50, maximum 100 |
+| `cursor` | The `nextCursor` of the previous page |
+
+A `from` earlier than the plan retention is moved to its start, with no error, and the response carries `fromAdjusted: true`.
+
+### Fields of each delivery
+
+- `attempts` is the number of the last attempt.
+- `lastHttpStatus` is `null` when the last attempt got no response from your server (timeout, connection or DNS error). Do not treat it as a required integer.
+- `lastOutcome`: `SUCCEEDED`, `HTTP_ERROR`, `TIMEOUT`, `CONNECTION_ERROR`, `DESTINATION_REFUSED`, `NOT_SENT_CIRCUIT_OPEN`, `NOT_SENT_SUSPENDED` or `EXPIRED`.
+- `notSentReason` (`SUSPENDED` or `CIRCUIT_OPEN`) only comes with `status` `NOT_SENT`.
+- `resentAt` only comes with `status` `RESENT`.
+- `resendable` tells whether the delivery can be resent now; when it cannot, `notResendableReason` tells why (`TRUNCATED`, `WEBHOOK_SUSPENDED` or `WEBHOOK_DISABLED`).
+- Fields without a value come as `null`, never missing.
+
+### Errors
+
+| Case | Response |
+|---|---|
+| `eventType` not in the list | `400` with `{"error": {"message": "eventType invalido"}}` |
+| `status` not in the list | `400` with `{"error": {"message": "status invalido"}}` |
+| `from` equal to or later than `to` | `400` with `{"error": {"message": "from deve ser anterior a to"}}` |
+| Date not in ISO-8601 | `400` with `{"error": {"message": "<field> deve ser uma data ISO-8601"}}` |
+| `limit` outside 1 to 100 | `400` with `{"error": {"message": "limit deve ser de 1 a 100"}}` |
+| `eventId` that is not a UUID | `400` with `{"error": {"message": "eventId invalido"}}` |
+| `cursor` that does not decode | `400` with `{"error": {"message": "cursor invalido"}}` |
+| The query took longer than 5 seconds | `503`. Request a shorter period or try again |
+
+The authentication, IP and inactive workspace errors are in [Webhook center](/en/webhooks/central#errors-common-to-every-route).
+
+## See also
+
+- [Webhook center](/en/webhooks/central)

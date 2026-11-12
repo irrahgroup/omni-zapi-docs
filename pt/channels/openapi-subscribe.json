@@ -1,68 +1,166 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Assinar Canal",
+    "title": "Z-API Omni - Assinar canal",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/subscribe": {
       "get": {
-        "summary": "Assinar canal (ENTERPRISE)",
-        "description": "Vincula o canal à assinatura Stripe ativa da conta. O canal é adicionado automaticamente à assinatura existente e uma cobrança proporcional ao período restante é incluída na próxima fatura. O pagamento deve ter sido concluído previamente pelo usuário no painel do Omni Z-API. Requer role **ENTERPRISE**.",
+        "summary": "Assinar canal",
+        "description": "Inclui o canal na assinatura da conta. Quando há pagamento a fazer, a resposta traz a `url` do checkout; quando a assinatura é atualizada sem checkout, a resposta traz `type` `SUBSCRIPTION_UPDATED`. Requer role ENTERPRISE.",
         "operationId": "subscribeChannel",
-        "tags": ["Canais"],
+        "tags": [
+          "Canais"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
-            "description": "ID do canal (obtido via Criar canal)",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "description": "ID do canal (obtido em Criar canal ou Listar canais)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          },
+          {
+            "name": "redirectUrl",
+            "in": "query",
+            "required": false,
+            "description": "URL para onde o checkout volta depois do pagamento",
+            "schema": {
+              "type": "string",
+              "format": "uri",
+              "example": "https://app.suaempresa.com/canais"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Canal vinculado à assinatura com sucesso",
+            "description": "Assinatura atualizada ou checkout criado",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SubscribeResponse" },
-                "example": {
-                  "type": "SUBSCRIPTION_UPDATED",
-                  "message": "Canal ativo. Cobrança proporcional será incluída na próxima fatura."
+                "schema": {
+                  "$ref": "#/components/schemas/SubscribeResponse"
+                },
+                "examples": {
+                  "subscriptionUpdated": {
+                    "summary": "Assinatura atualizada sem checkout",
+                    "value": {
+                      "type": "SUBSCRIPTION_UPDATED",
+                      "message": "Canal ativo. Cobrança proporcional será incluída na próxima fatura."
+                    }
+                  },
+                  "checkout": {
+                    "summary": "Pagamento a fazer",
+                    "value": {
+                      "checkoutId": "cs_a1B2c3D4e5F6",
+                      "url": "https://checkout.stripe.com/c/pay/cs_a1B2c3D4e5F6"
+                    }
+                  }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": {
-            "description": "Canal não encontrado",
+          "400": {
+            "description": "Secret Key ausente, malformada ou inexistente, IP fora da lista de IPs liberados ou requisição inválida",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 404, "message": "Channel not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fora da lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente ou de outro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
               }
             }
           },
           "422": {
-            "description": "Regra de negócio violada. Possíveis causas:\n\n- `ENTERPRISE role required` — conta sem role ENTERPRISE\n- `CREDIT_LIMIT_EXCEEDED` — limite de crédito da conta atingido\n- `SUBSCRIPTION_TERMINATED` — assinatura encerrada, não é possível adicionar canais",
+            "description": "Conta sem role ENTERPRISE, ou regra de cobrança violada (`CREDIT_LIMIT_EXCEEDED`: limite de crédito da conta atingido; `SUBSCRIPTION_TERMINATED`: assinatura encerrada, não é possível incluir canais). Nos erros de cobrança, o código vem em `error.type`.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BusinessError"
+                    }
+                  ]
+                },
                 "examples": {
                   "enterpriseRequired": {
                     "summary": "Conta sem role ENTERPRISE",
-                    "value": { "error": 422, "message": "This action requires ENTERPRISE role" }
+                    "value": {
+                      "error": "Channel subscription requires ENTERPRISE role"
+                    }
                   },
                   "creditLimit": {
                     "summary": "Limite de crédito atingido",
-                    "value": { "error": 422, "message": "CREDIT_LIMIT_EXCEEDED" }
+                    "value": {
+                      "error": {
+                        "type": "CREDIT_LIMIT_EXCEEDED"
+                      }
+                    }
                   },
                   "terminated": {
                     "summary": "Assinatura encerrada",
-                    "value": { "error": 422, "message": "SUBSCRIPTION_TERMINATED" }
+                    "value": {
+                      "error": {
+                        "type": "SUBSCRIPTION_TERMINATED"
+                      }
+                    }
                   }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha de integração. A operação não foi concluída; tente de novo em alguns instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
                 }
               }
             }
@@ -72,39 +170,70 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Token inválido ou ausente.",
-        "content": {
-          "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo do erro"
           }
         }
-      }
-    },
-    "schemas": {
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estável do erro"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto do erro, em inglês"
+          }
+        }
+      },
       "SubscribeResponse": {
         "type": "object",
         "properties": {
+          "checkoutId": {
+            "type": "string",
+            "description": "ID do checkout, quando há pagamento a fazer"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL do checkout para concluir o pagamento, quando há pagamento a fazer"
+          },
           "type": {
             "type": "string",
-            "enum": ["SUBSCRIPTION_UPDATED"],
-            "description": "Indica que o canal foi adicionado à assinatura com sucesso",
+            "description": "`SUBSCRIPTION_UPDATED` quando a assinatura foi atualizada sem checkout",
             "example": "SUBSCRIPTION_UPDATED"
           },
           "message": {
             "type": "string",
-            "description": "Mensagem informativa para exibir ao usuário",
-            "example": "Canal ativo. Cobrança proporcional será incluída na próxima fatura."
+            "description": "Mensagem informativa para exibir ao usuário"
           }
         }
       },
-      "Error": {
+      "BusinessError": {
         "type": "object",
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Código de negócio do erro"
+              },
+              "message": {
+                "type": "string",
+                "description": "Texto descritivo do erro"
+              },
+              "details": {
+                "description": "Detalhes adicionais, quando houver"
+              }
+            }
+          }
         }
       }
     },
@@ -112,7 +241,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key gerada no painel de Segurança do Omni Z-API"
+        "description": "Secret Key gerada em Segurança, no painel do Z-API Omni. O prefixo `Bearer` é opcional."
       }
     }
   }

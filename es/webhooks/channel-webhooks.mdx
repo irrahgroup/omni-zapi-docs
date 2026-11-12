@@ -12,7 +12,7 @@ Los webhooks de canal se asocian a un canal concreto mediante el `channelId` y r
 Un mismo canal puede tener **varios webhooks** con configuraciones distintas; por ejemplo, uno para mensajes y otro para eventos de conexión.
 
 <Note>
-  Los conceptos comunes a los dos tipos de webhook (quién puede gestionarlos, reglas de la URL, autenticación, firma HMAC y formatos de payload) están en la [Introducción](/es/webhooks/introduction).
+  Los conceptos comunes a los tres tipos de webhook (quién puede gestionarlos, reglas de la URL, autenticación, firma HMAC y formatos de payload) están en la [Introducción](/es/webhooks/introduction).
 </Note>
 
 ## Eventos disponibles
@@ -30,12 +30,39 @@ Un mismo canal puede tener **varios webhooks** con configuraciones distintas; po
 | `INITIAL_DATA` | Sincronización inicial de datos al conectar el canal |
 | `BLOCK` | Evento de bloqueo de un contacto |
 
+## Eventos por tipo de canal
+
+Cada tipo de canal emite solo algunos eventos. Al crear o actualizar un webhook de canal, los eventos se comprueban contra el tipo del canal.
+
+| Evento | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| `MESSAGE_RECEIVED` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `MESSAGE_DELIVERY` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `MESSAGE_STATUS` | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `RECEIVED_AND_DELIVERY` | ❌ | ✅ | ✅ | ✅ | ✅ |
+| `PRESENCE_CHAT` | ❌ | ✅ | ❌ | ❌ | ❌ |
+| `CONNECTED` | ✅ | ✅ | ❌ | ❌ | ✅ |
+| `DISCONNECTED` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `INITIAL_DATA` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `RECEIVED_STATUS` | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `BLOCK` | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+Ningún tipo de canal admite `RECEIVED_STATUS` ni `BLOCK`.
+
+Un evento que el tipo del canal no emite se rechaza con `422`, sin guardar nada:
+
+```json
+{ "error": "Events [PRESENCE_CHAT] are not supported by middleware META_WHATSAPP" }
+```
+
+En el `PATCH`, un evento que ya estaba guardado en el webhook sigue aceptado, aunque esté fuera de la tabla: así un webhook antiguo se puede editar y quitarle el evento.
+
 <Note>
   El `DISCONNECTED` sigue como es, sin código del motivo. Para recibir en un solo lugar la desconexión de todos los canales del workspace, con el motivo en código, consulta el [Aviso de desconexión de canal](/es/webhooks/channel-disconnected).
 </Note>
 
 <Note>
-  Los webhooks de canal **no** pueden suscribirse a eventos de plantilla (`422`). Para recibir los eventos de plantilla de WhatsApp, usa los [Webhooks de plantilla](/es/webhooks/template-webhooks).
+  Los webhooks de canal **no** pueden suscribirse a eventos de plantilla (`422`). Para recibir los eventos de plantilla de WhatsApp, usa el [Webhook global](/es/webhooks/template-webhooks).
 </Note>
 
 ## Gestión

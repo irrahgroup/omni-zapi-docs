@@ -6,12 +6,22 @@ openapi: "/en/z-api/openapi.json POST /send-text"
 
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Overview
-
-Method for sending simple text messages. Supports WhatsApp formatting, emojis, and line breaks.
-
-To add line breaks in the message, use any of these formats: `\n`, `\r`, `\r\n` or `%0a`.
+Sends a simple text message. It supports WhatsApp formatting, emojis and line breaks.
 
 <Note>
   <ZapiResponseText lang="en" />
 </Note>
+
+### Errors
+
+| Status | `error` response | When |
+|---|---|---|
+| `400` | `phone is required` | `phone` missing or empty |
+| `400` | `message is required` | `message` missing, empty or only spaces |
+| `400` | `mentions are only allowed in groups` | `mentioned` in a conversation that is not a group |
+| `422` | `message editing is not supported for this channel` | `editMessageId` in the body |
+
+## See also
+
+- [Messages: common errors](/en/z-api/messages/introduction#common-errors)
+- [Limitations and refusals](/en/z-api/limitations)

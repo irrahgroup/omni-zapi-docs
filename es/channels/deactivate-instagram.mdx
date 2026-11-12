@@ -1,0 +1,43 @@
+---
+title: "Desactivar Instagram"
+description: "Desconecta un canal META_INSTAGRAM y limpia el vínculo en el proveedor"
+openapi: "/es/channels/openapi-deactivate-social.json POST /v1/channels/{channelId}/deactivate-instagram"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_INSTAGRAM" lang="es" />
+
+## Conceptos
+
+Desconecta un canal `META_INSTAGRAM` y limpia el vínculo con la cuenta, la página o el bot. Sin cuerpo.
+
+Úsalo para cambiar de cuenta de Instagram.
+
+Usa la Secret Key, desde tu backend. No requiere ENTERPRISE.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/deactivate-instagram \
+  -H "Authorization: Bearer SU_SECRET_KEY"
+```
+
+La respuesta es un booleano. Con `true`, el canal queda desconectado y se limpia el vínculo. Con `false`, nada cambia en el canal.
+
+Para conectar de nuevo, rehaz la conexión con el SDK y finaliza con [Activar Instagram](/es/channels/activate-instagram). Las rutas equivalentes de los otros canales sociales son [Desactivar Instagram](/es/channels/deactivate-instagram), [Desactivar Messenger](/es/channels/deactivate-messenger) y [Desactivar Telegram](/es/channels/deactivate-telegram).
+
+### Errores
+
+| Estado | Cuerpo | Cuándo |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, mal formada o inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fuera de la [lista de IPs](/es/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente o de otro workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Falla de integración; vuelve a intentarlo en unos instantes |
+
+<Note>
+  El `channelId` se obtiene mediante el endpoint [Crear canal](/es/channels/create-channel) o [Listar canales](/es/channels/list-channels).
+</Note>
+
+## Véase también
+
+- [Introducción](/es/channels/introduction)

@@ -1,220 +1,377 @@
 ---
-title: "Limitações da API Oficial"
-description: "Funcionalidades da Z-API que não estão disponíveis na API oficial do WhatsApp"
+title: "Limitações e recusas"
+description: "O que a compatibilidade com a Z-API recusa, com a resposta de cada caso"
 ---
 
-import { projectName } from '/snippets/variables.mdx';
+## Como as recusas respondem
 
-## Sobre as limitações
+A compatibilidade atende só canais WhatsApp Oficial (`META_WHATSAPP`). O que ela não envia ou não tem responde sempre em JSON, depois da [autenticação](/z-api/authentication), e nada é enviado:
 
-A API oficial do WhatsApp Business possui algumas limitações em relação à Z-API (que utiliza conexão não oficial). Algumas funcionalidades que existiam na Z-API **não são suportadas** pela API oficial e, portanto, não estão disponíveis no {projectName}.
-
-Abaixo listamos as funcionalidades afetadas para que você avalie o impacto na sua integração antes de migrar.
-
----
-
-## Mensagens
-
-| Funcionalidade | Rota Z-API | Status |
+| Caso | Status | Corpo |
 |---|---|---|
-| Deletar mensagem | [`DELETE /messages`](https://developer.z-api.io/message/delete-message) | ❌ Não suportado |
-| Editar mensagem | Atributo `editMessageId` nos envios | ❌ Não suportado |
-| Encaminhar mensagem | [`POST /forward-message`](https://developer.z-api.io/message/forward-message) | ❌ Não suportado |
-| Enviar GIF | [`POST /send-gif`](https://developer.z-api.io/message/send-message-gif) | ❌ Não suportado |
-| Enviar PTV (vídeo circular) | [`POST /send-ptv`](https://developer.z-api.io/message/send-message-ptv) | ❌ Não suportado |
-| Editar descrição de documento | Atributo `editDocumentMessageId` no send-document | ❌ Não suportado |
-| Enviar OTP via botão | [`POST /send-button-otp`](https://developer.z-api.io/message/send-button-otp) | ⚠️ Apenas via template |
-| Responder mensagem (citação) | Atributo `messageId` nos envios ([reply-message](/z-api/messages/reply-message)) | ❌ Não suportado |
-| Resposta privada em grupo | Atributo `privateAnswer` no reply-message | ❌ Não suportado |
-| Enviar enquete / votar | [`POST /send-poll`](https://developer.z-api.io/message/send-poll) | ❌ Não suportado |
-| Fixar mensagem | [`POST /pin-message`](https://developer.z-api.io/message/send-pin-message) | ❌ Não suportado |
-| Enviar / editar / responder evento | [`POST /send-event`](https://developer.z-api.io/message/send-event) | ❌ Não suportado |
-| Convite de admin de canal | [`POST /send-newsletter-admin-invite`](https://developer.z-api.io/message/send-newsletter-admin-invite) | ❌ Não suportado |
+| Rota de envio recusada | `422` | `{"error": "<motivo>"}`, na tabela [Envio recusado](#envio-recusado) |
+| Rota da Z-API sem equivalente | `422` | `{"error": "<família> route is not available for META_WHATSAPP channels; available only on Z-API (WhatsApp Web) instances"}` |
+| Método errado para uma rota que existe | `405`, com o header `Allow` | `{"error": "method not allowed: use POST"}`, com os métodos aceitos no lugar de `POST` |
+| Rota que não existe na compatibilidade | `404` | `{"error": "route not found: this route does not exist in the Z-API compatibility"}` |
+| Canal de outro tipo, em rota de envio | `422` | `{"error": "instance middleware is not META_WHATSAPP"}` |
+| Canal sem assinatura ativa, em rota de envio | `422` | `{"error": "instance subscription is not active"}` |
 
-## Contatos
+Quando o canal não é WhatsApp Oficial, o nome do tipo do canal entra na mensagem de recusa das rotas sem equivalente, no lugar de `META_WHATSAPP`.
 
-| Funcionalidade | Rota Z-API | Status |
+## Envio recusado
+
+Estas rotas existem na compatibilidade, mas **não enviam**. A resposta é `422`, sem `zaapId` nem `messageId`.
+
+| Rota | Resposta `error` |
+|---|---|
+| `send-button-pix` | `pix button is not supported for this channel` |
+| `send-poll` | `poll is not supported for this channel` |
+| `send-order` | `order is not supported for this channel` |
+| `send-link-list` | `link list is not supported for this channel` |
+| `send-carousel` | `carousel is not available for this channel yet` |
+| `send-catalog` | `catalog message is not available for this channel yet` |
+| `send-product` | `product message is not available for this channel yet` |
+| `send-option-multi-list` | `multi-section option list is not available for this channel yet` |
+| `send-option-list` | `option list is not available for this channel yet`. O payload é conferido antes: um erro dele (por exemplo `optionList.options is required`) vem no lugar desta mensagem |
+| `send-text-status`, `send-image-status`, `send-video-status` | `status (stories) route is not available for META_WHATSAPP channels; available only on Z-API (WhatsApp Web) instances` |
+| Qualquer rota de envio com `editMessageId` ou `editDocumentMessageId` | `message editing is not supported for this channel` |
+
+As mensagens com "is not supported" são de recursos que o WhatsApp Oficial não tem. As com "is not available ... yet" são de recursos que ainda não estão disponíveis por esta rota.
+
+### Rotas sem conteúdo convertido
+
+Estas rotas existem, mas o corpo no formato da Z-API não é convertido em uma mensagem. A resposta é `422` com `{"error": "message has no content this route can send"}`, e nada é enviado:
+
+- `send-poll-vote`
+- `send-call`
+- `send-chat-expiration` (o valor de `chatExpiration` é conferido antes: `24_HOURS`, `7_DAYS`, `90_DAYS` ou `OFF`)
+- `send-event`, `send-edit-event` e `send-event-response`
+- `send-comment`
+- `send-request-payment`
+- `order-status-update` e `order-payment-update`
+- `send-newsletter-admin-invite`
+
+A mesma resposta vale para qualquer envio cujo conteúdo seria um texto vazio, por exemplo `send-messages` com `message` só com espaços ou `send-button-otp` sem `code` e `message`.
+
+## Recusas por campo em rotas que enviam
+
+| Rota | Quando | Resposta `error` |
 |---|---|---|
-| Listar contatos | [`GET /contacts?page=&pageSize=`](https://developer.z-api.io/contacts/get-contacts) | ❌ Não suportado |
-| Adicionar contatos | [`POST /contacts/add`](https://developer.z-api.io/contacts/add-contacts) | ❌ Não suportado |
-| Remover contatos | [`DELETE /contacts/remove`](https://developer.z-api.io/contacts/remove-contacts) | ❌ Não suportado |
-| Metadados do contato | [`GET /contacts/{phone}`](https://developer.z-api.io/contacts/get-metadata-contact) | ❌ Não suportado |
-| Foto de perfil | [`GET /profile-picture?phone={phone}`](https://developer.z-api.io/contacts/get-profile-picture) | ❌ Não suportado |
-| Verificar número no WhatsApp | [`GET /phone-exists/{phone}`](https://developer.z-api.io/contacts/get-iswhatsapp) | ❌ Não suportado |
-| Verificar números em lote | [`POST /phone-exists-batch`](https://developer.z-api.io/contacts/get-iswhatsapp-batch) | ❌ Não suportado |
-| Bloquear / desbloquear contato | [`POST /contacts/modify-blocked`](https://developer.z-api.io/contacts/block-contact) | ❌ Não suportado |
-| Denunciar contato | [`POST /contacts/{phone}/report`](https://developer.z-api.io/contacts/report-contact) | ❌ Não suportado |
+| `send-button-actions` | Botão `CALL` | `call button is not supported for this channel` |
+| `send-button-actions` | Botão `URL` com o link de copiar código (`whatsapp.com/otp/code`) | `copy button is not supported for this channel` |
+| `send-button-actions` | Botões `URL` e `REPLY` juntos | `URL and REPLY buttons cannot be sent together on this channel` |
+| `send-button-actions` | Mais de um botão `URL` | `only one URL button is supported for this channel` |
+| `send-button-actions` | Botão `URL` com `image` | `image header with a URL button is not available for this channel yet` |
+| `send-button-actions` | Botões `REPLY` com `title` ou `footer` | `title and footer with REPLY buttons are not available for this channel yet` |
+| `send-button-list` | `headerImage` e `headerVideo` juntos | `buttonList accepts headerImage or headerVideo, not both` |
 
-## Grupos
+Os limites de tamanho e de quantidade estão em [Enviar botões de ação](/z-api/messages/send-button-actions) e [Enviar lista de botões](/z-api/messages/send-button-list).
+
+## Rotas que enviam com diferença
+
+| Recurso | O que acontece |
+|---|---|
+| Responder com citação (`messageId` nos envios) | O campo é aceito, mas a mensagem chega sem citar a original |
+| Resposta privada em grupo (`privateAnswer`) | O campo não é lido |
+| `send-gif` | Enviado como imagem |
+| `send-ptv` | Enviado como vídeo comum, não como vídeo circular |
+| `delayMessage` e `delayTyping` | Valores acima de 15 são reduzidos a 15 |
+| `mentioned` | Só em conversa de grupo. Fora dela: `400` com `mentions are only allowed in groups` |
+
+## Rotas da Z-API sem equivalente
+
+São 149 rotas da Z-API. Todas respondem `422` com `<família> route is not available for META_WHATSAPP channels; available only on Z-API (WhatsApp Web) instances`, depois da autenticação. Cada tabela traz o nome da família que entra na mensagem.
+
+Os métodos que a tabela tem para uma rota são os únicos que respondem `422`. Outro método responde `405`.
+
+Os webhooks, as rotas de integrador e as rotas on-demand da Z-API não têm equivalente na compatibilidade e respondem `404`, como qualquer rota que não existe.
 
 <Info>
-  A API oficial do WhatsApp possui suporte a grupos, porém com funcionalidades limitadas em relação à Z-API. As funcionalidades suportadas pela oficial estão marcadas como **Em desenvolvimento** e serão disponibilizadas em breve no {projectName}.
+  Para canais WhatsApp Web, o Z-API Omni tem rotas próprias, fora da compatibilidade: [QR Code](/channels/zapi-qr-code), [status](/channels/zapi-status), [desconectar](/channels/zapi-disconnect) e [aparelho](/channels/zapi-device).
 </Info>
 
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Criar grupo | [`POST /create-group`](https://developer.z-api.io/group/create-group) | 🔧 **Em desenvolvimento** |
-| Metadados do grupo | [`GET /group-metadata/{phone}`](https://developer.z-api.io/group/metadata-group) | 🔧 **Em desenvolvimento** |
-| Remover participantes | [`POST /remove-participant`](https://developer.z-api.io/group/remove-participant) | 🔧 **Em desenvolvimento** |
-| Aprovar participantes | [`POST /approve-participant`](https://developer.z-api.io/group/approve-participant) | 🔧 **Em desenvolvimento** |
-| Rejeitar participantes | [`POST /reject-participant`](https://developer.z-api.io/group/reject-participant) | 🔧 **Em desenvolvimento** |
-| Obter link de convite | [`GET /group-invitation-link/{id}`](https://developer.z-api.io/group/get-invitation-link) | 🔧 **Em desenvolvimento** |
-| Redefinir link de convite | [`POST /redefine-invitation-link/{id}`](https://developer.z-api.io/group/redefine-invitation-link) | 🔧 **Em desenvolvimento** |
-| Alterar descrição | [`POST /update-group-description`](https://developer.z-api.io/group/update-group-description) | 🔧 **Em desenvolvimento** |
-| Atualizar nome do grupo | [`POST /update-group-name`](https://developer.z-api.io/group/update-group-name) | 🔧 **Em desenvolvimento** |
-| Atualizar imagem do grupo | [`POST /update-group-photo`](https://developer.z-api.io/group/update-group-photo) | 🔧 **Em desenvolvimento** |
-| Buscar grupos | [`GET /groups`](https://developer.z-api.io/group/get-groups) | ❌ Não suportado |
-| Metadados do grupo (leve) | [`GET /light-group-metadata/{phone}`](https://developer.z-api.io/group/light-group-metadata) | ❌ Não suportado |
-| Configurações do grupo | [`POST /update-group-settings`](https://developer.z-api.io/group/update-group-settings) | ❌ Não suportado |
-| Adicionar participantes | [`POST /add-participant`](https://developer.z-api.io/group/add-participant) | ❌ Não suportado |
-| Promover admin | [`POST /add-admin`](https://developer.z-api.io/group/add-admin) | ❌ Não suportado |
-| Remover admin | [`POST /remove-admin`](https://developer.z-api.io/group/remove-admin) | ❌ Não suportado |
-| Sair do grupo | [`POST /leave-group`](https://developer.z-api.io/group/leave-group) | ❌ Não suportado |
-| Mencionar membro | [`POST /send-text`](https://developer.z-api.io/group/mention-participant) | ❌ Não suportado |
-| Mencionar grupo | [`POST /send-text`](https://developer.z-api.io/group/mention-group) | ❌ Não suportado |
-| Metadados por convite | [`GET /group-invitation-metadata?url=`](https://developer.z-api.io/group/group-invitation-metadata) | ❌ Não suportado |
-| Aceitar convite | [`GET /accept-invite-group?url=`](https://developer.z-api.io/group/accept-group-invite) | ❌ Não suportado |
+### Segurança da conta
 
-## Business
+Nome na mensagem de recusa: `account security`
 
-### Perfil da empresa
+| Método | Rota |
+|---|---|
+| `GET` | `/security/email` |
+| `POST` | `/security/email` |
+| `POST` | `/security/email/remove` |
+| `GET` | `/security/two-fa-code` |
+| `POST` | `/security/two-fa-code` |
+| `POST` | `/security/two-fa-code/remove` |
+| `POST` | `/security/verify-email` |
 
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Dados da conta business | [`GET /business/profile`](https://developer.z-api.io/business/profile) | 🔧 **Em desenvolvimento** |
-| Alterar descrição da empresa | [`POST /business/company-description`](https://developer.z-api.io/business/company-description) | 🔧 **Em desenvolvimento** |
-| Alterar email da empresa | [`POST /business/company-email`](https://developer.z-api.io/business/company-email) | 🔧 **Em desenvolvimento** |
-| Alterar endereço comercial | [`POST /business/company-address`](https://developer.z-api.io/business/company-address) | 🔧 **Em desenvolvimento** |
-| Alterar websites da empresa | [`POST /business/company-websites`](https://developer.z-api.io/business/company-websites) | 🔧 **Em desenvolvimento** |
-| Atribuir categorias | [`POST /business/categories`](https://developer.z-api.io/business/company-categories) | 🔧 **Em desenvolvimento** |
+### Lista de transmissão
+
+Nome na mensagem de recusa: `broadcast list`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/broadcast` |
+| `POST` | `/broadcast` |
+| `PUT` | `/broadcast/{broadcastId}` |
+| `DELETE` | `/broadcast/{broadcastId}` |
+
+### Perfil comercial
+
+Nome na mensagem de recusa: `business profile`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/business/available-categories` |
+| `POST` | `/business/categories` |
+| `POST` | `/business/company-address` |
+| `POST` | `/business/company-description` |
+| `POST` | `/business/company-email` |
+| `POST` | `/business/company-websites` |
+| `POST` | `/business/hours` |
+| `GET` | `/business/profile` |
+
+### Chamadas
+
+Nome na mensagem de recusa: `call`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/call-token` |
+| `GET` | `/sip-info` |
+| `POST` | `/sip-token` |
 
 ### Catálogo e produtos
 
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Criar/editar produto | [`POST /products`](https://developer.z-api.io/business/edit-product) | 🔧 **Em desenvolvimento** |
-| Listar produtos | [`GET /catalogs`](https://developer.z-api.io/business/get-products) | 🔧 **Em desenvolvimento** |
-| Buscar produto por ID | [`GET /products/{productId}`](https://developer.z-api.io/business/get-product-id) | 🔧 **Em desenvolvimento** |
-| Deletar produto | [`DELETE /products/{productId}`](https://developer.z-api.io/business/delete-product) | 🔧 **Em desenvolvimento** |
-| Configuração do catálogo | [`POST /catalogs/config`](https://developer.z-api.io/business/save-catalog-config) | 🔧 **Em desenvolvimento** |
-| Criar coleção | [`POST /catalogs/collection`](https://developer.z-api.io/business/create-collection) | 🔧 **Em desenvolvimento** |
-| Listar coleções | [`GET /catalogs/collection`](https://developer.z-api.io/business/list-collections) | 🔧 **Em desenvolvimento** |
-| Deletar coleção | [`DELETE /catalogs/collection/{id}`](https://developer.z-api.io/business/delete-collection) | 🔧 **Em desenvolvimento** |
-| Editar coleção | [`POST /catalogs/collection-edit/{id}`](https://developer.z-api.io/business/edit-collection) | 🔧 **Em desenvolvimento** |
-| Listar produtos da coleção | [`GET /catalogs/collection-products/{phone}`](https://developer.z-api.io/business/list-collection-products) | 🔧 **Em desenvolvimento** |
-| Adicionar produto à coleção | [`POST /catalogs/collection/add-product`](https://developer.z-api.io/business/add-product-to-collection) | 🔧 **Em desenvolvimento** |
-| Remover produto da coleção | [`POST /catalogs/collection/remove-product`](https://developer.z-api.io/business/remove-product-from-collection) | 🔧 **Em desenvolvimento** |
-| Listar produtos (telefone) | [`GET /catalogs/{phone}`](https://developer.z-api.io/business/get-products-phone) | ❌ Não suportado |
-| Listar produtos V2 | [`POST /catalogs`](https://developer.z-api.io/business/get-products-v2) | ❌ Não suportado |
-| Listar produtos V2 (telefone) | [`POST /catalogs/{phone}`](https://developer.z-api.io/business/get-products-phone-v2) | ❌ Não suportado |
+Nome na mensagem de recusa: `catalog`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/catalogs` |
+| `POST` | `/catalogs` |
+| `GET` | `/catalogs/collection` |
+| `POST` | `/catalogs/collection` |
+| `POST` | `/catalogs/collection-edit/{collectionId}` |
+| `GET` | `/catalogs/collection-products/{phone}` |
+| `POST` | `/catalogs/collection/add-product` |
+| `POST` | `/catalogs/collection/remove-product` |
+| `DELETE` | `/catalogs/collection/{collectionId}` |
+| `POST` | `/catalogs/config` |
+| `GET` | `/catalogs/{phone}` |
+| `POST` | `/catalogs/{phone}` |
+| `POST` | `/products` |
+| `GET` | `/products/{productId}` |
+| `DELETE` | `/products/{productId}` |
+
+### Chats
+
+Nome na mensagem de recusa: `chat`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/chats` |
+| `GET` | `/chats/{phone}` |
+| `POST` | `/chats/{phone}/notes` |
+| `POST` | `/modify-chat` |
+
+### Comunidades
+
+Nome na mensagem de recusa: `community`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/communities` |
+| `POST` | `/communities` |
+| `GET` | `/communities-metadata/{communityId}` |
+| `POST` | `/communities/link` |
+| `POST` | `/communities/settings` |
+| `POST` | `/communities/unlink` |
+| `DELETE` | `/communities/{communityId}` |
+| `POST` | `/update-community-description` |
+
+### Conexão da instância
+
+Nome na mensagem de recusa: `instance connection`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/disconnect` |
+| `GET` | `/phone-code/{phone}` |
+| `GET` | `/qr-code` |
+| `GET` | `/qr-code/image` |
+| `GET` | `/restart` |
+
+### Contatos
+
+Nome na mensagem de recusa: `contact`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/contacts` |
+| `POST` | `/contacts/add` |
+| `POST` | `/contacts/modify-blocked` |
+| `DELETE` | `/contacts/remove` |
+| `GET` | `/contacts/{phone}` |
+| `POST` | `/contacts/{phone}/report` |
+| `POST` | `/phone-exists-batch` |
+| `GET` | `/phone-exists/{phone}` |
+| `GET` | `/profile-picture` |
+
+### Grupos
+
+Nome na mensagem de recusa: `group`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/accept-invite-group` |
+| `POST` | `/add-admin` |
+| `POST` | `/add-participant` |
+| `POST` | `/approve-participant` |
+| `POST` | `/create-group` |
+| `GET` | `/group-invitation-link/{groupId}` |
+| `GET` | `/group-invitation-metadata` |
+| `GET` | `/group-metadata/{phone}` |
+| `GET` | `/groups` |
+| `POST` | `/leave-group` |
+| `GET` | `/light-group-metadata/{phone}` |
+| `POST` | `/redefine-invitation-link/{id}` |
+| `POST` | `/reject-participant` |
+| `POST` | `/remove-admin` |
+| `POST` | `/remove-participant` |
+| `POST` | `/update-group-description` |
+| `POST` | `/update-group-name` |
+| `POST` | `/update-group-photo` |
+| `POST` | `/update-group-settings` |
+
+### Configurações da instância
+
+Nome na mensagem de recusa: `instance settings`
+
+| Método | Rota |
+|---|---|
+| `GET` | `/extension-token` |
+| `POST` | `/passkey-prologue` |
+| `PUT` | `/profile-description` |
+| `PUT` | `/profile-name` |
+| `PUT` | `/profile-picture` |
+| `POST` | `/reset-passkey-challenge` |
+| `PUT` | `/update-announcement-guard` |
+| `PUT` | `/update-auto-read-message` |
+| `PUT` | `/update-auto-read-status` |
+| `PUT` | `/update-call-reject-auto` |
+| `PUT` | `/update-call-reject-message` |
+| `PUT` | `/update-name` |
+
+### Ações sobre mensagens
+
+Nome na mensagem de recusa: `message action`
+
+| Método | Rota |
+|---|---|
+| `POST` | `/forward-message` |
+| `DELETE` | `/messages` |
+| `POST` | `/pin-message` |
+| `POST` | `/read-message` |
+| `POST` | `/reply-button` |
+| `POST` | `/reply-option-list` |
+| `POST` | `/reply-template-button` |
+
+### Registro de número (mobile)
+
+Nome na mensagem de recusa: `mobile registration`
+
+| Método | Rota |
+|---|---|
+| `POST` | `/mobile/confirm-pin-code` |
+| `POST` | `/mobile/confirm-registration-code` |
+| `GET` | `/mobile/device-transfer-confirmed` |
+| `POST` | `/mobile/recovery-pin-code` |
+| `POST` | `/mobile/registration-available` |
+| `POST` | `/mobile/request-registration-code` |
+| `POST` | `/mobile/request-unbanning` |
+| `POST` | `/mobile/respond-captcha` |
+
+### Canais (newsletter)
+
+Nome na mensagem de recusa: `newsletter`
+
+| Método | Rota |
+|---|---|
+| `POST` | `/create-newsletter` |
+| `DELETE` | `/delete-newsletter` |
+| `PUT` | `/follow-newsletter` |
+| `PUT` | `/mute-newsletter` |
+| `GET` | `/newsletter` |
+| `POST` | `/newsletter/accept-admin-invite/{newsletterId}` |
+| `GET` | `/newsletter/metadata/{newsletterId}` |
+| `POST` | `/newsletter/remove-admin/{newsletterId}` |
+| `POST` | `/newsletter/revoke-admin-invite/{newsletterId}` |
+| `POST` | `/newsletter/settings/{newsletterId}` |
+| `GET` | `/newsletter/subscribers/{newsletterId}` |
+| `POST` | `/newsletter/transfer-ownership/{newsletterId}` |
+| `POST` | `/search-newsletter` |
+| `PUT` | `/unfollow-newsletter` |
+| `PUT` | `/unmute-newsletter` |
+| `POST` | `/update-newsletter-description` |
+| `POST` | `/update-newsletter-name` |
+| `POST` | `/update-newsletter-picture` |
+
+### Parceiros
+
+Nome na mensagem de recusa: `partner`
+
+| Método | Rota |
+|---|---|
+| `PUT` | `/integrator/configure-proxy` |
+| `GET` | `/sdk-connector-token` |
+| `PUT` | `/update-proxy-webhook` |
+
+### Privacidade
+
+Nome na mensagem de recusa: `privacy`
+
+| Método | Rota |
+|---|---|
+| `POST` | `/privacy/description` |
+| `GET` | `/privacy/disallowed-contacts` |
+| `POST` | `/privacy/group-add` |
+| `POST` | `/privacy/last-seen` |
+| `POST` | `/privacy/messages-duration` |
+| `POST` | `/privacy/online` |
+| `POST` | `/privacy/photo-visualization` |
+| `POST` | `/privacy/read-receipts` |
+
+### Configuração da fila
+
+Nome na mensagem de recusa: `queue settings`
+
+| Método | Rota |
+|---|---|
+| `PUT` | `/update-queue-settings` |
+
+### Status (stories)
+
+Nome na mensagem de recusa: `status (stories)`
+
+| Método | Rota |
+|---|---|
+| `POST` | `/reply-status-gif` |
+| `POST` | `/reply-status-sticker` |
+| `POST` | `/reply-status-text` |
 
 ### Etiquetas
 
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Buscar etiquetas | [`GET /tags`](https://developer.z-api.io/business/tags) | ❌ Não suportado |
-| Criar etiqueta | [`POST /business/create-tag`](https://developer.z-api.io/business/create-tag) | ❌ Não suportado |
-| Editar etiqueta | [`POST /business/edit-tag/{tagId}`](https://developer.z-api.io/business/edit-tag) | ❌ Não suportado |
-| Deletar etiqueta | [`DELETE /business/tag/{tagId}`](https://developer.z-api.io/business/delete-tag) | ❌ Não suportado |
-| Atribuir etiqueta ao chat | [`PUT /chats/{phone}/tags/{tag}/add`](https://developer.z-api.io/business/tags-add) | ❌ Não suportado |
-| Remover etiqueta do chat | [`PUT /chats/{phone}/tags/{tag}/remove`](https://developer.z-api.io/business/tags-remove) | ❌ Não suportado |
-| Cores de etiquetas | [`GET /business/tags/colors`](https://developer.z-api.io/business/tags-colors) | ❌ Não suportado |
+Nome na mensagem de recusa: `tag`
 
-### Outros
+| Método | Rota |
+|---|---|
+| `POST` | `/business/create-tag` |
+| `POST` | `/business/edit-tag/{tagId}` |
+| `DELETE` | `/business/tag/{tagId}` |
+| `GET` | `/business/tags/colors` |
+| `PUT` | `/chats/{phone}/tags/{tag}/add` |
+| `PUT` | `/chats/{phone}/tags/{tag}/remove` |
+| `GET` | `/tags` |
 
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Anotações no chat | [`POST /chats/{phone}/notes`](https://developer.z-api.io/business/chats-notes) | ❌ Não suportado |
-| Alterar horário de funcionamento | [`POST /business/hours`](https://developer.z-api.io/business/business-hours) | ❌ Não suportado |
-| Listar categorias | [`GET /business/available-categories`](https://developer.z-api.io/business/available-categories) | ❌ Não suportado |
+## Rotas de instância que a compatibilidade atende
 
-## Status
-
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Enviar texto no status | [`POST /send-text-status`](https://developer.z-api.io/status/send-text-status) | ❌ Não suportado |
-| Enviar imagem no status | [`POST /send-image-status`](https://developer.z-api.io/status/send-image-status) | ❌ Não suportado |
-| Enviar vídeo no status | [`POST /send-video-status`](https://developer.z-api.io/status/send-video-status) | ❌ Não suportado |
-| Responder status com texto | [`POST /reply-status-text`](https://developer.z-api.io/status/reply-status-text) | ❌ Não suportado |
-| Responder status com GIF | [`POST /reply-status-gif`](https://developer.z-api.io/status/reply-status-gif) | ❌ Não suportado |
-| Responder status com sticker | [`POST /reply-status-sticker`](https://developer.z-api.io/status/reply-status-sticker) | ❌ Não suportado |
-
-## Canais (Newsletter)
-
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Criar canal | [`POST /create-newsletter`](https://developer.z-api.io/newsletter/create-newsletter) | ❌ Não suportado |
-| Atualizar imagem do canal | [`POST /update-newsletter-picture`](https://developer.z-api.io/newsletter/update-newsletter-picture) | ❌ Não suportado |
-| Atualizar nome do canal | [`POST /update-newsletter-name`](https://developer.z-api.io/newsletter/update-newsletter-name) | ❌ Não suportado |
-| Atualizar descrição do canal | [`POST /update-newsletter-description`](https://developer.z-api.io/newsletter/update-newsletter-description) | ❌ Não suportado |
-| Seguir canal | [`PUT /follow-newsletter`](https://developer.z-api.io/newsletter/follow-newsletter) | ❌ Não suportado |
-| Deixar de seguir canal | [`PUT /unfollow-newsletter`](https://developer.z-api.io/newsletter/unfollow-newsletter) | ❌ Não suportado |
-| Mutar canal | [`PUT /mute-newsletter`](https://developer.z-api.io/newsletter/mute-newsletter) | ❌ Não suportado |
-| Desmutar canal | [`PUT /unmute-newsletter`](https://developer.z-api.io/newsletter/unmute-newsletter) | ❌ Não suportado |
-| Deletar canal | [`DELETE /delete-newsletter`](https://developer.z-api.io/newsletter/delete-newsletter) | ❌ Não suportado |
-| Metadados do canal | [`GET /newsletter/metadata/{id}`](https://developer.z-api.io/newsletter/newsletter-metadata) | ❌ Não suportado |
-| Listar canais | [`GET /newsletter`](https://developer.z-api.io/newsletter/newsletter-list) | ❌ Não suportado |
-| Buscar canais | [`POST /search-newsletter`](https://developer.z-api.io/newsletter/search-newsletter) | ❌ Não suportado |
-| Configurações do canal | [`POST /newsletter/settings/{id}`](https://developer.z-api.io/newsletter/update-newsletter-config) | ❌ Não suportado |
-| Aceitar convite de admin | [`POST /newsletter/accept-admin-invite/{id}`](https://developer.z-api.io/newsletter/accept-newsletter-admin-invite) | ❌ Não suportado |
-| Remover admin do canal | [`POST /newsletter/remove-admin/{id}`](https://developer.z-api.io/newsletter/newsletter-remove-admin) | ❌ Não suportado |
-| Anular convite de admin | [`POST /newsletter/revoke-admin-invite/{id}`](https://developer.z-api.io/newsletter/newsletter-revoke-admin-invite) | ❌ Não suportado |
-| Transferir propriedade | [`POST /newsletter/transfer-ownership/{id}`](https://developer.z-api.io/newsletter/transfer-newsletter-ownership) | ❌ Não suportado |
-
-## Chats
-
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Listar chats | [`GET /chats`](https://developer.z-api.io/chats/get-chats) | ❌ Não suportado |
-| Metadados do chat | [`GET /chats/{phone}`](https://developer.z-api.io/chats/get-metadata-chat) | ❌ Não suportado |
-| Ler chat | [`POST /modify-chat`](https://developer.z-api.io/chats/read-chat) | ❌ Não suportado |
-| Arquivar chat | [`POST /modify-chat`](https://developer.z-api.io/chats/archive-chat) | ❌ Não suportado |
-| Fixar chat | [`POST /modify-chat`](https://developer.z-api.io/chats/pin-chat) | ❌ Não suportado |
-| Mutar chat | [`POST /modify-chat`](https://developer.z-api.io/chats/mute-chat) | ❌ Não suportado |
-| Limpar chat | [`POST /modify-chat`](https://developer.z-api.io/chats/clear-chat) | ❌ Não suportado |
-| Deletar chat | [`POST /modify-chat`](https://developer.z-api.io/chats/delete-chat) | ❌ Não suportado |
-| Expiração dos chats | [`POST /send-chat-expiration`](https://developer.z-api.io/chats/send-chat-expiration) | ❌ Não suportado |
-
-## Comunidades
-
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Criar comunidade | [`POST /communities`](https://developer.z-api.io/communities/create-community) | ❌ Não suportado |
-| Listar comunidades | [`GET /communities`](https://developer.z-api.io/communities/list-communities) | ❌ Não suportado |
-| Vincular grupos | [`POST /communities/link`](https://developer.z-api.io/communities/link-groups) | ❌ Não suportado |
-| Desvincular grupos | [`POST /communities/unlink`](https://developer.z-api.io/communities/unlink-groups) | ❌ Não suportado |
-| Metadados da comunidade | [`GET /communities-metadata/{id}`](https://developer.z-api.io/communities/community-metadata) | ❌ Não suportado |
-| Redefinir link de convite | [`POST /redefine-invitation-link/{id}`](https://developer.z-api.io/communities/redefine-invitation-link) | ❌ Não suportado |
-| Adicionar participantes | [`POST /add-participant`](https://developer.z-api.io/communities/add-community-participant) | ❌ Não suportado |
-| Remover participantes | [`POST /remove-participant`](https://developer.z-api.io/communities/remove-community-participant) | ❌ Não suportado |
-| Promover admin | [`POST /add-admin`](https://developer.z-api.io/communities/add-community-admin) | ❌ Não suportado |
-| Remover admin | [`POST /remove-admin`](https://developer.z-api.io/communities/remove-community-admin) | ❌ Não suportado |
-| Configurações da comunidade | [`POST /communities/settings`](https://developer.z-api.io/communities/community-settings) | ❌ Não suportado |
-| Desativar comunidade | [`DELETE /communities/{id}`](https://developer.z-api.io/communities/deactivate-community) | ❌ Não suportado |
-| Alterar descrição | [`POST /update-community-description`](https://developer.z-api.io/communities/update-community-description) | ❌ Não suportado |
-
-## Chamadas
-
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Fazer ligação | [`POST /send-call`](https://developer.z-api.io/calls/send-call) | ❌ Não suportado |
-| Gerar token para chamadas | [`GET /call-token`](https://developer.z-api.io/calls/call-token) | ❌ Não suportado |
-
-## Privacidade
-
-| Funcionalidade | Rota Z-API | Status |
-|---|---|---|
-| Contatos não permitidos | [`GET /privacy/disallowed-contacts`](https://developer.z-api.io/privacy/get-disallowed-contacts) | ❌ Não suportado |
-| Visto por último | [`POST /privacy/last-seen`](https://developer.z-api.io/privacy/set-last-seen) | ❌ Não suportado |
-| Visualização da foto de perfil | [`POST /privacy/photo`](https://developer.z-api.io/privacy/set-photo-visualization) | ❌ Não suportado |
-| Visualização do recado | [`POST /privacy/description`](https://developer.z-api.io/privacy/set-privacy-description) | ❌ Não suportado |
-| Permissão para adicionar em grupos | [`POST /privacy/group-add`](https://developer.z-api.io/privacy/set-group-add-permission) | ❌ Não suportado |
-| Visualização de online | [`POST /privacy/online`](https://developer.z-api.io/privacy/set-privacy-online) | ❌ Não suportado |
-| Confirmações de leitura | [`POST /privacy/read-receipts`](https://developer.z-api.io/privacy/set-read-receipts) | ❌ Não suportado |
-| Duração das mensagens | [`POST /privacy/messages-duration`](https://developer.z-api.io/privacy/set-messages-duration) | ❌ Não suportado |
-
----
-
-<Info>
-  Estas limitações são da própria API oficial do WhatsApp Business (Meta) e não do {projectName}. Caso a Meta disponibilize essas funcionalidades futuramente, o {projectName} as incorporará.
-</Info>
+`GET /status`, `GET /me`, `GET /device` e a fila (`queue`) respondem no formato da Z-API. Veja [Status da instância](/z-api/instance/status), [Dados da instância](/z-api/instance/me), [Aparelho](/z-api/instance/device) e [Fila](/z-api/instance/queue-count).

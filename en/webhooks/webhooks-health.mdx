@@ -1,0 +1,43 @@
+---
+title: "Webhook health"
+description: "See the plan retention and the state of each webhook in the workspace"
+openapi: "/en/webhooks/openapi-central.json GET /v1/webhooks/health"
+---
+
+## Overview
+
+Returns the workspace's current retention (`retentionDays`) and the state of each of its webhooks: channel, default and global. Use this route to find which webhooks are failing before querying the deliveries.
+
+`retentionDays` is 3 for the `ENTERPRISE` role and 1 for the others. See [Retention](/en/webhooks/central).
+
+### States
+
+| `state` | When |
+|---|---|
+| `ACTIVE` | Enabled, with no open failure notice |
+| `FAILING` | A failure notice was already given or is pending. It also applies after the 3rd notice when there is no suspension: the webhook stays `FAILING` and keeps receiving deliveries |
+| `SUSPENDED` | Delivery was suspended after the 3rd notice. It only happens where automatic suspension is on for the workspace brand |
+| `DISABLED` | You disabled the webhook (`status` `DISABLED`) |
+| `NO_HISTORY` | `CHATWOOT` format: no history, notices or suspension |
+
+### Fields of each webhook
+
+| Field | What it holds |
+|---|---|
+| `webhookId`, `channelId`, `description`, `payloadFormat` | Webhook identification. `channelId` is `null` for the default and the global webhook |
+| `consecutiveFailures` | Consecutive failures in the current sequence |
+| `failingSince` | Start of the current failure sequence |
+| `lastFailureAt`, `lastSuccessAt` | Last failure and last success |
+| `alertsGiven` | Failure notices already given in the sequence (0 to 3) |
+| `alertPending` | `true` when a notice is pending delivery |
+| `suspendedAt` | When delivery was suspended. `null` when not suspended |
+| `episodeStartedAt` | Start of the current failure episode: the first failure of the sequence. The [bulk resend](/en/webhooks/resend-deliveries) takes deliveries from this point |
+| `retainedSince` | Start of the episode that led to the last suspension, stored on reactivation |
+
+Fields without a value come as `null`, never missing. A `NO_HISTORY` webhook comes with its counters as `null`.
+
+The authentication, IP and inactive workspace errors are in [Webhook center](/en/webhooks/central#errors-common-to-every-route).
+
+## See also
+
+- [Webhook center](/en/webhooks/central)

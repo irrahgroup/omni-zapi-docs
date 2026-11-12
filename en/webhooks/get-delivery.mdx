@@ -1,0 +1,51 @@
+---
+title: "Get delivery"
+description: "See a delivery with every attempt, the request sent and your server's response"
+openapi: "/en/webhooks/openapi-central.json GET /v1/webhooks/deliveries/{deliveryId}"
+---
+
+## Overview
+
+Returns a delivery with the same fields as the [delivery list](/en/webhooks/list-deliveries) and, instead of the attempt count, the `attempts[]` list, ordered by `attemptNumber`. The `deliveryId` is a UUID and comes from the delivery list or from the `x-webhook-delivery-id` header.
+
+### Fields of each attempt
+
+| Field | What it holds |
+|---|---|
+| `attemptNumber` | Attempt number, the same as the `x-webhook-attempt` header |
+| `origin` | `AUTOMATIC` (retry schedule), `MANUAL_RESEND` (resend through the center) or `SYSTEM` |
+| `resentBy` | Who requested the resend, on `MANUAL_RESEND` |
+| `attemptedAt` | When the attempt happened |
+| `outcome` | Result of the attempt, with the same values as `lastOutcome` |
+| `httpStatus` | HTTP status of the response. `null` when there was no response (timeout, connection or DNS error) |
+| `latencyMs` | Time to the response, in milliseconds |
+| `errorClass`, `errorMessage` | The error, when there was no response |
+| `url`, `requestHeaders` | The URL called and the headers sent, masked |
+| `requestBody`, `requestBodyTruncated` | The body sent and whether it was cut |
+| `responseBody`, `responseBodyTruncated` | Your server's response and whether it was cut |
+
+With the Secret Key, the bodies are filled in and `bodyHidden` is `false`.
+
+### What appears masked
+
+- The values of `Authorization`, `X-API-Key`, your custom header and `X-Webhook-Signature` appear as `***`.
+- The URL segment after `/token/` appears as `{token}`.
+- The value of each URL query parameter appears as `{masked}`.
+
+### Storage limits
+
+The stored request and response bodies have a size limit. Above it, the body is cut and the matching `...Truncated` field is `true`. A delivery whose request was cut cannot be resent (`notResendableReason` `TRUNCATED`).
+
+### Errors
+
+| Case | Response |
+|---|---|
+| `deliveryId` that is not a UUID | `400` with `{"error": {"message": "deliveryId invalido"}}` |
+| Delivery that does not exist, has expired (outside retention) or belongs to another workspace | `404` |
+| The query took longer than 5 seconds | `503`. Try again |
+
+The authentication, IP and inactive workspace errors are in [Webhook center](/en/webhooks/central#errors-common-to-every-route).
+
+## See also
+
+- [Webhook center](/en/webhooks/central)

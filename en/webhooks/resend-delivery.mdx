@@ -1,0 +1,67 @@
+---
+title: "Resend delivery"
+description: "Make a new attempt of a webhook delivery"
+openapi: "/en/webhooks/openapi-central.json POST /v1/webhooks/deliveries/{deliveryId}/resend"
+---
+
+## Overview
+
+Makes **one** new attempt of the delivery. The request has no body.
+
+The resend:
+
+- goes to the webhook's **current** URL, authentication and secret. If you fixed the URL or the credential after the failure, the resend already uses the new value;
+- carries the delivery's stored body, in the format it was delivered in (`DEFAULT` or `Z_API`);
+- carries the same `X-Webhook-Event-Id` and `X-Webhook-Delivery-Id` as the previous attempts;
+- carries an `X-Webhook-Attempt` always greater than the previous attempt's. It is the `attemptNumber` in the response.
+
+The response is `202` with `{"deliveryId": "...", "attemptNumber": 8}`. Until the result arrives, the delivery shows `status` `RESENT`, for at most 1 hour. After that, the result appears in the [delivery detail](/en/webhooks/get-delivery) as a new attempt, with `origin` `MANUAL_RESEND`.
+
+If the send confirmation is slow, the `202` response also carries `message`: the resend may have been sent, and the result should be checked in a few minutes. Do not request it again before checking.
+
+<Warning>
+  Resending a delivery that had already succeeded arrives with the **same** `X-Webhook-Delivery-Id`. If you deduplicate by it alone, the resend will be discarded. Accept an already seen delivery when `X-Webhook-Attempt` is greater than the last one processed.
+</Warning>
+
+### Limit
+
+1 resend per minute per delivery. Above that, `429`.
+
+### When the resend is refused
+
+The `422` carries the reason in `error.details.reason`:
+
+| `details.reason` | When | What to do |
+|---|---|---|
+| `TRUNCATED` | The delivery body exceeded the stored limit and was cut | It cannot be resent |
+| `WEBHOOK_SUSPENDED` | The webhook delivery is suspended | [Reactivate the webhook](/en/webhooks/reactivate-webhook) first |
+| `WEBHOOK_DISABLED` | The webhook is disabled | Enable the webhook first, with `status` `ENABLED` in the `PATCH` |
+| `UNREADABLE_BODY` | The stored body cannot be read | It cannot be resent |
+
+Example:
+
+```json
+{
+  "error": {
+    "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+    "message": "O webhook esta desabilitado. Habilite o webhook antes de reenviar.",
+    "details": { "reason": "WEBHOOK_DISABLED" }
+  }
+}
+```
+
+### Errors
+
+| Case | Response |
+|---|---|
+| `deliveryId` that is not a UUID | `400` with `{"error": {"message": "deliveryId invalido"}}` |
+| Delivery that does not exist, has expired, belongs to a deleted webhook or to another workspace | `404` |
+| Delivery that cannot be resent | `422`, with the reason in the table above |
+| More than 1 resend per minute, or another resend of the same delivery in progress | `429` |
+| The resend was not sent | `503` with `{"error": "O reenvio nao foi enviado; tente de novo."}`. Try again |
+
+The authentication, IP and inactive workspace errors are in [Webhook center](/en/webhooks/central#errors-common-to-every-route).
+
+## See also
+
+- [Webhook center](/en/webhooks/central)

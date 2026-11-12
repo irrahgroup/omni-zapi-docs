@@ -1,0 +1,43 @@
+---
+title: "Estado dos webhooks"
+description: "Veja a retenção do plano e o estado de cada webhook do workspace"
+openapi: "/pt/webhooks/openapi-central.json GET /v1/webhooks/health"
+---
+
+## Conceituação
+
+Retorna a retenção atual do workspace (`retentionDays`) e o estado de cada webhook dele: de canal, padrão e global. Use esta rota para saber quais webhooks estão falhando antes de consultar as entregas.
+
+`retentionDays` é 3 no papel `ENTERPRISE` e 1 nos demais. Veja [Retenção](/webhooks/central).
+
+### Estados
+
+| `state` | Quando |
+|---|---|
+| `ACTIVE` | Habilitado, sem aviso de falha aberto |
+| `FAILING` | Um aviso de falha já foi dado ou está pendente. Vale também depois do 3º aviso quando não há suspensão: o webhook segue `FAILING` e continua recebendo as entregas |
+| `SUSPENDED` | O envio foi suspenso depois do 3º aviso. Só acontece onde a suspensão automática está ligada para a marca do workspace |
+| `DISABLED` | Você desabilitou o webhook (`status` `DISABLED`) |
+| `NO_HISTORY` | Formato `CHATWOOT`: sem histórico, avisos nem suspensão |
+
+### Campos de cada webhook
+
+| Campo | O que traz |
+|---|---|
+| `webhookId`, `channelId`, `description`, `payloadFormat` | Identificação do webhook. `channelId` vem `null` no webhook padrão e no global |
+| `consecutiveFailures` | Falhas seguidas na sequência atual |
+| `failingSince` | Início da sequência atual de falhas |
+| `lastFailureAt`, `lastSuccessAt` | Última falha e último sucesso |
+| `alertsGiven` | Avisos de falha já dados na sequência (0 a 3) |
+| `alertPending` | `true` quando um aviso está pendente de envio |
+| `suspendedAt` | Quando o envio foi suspenso. `null` quando não está suspenso |
+| `episodeStartedAt` | Início do episódio atual de falha: a primeira falha da sequência. É a partir dela que o [reenvio em lote](/webhooks/resend-deliveries) pega as entregas |
+| `retainedSince` | Início do episódio que levou à última suspensão, guardado na reativação |
+
+Os campos sem valor vêm `null`, nunca ausentes. Um webhook `NO_HISTORY` vem com os contadores em `null`.
+
+Os erros de autenticação, de IP e de workspace inativo estão em [Central de webhooks](/webhooks/central#erros-comuns-a-todas-as-rotas).
+
+## Veja também
+
+- [Central de webhooks](/webhooks/central)

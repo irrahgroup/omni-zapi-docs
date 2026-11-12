@@ -1,0 +1,143 @@
+---
+title: "Central de webhooks"
+description: "Consulta las entregas a tus webhooks, ve el estado de cada uno y reenvía lo que falló"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceptos
+
+La central de webhooks muestra cada entrega de evento a tus webhooks: los intentos, el status, la latencia y la respuesta de tu servidor. Con ella puedes:
+
+- consultar las entregas, con filtros por webhook, status, tipo de evento y período;
+- ver el detalle de una entrega, con la petición enviada y la respuesta recibida en cada intento;
+- reenviar una entrega, o en lote las entregas que fallaron en un episodio de fallo;
+- ver el estado de cada webhook del workspace (de canal, predeterminado y global);
+- reactivar un webhook suspendido.
+
+## Autenticación y acceso
+
+Todas las rutas usan la Secret Key del workspace, como las demás rutas de la API:
+
+```
+Authorization: Bearer <secret-key>
+```
+
+- El prefijo `Bearer` es opcional.
+- Cualquier rol de workspace puede usar la central. No se exige el plan `ENTERPRISE`.
+- El workspace sale de la propia Secret Key. No hay parámetro para consultar otro workspace: una entrega o un webhook de otro workspace devuelve `404`, igual que un id que no existe.
+- Todas las rutas existen también sin el prefijo `/v1` (por ejemplo, `GET /webhooks/deliveries`).
+
+## Historial por formato
+
+| Formato del webhook | Historial en la central |
+|---|---|
+| `DEFAULT` | Sí. Las entregas aparecen en la central y se pueden reenviar. |
+| `Z_API` | Sí. El reenvío usa el cuerpo guardado, en el mismo formato. |
+| `CHATWOOT` | No. El webhook aparece en el estado con `state` `NO_HISTORY`, sin entregas, avisos ni suspensión. |
+
+## Retención
+
+La central guarda las entregas durante el tiempo de retención del plan del workspace:
+
+| Rol del workspace | Retención |
+|---|---|
+| `ENTERPRISE` | 3 días |
+| Demás | 1 día |
+
+La retención actual llega en el campo `retentionDays` de [Estado de los webhooks](/es/webhooks/webhooks-health). La consulta solo muestra lo que está dentro de la retención **actual**: al pasar de `ENTERPRISE` a otro rol, lo que tiene más de 1 día desaparece de la consulta de inmediato.
+
+## Status de las entregas
+
+| `status` | Significado |
+|---|---|
+| `SUCCEEDED` | Tu servidor respondió `2xx`. |
+| `RETRYING` | Falló y tendrá un nuevo intento en `nextAttemptAt`. |
+| `FAILED` | Falló y no habrá nuevo intento. |
+| `NOT_SENT` | No se envió nada. `notSentReason` indica el motivo: `SUSPENDED` (webhook suspendido) o `CIRCUIT_OPEN` (el destino estuvo no disponible hasta el plazo). |
+| `EXPIRED` | Pasaron las 23 horas sin éxito. |
+| `UNKNOWN` | El siguiente intento debía haber ocurrido hace más de 1 hora y no hay registro de él. |
+| `RESENT` | Reenviada hace menos de 1 hora, a la espera del resultado. |
+
+## Cuándo se repite una entrega
+
+| Respuesta de tu servidor | Qué ocurre |
+|---|---|
+| `2xx` | Entregada. |
+| `408`, `429`, `5xx`, sin respuesta en 5 segundos o error de conexión | Nuevo intento, hasta 7 intentos en hasta 23 horas. |
+| Otro `4xx`, o `3xx` | No hay nuevo intento: la entrega termina `FAILED`. Corrige el problema y usa el reenvío. |
+
+El calendario completo de los intentos está en [Entrega y reintentos](/es/webhooks/delivery).
+
+## Cómo recuperar las entregas que fallaron
+
+<Steps>
+  <Step title="Consulta el estado de los webhooks">
+    Llama a [Estado de los webhooks](/es/webhooks/webhooks-health). Un webhook con `state` `FAILING` está fallando; `consecutiveFailures`, `failingSince` y `lastFailureAt` muestran desde cuándo.
+  </Step>
+  <Step title="Descubre el motivo">
+    [Lista las entregas](/es/webhooks/list-deliveries) del webhook con `status=FAILED` y abre una en [Consultar entrega](/es/webhooks/get-delivery). `httpStatus`, `errorMessage` y `responseBody` muestran lo que respondió tu servidor.
+  </Step>
+  <Step title="Corrige tu servidor">
+    Ajusta el endpoint, la URL o la autenticación del webhook. El reenvío usa la URL, la autenticación y el secreto **actuales** del webhook.
+  </Step>
+  <Step title="Reenvía">
+    Para una entrega, usa [Reenviar entrega](/es/webhooks/resend-delivery). Para todas las entregas que fallaron en el episodio, usa [Reenviar entregas en lote](/es/webhooks/resend-deliveries) y repite cada 2 minutos mientras `remaining` sea mayor que cero, antes de `oldestExpiresAt`.
+  </Step>
+</Steps>
+
+<Note>
+  El reenvío de una entrega llega con el **mismo** `x-webhook-delivery-id` y un `x-webhook-attempt` mayor. Si deduplicas por el `x-webhook-delivery-id`, acepta la entrega ya vista cuando el `x-webhook-attempt` sea mayor que el último procesado. Consulta [Entrega y reintentos](/es/webhooks/delivery#deduplica-por-x-webhook-delivery-id).
+</Note>
+
+## Avisos de fallo
+
+Cuando un webhook falla de forma seguida, el Owner y los Managers del workspace reciben avisos por correo, y el aviso aparece en la campana del panel:
+
+| Aviso | Cuándo se envía |
+|---|---|
+| 1º | Después de al menos 3 fallos seguidos, que abarquen al menos 1 hora |
+| 2º | Al menos 1 hora después del 1º, con 3 fallos nuevos |
+| 3º | Al menos 6 horas después del 2º, con 3 fallos nuevos |
+
+Una respuesta `2xx` cierra la secuencia.
+
+**Donde la suspensión automática está activada para la marca del workspace, el envío se desactiva junto con el 3.er aviso.** Donde está desactivada, los avisos no desactivan el webhook: sigue con `state` `FAILING` y continúa recibiendo las entregas, con los reintentos de siempre.
+
+<Note>
+  Con el envío suspendido, los eventos nuevos siguen registrados, sin envío, durante la retención del plan, con `status` `NOT_SENT` y `notSentReason` `SUSPENDED`. Cambiar la URL o el status del webhook no lo reactiva: usa [Reactivar webhook](/es/webhooks/reactivate-webhook).
+</Note>
+
+## Errores comunes a todas las rutas
+
+| Caso | Respuesta |
+|---|---|
+| `Authorization` ausente o que no es una Secret Key válida | `400` con `{"error": "Authorization invalid"}` |
+| Llamada desde una IP fuera de la lista de IP del workspace | `400` con `{"error": "203.0.113.10 not allowed"}` |
+| Workspace sin configuración activa | `422` con `{"error": "Webhook management requires an active workspace"}` |
+| No se pudo completar la operación ahora | `502` con `{"error": "integration_unavailable", "message": "The operation could not be completed right now. Try again in a few moments."}` |
+
+Los errores de validación y de regla (`400`, `404`, `422` y `429`) llegan como `{"error": {"message": "..."}}`. En el `422` de reenvío llegan también `type` y `details.reason`. El `503` llega como `{"error": "<mensaje>"}`.
+
+## Rutas
+
+<CardGroup cols={2}>
+  <Card title="Listar entregas" icon="list" href="/es/webhooks/list-deliveries">
+    Las entregas del workspace, con filtros y paginación.
+  </Card>
+  <Card title="Consultar entrega" icon="magnifying-glass" href="/es/webhooks/get-delivery">
+    Una entrega con todos los intentos, la petición y la respuesta.
+  </Card>
+  <Card title="Reenviar entrega" icon="rotate-right" href="/es/webhooks/resend-delivery">
+    Un intento nuevo de una entrega.
+  </Card>
+  <Card title="Reenviar entregas en lote" icon="layer-group" href="/es/webhooks/resend-deliveries">
+    Las entregas que fallaron en el episodio actual de un webhook.
+  </Card>
+  <Card title="Estado de los webhooks" icon="heart-pulse" href="/es/webhooks/webhooks-health">
+    Retención del plan y estado de cada webhook.
+  </Card>
+  <Card title="Reactivar webhook" icon="power-off" href="/es/webhooks/reactivate-webhook">
+    Reactiva un webhook suspendido.
+  </Card>
+</CardGroup>

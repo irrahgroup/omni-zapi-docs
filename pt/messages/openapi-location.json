@@ -1,32 +1,47 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Enviar Localização",
+    "title": "Z-API Omni - Enviar Localização",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/messages": {
       "post": {
         "summary": "Enviar localização",
         "description": "Envia uma mensagem de localização. Funciona apenas quando a janela de conversa de 24 horas estiver aberta.",
         "operationId": "sendLocationMessage",
-        "tags": ["Mensagens"],
+        "tags": [
+          "Mensagens"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
             "description": "ID do canal",
-            "schema": { "type": "string", "example": "SEU_CHANNEL_ID" }
+            "schema": {
+              "type": "string",
+              "example": "SEU_CHANNEL_ID"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/SendLocationRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/SendLocationRequest"
+              },
               "example": {
                 "recipient": {
                   "identifier": "5544936181064",
@@ -55,9 +70,21 @@
           }
         },
         "responses": {
-          "200": { "$ref": "#/components/responses/MessageSuccess" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/SendRefused" }
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
         }
       }
     }
@@ -65,36 +92,164 @@
   "components": {
     "responses": {
       "MessageSuccess": {
-        "description": "Mensagem enviada com sucesso",
+        "description": "Mensagem aceita e colocada na fila de envio. A entrega é confirmada depois, pelos eventos de status do webhook.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/MessageResponse" },
-            "example": { "messageId": "01A0C92D0C957FE98B73C8BA0CACF741" }
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
           }
         }
       },
-      "Unauthorized": {
-        "description": "Token inválido ou ausente.",
+      "BadRequest": {
+        "description": "Requisição recusada antes do envio: Secret Key inválida, IP fora da lista permitida, corpo ausente ou corpo que não serve para o tipo da mensagem.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "authorizationInvalid": {
+                "summary": "Secret Key inválida ou ausente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ipNotAllowed": {
+                "summary": "IP de origem fora da lista de IPs permitidos",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "payloadRequired": {
+                "summary": "Corpo vazio ({})",
+                "value": {
+                  "error": "message payload is required"
+                }
+              },
+              "validationError": {
+                "summary": "Campo obrigatório ausente para o tipo",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.attachments': is required for message type LOCATION"
+                }
+              }
+            }
           }
         }
       },
-      "SendRefused": {
-        "description": "Envio recusado.",
+      "InstanceNotFound": {
+        "description": "Instância não encontrada para a Secret Key informada.",
         "content": {
           "application/json": {
-            "schema": { "oneOf": [{ "$ref": "#/components/schemas/SendError" }, { "$ref": "#/components/schemas/Error" }] },
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "instanceNotFound": {
+                "summary": "Instância não encontrada",
+                "value": {
+                  "error": "instance not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Envio recusado por uma regra: canal desconectado, instância sem provisionamento, assinatura inativa, conta bloqueada ou tipo que o canal não tem.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
             "examples": {
               "channelDisconnected": {
                 "summary": "Canal desconectado: conecte o canal de novo e repita o envio",
-                "value": { "timestamp": "2026-10-22T14:00:00.123Z", "code": "BUSINESS_RULE_VIOLATION", "subCode": "CHANNEL_DISCONNECTED", "message": "Channel is disconnected" }
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "CHANNEL_DISCONNECTED",
+                  "message": "Channel is disconnected"
+                }
               },
-              "windowClosed": {
-                "summary": "Janela de conversa de 24 horas fechada.",
-                "value": { "error": 422, "message": "Conversation window is closed" }
+              "unsupportedChannelType": {
+                "summary": "Tipo que o canal não tem",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "message": "[UNSUPPORTED_CHANNEL_TYPE] O canal META_INSTAGRAM nao suporta mensagens do tipo LOCATION"
+                }
+              },
+              "instanceNotProvisioned": {
+                "summary": "Instância sem provisionamento",
+                "value": {
+                  "error": "instance is not provisioned"
+                }
+              },
+              "subscriptionInactive": {
+                "summary": "Assinatura da instância inativa",
+                "value": {
+                  "error": "instance subscription is not active"
+                }
+              },
+              "blocked": {
+                "summary": "Conta bloqueada",
+                "value": {
+                  "error": "You are blocked, contact support."
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Falha do nosso lado ao processar o pedido. Confira o webhook de status antes de repetir: o pedido pode ter sido aceito.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "integrationUnavailable": {
+                "summary": "Falha temporária: tente de novo em instantes",
+                "value": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              },
+              "sendingFailed": {
+                "summary": "Falha interna ao processar o pedido",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "INTEGRATION_ERROR",
+                  "message": "Message sending failed"
+                }
               }
             }
           }
@@ -104,43 +259,101 @@
     "schemas": {
       "SendLocationRequest": {
         "type": "object",
-        "required": ["recipient", "content"],
+        "required": [
+          "recipient",
+          "content"
+        ],
         "properties": {
           "recipient": {
             "type": "object",
-            "required": ["identifier"],
+            "required": [
+              "identifier"
+            ],
             "description": "Dados do destinatário",
             "properties": {
-              "identifier": { "type": "string", "description": "Telefone do destinatário (DDI + DDD + número)", "example": "5544936181064" },
-              "name": { "type": "string", "description": "Nome do destinatário (opcional)", "example": "Nome do Destinatário" },
-              "subject": { "type": "string", "description": "Título ou assunto (opcional)", "example": "Título" },
-              "picture": { "type": "string", "description": "URL da foto do destinatário (opcional)", "example": "" }
+              "identifier": {
+                "type": "string",
+                "description": "Identificador do destinatário no canal: telefone com DDI e DDD no WhatsApp (5511999999999), IGSID no Instagram, PSID no Messenger e chat_id no Telegram",
+                "example": "5544936181064"
+              },
+              "name": {
+                "type": "string",
+                "description": "Nome do destinatário (opcional)",
+                "example": "Nome do Destinatário"
+              },
+              "subject": {
+                "type": "string",
+                "description": "Título ou assunto (opcional)",
+                "example": "Título"
+              },
+              "picture": {
+                "type": "string",
+                "description": "URL da foto do destinatário (opcional)",
+                "example": ""
+              }
             }
           },
           "sender": {
             "type": "object",
             "description": "Dados do remetente (opcional)",
             "properties": {
-              "identifier": { "type": "string", "description": "Telefone do remetente", "example": "5544936181064" },
-              "name": { "type": "string", "description": "Nome do remetente", "example": "Nome do Remetente" },
-              "picture": { "type": "string", "description": "URL da foto do remetente", "example": "" }
+              "identifier": {
+                "type": "string",
+                "description": "Telefone do remetente",
+                "example": "5544936181064"
+              },
+              "name": {
+                "type": "string",
+                "description": "Nome do remetente",
+                "example": "Nome do Remetente"
+              },
+              "picture": {
+                "type": "string",
+                "description": "URL da foto do remetente",
+                "example": ""
+              }
             }
           },
           "content": {
             "type": "object",
-            "required": ["type", "attachments"],
+            "required": [
+              "type",
+              "attachments"
+            ],
             "properties": {
-              "type": { "type": "string", "description": "Tipo da mensagem", "enum": ["LOCATION"] },
+              "type": {
+                "type": "string",
+                "description": "Tipo da mensagem",
+                "enum": [
+                  "LOCATION"
+                ]
+              },
               "attachments": {
                 "type": "array",
                 "description": "Lista com os dados da localização",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "latitude": { "type": "string", "description": "Latitude da localização, em texto, como no exemplo. Não é validado pela API, mas necessário para exibir o pin corretamente no WhatsApp.", "example": "-23.0696347" },
-                    "longitude": { "type": "string", "description": "Longitude da localização, em texto, como no exemplo. Não é validado pela API, mas necessário para exibir o pin corretamente no WhatsApp.", "example": "-50.4357913" },
-                    "name": { "type": "string", "description": "Nome do local (opcional)", "example": "Google Brasil" },
-                    "address": { "type": "string", "description": "Endereço do local (opcional)", "example": "Av. Brg. Faria Lima, 3477 - Itaim Bibi, São Paulo - SP, 04538-133" }
+                    "latitude": {
+                      "type": "string",
+                      "description": "Latitude da localização, em texto, como no exemplo. Não é validado pela API, mas necessário para exibir o pin corretamente no WhatsApp.",
+                      "example": "-23.0696347"
+                    },
+                    "longitude": {
+                      "type": "string",
+                      "description": "Longitude da localização, em texto, como no exemplo. Não é validado pela API, mas necessário para exibir o pin corretamente no WhatsApp.",
+                      "example": "-50.4357913"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Nome do local (opcional)",
+                      "example": "Google Brasil"
+                    },
+                    "address": {
+                      "type": "string",
+                      "description": "Endereço do local (opcional)",
+                      "example": "Av. Brg. Faria Lima, 3477 - Itaim Bibi, São Paulo - SP, 04538-133"
+                    }
                   }
                 }
               }
@@ -151,28 +364,57 @@
       "MessageResponse": {
         "type": "object",
         "properties": {
-          "messageId": { "type": "string", "description": "ID da mensagem enviada — hexadecimal de 32 caracteres maiúsculos" }
+          "messageId": {
+            "type": "string",
+            "description": "ID da mensagem no Z-API Omni: hexadecimal de 32 caracteres maiúsculos. É o mesmo valor de message._id no webhook"
+          }
         }
       },
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string",
+            "description": "Motivo da recusa"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detalhe da recusa, quando houver"
+          }
         }
       },
       "SendError": {
         "type": "object",
         "properties": {
-          "timestamp": { "type": "string", "format": "date-time", "description": "Data e hora da recusa, em UTC" },
-          "code": { "type": "string", "description": "Categoria do erro", "example": "BUSINESS_RULE_VIOLATION" },
-          "subCode": { "type": "string", "description": "Código do caso. Só vem quando o caso tem um código próprio", "example": "CHANNEL_DISCONNECTED" },
-          "message": { "type": "string", "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`", "example": "Channel is disconnected" }
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora da recusa, em UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Categoria do erro",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Código do caso. Só vem quando o caso tem um código próprio",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`",
+            "example": "Channel is disconnected"
+          }
         }
       }
     },
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "Secret Key gerada no painel de Segurança do Omni Z-API" }
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada no painel de Segurança do Z-API Omni"
+      }
     }
   }
 }

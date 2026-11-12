@@ -30,9 +30,35 @@ The request is refused with `400`, and nothing is saved, in these cases:
 | An `events` item that is null, blank, or a name that does not exist | `{"error": "events contains an unknown or empty event name"}` |
 | `auth.type` `CUSTOM_HEADER` without `auth.headerName` | `{"error": "Header name is required for CUSTOM_HEADER auth type"}` |
 | Authentication other than `NONE` without the credential for its type | `{"error": "Credentials are required when auth type is not NONE"}` |
+| `payloadFormat` `CHATWOOT` without a numeric `customAttributes.chatwoot_account_id` greater than zero | `{"error": "Chatwoot Account ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"}` |
+| `payloadFormat` `CHATWOOT` without a numeric `customAttributes.chatwoot_inbox_id` greater than zero | `{"error": "Chatwoot Inbox ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"}` |
+| `payloadFormat` `CHATWOOT` with authentication other than `API_KEY` | `{"error": "Formato CHATWOOT exige autenticacao API_KEY (selecione 'API Key' no tipo de autenticacao)"}` |
 
 Event names are accepted in any letter case. The invalid-name response does not echo the value you sent.
+
+The events must also be emitted by the channel type. An event outside the type's list returns `422`, as in `{"error": "Events [PRESENCE_CHAT] are not supported by middleware META_WHATSAPP"}`. See [Events by channel type](/en/webhooks/channel-webhooks#events-by-channel-type). A channel that does not exist or belongs to another workspace returns `404` with `{"error": "Instance not found"}`.
+
+### `CHATWOOT` format
+
+To deliver to Chatwoot, provide the account and the inbox in `customAttributes` and the Chatwoot API key in the `API_KEY` authentication:
+
+```json
+{
+  "url": "https://chatwoot.yourcompany.com/webhooks/omni-zapi",
+  "events": ["MESSAGE_RECEIVED", "MESSAGE_STATUS"],
+  "payloadFormat": "CHATWOOT",
+  "customAttributes": { "chatwoot_account_id": 1, "chatwoot_inbox_id": 2 },
+  "authType": "API_KEY",
+  "key": "<chatwoot-api-key>"
+}
+```
+
+`chatwoot_account_id` and `chatwoot_inbox_id` are numbers, not text.
 
 <Note>
   The `channelId` is obtained from the [Create channel](/en/channels/create-channel) endpoint.
 </Note>
+
+## See also
+
+- [Channel webhooks](/en/webhooks/channel-webhooks)

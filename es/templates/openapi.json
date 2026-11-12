@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - API de plantillas",
+    "title": "Z-API Omni - API de plantillas",
     "description": "API para gestionar las plantillas de mensaje de WhatsApp Business",
     "version": "1.0.0"
   },
@@ -22,7 +22,7 @@
         "description": "Devuelve la lista de WABAs (cuentas de WhatsApp Business) disponibles para el token autenticado.",
         "operationId": "listBusinesses",
         "tags": [
-          "Plantillas"
+          "Plantillas (WhatsApp)"
         ],
         "responses": {
           "200": {
@@ -48,8 +48,8 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/AuthBadRequest"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -63,10 +63,10 @@
     "/whatsapp/businesses/{wabaId}/templates": {
       "get": {
         "summary": "Listar plantillas",
-        "description": "Devuelve la lista de plantillas de una WABA. La estructura de los `components` varía según la categoría y la configuración de cada plantilla.",
+        "description": "Devuelve todas las plantillas de la WABA de una vez, sin paginación y sin filtros: la lista sale del registro de la plataforma, actualizado por Sincronizar plantillas y por los eventos de estado de Meta. Filtra de tu lado. La estructura de los `components` varía según la categoría y la configuración de cada plantilla.",
         "operationId": "listTemplates",
         "tags": [
-          "Plantillas"
+          "Plantillas (WhatsApp)"
         ],
         "parameters": [
           {
@@ -77,51 +77,6 @@
             "schema": {
               "type": "string",
               "example": "428083093730937"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "description": "Cantidad de plantillas por página (paginación por cursor de Meta)",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "example": 25
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "description": "Filtra por estado de aprobación",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "PENDING",
-                "APPROVED",
-                "REJECTED"
-              ],
-              "example": "APPROVED"
-            }
-          },
-          {
-            "name": "before",
-            "in": "query",
-            "required": false,
-            "description": "Cursor de la página anterior, devuelto en `paging.cursors.before`",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "after",
-            "in": "query",
-            "required": false,
-            "description": "Cursor de la página siguiente, devuelto en `paging.cursors.after`",
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -184,8 +139,8 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -200,7 +155,7 @@
         "description": "Crea una plantilla de mensaje nueva y la envía a la aprobación de Meta.",
         "operationId": "createTemplate",
         "tags": [
-          "Plantillas"
+          "Plantillas (WhatsApp)"
         ],
         "parameters": [
           {
@@ -241,10 +196,7 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/MetaError"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+            "$ref": "#/components/responses/TemplateBadRequest"
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
@@ -259,12 +211,102 @@
       }
     },
     "/whatsapp/businesses/{wabaId}/templates/{templateId}": {
+      "get": {
+        "summary": "Consultar plantilla",
+        "description": "Devuelve una plantilla de la WABA por su `templateId` exacto, con los mismos campos de la lista y sin el envoltorio `data`. La respuesta sale del registro de la plataforma: una plantilla creada directamente en Meta solo aparece después de Sincronizar plantillas.",
+        "operationId": "getTemplate",
+        "tags": [
+          "Plantillas (WhatsApp)"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "description": "ID exacto de la plantilla (obtenido con Listar plantillas o en la respuesta de Crear plantilla). `sync` y `media` no se aceptan como `templateId`",
+            "schema": {
+              "type": "string",
+              "example": "1900296177408890"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantilla encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Template"
+                },
+                "example": {
+                  "id": "1900296177408890",
+                  "name": "confirm_account",
+                  "status": "APPROVED",
+                  "category": "AUTHENTICATION",
+                  "language": "es_ES",
+                  "parameter_format": "POSITIONAL",
+                  "message_send_ttl_seconds": 600,
+                  "components": [
+                    {
+                      "type": "BODY",
+                      "text": "Tu código de verificación es *{{1}}*. Por tu seguridad, no lo compartas.",
+                      "add_security_recommendation": true,
+                      "example": {
+                        "body_text": [
+                          [
+                            "123456"
+                          ]
+                        ]
+                      }
+                    },
+                    {
+                      "type": "BUTTONS",
+                      "buttons": [
+                        {
+                          "type": "URL",
+                          "text": "Copiar código",
+                          "url": "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp{{1}}",
+                          "example": [
+                            "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp123456"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "502": {
+            "$ref": "#/components/responses/IntegrationUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
+          }
+        }
+      },
       "put": {
-        "summary": "Editar plantilla",
+        "summary": "Actualizar plantilla",
         "description": "Edita una plantilla existente y la reenvía a la aprobación de Meta.",
         "operationId": "updateTemplate",
         "tags": [
-          "Plantillas"
+          "Plantillas (WhatsApp)"
         ],
         "parameters": [
           {
@@ -333,10 +375,7 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/MetaError"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+            "$ref": "#/components/responses/TemplateBadRequest"
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
@@ -354,7 +393,7 @@
         "description": "Elimina una plantilla existente de la WABA.",
         "operationId": "deleteTemplate",
         "tags": [
-          "Plantillas"
+          "Plantillas (WhatsApp)"
         ],
         "parameters": [
           {
@@ -390,20 +429,22 @@
         ],
         "responses": {
           "200": {
-            "description": "Plantilla eliminada correctamente",
+            "description": "Plantilla eliminada. El cuerpo es el booleano `true`",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "type": "boolean",
+                  "description": "`true` cuando la eliminación fue aceptada"
                 },
-                "example": {
-                  "success": true
-                }
+                "example": true
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -420,7 +461,7 @@
         "description": "Fuerza la sincronización de las plantillas con Meta, actualizando los estados (PENDING, APPROVED, REJECTED) y el resto de la información.",
         "operationId": "syncTemplates",
         "tags": [
-          "Plantillas"
+          "Plantillas (WhatsApp)"
         ],
         "parameters": [
           {
@@ -487,8 +528,11 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -505,7 +549,7 @@
         "description": "Sube el multimedia del HEADER y devuelve el `header_handle` que exige Meta.\n\nMeta no acepta el archivo directamente al crear la plantilla: exige el handle de la Resumable Upload API, que depende del token de la aplicación. Este endpoint hace ese puente.\n\nAcepta dos formatos, elegidos por el `Content-Type`: el archivo en `multipart/form-data` o el enlace público del multimedia en `application/json`.",
         "operationId": "uploadTemplateMedia",
         "tags": [
-          "Plantillas"
+          "Plantillas (WhatsApp)"
         ],
         "parameters": [
           {
@@ -575,7 +619,7 @@
             }
           },
           "400": {
-            "description": "Petición no válida: falta `file` o está vacío, falta `url` o está en blanco, JSON no válido o secret key no válida",
+            "description": "Petición no válida: `file` ausente o vacío, `url` ausente o en blanco, JSON no válido, header `Authorization` ausente, clave mal formada o inexistente, o IP fuera de la lista de IPs permitidas de la Secret Key",
             "content": {
               "application/json": {
                 "schema": {
@@ -650,138 +694,155 @@
           }
         }
       }
-    },
-    "/whatsapp/businesses/{wabaId}/template-library": {
-      "get": {
-        "summary": "Listar biblioteca de plantillas",
-        "description": "Devuelve las plantillas ya hechas de la biblioteca de Meta, que se pueden crear sin pasar por revisión.",
-        "operationId": "listTemplateLibrary",
-        "tags": [
-          "Plantillas"
-        ],
-        "parameters": [
-          {
-            "name": "wabaId",
-            "in": "path",
-            "required": true,
-            "description": "ID de la WABA (obtenido con Listar WABAs)",
-            "schema": {
-              "type": "string",
-              "example": "428083093730937"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plantillas de la biblioteca",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TemplateLibraryResponse"
-                },
-                "example": {
-                  "data": [
-                    {
-                      "name": "order_confirmation_1",
-                      "category": "UTILITY",
-                      "languages": [
-                        "pt_BR",
-                        "en_US",
-                        "es_ES"
-                      ],
-                      "body": "Ola {{1}}, seu pedido {{2}} foi confirmado."
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Token no válido o ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
     "responses": {
-      "MethodNotAllowed": {
-        "description": "Método no permitido.",
+      "AuthBadRequest": {
+        "description": "Autenticación rechazada. El header `Authorization` falta, la clave está mal formada o no existe (`Authorization invalid`), o la IP de origen está fuera de la lista de IPs permitidas de la Secret Key (`<ip> not allowed`). El prefijo `Bearer` es opcional.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
-            "example": {
-              "error": 405,
-              "message": "Method not allowed"
-            }
-          }
-        }
-      },
-      "MetaError": {
-        "description": "Error devuelto por Meta al procesar la petición.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/MetaError"
-            },
-            "example": {
-              "error": {
-                "timestamp": "2026-10-19T12:00:00Z",
-                "status": 422,
-                "errors": [
-                  {
-                    "description": "",
-                    "name": "META_WHATSAPP_ERROR",
-                    "message": "Tu mensaje no se puede enviar porque incluye contenido que otras personas en Facebook denunciaron como abusivo.",
-                    "code": "368"
-                  }
-                ]
+            "examples": {
+              "authorization_invalid": {
+                "summary": "Clave ausente, mal formada o inexistente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ip_not_allowed": {
+                "summary": "IP fuera de la lista de IPs permitidas de la Secret Key",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
               }
             }
           }
         }
       },
-      "Unauthorized": {
-        "description": "Token no válido o ausente.",
+      "BadRequest": {
+        "description": "Autenticación rechazada. El header `Authorization` falta, la clave está mal formada o no existe (`Authorization invalid`), o la IP de origen está fuera de la lista de IPs permitidas de la Secret Key (`<ip> not allowed`). El prefijo `Bearer` es opcional.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
-            "example": {
-              "error": 401,
-              "message": "Unauthorized"
+            "examples": {
+              "authorization_invalid": {
+                "summary": "Clave ausente, mal formada o inexistente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ip_not_allowed": {
+                "summary": "IP fuera de la lista de IPs permitidas de la Secret Key",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "business_id_required": {
+                "summary": "WABA no informada",
+                "value": {
+                  "error": "Business id is required"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TemplateBadRequest": {
+        "description": "Petición rechazada antes de llegar a Meta: autenticación rechazada (header `Authorization` ausente, clave mal formada o inexistente, o IP fuera de la lista de IPs permitidas de la Secret Key), cuerpo ausente o plantilla vacía.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "authorization_invalid": {
+                "summary": "Clave ausente, mal formada o inexistente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ip_not_allowed": {
+                "summary": "IP fuera de la lista de IPs permitidas de la Secret Key",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "template_payload_required": {
+                "summary": "Plantilla vacía",
+                "value": {
+                  "error": "Template payload is required"
+                }
+              },
+              "request_body_missing": {
+                "summary": "Cuerpo de la petición ausente",
+                "value": {
+                  "error": "Required request body is missing"
+                }
+              },
+              "business_id_required": {
+                "summary": "WABA no informada",
+                "value": {
+                  "error": "Business id is required"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Recurso no encontrado. El mismo cuerpo vale para una WABA de otro workspace, una WABA inexistente y una plantilla que no pertenece a la WABA.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "not_found": {
+                "summary": "Resource not found",
+                "value": {
+                  "error": "Resource not found"
+                }
+              }
             }
           }
         }
       },
       "UnprocessableEntity": {
-        "description": "La petición no se pudo procesar debido a un error de validación.",
+        "description": "Meta o la plataforma rechazó la operación. Cuando el rechazo viene de Meta, el cuerpo trae `error.errors[]` con `code`, `subCode`, `name`, `message` y `description`. Guarda `timestamp`, `code` y `subCode` para hablar con el soporte. Sin detalle del rechazo, `error` viene como texto.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/UnprocessableEntity"
             },
-            "example": {
-              "error": {
-                "errors": [
-                  {
-                    "code": "100",
-                    "name": "META_WHATSAPP_ERROR",
-                    "subCode": "2388024",
-                    "message": "Invalid parameter",
-                    "description": "There is already Portuguese (BR) content for this template. You can create a new template and try again."
+            "examples": {
+              "meta_rejection": {
+                "summary": "Rechazo de Meta",
+                "value": {
+                  "error": {
+                    "timestamp": "2026-11-09T12:00:00Z",
+                    "status": 400,
+                    "errors": [
+                      {
+                        "code": "100",
+                        "name": "META_WHATSAPP_ERROR",
+                        "subCode": "2388024",
+                        "message": "Invalid parameter",
+                        "description": "There is already Portuguese (BR) content for this template. You can create a new template and try again."
+                      }
+                    ]
                   }
-                ]
+                }
+              },
+              "no_details": {
+                "summary": "Rechazo sin detalle",
+                "value": {
+                  "error": "The operation could not be completed right now. Try again in a few moments."
+                }
               }
             }
           }
@@ -1111,52 +1172,12 @@
           }
         }
       },
-      "MetaError": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "object",
-            "description": "Rechazo de Meta, en el sobre `errors` reenviado por el servicio de templates.",
-            "properties": {
-              "timestamp": {
-                "type": "string"
-              },
-              "status": {
-                "type": "integer"
-              },
-              "errors": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "description": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "Tipo de error (p. ej.: META_WHATSAPP_ERROR)"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Mensaje de error de Meta"
-                    },
-                    "code": {
-                      "type": "string",
-                      "description": "Código de error de Meta"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
       "Error": {
         "type": "object",
         "properties": {
           "error": {
-            "type": "integer",
-            "description": "Código del error"
+            "type": "string",
+            "description": "Código o mensaje del error"
           },
           "message": {
             "type": "string",
@@ -1167,28 +1188,54 @@
       "UnprocessableEntity": {
         "type": "object",
         "properties": {
-          "errors": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "subCode": {
-                  "type": "string"
-                },
-                "message": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
+          "error": {
+            "description": "Detalle del rechazo (objeto) o, cuando no hay detalle, el mensaje en texto.",
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "timestamp": {
+                    "type": "string",
+                    "description": "Momento del rechazo"
+                  },
+                  "status": {
+                    "type": "integer",
+                    "description": "Status HTTP informado en el detalle del rechazo"
+                  },
+                  "errors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Código de error de Meta"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Tipo del error (ej: META_WHATSAPP_ERROR)"
+                        },
+                        "subCode": {
+                          "type": "string",
+                          "description": "Subcódigo de error de Meta"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Mensaje de error"
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "Explicación del rechazo"
+                        }
+                      }
+                    }
+                  }
                 }
+              },
+              {
+                "type": "string"
               }
-            }
+            ]
           }
         }
       },
@@ -1198,43 +1245,6 @@
           "h": {
             "type": "string",
             "description": "Handle que se usa como `example` del componente HEADER al crear la plantilla"
-          }
-        }
-      },
-      "TemplateLibraryResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "Nombre de la plantilla en la biblioteca"
-                },
-                "category": {
-                  "type": "string",
-                  "enum": [
-                    "UTILITY",
-                    "MARKETING",
-                    "AUTHENTICATION"
-                  ],
-                  "description": "Categoría"
-                },
-                "languages": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  },
-                  "description": "Idiomas disponibles"
-                },
-                "body": {
-                  "type": "string",
-                  "description": "Vista previa del cuerpo de la plantilla"
-                }
-              }
-            }
           }
         }
       },
@@ -1565,7 +1575,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+        "description": "Secret Key generada en el panel de Seguridad de Z-API Omni. El prefijo `Bearer` es opcional."
       }
     }
   }

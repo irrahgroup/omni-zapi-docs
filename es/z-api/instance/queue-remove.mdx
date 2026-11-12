@@ -1,0 +1,30 @@
+---
+title: "Quitar un mensaje de la cola"
+description: "Rechaza quitar un mensaje de la cola: no se quita nada"
+openapi: "/es/z-api/openapi.json DELETE /queue/{zaapId}"
+---
+
+## Conceptos
+
+Responde `422` y no quita nada: un mensaje enviado ya fue entregado a la API oficial y no se puede retirar.
+
+```json
+{
+  "error": "messages are not queued on META_WHATSAPP channels: they are handed to the official API when sent and cannot be removed"
+}
+```
+
+### Errores
+
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `422` | `messages are not queued on META_WHATSAPP channels: they are handed to the official API when sent and cannot be removed` | Siempre |
+| `404` | `instance not found` | El `id` o el `token` del path no existe |
+| `422` | `queue route is not available through this compatibility route for Z_API_WHATSAPP instances yet` | El canal es del tipo `Z_API_WHATSAPP` |
+
+Los errores de [autenticación](/es/z-api/authentication) valen aquí también.
+
+## Véase también
+
+- [Estado de la instancia](/es/z-api/instance/status)
+- [Limitaciones y rechazos](/es/z-api/limitations)

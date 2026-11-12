@@ -1,17 +1,22 @@
 ---
 title: "Enviar botón Pix"
-description: "Envía mensajes con botón de pago mediante Pix"
+description: "Ruta de botón Pix, rechazada en Z-API Omni"
 openapi: "/es/z-api/openapi.json POST /send-button-pix"
 ---
 
-import { ZapiResponseText } from '/snippets/notes.mdx';
+<Warning>
+  Esta ruta **no envía** en Z-API Omni. Siempre responde `422`. Consulta [Limitaciones y rechazos](/es/z-api/limitations#envío-rechazado).
+</Warning>
 
-## Conceptos
+En Z-API, esta ruta envía un mensaje con un botón que copia la clave Pix. WhatsApp Oficial no tiene ese botón.
 
-Método para enviar mensajes con botón de pago mediante Pix. El destinatario recibe un botón que, al pulsarlo, copia la clave Pix.
+### Errores
 
-Los tipos de clave admitidos son: **CPF**, **CNPJ**, **PHONE**, **EMAIL** y **EVP** (clave aleatoria).
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `422` | `pix button is not supported for this channel` | Siempre. No se envía nada |
 
-<Note>
-  <ZapiResponseText lang="es" />
-</Note>
+## Véase también
+
+- [Mensajes: errores comunes](/es/z-api/messages/introduction#errores-comunes)
+- [Limitaciones y rechazos](/es/z-api/limitations)

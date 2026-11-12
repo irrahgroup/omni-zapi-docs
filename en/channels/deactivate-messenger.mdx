@@ -1,0 +1,43 @@
+---
+title: "Deactivate Messenger"
+description: "Disconnect a META_MESSENGER channel and clear the link on the provider"
+openapi: "/en/channels/openapi-deactivate-social.json POST /v1/channels/{channelId}/deactivate-messenger"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_MESSENGER" lang="en" />
+
+## Overview
+
+Disconnects a `META_MESSENGER` channel and clears the link to the account, page or bot. No body.
+
+Use it to switch to another Facebook page, or solve the `422` from [List Messenger pages](/en/channels/list-messenger-pages), which shows up when the channel is still active on the provider.
+
+Use the Secret Key, from your backend. Does not require ENTERPRISE.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/CHANNEL_ID/deactivate-messenger \
+  -H "Authorization: Bearer YOUR_SECRET_KEY"
+```
+
+The response is a boolean. With `true`, the channel is disconnected and the link is cleared. With `false`, nothing changes on the channel.
+
+To connect again, redo the connection through the SDK and finish with [Activate Messenger](/en/channels/activate-messenger). The equivalent routes of the other social channels are [Deactivate Instagram](/en/channels/deactivate-instagram), [Deactivate Messenger](/en/channels/deactivate-messenger) and [Deactivate Telegram](/en/channels/deactivate-telegram).
+
+### Errors
+
+| Status | Body | When |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key missing, malformed or unknown |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP outside the [IP list](/en/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Channel does not exist or belongs to another workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Integration failure; try again in a few moments |
+
+<Note>
+  The `channelId` comes from the [Create channel](/en/channels/create-channel) endpoint or from [List channels](/en/channels/list-channels).
+</Note>
+
+## See also
+
+- [Introduction](/en/channels/introduction)

@@ -1,6 +1,6 @@
 ---
 title: "Autenticação"
-description: "Como gerar e utilizar suas credenciais de API no Omni Z-API"
+description: "Como gerar e utilizar suas credenciais de API no Z-API Omni"
 ---
 
 import { projectName, frontendUrl } from '/snippets/variables.mdx';
@@ -18,6 +18,8 @@ A Public Key é utilizada pelo SDK de conexão de canais ([`@omnizapi/connect`](
 <Note>
   A Public Key pode ser exposta no frontend da sua aplicação, pois ela tem permissões limitadas apenas à conexão de canais.
 </Note>
+
+Duas rotas da API aceitam a Public Key: [Origens do SDK](/channels/sdk-info) e [Listar páginas do Messenger](/channels/list-messenger-pages). Nas demais, use a Secret Key.
 
 Exemplo de uso:
 
@@ -47,6 +49,27 @@ curl -X GET https://api.omni.z-api.io/whatsapp/businesses \
 ```
 
 ---
+
+## Erros comuns
+
+Estes erros valem para as rotas da API, em qualquer área (canais, templates, mensagens, webhooks). O corpo é `{"error": "<texto>"}`. Quando o erro vem de um serviço interno em JSON, o campo `error` traz esse objeto.
+
+| Status | Resposta `error` | Quando |
+|---|---|---|
+| `400` | `Authorization invalid` | Header `Authorization` ausente, ou chave malformada ou inexistente |
+| `400` | `<ip> not allowed` | O IP de origem não está na [lista de IPs](/security/ip-restriction) do workspace. Quando o IP de origem não é identificado: `ip not allowed` |
+| `400` | `Required request body is missing` | Corpo ausente ou ilegível em uma rota que exige corpo |
+| `404` | `Instance not found` (`instance not found` nas rotas de mensagens) | O canal não existe ou é de outro workspace |
+| `422` | `instance is not provisioned` | Rotas de mensagens: o canal ainda não terminou de ser provisionado |
+| `422` | `instance subscription is not active` | Rotas de mensagens: o canal está sem assinatura ativa |
+| `422` | `You are blocked, contact support.` | Rotas de mensagens: o workspace está bloqueado |
+| `422` | `operation not supported for this instance` | Rotas de mensagens: o tipo do canal não aceita a operação |
+| `502` | `integration_unavailable` | Falha em um serviço interno. A resposta traz `message`. Tente de novo em instantes |
+| `504` | `integration_timeout` | O serviço não respondeu no prazo. Em leitura, repetir é seguro |
+| `504` | `outcome_unknown` | O prazo passou em uma operação que muda dados. Confira o estado antes de repetir |
+| `504` | `template_sync_timeout` | A sincronização de templates com a Meta passou do prazo e continua em andamento. Liste os templates de novo em instantes |
+
+As rotas de [mensagens](/messages/introduction) e a [compatibilidade com a Z-API](/z-api/limitations) têm erros próprios, descritos em cada seção.
 
 ## Resumo
 

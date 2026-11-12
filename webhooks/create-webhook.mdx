@@ -30,9 +30,35 @@ O pedido é recusado com `400`, sem gravar nada, nestes casos:
 | Item de `events` nulo, em branco ou com nome que não existe | `{"error": "events contains an unknown or empty event name"}` |
 | `auth.type` `CUSTOM_HEADER` sem `auth.headerName` | `{"error": "Header name is required for CUSTOM_HEADER auth type"}` |
 | Autenticação diferente de `NONE` sem a credencial do tipo | `{"error": "Credentials are required when auth type is not NONE"}` |
+| `payloadFormat` `CHATWOOT` sem `customAttributes.chatwoot_account_id` numérico maior que zero | `{"error": "Chatwoot Account ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"}` |
+| `payloadFormat` `CHATWOOT` sem `customAttributes.chatwoot_inbox_id` numérico maior que zero | `{"error": "Chatwoot Inbox ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"}` |
+| `payloadFormat` `CHATWOOT` com autenticação diferente de `API_KEY` | `{"error": "Formato CHATWOOT exige autenticacao API_KEY (selecione 'API Key' no tipo de autenticacao)"}` |
 
 O nome do evento é aceito em maiúsculas ou minúsculas. A resposta de nome inválido não repete o valor enviado.
+
+Os eventos também precisam ser emitidos pelo tipo do canal. Um evento fora da lista do tipo responde `422`, como em `{"error": "Events [PRESENCE_CHAT] are not supported by middleware META_WHATSAPP"}`. Veja [Eventos por tipo de canal](/webhooks/channel-webhooks#eventos-por-tipo-de-canal). Um canal inexistente ou de outro workspace responde `404` com `{"error": "Instance not found"}`.
+
+### Formato `CHATWOOT`
+
+Para entregar no Chatwoot, informe a conta e a caixa de entrada em `customAttributes` e a API Key do Chatwoot na autenticação `API_KEY`:
+
+```json
+{
+  "url": "https://chatwoot.suaempresa.com/webhooks/omni-zapi",
+  "events": ["MESSAGE_RECEIVED", "MESSAGE_STATUS"],
+  "payloadFormat": "CHATWOOT",
+  "customAttributes": { "chatwoot_account_id": 1, "chatwoot_inbox_id": 2 },
+  "authType": "API_KEY",
+  "key": "<api-key-do-chatwoot>"
+}
+```
+
+`chatwoot_account_id` e `chatwoot_inbox_id` são números, não texto.
 
 <Note>
   O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel).
 </Note>
+
+## Veja também
+
+- [Webhooks de canal](/webhooks/channel-webhooks)

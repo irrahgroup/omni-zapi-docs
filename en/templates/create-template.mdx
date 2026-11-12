@@ -1,14 +1,18 @@
 ---
-title: "API reference"
+title: "Create template"
 description: "The call that creates the template: route, authentication, responses and errors"
 openapi: "/en/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates"
 ---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
 
 This is the single creation call. **Its body is the JSON of the model** you picked — there is no separate route per model, and sending the payload from [Models](/en/templates/models/overview) already creates the template.
 
 What lives here is the mechanics and the return: the route, the `wabaId`, the schema field by field and what comes back in each case. The playground above fires the real call.
 
-The template starts as `PENDING` and becomes `APPROVED` or `REJECTED` after Meta's review. Use [Sync templates](/en/templates/sync-templates) to force a status update.
+The template starts as `PENDING` and becomes `APPROVED` or `REJECTED` after Meta's review. The preferred way to learn the result is the [template webhook](/en/webhooks/template-webhooks), which does not depend on a channel, subscribed to the `UPDATE_TEMPLATE_STATUS` event: the platform notifies you when Meta decides. To check a specific template, use [Get template](/en/templates/get-template) with the `id` returned here. If the status looks outdated, [Sync templates](/en/templates/sync-templates) forces an update with Meta.
+
+Meta rejects the template with `422`, and the body carries the original refusal in `error.errors[]`. The `400` errors come only from the platform: authentication refused, missing body or empty template.
 
 <Note>
   The `wabaId` comes from the [List WABAs](/en/templates/list-businesses) endpoint.
@@ -18,11 +22,7 @@ The template starts as `PENDING` and becomes `APPROVED` or `REJECTED` after Meta
   The name goes in `snake_case`, with no spaces or special characters, and **cannot be changed** after creation.
 </Warning>
 
-<Warning>
-  This endpoint is scoped by **WABA**, so today it covers only **Official WhatsApp**.
-
-  Instagram and Messenger also have a pre-approved template — the **Utility Template**, scoped by page. Support for them in Omni Z-API is **being implemented**. See the [comparison of the three template kinds](/en/templates/introduction).
-</Warning>
+<ChannelSupport type="TEMPLATES_API" lang="en" />
 
 <CardGroup cols={3}>
   <Card title="Choose the model" icon="layer-group" href="/en/templates/models/overview">
@@ -35,3 +35,7 @@ The template starts as `PENDING` and becomes `APPROVED` or `REJECTED` after Meta
     What Meta rejects
   </Card>
 </CardGroup>
+
+## See also
+
+- [Introduction](/en/templates/introduction)

@@ -1,8 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Informações do SDK",
-    "description": "Consulta as origens liberadas para o SDK de conexão de canais",
+    "title": "Z-API Omni - Origens do SDK",
     "version": "1.0.0"
   },
   "servers": [
@@ -10,26 +9,26 @@
       "url": "https://api.omni.z-api.io"
     }
   ],
+  "security": [
+    {
+      "publicKey": []
+    }
+  ],
   "paths": {
-    "/instances/{channelId}/sdk-info": {
+    "/v1/channels/{channelId}/sdk-info": {
       "get": {
-        "summary": "Consultar origens do SDK",
-        "description": "Retorna as origens liberadas para o SDK de conexão daquele canal.\n\nAutenticado com a **Public Key** no header `Authorization` — sem o prefixo `Bearer`. É o único endpoint que aceita a Public Key, justamente para poder ser chamado do frontend.",
+        "summary": "Origens do SDK",
+        "description": "Devolve o que o SDK de conexão precisa para abrir o fluxo do canal: o tipo do canal, o app da Meta usado e as origens liberadas. Autenticado com a **Public Key** no header `Authorization`, para poder ser chamado do frontend.",
         "operationId": "getSdkInfo",
         "tags": [
           "Canais"
-        ],
-        "security": [
-          {
-            "publicKey": []
-          }
         ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
-            "description": "ID do canal",
+            "description": "ID do canal (obtido em Criar canal ou Listar canais)",
             "schema": {
               "type": "string",
               "example": "019E4C54B1B375A28970B605CA9B03C3"
@@ -38,119 +37,66 @@
         ],
         "responses": {
           "200": {
-            "description": "Origens do canal",
+            "description": "Dados do SDK para o canal",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SdkInfo"
                 },
                 "example": {
+                  "middleware": "META_WHATSAPP",
+                  "appId": "1234567890123456",
+                  "appConfig": "987654321098765",
                   "allowOrigins": [
                     "https://app.suaempresa.com",
-                    "http://localhost:3000"
-                  ]
+                    "http://localhost:3000",
+                    "https://app.hubmessage.io",
+                    "https://app.omni.z-api.io"
+                  ],
+                  "appCustom": false,
+                  "appInstagramId": null
                 }
               }
             }
           },
-          "401": {
-            "description": "Public Key inválida ou ausente",
+          "400": {
+            "description": "Public Key ausente, malformada ou inexistente",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Public Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  }
                 }
               }
             }
           },
           "404": {
-            "description": "Canal não encontrado",
+            "description": "Canal inexistente ou de outro workspace",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/channels/{channelId}/list-messenger-pages": {
-      "post": {
-        "summary": "Listar páginas do Messenger",
-        "description": "Devolve as páginas do Facebook que o usuário autorizou, para ele escolher qual vincular ao canal.\n\nÉ um passo **exclusivo do Messenger**: o OAuth da Meta devolve um `code` que dá acesso a várias páginas, e o canal precisa de uma só. Autenticado com a **Public Key**.",
-        "operationId": "listMessengerPages",
-        "tags": [
-          "Canais"
-        ],
-        "security": [
-          {
-            "publicKey": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "channelId",
-            "in": "path",
-            "required": true,
-            "description": "ID do canal",
-            "schema": {
-              "type": "string",
-              "example": "019E4C54B1B375A28970B605CA9B03C3"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ListMessengerPagesRequest"
-              },
-              "example": {
-                "code": "AQD8h2...",
-                "redirectUri": "https://app.omni.z-api.io/oauth/proxy-messenger"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Páginas disponíveis",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessengerPages"
                 },
-                "example": {
-                  "data": [
-                    {
-                      "id": "102938475601234",
-                      "name": "Minha Loja",
-                      "accessToken": "EAAG..."
+                "examples": {
+                  "instanceNotFound": {
+                    "summary": "Canal não encontrado",
+                    "value": {
+                      "error": "Instance not found"
                     }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Public Key inválida ou ausente",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "`code` inválido ou expirado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  },
+                  "appConfigurationNotFound": {
+                    "summary": "App não configurado",
+                    "value": {
+                      "error": "app configuration not found"
+                    }
+                  }
                 }
               }
             }
@@ -161,69 +107,67 @@
   },
   "components": {
     "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo do erro"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estável do erro"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto do erro, em inglês"
+          }
+        }
+      },
       "SdkInfo": {
         "type": "object",
         "properties": {
+          "middleware": {
+            "type": "string",
+            "description": "Tipo do canal",
+            "enum": [
+              "META_WHATSAPP",
+              "Z_API_WHATSAPP",
+              "META_INSTAGRAM",
+              "META_MESSENGER",
+              "BOT_TELEGRAM"
+            ]
+          },
+          "appId": {
+            "type": "string",
+            "description": "ID do app da Meta que o SDK usa"
+          },
+          "appConfig": {
+            "type": "string",
+            "description": "Configuração do app da Meta que o SDK usa"
+          },
           "allowOrigins": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Origens liberadas para o SDK"
-          }
-        }
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer"
+            "description": "Origens liberadas para o SDK: primeiro as do workspace, depois as do painel (`https://app.hubmessage.io` e `https://app.omni.z-api.io`)"
           },
-          "message": {
-            "type": "string"
-          }
-        }
-      },
-      "ListMessengerPagesRequest": {
-        "type": "object",
-        "required": [
-          "code",
-          "redirectUri"
-        ],
-        "properties": {
-          "code": {
-            "type": "string",
-            "description": "`code` devolvido pelo OAuth da Meta"
+          "appCustom": {
+            "type": "boolean",
+            "description": "`true` quando o workspace usa app próprio"
           },
-          "redirectUri": {
-            "type": "string",
-            "description": "A mesma `redirectUri` usada no OAuth"
-          }
-        }
-      },
-      "MessengerPages": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "description": "Páginas autorizadas",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "description": "ID da página"
-                },
-                "name": {
-                  "type": "string",
-                  "description": "Nome da página"
-                },
-                "accessToken": {
-                  "type": "string",
-                  "description": "Token de acesso da página"
-                }
-              }
-            }
+          "appInstagramId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ID do app do Instagram"
           }
         }
       }
@@ -232,7 +176,8 @@
       "publicKey": {
         "type": "apiKey",
         "in": "header",
-        "name": "Authorization"
+        "name": "Authorization",
+        "description": "Public Key gerada em Segurança, no painel do Z-API Omni, enviada no header `Authorization`."
       }
     }
   }

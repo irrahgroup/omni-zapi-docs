@@ -1,15 +1,15 @@
 ---
 title: "Introdução"
-description: "Entenda como funcionam as mensagens livres no Omni Z-API"
+description: "Entenda como funcionam as mensagens livres no Z-API Omni"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
 ## O que são mensagens livres?
 
-Mensagens livres são mensagens que você envia **sem precisar de um template aprovado**. Você pode enviar texto, imagem, áudio, vídeo, documento — qualquer formato suportado — com total liberdade de conteúdo.
+Mensagens livres são mensagens que você envia **sem precisar de um template aprovado**. Você pode enviar texto, imagem, áudio, vídeo, documento ou qualquer outro formato suportado, com total liberdade de conteúdo.
 
-A única condição: a [janela de conversa](/conversation-window) de **24 horas** precisa estar aberta.
+Na Meta Cloud API, a condição é a [janela de conversa](/conversation-window) de **24 horas** estar aberta.
 
 ## Quando posso usar?
 
@@ -23,6 +23,8 @@ Cliente envia mensagem → Janela abre (24h) → Você envia mensagens livres
 
 Se o cliente não enviou mensagem nas últimas 24 horas, a janela está fechada. Nesse caso, a única opção é enviar um **template aprovado pela Meta** através do endpoint [Enviar template](/messages/send-template).
 
+A API não confere a janela: uma mensagem livre fora dela é aceita com `200`, mas a Meta não a entrega, e a falha chega pelo webhook de status.
+
 Depois que o cliente **responder** o template, a janela reabre e você volta a poder usar mensagens livres.
 
 ```
@@ -35,7 +37,7 @@ Janela fechada → Enviar template → Cliente responde → Janela reabre (24h)
 
 ## Tipos disponíveis
 
-Todos os endpoints desta seção utilizam a mesma rota:
+Todos os endpoints de envio desta seção utilizam a mesma rota:
 
 `POST /v1/channels/{channelId}/messages`
 
@@ -44,6 +46,7 @@ O que muda é o campo `content.type`:
 | Tipo | Descrição |
 |---|---|
 | `TEXT` | Mensagem de texto simples |
+| `LINK` | Texto com link e prévia |
 | `IMAGE` | Mensagem com imagem |
 | `AUDIO` | Mensagem de áudio |
 | `VIDEO` | Mensagem com vídeo |
@@ -52,17 +55,25 @@ O que muda é o campo `content.type`:
 | `LOCATION` | Mensagem de localização |
 | `INTERACTIVE_ACTION` | Mensagem com botões de ação (URL e ligar) |
 | `INTERACTIVE_BUTTON` | Mensagem com botões de resposta rápida |
-| `INTERACTIVE_LIST` | Lista de opções em seções — *em desenvolvimento* |
-| `DOCUMENT` | Arquivo de até 100 MB, por URL ou Base64 |
-| `REACTION` | Emoji em uma mensagem da conversa — *em desenvolvimento* |
-| `LOCATION_REQUEST` | Pede a localização do cliente — *em desenvolvimento* |
-| `FLOW` | Abre um formulário publicado — *em desenvolvimento* |
-| `CATALOG` | Abre o catálogo da conta — *em desenvolvimento* |
-| `PRODUCT` | Um produto do catálogo — *em desenvolvimento* |
-| `PRODUCT_LIST` | Vitrine com seções — *em desenvolvimento* |
-| `ORDER_DETAILS` | Fatura com pagamento — *em desenvolvimento* |
-| `ORDER_STATUS` | Andamento do pedido — *em desenvolvimento* |
+| `INTERACTIVE_LIST` | Lista de opções em seções |
+| `DOCUMENT` | Arquivo por URL ou Base64 |
+| `REACTION` | Emoji em uma mensagem da conversa |
+| `INTERACTIVE_FLOW` | Abre um formulário (Flow) da Meta |
+| `INTERACTIVE_CATALOG` | Abre o catálogo da conta |
+| `INTERACTIVE_SINGLE_PRODUCT` | Um produto do catálogo |
+| `INTERACTIVE_MULTI_PRODUCT` | Vitrine com seções de produtos |
 | `TEMPLATE` | Template aprovado pela Meta (fora da janela de 24h) |
+| `LOCATION_REQUEST` | Pede a localização do cliente: *em desenvolvimento* |
+| `ORDER_DETAILS` | Fatura com pagamento: *em desenvolvimento* |
+| `ORDER_STATUS` | Andamento do pedido: *em desenvolvimento* |
+
+Os tipos em desenvolvimento ainda não existem na API: a chamada com eles é recusada com `400`.
+
+Para trocar o texto de uma mensagem já enviada, use [Editar mensagem](/messages/edit-message), que tem rota própria.
+
+## Responder uma mensagem
+
+Nas mensagens de [catálogo](/messages/send-catalog), [formulário](/messages/send-flow), [lista de opções](/messages/send-interactive-list) e [produto](/messages/send-product), o campo `content.messageIdReply` faz a mensagem responder a outra, com citação, e `content.messageIdForwarded` marca o encaminhamento de uma mensagem.
 
 ## Resposta da API
 
@@ -74,11 +85,24 @@ Quando o envio é aceito, a API responde `200` com o identificador da mensagem:
 }
 ```
 
-O `messageId` é uma string hexadecimal de 32 caracteres maiúsculos. Guarde esse valor: ele é necessário para reagir à mensagem depois.
+O `messageId` é uma string hexadecimal de 32 caracteres maiúsculos. Guarde esse valor: ele é necessário para reagir à mensagem e para editá-la depois.
 
 <Note>
-  Esse é o mesmo valor que chega no seu webhook como `message._id`. Use-o para reconciliar a chamada de envio com o evento recebido — veja a [estrutura dos payloads](/webhooks/payloads).
+  Esse é o mesmo valor que chega no seu webhook como `message._id`. Use-o para reconciliar a chamada de envio com o evento recebido. Veja a [estrutura dos payloads](/webhooks/payloads).
 </Note>
+
+### O que o 200 quer dizer
+
+O `200` quer dizer que a mensagem foi **aceita e entrou na fila de envio**. Ele não confirma que a mensagem
+chegou ao cliente: o canal ainda pode recusar a entrega, por exemplo fora da janela de 24 horas, com um tipo
+que o canal não tem ou com um arquivo que o canal não aceita.
+
+Acompanhe a entrega pelos eventos de status e entrega do [webhook de canal](/webhooks/channel-webhooks).
+
+<Warning>
+  Repetir a mesma requisição com a Secret Key pode duplicar o envio: cada chamada aceita vira uma mensagem.
+  Em `502` ou `504`, confira o webhook antes de repetir, porque o pedido pode ter sido aceito.
+</Warning>
 
 ## Erros no envio
 
@@ -106,14 +130,46 @@ Se o canal não estiver conectado no momento da chamada, a API responde `422` co
 
 Para voltar a enviar, conecte o canal de novo (veja [Conectar um canal](/connect/introduction)) e repita a chamada.
 
+### Tipo que o canal não tem
+
+A API só recusa na hora quando o tipo não existe no canal e a [Disponibilidade por canal](/channels/message-support) do tipo marca a recusa. Ela responde `422` com `code` `BUSINESS_RULE_VIOLATION`, sem `subCode`, e a mensagem não é enviada. O motivo vem em `message`, como `"[UNSUPPORTED_CHANNEL_TYPE] O canal META_INSTAGRAM nao suporta mensagens do tipo LOCATION"`.
+
+Nos demais casos em que o canal não tem o tipo, a API aceita com `200`, a mensagem não é enviada, e a falha chega pelo webhook de status.
+
+### Mídia recusada
+
+Em imagem, áudio, vídeo, documento e sticker, a API confere o anexo antes de enviar. Quando recusa, responde
+`400` com `code` `VALIDATION_ERROR` e um destes `subCode`:
+
+| `subCode` | Quando |
+|---|---|
+| `MEDIA_TOO_LARGE` | O arquivo passa do limite do canal |
+| `MEDIA_MIME_NOT_ALLOWED` | O formato do arquivo não é aceito para o tipo |
+| `MEDIA_CAPTION_TOO_LONG` | A legenda passa de 1024 caracteres |
+| `MEDIA_URL_REQUIRED` | O anexo veio sem `url` |
+| `MEDIA_INVALID_URL` | A `url` não é um endereço válido |
+| `MEDIA_INVALID_DATA_URL` | O Base64 em `url` está malformado ou sem o marcador `;base64,` |
+
+Os limites por canal estão na página de cada tipo de mídia, como [Enviar imagem](/messages/send-image).
+
 ### Outros erros
 
 | Status | `code` | Quando |
 |---|---|---|
-| `400` | `VALIDATION_ERROR` | O corpo não serve para o tipo da mensagem: um `content.type` que não existe ou um campo obrigatório ausente. O campo vem em `message`, como `"Field 'content.type': invalid value"` |
+| `400` | `VALIDATION_ERROR` | O corpo não serve para o tipo da mensagem: um `content.type` que não existe ou um campo obrigatório ausente. O campo vem em `message`, como `"Field 'content.type': invalid value"` ou `"Field 'content.body': is required for message type REACTION"` |
 | `422` | `BUSINESS_RULE_VIOLATION` | Outra regra de envio recusou a mensagem. Sem `subCode`, o motivo está só em `message` |
-| `502` | — | Falha do nosso lado ao processar o envio. O corpo traz `"error": "integration_unavailable"`, ou `code` com a `message` fixa `"Message sending failed"` |
+| `502` | | Falha do nosso lado ao processar o envio. O corpo traz `"error": "integration_unavailable"`, ou `code` com a `message` fixa `"Message sending failed"` |
 
-<Note>
-  Recusas feitas antes de a mensagem seguir para o envio, como Secret Key inválida ou assinatura inativa, vêm em outro formato, só com o campo `error`.
-</Note>
+### Recusas antes do envio
+
+Recusas feitas antes de a mensagem seguir para o envio vêm em outro formato, só com o campo `error`:
+
+| Status | `error` | Quando |
+|---|---|---|
+| `400` | `"Authorization invalid"` | Secret Key inválida ou ausente |
+| `400` | `"203.0.113.10 not allowed"` | O IP de origem está fora da lista de IPs permitidos |
+| `400` | `"message payload is required"` | O corpo veio vazio (`{}`) |
+| `404` | `"instance not found"` | Não há instância para a Secret Key informada |
+| `422` | `"instance is not provisioned"` | A instância ainda não foi provisionada |
+| `422` | `"instance subscription is not active"` | A assinatura da instância não está ativa |
+| `422` | `"You are blocked, contact support."` | A conta está bloqueada. Fale com o suporte |

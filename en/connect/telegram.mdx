@@ -33,12 +33,12 @@ Channel of type `BOT_TELEGRAM`. It is the simplest of the five flows: no OAuth, 
 ```javascript
 const client = OmniZapi.newClient({ publicKey: 'YOUR_PUBLIC_KEY' });
 const response = await client.connect({ channelId: 'CHANNEL_ID' });
-// response: { success, channelId, botToken }
+// response: { success, channelId, type, botToken }
 ```
 
 The SDK opens a window where the user pastes the bot token. Unlike the Meta channels, the response carries **`botToken` instead of `code`** — no OAuth is involved.
 
-Forward the whole object to [finish the connection](/en/channels/connect-channel).
+On your backend, finish with [Activate Telegram](/en/channels/activate-telegram) (`POST /v1/channels/{channelId}/activate-telegram`) and the Secret Key. The body is `{"token": "<botToken>"}`: the field is named `token`, not `botToken`.
 
 ## What is different on Telegram
 

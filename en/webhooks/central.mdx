@@ -1,0 +1,143 @@
+---
+title: "Webhook center"
+description: "Query the deliveries to your webhooks, see each one's state and resend what failed"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Overview
+
+The webhook center shows every event delivery to your webhooks: the attempts, the status, the latency and your server's response. With it you can:
+
+- query deliveries, filtered by webhook, status, event type and period;
+- see a delivery's detail, with the request sent and the response received on each attempt;
+- resend one delivery, or in bulk the deliveries that failed in a failure episode;
+- see the state of each webhook in the workspace (channel, default and global);
+- reactivate a suspended webhook.
+
+## Authentication and access
+
+Every route uses the workspace Secret Key, like the other API routes:
+
+```
+Authorization: Bearer <secret-key>
+```
+
+- The `Bearer` prefix is optional.
+- Any workspace role can use the center. The `ENTERPRISE` plan is not required.
+- The workspace comes from the Secret Key itself. There is no parameter to query another workspace: a delivery or webhook from another workspace returns `404`, the same as an id that does not exist.
+- Every route also exists without the `/v1` prefix (for example, `GET /webhooks/deliveries`).
+
+## History by format
+
+| Webhook format | History in the center |
+|---|---|
+| `DEFAULT` | Yes. Deliveries appear in the center and can be resent. |
+| `Z_API` | Yes. The resend uses the stored body, in the same format. |
+| `CHATWOOT` | No. The webhook appears in the health with `state` `NO_HISTORY`, with no deliveries, notices or suspension. |
+
+## Retention
+
+The center keeps deliveries for the retention period of the workspace plan:
+
+| Workspace role | Retention |
+|---|---|
+| `ENTERPRISE` | 3 days |
+| Others | 1 day |
+
+The current retention comes in the `retentionDays` field of [Webhook health](/en/webhooks/webhooks-health). Queries only show what is within the **current** retention: when moving from `ENTERPRISE` to another role, anything older than 1 day disappears from queries at once.
+
+## Delivery statuses
+
+| `status` | Meaning |
+|---|---|
+| `SUCCEEDED` | Your server responded `2xx`. |
+| `RETRYING` | It failed and will be retried at `nextAttemptAt`. |
+| `FAILED` | It failed and will not be retried. |
+| `NOT_SENT` | Nothing was sent. `notSentReason` gives the reason: `SUSPENDED` (webhook suspended) or `CIRCUIT_OPEN` (the destination stayed unavailable until the deadline). |
+| `EXPIRED` | 23 hours passed without success. |
+| `UNKNOWN` | The next attempt should have happened more than 1 hour ago and there is no record of it. |
+| `RESENT` | Resent less than 1 hour ago, waiting for the result. |
+
+## When a delivery is retried
+
+| Your server's response | What happens |
+|---|---|
+| `2xx` | Delivered. |
+| `408`, `429`, `5xx`, no response within 5 seconds, or a connection error | Retry, up to 7 attempts within 23 hours. |
+| Any other `4xx`, or `3xx` | No retry: the delivery ends as `FAILED`. Fix the problem and use the resend. |
+
+The full attempt schedule is in [Delivery and retries](/en/webhooks/delivery).
+
+## How to recover failed deliveries
+
+<Steps>
+  <Step title="Check the webhook health">
+    Call [Webhook health](/en/webhooks/webhooks-health). A webhook with `state` `FAILING` is failing; `consecutiveFailures`, `failingSince` and `lastFailureAt` show since when.
+  </Step>
+  <Step title="Find the cause">
+    [List the deliveries](/en/webhooks/list-deliveries) of the webhook with `status=FAILED` and open one in [Get delivery](/en/webhooks/get-delivery). `httpStatus`, `errorMessage` and `responseBody` show what your server responded.
+  </Step>
+  <Step title="Fix your server">
+    Fix the endpoint, the URL or the webhook authentication. The resend uses the webhook's **current** URL, authentication and secret.
+  </Step>
+  <Step title="Resend">
+    For one delivery, use [Resend delivery](/en/webhooks/resend-delivery). For every delivery that failed in the episode, use [Resend deliveries in bulk](/en/webhooks/resend-deliveries) and repeat every 2 minutes while `remaining` is greater than zero, before `oldestExpiresAt`.
+  </Step>
+</Steps>
+
+<Note>
+  A resent delivery arrives with the **same** `x-webhook-delivery-id` and a greater `x-webhook-attempt`. If you deduplicate by `x-webhook-delivery-id`, accept an already seen delivery when `x-webhook-attempt` is greater than the last one processed. See [Delivery and retries](/en/webhooks/delivery#deduplicate-by-x-webhook-delivery-id).
+</Note>
+
+## Failure notices
+
+When a webhook fails repeatedly, the workspace Owner and Managers receive email notices, and the notice shows up in the dashboard bell:
+
+| Notice | When it is sent |
+|---|---|
+| 1st | After at least 3 consecutive failures, spanning at least 1 hour |
+| 2nd | At least 1 hour after the 1st, with 3 new failures |
+| 3rd | At least 6 hours after the 2nd, with 3 new failures |
+
+A `2xx` response ends the sequence.
+
+**Where automatic suspension is on for the workspace brand, delivery is disabled together with the 3rd notice.** Where it is off, the notices do not disable the webhook: it stays in `state` `FAILING` and keeps receiving deliveries, with the usual retries.
+
+<Note>
+  While delivery is suspended, new events keep being recorded, without being sent, for the plan retention, with `status` `NOT_SENT` and `notSentReason` `SUSPENDED`. Changing the webhook URL or status does not reactivate it: use [Reactivate webhook](/en/webhooks/reactivate-webhook).
+</Note>
+
+## Errors common to every route
+
+| Case | Response |
+|---|---|
+| `Authorization` missing or not a valid Secret Key | `400` with `{"error": "Authorization invalid"}` |
+| Call from an IP outside the workspace IP allowlist | `400` with `{"error": "203.0.113.10 not allowed"}` |
+| Workspace without an active configuration | `422` with `{"error": "Webhook management requires an active workspace"}` |
+| The operation could not be completed right now | `502` with `{"error": "integration_unavailable", "message": "The operation could not be completed right now. Try again in a few moments."}` |
+
+Validation and business-rule errors (`400`, `404`, `422` and `429`) arrive as `{"error": {"message": "..."}}`. The resend `422` also carries `type` and `details.reason`. The `503` arrives as `{"error": "<message>"}`.
+
+## Routes
+
+<CardGroup cols={2}>
+  <Card title="List deliveries" icon="list" href="/en/webhooks/list-deliveries">
+    The workspace deliveries, with filters and pagination.
+  </Card>
+  <Card title="Get delivery" icon="magnifying-glass" href="/en/webhooks/get-delivery">
+    One delivery with every attempt, the request and the response.
+  </Card>
+  <Card title="Resend delivery" icon="rotate-right" href="/en/webhooks/resend-delivery">
+    A new attempt of one delivery.
+  </Card>
+  <Card title="Resend deliveries in bulk" icon="layer-group" href="/en/webhooks/resend-deliveries">
+    The deliveries that failed in a webhook's current episode.
+  </Card>
+  <Card title="Webhook health" icon="heart-pulse" href="/en/webhooks/webhooks-health">
+    Plan retention and the state of each webhook.
+  </Card>
+  <Card title="Reactivate webhook" icon="power-off" href="/en/webhooks/reactivate-webhook">
+    Reactivate a suspended webhook.
+  </Card>
+</CardGroup>

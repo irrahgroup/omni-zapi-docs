@@ -1,13 +1,13 @@
 ---
 title: "Delivery and retries"
-description: "How Omni Z-API delivers each webhook, when it retries, and how to deduplicate and order events"
+description: "How Z-API Omni delivers each webhook, when it retries, and how to deduplicate and order events"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
 This page describes how {projectName} delivers events to your endpoint and what happens when a delivery fails.
 
-It applies to every webhook type — [channel](/en/webhooks/channel-webhooks), [template](/en/webhooks/template-webhooks) and [default](/en/webhooks/default-webhooks) — in both the default and the Z-API formats.
+It applies to every webhook type, [channel](/en/webhooks/channel-webhooks), [global](/en/webhooks/template-webhooks) and [default](/en/webhooks/default-webhooks), in both the default and the Z-API formats.
 
 ## Respond with 2xx within 5 seconds
 
@@ -47,14 +47,16 @@ That is up to 7 attempts, within **23 hours** of the event. After that, the even
 |---|---|
 | `x-webhook-event-id` | The event. It is the same on every webhook that receives this event. |
 | `x-webhook-delivery-id` | The delivery of this event to this webhook. It is the same on every attempt. |
-| `x-webhook-attempt` | The attempt number: `1`, `2`, `3`... |
+| `x-webhook-attempt` | The attempt number: `1`, `2`, `3`... Always greater on each attempt of the same delivery, including on a resend. |
 | `x-idempotency-key` | The same value on every attempt. It is part of the [HMAC signature](/en/webhooks/signature). |
 
 ## Deduplicate by `x-webhook-delivery-id`
 
 The same delivery can arrive more than once. This happens, for example, when your endpoint processed the event but took more than 5 seconds to respond.
 
-Keep the `x-webhook-delivery-id` values you already processed for at least 24 hours, and discard repeats.
+Keep the `x-webhook-delivery-id` values you already processed for at least 3 days, the longest period in which a delivery can still be resent, and discard repeats.
+
+A manual resend through the [Webhook center](/en/webhooks/central) repeats the **same** `x-webhook-delivery-id`, with a greater `x-webhook-attempt`. To process the resend, accept an already seen delivery when `x-webhook-attempt` is greater than the last one you processed for that `x-webhook-delivery-id`.
 
 ## Arrival order is not guaranteed
 
@@ -80,3 +82,8 @@ When a webhook fails repeatedly, the workspace Owner and Managers receive an ema
 - The email includes the webhook description, the URL with parts hidden, the number of failures and the last error. It never includes the secret, the credential or the delivery bodies.
 - A successful delivery ends the sequence. If the webhook fails again, a new 1st notice is only sent 6 hours after the previous one.
 - **The notice does not disable the webhook.** Deliveries continue, with the attempts described above.
+- The notice also shows up in the dashboard bell.
+
+## See and resend deliveries
+
+In the [Webhook center](/en/webhooks/central) you query each delivery, with its attempts and your server's response, see the state of each webhook and resend what failed, one delivery or in bulk.

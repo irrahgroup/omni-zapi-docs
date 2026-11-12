@@ -1,0 +1,237 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Listar páginas de Messenger",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "publicKey": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/list-messenger-pages": {
+      "post": {
+        "summary": "Listar páginas de Messenger",
+        "description": "Devuelve las páginas de Facebook que el usuario autorizó en el OAuth, para que elija cuál vincular al canal `META_MESSENGER`. Se autentica con la **Public Key**, no con la Secret Key. Normalmente el SDK llama a esta ruta con el método `getListMessengerPages`.",
+        "operationId": "listMessengerPages",
+        "tags": [
+          "Canales"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal (obtenido en Crear canal o Listar canales)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListMessengerPagesRequest"
+              },
+              "example": {
+                "code": "AQD8h2...",
+                "redirectUri": "https://app.omni.z-api.io/oauth/proxy-messenger"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Páginas autorizadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MessengerPage"
+                  }
+                },
+                "example": [
+                  {
+                    "pageId": "102938475601234",
+                    "name": "Minha Loja",
+                    "accessToken": "EAAG...",
+                    "category": "Shopping"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Public Key ausente, mal formada o inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Public Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente o de otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "instanceNotFound": {
+                    "summary": "Canal no encontrado",
+                    "value": {
+                      "error": "Instance not found"
+                    }
+                  },
+                  "appConfigurationNotFound": {
+                    "summary": "App no configurada",
+                    "value": {
+                      "error": "app configuration not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El proveedor rechazó el listado. El caso más común: el canal Messenger todavía está activo en el proveedor. Desactívalo con `POST /v1/channels/{channelId}/deactivate-messenger`, usando la Secret Key, y lista las páginas de nuevo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderError"
+                },
+                "example": {
+                  "error": {
+                    "errors": [
+                      {
+                        "description": "The Messenger channel is still active on the provider. Deactivate it with POST /channels/{id}/deactivate-messenger using the Secret Key, then list the pages again."
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo del error"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estable del error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto del error, en inglés"
+          }
+        }
+      },
+      "ListMessengerPagesRequest": {
+        "type": "object",
+        "required": [
+          "code",
+          "redirectUri"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "`code` que devuelve el OAuth de Facebook"
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "La misma `redirectUri` usada en el OAuth"
+          }
+        }
+      },
+      "MessengerPage": {
+        "type": "object",
+        "properties": {
+          "pageId": {
+            "type": "string",
+            "description": "ID de la página"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la página"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "Token de acceso de la página, usado en Activar Messenger"
+          },
+          "category": {
+            "type": "string",
+            "description": "Categoría de la página en Facebook"
+          }
+        }
+      },
+      "ProviderError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Nombre del error"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Texto del error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "publicKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "Public Key generada en Seguridad, en el panel de Z-API Omni, enviada en el header `Authorization`."
+      }
+    }
+  }
+}

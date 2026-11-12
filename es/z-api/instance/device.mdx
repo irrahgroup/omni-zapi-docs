@@ -1,0 +1,35 @@
+---
+title: "Dispositivo"
+description: "Consulta el número del canal WhatsApp Oficial"
+openapi: "/es/z-api/openapi.json GET /device"
+---
+
+## Conceptos
+
+Devuelve el número del canal y si es WhatsApp Business. Responde solo para canales WhatsApp Oficial (`META_WHATSAPP`).
+
+```json
+{
+  "phone": "5511999999999",
+  "isBusiness": true
+}
+```
+
+| Campo | Qué es |
+|---|---|
+| `phone` | Número del canal, solo dígitos, de 8 a 15. Viene solo cuando el número registrado tiene ese formato |
+| `isBusiness` | Siempre `true`: todo número de WhatsApp Oficial es WhatsApp Business |
+
+### Errores
+
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `404` | `instance not found` | El `id` o el `token` del path no existe |
+| `422` | `device route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances` | El canal no es WhatsApp Oficial. El tipo del canal entra en lugar de `<TIPO>` |
+| `502` | `failed to read instance data` | La plataforma no respondió. Intenta de nuevo |
+
+Los errores de [autenticación](/es/z-api/authentication) valen aquí también.
+
+## Véase también
+
+- [Compatibilidad con Z-API](/es/z-api/introduction)

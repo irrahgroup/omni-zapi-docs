@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Webhooks de plantilla",
-    "description": "API para crear y gestionar webhooks de plantilla: endpoints que reciben los eventos de plantilla de WhatsApp y no dependen de una instancia (`instanceId` se guarda como `null`). Cualquier secret key válida de un workspace activo puede usar estas rutas. Conviven con las rutas de webhook por instancia o canal, que se mantienen sin cambios.",
+    "title": "Z-API Omni - Webhook global (eventos de la cuenta)",
+    "description": "API para crear y gestionar el webhook global del workspace: endpoints que reciben los eventos de la cuenta (plantillas de WhatsApp, facturación, restricción de la cuenta y desconexión de canal) y no dependen de una instancia (`instanceId` guardado como `null`). El webhook global se entrega en el formato `DEFAULT`. Cualquier secret key válida de un workspace activo puede usar estas rutas.",
     "version": "1.0.0"
   },
   "servers": [
@@ -18,11 +18,11 @@
   "paths": {
     "/v1/webhooks": {
       "post": {
-        "summary": "Crear webhook de plantilla",
-        "description": "Crea un webhook de plantilla. No depende de ninguna instancia (`instanceId` se guarda como `null`) y admite **solo** eventos de plantilla. El campo `payloadFormat` se ignora: el formato es siempre `DEFAULT`.",
+        "summary": "Crear webhook global",
+        "description": "Crea un webhook global. No depende de ninguna instancia (`instanceId` guardado como `null`) y admite **solo** eventos de la cuenta. Se entrega en el formato `DEFAULT`: usa siempre `DEFAULT`. Con `ACCOUNT_RESTRICTION`, `payloadFormat` `Z_API` o `CHATWOOT` devuelve `422`.",
         "operationId": "createTemplateWebhook",
         "tags": [
-          "Webhooks de plantilla"
+          "Webhook global (eventos de la cuenta)"
         ],
         "requestBody": {
           "required": true,
@@ -114,6 +114,12 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
                   "authorizationInvalid": {
                     "summary": "Header `Authorization` ausente o no válido",
                     "value": {
@@ -167,7 +173,7 @@
             }
           },
           "422": {
-            "description": "Workspace sin configuración activa, o el alcance de los eventos no es válido (evento que no es de plantilla)",
+            "description": "Workspace sin configuración activa, o el alcance de los eventos no es válido (evento que no es de plantilla); o un formato distinto de `DEFAULT` con `ACCOUNT_RESTRICTION` o eventos de la plataforma.",
             "content": {
               "application/json": {
                 "schema": {
@@ -184,6 +190,12 @@
                     "summary": "Evento que no es de plantilla",
                     "value": {
                       "error": "Global webhooks (without instance) accept only template events"
+                    }
+                  },
+                  "accountRestrictionFormat": {
+                    "summary": "`ACCOUNT_RESTRICTION` con `payloadFormat` `Z_API` o `CHATWOOT`",
+                    "value": {
+                      "error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"
                     }
                   }
                 }
@@ -206,11 +218,11 @@
         }
       },
       "get": {
-        "summary": "Listar webhooks de plantilla",
+        "summary": "Listar webhooks globales",
         "description": "Devuelve los webhooks de plantilla habilitados del tenant. Las credenciales de autenticación y el `secret` HMAC **no** se devuelven por seguridad.",
         "operationId": "listTemplateWebhooks",
         "tags": [
-          "Webhooks de plantilla"
+          "Webhook global (eventos de la cuenta)"
         ],
         "responses": {
           "200": {
@@ -256,8 +268,19 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "Authorization invalid"
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
                 }
               }
             }
@@ -280,11 +303,11 @@
     },
     "/v1/webhooks/{webhookId}": {
       "get": {
-        "summary": "Consultar webhook de plantilla",
+        "summary": "Consultar webhook global",
         "description": "Devuelve los datos de un webhook de plantilla concreto del tenant. Las credenciales y el `secret` no se devuelven.",
         "operationId": "getTemplateWebhook",
         "tags": [
-          "Webhooks de plantilla"
+          "Webhook global (eventos de la cuenta)"
         ],
         "parameters": [
           {
@@ -329,6 +352,30 @@
               }
             }
           },
+          "400": {
+            "description": "Header `Authorization` ausente o no válido, o IP de origen fuera de la lista del workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "404": {
             "description": "Webhook no encontrado para el tenant",
             "content": {
@@ -358,11 +405,11 @@
         }
       },
       "patch": {
-        "summary": "Actualizar webhook de plantilla",
-        "description": "Actualiza parcialmente el webhook de plantilla. Solo se modifican los campos que se envían; los que se omiten se mantienen sin cambios. Si se envía `events`, debe contener **solo** eventos de plantilla. El campo `payloadFormat` se sigue ignorando.",
+        "summary": "Actualizar webhook global",
+        "description": "Actualiza parcialmente el webhook global. Solo se modifican los campos enviados; los omitidos se mantienen. Si se envía `events`, debe contener **solo** eventos de la cuenta. Un `PATCH` que dejaría el webhook con `ACCOUNT_RESTRICTION` o con eventos de la plataforma (facturación, `CHANNEL_DISCONNECTED`) en un formato distinto de `DEFAULT` devuelve `422`.",
         "operationId": "updateTemplateWebhook",
         "tags": [
-          "Webhooks de plantilla"
+          "Webhook global (eventos de la cuenta)"
         ],
         "parameters": [
           {
@@ -430,6 +477,7 @@
                   ],
                   "status": "DISABLED",
                   "signing": false,
+                  "secret": null,
                   "auth": {
                     "type": "NONE",
                     "configured": false
@@ -450,6 +498,18 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
                   "emptyEvents": {
                     "summary": "`events` enviado vacío",
                     "value": {
@@ -510,7 +570,7 @@
             }
           },
           "422": {
-            "description": "Workspace sin configuración activa, o el alcance de los eventos no es válido",
+            "description": "Workspace sin configuración activa, o el alcance de los eventos no es válido; o un formato distinto de `DEFAULT` con `ACCOUNT_RESTRICTION` o eventos de la plataforma.",
             "content": {
               "application/json": {
                 "schema": {
@@ -527,6 +587,18 @@
                     "summary": "Evento que no es de plantilla",
                     "value": {
                       "error": "Global webhooks (without instance) accept only template events"
+                    }
+                  },
+                  "accountRestrictionFormat": {
+                    "summary": "`ACCOUNT_RESTRICTION` con `payloadFormat` `Z_API` o `CHATWOOT`",
+                    "value": {
+                      "error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"
+                    }
+                  },
+                  "platformEventsFormat": {
+                    "summary": "Eventos de la plataforma (facturación, `CHANNEL_DISCONNECTED`) en un formato distinto de `DEFAULT`",
+                    "value": {
+                      "error": "Platform events are delivered only in DEFAULT payload format"
                     }
                   }
                 }
@@ -549,11 +621,11 @@
         }
       },
       "delete": {
-        "summary": "Eliminar webhook de plantilla",
+        "summary": "Eliminar webhook global",
         "description": "Elimina permanentemente el webhook de plantilla. Tras el borrado, ya no se entrega ningún evento de plantilla en la URL configurada.",
         "operationId": "deleteTemplateWebhook",
         "tags": [
-          "Webhooks de plantilla"
+          "Webhook global (eventos de la cuenta)"
         ],
         "parameters": [
           {
@@ -570,6 +642,30 @@
         "responses": {
           "204": {
             "description": "Webhook eliminado correctamente. No se devuelve contenido."
+          },
+          "400": {
+            "description": "Header `Authorization` ausente o no válido, o IP de origen fuera de la lista del workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Webhook no encontrado para el tenant",
@@ -622,7 +718,7 @@
           },
           "events": {
             "type": "array",
-            "description": "Solo eventos de plantilla. Es obligatorio al menos uno. Cualquier evento que no sea de plantilla devuelve `422`; un nombre inexistente, nulo o en blanco devuelve `400`.",
+            "description": "Solo eventos de la cuenta: `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY`, los cinco `BILLING_*`, `ACCOUNT_RESTRICTION` y `CHANNEL_DISCONNECTED`. Un evento de canal devuelve `422`; un nombre inexistente, nulo o en blanco devuelve `400`.",
             "minItems": 1,
             "items": {
               "$ref": "#/components/schemas/TemplateEvent"
@@ -665,9 +761,11 @@
           "payloadFormat": {
             "type": "string",
             "enum": [
-              "DEFAULT"
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
             ],
-            "description": "**Ignorado** en los webhooks de plantilla: el formato es siempre `DEFAULT`. Se puede omitir; si se envía (con cualquier valor), se descarta y se persiste como `DEFAULT`.",
+            "description": "El webhook global se entrega en `DEFAULT`: usa siempre `DEFAULT`. Con `ACCOUNT_RESTRICTION`, `Z_API` o `CHATWOOT` devuelven `422` (`ACCOUNT_RESTRICTION only supports DEFAULT payload format`). Los eventos de la plataforma (facturación y `CHANNEL_DISCONNECTED`) también se entregan solo en `DEFAULT`.",
             "default": "DEFAULT",
             "example": "DEFAULT"
           },
@@ -694,7 +792,7 @@
           },
           "events": {
             "type": "array",
-            "description": "Si se envía, sustituye los eventos que la API conoce: solo eventos de plantilla (en caso contrario → `422`). Un evento guardado que la API todavía no conoce se mantiene. No puede estar vacía (`400`).",
+            "description": "Solo eventos de la cuenta: `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY`, los cinco `BILLING_*`, `ACCOUNT_RESTRICTION` y `CHANNEL_DISCONNECTED`. Un evento de canal devuelve `422`; un nombre inexistente, nulo o en blanco devuelve `400`. Si se envía, sustituye los eventos que la API conoce; no puede estar vacío (`400`).",
             "items": {
               "$ref": "#/components/schemas/TemplateEvent"
             }
@@ -736,9 +834,13 @@
           "payloadFormat": {
             "type": "string",
             "enum": [
-              "DEFAULT"
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
             ],
-            "description": "**Ignorado** en los webhooks de plantilla"
+            "description": "El webhook global se entrega en `DEFAULT`: usa siempre `DEFAULT`. Con `ACCOUNT_RESTRICTION`, `Z_API` o `CHATWOOT` devuelven `422` (`ACCOUNT_RESTRICTION only supports DEFAULT payload format`). Los eventos de la plataforma (facturación y `CHANNEL_DISCONNECTED`) también se entregan solo en `DEFAULT`. En el `PATCH`, dejar el webhook con eventos de la plataforma en otro formato devuelve `422` (`Platform events are delivered only in DEFAULT payload format`).",
+            "default": "DEFAULT",
+            "example": "DEFAULT"
           },
           "customAttributes": {
             "type": "object",
@@ -889,9 +991,11 @@
           "payloadFormat": {
             "type": "string",
             "enum": [
-              "DEFAULT"
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
             ],
-            "description": "Siempre `DEFAULT` en los webhooks de plantilla",
+            "description": "Formato de entrega. `DEFAULT` en los webhooks globales creados por la API.",
             "example": "DEFAULT"
           },
           "customAttributes": {
@@ -942,7 +1046,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+        "description": "Secret Key generada en el panel de Seguridad de Z-API Omni"
       }
     }
   }

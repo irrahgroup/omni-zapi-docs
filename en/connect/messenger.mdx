@@ -17,7 +17,7 @@ Channel of type `META_MESSENGER`. It is the only flow with **two authorization s
 ```javascript
 const client = OmniZapi.newClient({ publicKey: 'YOUR_PUBLIC_KEY' });
 const response = await client.connect({ channelId: 'CHANNEL_ID' });
-// response: { success, channelId, code, pageId, accessToken }
+// response: { success, channelId, type, code, pageId, accessToken, redirectUri }
 ```
 
 The SDK opens `facebook.com/dialog/oauth` with these scopes:
@@ -37,10 +37,16 @@ After the OAuth, if the user administers more than one page, you have to ask whi
 
 ```javascript
 const pages = await client.getListMessengerPages(channelId, response.code);
-// { data: [{ id, name, accessToken }, ...] }
+// [{ pageId, name, accessToken, category }, ...]
 ```
 
-That method calls [`POST /v1/channels/{channelId}/list-messenger-pages`](/en/channels/sdk-info), authenticated with the **Public Key**. Show the list, let the user pick, and send the chosen `pageId` along to the [connect endpoint](/en/channels/connect-channel).
+That method calls [List Messenger pages](/en/channels/list-messenger-pages) (`POST /v1/channels/{channelId}/list-messenger-pages`), authenticated with the **Public Key**. Show the list and let the user pick.
+
+On your backend, finish with [Activate Messenger](/en/channels/activate-messenger) (`POST /v1/channels/{channelId}/activate-messenger`) and the Secret Key, sending the `pageId` and `accessToken` of the chosen page and the `redirectUri` from the SDK result.
+
+<Warning>
+  If the Messenger channel is still active on the provider, the listing answers `422`. Deactivate the channel with [Deactivate Messenger](/en/channels/deactivate-messenger), using the Secret Key, and list the pages again.
+</Warning>
 
 <Note>
   If the user administers only one page, the SDK already returns `pageId` filled in and you can skip this step.
@@ -74,5 +80,5 @@ The replacement is Meta's pre-approved templates:
 | **Marketing Messages API** | recurring promotion | no, but it requires customer **opt-in** |
 
 <Note>
-  Utility Template support in Omni Z-API is **being implemented**. See the [comparison of the three template types](/en/templates/introduction).
+  Utility Template support in Z-API Omni is **being implemented**. See the [comparison of the three template types](/en/templates/introduction).
 </Note>

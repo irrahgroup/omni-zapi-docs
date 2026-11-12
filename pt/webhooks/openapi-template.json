@@ -1,31 +1,46 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Webhooks de Template",
-    "description": "API para criar e gerenciar webhooks de template — endpoints que recebem os eventos de template do WhatsApp e não dependem de uma instância (`instanceId` gravado como `null`). Qualquer secret key válida de um workspace ativo pode usar estas rotas. Convivem com as rotas de webhook por instância/canal, que permanecem inalteradas.",
+    "title": "Z-API Omni - Webhook global (eventos da conta)",
+    "description": "API para criar e gerenciar o webhook global do workspace: endpoints que recebem os eventos da conta (templates do WhatsApp, cobrança, restrição da conta e desconexão de canal) e não dependem de uma instância (`instanceId` gravado como `null`). O webhook global é entregue no formato `DEFAULT`. Qualquer secret key válida de um workspace ativo pode usar estas rotas.",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/webhooks": {
       "post": {
-        "summary": "Criar webhook de template",
-        "description": "Cria um webhook de template. Não depende de instância (`instanceId` gravado como `null`) e aceita **somente** eventos de template. O campo `payloadFormat` é ignorado — o formato é sempre `DEFAULT`.",
+        "summary": "Criar webhook global",
+        "description": "Cria um webhook global. Não depende de instância (`instanceId` gravado como `null`) e aceita **somente** eventos da conta. É entregue no formato `DEFAULT`: use sempre `DEFAULT`. Com `ACCOUNT_RESTRICTION`, `payloadFormat` `Z_API` ou `CHATWOOT` responde `422`.",
         "operationId": "createTemplateWebhook",
-        "tags": ["Webhooks de template"],
+        "tags": [
+          "Webhook global (eventos da conta)"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateTemplateWebhookRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateWebhookRequest"
+              },
               "examples": {
                 "basic": {
                   "summary": "Básico — eventos de template",
                   "value": {
                     "url": "https://app.suaempresa.com/webhooks/templates",
                     "description": "Webhook de template",
-                    "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"],
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS",
+                      "UPDATE_TEMPLATE_CATEGORY"
+                    ],
                     "signing": false,
                     "authType": "NONE"
                   }
@@ -34,7 +49,9 @@
                   "summary": "Com assinatura HMAC",
                   "value": {
                     "url": "https://app.suaempresa.com/webhooks/templates",
-                    "events": ["UPDATE_TEMPLATE_STATUS"],
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS"
+                    ],
                     "signing": true
                   }
                 },
@@ -42,7 +59,10 @@
                   "summary": "Com autenticação Bearer",
                   "value": {
                     "url": "https://app.suaempresa.com/webhooks/templates",
-                    "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"],
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS",
+                      "UPDATE_TEMPLATE_CATEGORY"
+                    ],
                     "auth": {
                       "type": "BEARER",
                       "token": "meu-token-secreto"
@@ -58,18 +78,26 @@
             "description": "Webhook de template criado com sucesso. `channelId` e `instanceId` vêm `null`. O campo `secret` é retornado **apenas nesta resposta** quando `signing` é `true`.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/TemplateWebhookCreatedResponse" },
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateWebhookCreatedResponse"
+                },
                 "example": {
                   "id": "8F2C00000000000000000000000000A1",
                   "channelId": null,
                   "instanceId": null,
                   "url": "https://app.suaempresa.com/webhooks/templates",
                   "description": "Webhook de template",
-                  "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"],
+                  "events": [
+                    "UPDATE_TEMPLATE_STATUS",
+                    "UPDATE_TEMPLATE_CATEGORY"
+                  ],
                   "status": "ENABLED",
                   "signing": false,
                   "secret": null,
-                  "auth": { "type": "NONE", "configured": false },
+                  "auth": {
+                    "type": "NONE",
+                    "configured": false
+                  },
                   "payloadFormat": "DEFAULT",
                   "customAttributes": {},
                   "createdAt": "2026-07-15T19:00:00.000+00:00",
@@ -82,57 +110,93 @@
             "description": "Header `Authorization` ausente ou inválido, ou corpo inválido: `url` ou `events` ausentes, nome de evento inexistente, `url` fora do formato ou com destino não público, ou autenticação incompleta. Nada é gravado.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
                 "examples": {
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
                   "authorizationInvalid": {
                     "summary": "Header `Authorization` ausente ou inválido",
-                    "value": { "error": "Authorization invalid" }
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
                   },
                   "urlRequired": {
                     "summary": "`url` ausente ou em branco",
-                    "value": { "error": "URL is required" }
+                    "value": {
+                      "error": "URL is required"
+                    }
                   },
                   "eventsRequired": {
                     "summary": "`events` ausente ou vazio",
-                    "value": { "error": "At least one event is required" }
+                    "value": {
+                      "error": "At least one event is required"
+                    }
                   },
                   "unknownEvent": {
                     "summary": "Nome de evento inexistente, nulo ou em branco",
-                    "value": { "error": "events contains an unknown or empty event name" }
+                    "value": {
+                      "error": "events contains an unknown or empty event name"
+                    }
                   },
                   "invalidUrl": {
                     "summary": "URL fora do formato",
-                    "value": { "error": "Invalid webhook URL: use an absolute http or https URL up to 2048 characters" }
+                    "value": {
+                      "error": "Invalid webhook URL: use an absolute http or https URL up to 2048 characters"
+                    }
                   },
                   "urlNotAllowed": {
                     "summary": "Host que não resolve só para endereços públicos",
-                    "value": { "error": "Webhook URL not allowed: the host must resolve only to public addresses" }
+                    "value": {
+                      "error": "Webhook URL not allowed: the host must resolve only to public addresses"
+                    }
                   },
                   "headerNameRequired": {
                     "summary": "`CUSTOM_HEADER` sem `headerName`",
-                    "value": { "error": "Header name is required for CUSTOM_HEADER auth type" }
+                    "value": {
+                      "error": "Header name is required for CUSTOM_HEADER auth type"
+                    }
                   },
                   "credentialsRequired": {
                     "summary": "Autenticação sem a credencial do tipo",
-                    "value": { "error": "Credentials are required when auth type is not NONE" }
+                    "value": {
+                      "error": "Credentials are required when auth type is not NONE"
+                    }
                   }
                 }
               }
             }
           },
           "422": {
-            "description": "Workspace sem configuração ativa; ou escopo de eventos inválido (evento não-template)",
+            "description": "Workspace sem configuração ativa; ou escopo de eventos inválido (evento não-template); ou formato diferente de `DEFAULT` com `ACCOUNT_RESTRICTION` ou eventos da plataforma.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
                 "examples": {
                   "inactiveWorkspace": {
                     "summary": "Workspace sem configuração ativa",
-                    "value": { "error": "Webhook management requires an active workspace" }
+                    "value": {
+                      "error": "Webhook management requires an active workspace"
+                    }
                   },
                   "invalidScope": {
                     "summary": "Evento não-template",
-                    "value": { "error": "Global webhooks (without instance) accept only template events" }
+                    "value": {
+                      "error": "Global webhooks (without instance) accept only template events"
+                    }
+                  },
+                  "accountRestrictionFormat": {
+                    "summary": "`ACCOUNT_RESTRICTION` com `payloadFormat` `Z_API` ou `CHATWOOT`",
+                    "value": {
+                      "error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"
+                    }
                   }
                 }
               }
@@ -142,18 +206,24 @@
             "description": "Não foi possível consultar o DNS do host da `url` agora. Nada é gravado: tente de novo.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Could not verify the webhook URL now, try again" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Could not verify the webhook URL now, try again"
+                }
               }
             }
           }
         }
       },
       "get": {
-        "summary": "Listar webhooks de template",
+        "summary": "Listar webhooks globais",
         "description": "Retorna os webhooks de template habilitados do tenant. As credenciais de autenticação e o `secret` HMAC **não** são retornados por segurança.",
         "operationId": "listTemplateWebhooks",
-        "tags": ["Webhooks de template"],
+        "tags": [
+          "Webhook global (eventos da conta)"
+        ],
         "responses": {
           "200": {
             "description": "Lista de webhooks de template do tenant",
@@ -161,7 +231,9 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/TemplateWebhookResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateWebhookResponse"
+                  }
                 },
                 "example": [
                   {
@@ -170,10 +242,16 @@
                     "instanceId": null,
                     "url": "https://app.suaempresa.com/webhooks/templates",
                     "description": "Webhook de template",
-                    "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"],
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS",
+                      "UPDATE_TEMPLATE_CATEGORY"
+                    ],
                     "status": "ENABLED",
                     "signing": false,
-                    "auth": { "type": "NONE", "configured": false },
+                    "auth": {
+                      "type": "NONE",
+                      "configured": false
+                    },
                     "payloadFormat": "DEFAULT",
                     "customAttributes": {},
                     "createdAt": "2026-07-15T19:00:00.000+00:00",
@@ -187,8 +265,23 @@
             "description": "Header `Authorization` ausente",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Authorization invalid" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
               }
             }
           },
@@ -196,8 +289,12 @@
             "description": "Workspace sem configuração ativa",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Webhook management requires an active workspace" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook management requires an active workspace"
+                }
               }
             }
           }
@@ -206,17 +303,22 @@
     },
     "/v1/webhooks/{webhookId}": {
       "get": {
-        "summary": "Detalhar webhook de template",
+        "summary": "Detalhar webhook global",
         "description": "Retorna os dados de um webhook de template específico do tenant. Credenciais e `secret` não são retornados.",
         "operationId": "getTemplateWebhook",
-        "tags": ["Webhooks de template"],
+        "tags": [
+          "Webhook global (eventos da conta)"
+        ],
         "parameters": [
           {
             "name": "webhookId",
             "in": "path",
             "required": true,
             "description": "ID do webhook de template",
-            "schema": { "type": "string", "example": "8F2C00000000000000000000000000A1" }
+            "schema": {
+              "type": "string",
+              "example": "8F2C00000000000000000000000000A1"
+            }
           }
         ],
         "responses": {
@@ -224,17 +326,24 @@
             "description": "Dados do webhook de template",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/TemplateWebhookResponse" },
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateWebhookResponse"
+                },
                 "example": {
                   "id": "8F2C00000000000000000000000000A1",
                   "channelId": null,
                   "instanceId": null,
                   "url": "https://app.suaempresa.com/webhooks/templates",
                   "description": "Webhook de template",
-                  "events": ["UPDATE_TEMPLATE_STATUS"],
+                  "events": [
+                    "UPDATE_TEMPLATE_STATUS"
+                  ],
                   "status": "ENABLED",
                   "signing": false,
-                  "auth": { "type": "NONE", "configured": false },
+                  "auth": {
+                    "type": "NONE",
+                    "configured": false
+                  },
                   "payloadFormat": "DEFAULT",
                   "customAttributes": {},
                   "createdAt": "2026-07-15T19:00:00.000+00:00",
@@ -243,12 +352,40 @@
               }
             }
           },
+          "400": {
+            "description": "Header `Authorization` ausente ou inválido, ou IP de origem fora da lista do workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "404": {
             "description": "Webhook não encontrado para o tenant",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Webhook not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook not found"
+                }
               }
             }
           },
@@ -256,32 +393,43 @@
             "description": "Workspace sem configuração ativa",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Webhook management requires an active workspace" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook management requires an active workspace"
+                }
               }
             }
           }
         }
       },
       "patch": {
-        "summary": "Atualizar webhook de template",
-        "description": "Atualiza parcialmente o webhook de template. Apenas os campos enviados são alterados; os omitidos permanecem inalterados. Se `events` for enviado, deve conter **somente** eventos de template. O campo `payloadFormat` continua sendo ignorado.",
+        "summary": "Atualizar webhook global",
+        "description": "Atualiza parcialmente o webhook global. Apenas os campos enviados são alterados; os omitidos permanecem inalterados. Se `events` for enviado, deve conter **somente** eventos da conta. Um `PATCH` que deixaria o webhook com `ACCOUNT_RESTRICTION` ou com eventos da plataforma (cobrança, `CHANNEL_DISCONNECTED`) em formato diferente de `DEFAULT` responde `422`.",
         "operationId": "updateTemplateWebhook",
-        "tags": ["Webhooks de template"],
+        "tags": [
+          "Webhook global (eventos da conta)"
+        ],
         "parameters": [
           {
             "name": "webhookId",
             "in": "path",
             "required": true,
             "description": "ID do webhook de template",
-            "schema": { "type": "string", "example": "8F2C00000000000000000000000000A1" }
+            "schema": {
+              "type": "string",
+              "example": "8F2C00000000000000000000000000A1"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateTemplateWebhookRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTemplateWebhookRequest"
+              },
               "examples": {
                 "updateUrlAndStatus": {
                   "summary": "Atualizar URL e desabilitar",
@@ -292,11 +440,18 @@
                 },
                 "updateEvents": {
                   "summary": "Atualizar eventos de template",
-                  "value": { "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"] }
+                  "value": {
+                    "events": [
+                      "UPDATE_TEMPLATE_STATUS",
+                      "UPDATE_TEMPLATE_CATEGORY"
+                    ]
+                  }
                 },
                 "enableSignature": {
                   "summary": "Habilitar / rotacionar assinatura HMAC",
-                  "value": { "signing": true }
+                  "value": {
+                    "signing": true
+                  }
                 }
               }
             }
@@ -307,17 +462,26 @@
             "description": "Webhook de template atualizado. O campo `secret` é retornado **apenas** quando `signing = true` nesta atualização.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/TemplateWebhookCreatedResponse" },
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateWebhookCreatedResponse"
+                },
                 "example": {
                   "id": "8F2C00000000000000000000000000A1",
                   "channelId": null,
                   "instanceId": null,
                   "url": "https://nova-url.suaempresa.com/webhooks/templates",
                   "description": "Webhook de template",
-                  "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"],
+                  "events": [
+                    "UPDATE_TEMPLATE_STATUS",
+                    "UPDATE_TEMPLATE_CATEGORY"
+                  ],
                   "status": "DISABLED",
                   "signing": false,
-                  "auth": { "type": "NONE", "configured": false },
+                  "secret": null,
+                  "auth": {
+                    "type": "NONE",
+                    "configured": false
+                  },
                   "payloadFormat": "DEFAULT",
                   "customAttributes": {},
                   "createdAt": "2026-07-15T19:00:00.000+00:00",
@@ -330,35 +494,63 @@
             "description": "Corpo inválido: `events` vazio, nome de evento inexistente, `status` fora de `ENABLED` e `DISABLED`, nova `url` fora do formato ou com destino não público, ou autenticação incompleta. Nada é alterado.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
                 "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
                   "emptyEvents": {
                     "summary": "`events` enviado vazio",
-                    "value": { "error": "Events cannot be empty when provided" }
+                    "value": {
+                      "error": "Events cannot be empty when provided"
+                    }
                   },
                   "unknownEvent": {
                     "summary": "Nome de evento inexistente, nulo ou em branco",
-                    "value": { "error": "events contains an unknown or empty event name" }
+                    "value": {
+                      "error": "events contains an unknown or empty event name"
+                    }
                   },
                   "invalidStatus": {
                     "summary": "`status` diferente de `ENABLED` e `DISABLED`",
-                    "value": { "error": "status must be one of [ENABLED, DISABLED]" }
+                    "value": {
+                      "error": "status must be one of [ENABLED, DISABLED]"
+                    }
                   },
                   "invalidUrl": {
                     "summary": "URL fora do formato",
-                    "value": { "error": "Invalid webhook URL: use an absolute http or https URL up to 2048 characters" }
+                    "value": {
+                      "error": "Invalid webhook URL: use an absolute http or https URL up to 2048 characters"
+                    }
                   },
                   "urlNotAllowed": {
                     "summary": "Host que não resolve só para endereços públicos",
-                    "value": { "error": "Webhook URL not allowed: the host must resolve only to public addresses" }
+                    "value": {
+                      "error": "Webhook URL not allowed: the host must resolve only to public addresses"
+                    }
                   },
                   "headerNameRequired": {
                     "summary": "`CUSTOM_HEADER` sem `headerName`",
-                    "value": { "error": "Header name is required for CUSTOM_HEADER auth type" }
+                    "value": {
+                      "error": "Header name is required for CUSTOM_HEADER auth type"
+                    }
                   },
                   "credentialsRequired": {
                     "summary": "Autenticação sem a credencial do tipo",
-                    "value": { "error": "Credentials are required when auth type is not NONE" }
+                    "value": {
+                      "error": "Credentials are required when auth type is not NONE"
+                    }
                   }
                 }
               }
@@ -368,24 +560,46 @@
             "description": "Webhook não encontrado para o tenant",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Webhook not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook not found"
+                }
               }
             }
           },
           "422": {
-            "description": "Workspace sem configuração ativa; ou escopo de eventos inválido",
+            "description": "Workspace sem configuração ativa; ou escopo de eventos inválido; ou formato diferente de `DEFAULT` com `ACCOUNT_RESTRICTION` ou eventos da plataforma.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
                 "examples": {
                   "inactiveWorkspace": {
                     "summary": "Workspace sem configuração ativa",
-                    "value": { "error": "Webhook management requires an active workspace" }
+                    "value": {
+                      "error": "Webhook management requires an active workspace"
+                    }
                   },
                   "invalidScope": {
                     "summary": "Evento não-template",
-                    "value": { "error": "Global webhooks (without instance) accept only template events" }
+                    "value": {
+                      "error": "Global webhooks (without instance) accept only template events"
+                    }
+                  },
+                  "accountRestrictionFormat": {
+                    "summary": "`ACCOUNT_RESTRICTION` com `payloadFormat` `Z_API` ou `CHATWOOT`",
+                    "value": {
+                      "error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"
+                    }
+                  },
+                  "platformEventsFormat": {
+                    "summary": "Eventos da plataforma (cobrança, `CHANNEL_DISCONNECTED`) em formato diferente de `DEFAULT`",
+                    "value": {
+                      "error": "Platform events are delivered only in DEFAULT payload format"
+                    }
                   }
                 }
               }
@@ -395,37 +609,74 @@
             "description": "Não foi possível consultar o DNS do host da `url` agora. Nada é gravado: tente de novo.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Could not verify the webhook URL now, try again" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Could not verify the webhook URL now, try again"
+                }
               }
             }
           }
         }
       },
       "delete": {
-        "summary": "Remover webhook de template",
+        "summary": "Remover webhook global",
         "description": "Remove permanentemente o webhook de template. Após a exclusão, nenhum evento de template é mais entregue na URL configurada.",
         "operationId": "deleteTemplateWebhook",
-        "tags": ["Webhooks de template"],
+        "tags": [
+          "Webhook global (eventos da conta)"
+        ],
         "parameters": [
           {
             "name": "webhookId",
             "in": "path",
             "required": true,
             "description": "ID do webhook de template",
-            "schema": { "type": "string", "example": "8F2C00000000000000000000000000A1" }
+            "schema": {
+              "type": "string",
+              "example": "8F2C00000000000000000000000000A1"
+            }
           }
         ],
         "responses": {
           "204": {
             "description": "Webhook removido com sucesso. Nenhum conteúdo retornado."
           },
+          "400": {
+            "description": "Header `Authorization` ausente ou inválido, ou IP de origem fora da lista do workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "404": {
             "description": "Webhook não encontrado para o tenant",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Webhook not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook not found"
+                }
               }
             }
           },
@@ -433,8 +684,12 @@
             "description": "Workspace sem configuração ativa",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": "Webhook management requires an active workspace" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Webhook management requires an active workspace"
+                }
               }
             }
           }
@@ -446,7 +701,10 @@
     "schemas": {
       "CreateTemplateWebhookRequest": {
         "type": "object",
-        "required": ["url", "events"],
+        "required": [
+          "url",
+          "events"
+        ],
         "properties": {
           "url": {
             "type": "string",
@@ -460,10 +718,15 @@
           },
           "events": {
             "type": "array",
-            "description": "Somente eventos de template. Pelo menos um obrigatório. Qualquer evento não-template resulta em `422`; nome inexistente, nulo ou em branco resulta em `400`.",
+            "description": "Somente eventos da conta: `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY`, os cinco `BILLING_*`, `ACCOUNT_RESTRICTION` e `CHANNEL_DISCONNECTED`. Evento de canal resulta em `422`; nome inexistente, nulo ou em branco resulta em `400`.",
             "minItems": 1,
-            "items": { "$ref": "#/components/schemas/TemplateEvent" },
-            "example": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"]
+            "items": {
+              "$ref": "#/components/schemas/TemplateEvent"
+            },
+            "example": [
+              "UPDATE_TEMPLATE_STATUS",
+              "UPDATE_TEMPLATE_CATEGORY"
+            ]
           },
           "signing": {
             "type": "boolean",
@@ -473,7 +736,13 @@
           },
           "authType": {
             "type": "string",
-            "enum": ["NONE", "BEARER", "API_KEY", "BASIC", "CUSTOM_HEADER"],
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
             "description": "Tipo de autenticação (forma plana). Alternativa ao objeto `auth`.",
             "default": "NONE",
             "example": "NONE"
@@ -491,8 +760,12 @@
           },
           "payloadFormat": {
             "type": "string",
-            "enum": ["DEFAULT"],
-            "description": "**Ignorado** para webhooks de template — o formato é sempre `DEFAULT`. Pode ser omitido; se enviado (qualquer valor), é descartado e persistido como `DEFAULT`.",
+            "enum": [
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
+            ],
+            "description": "O webhook global é entregue em `DEFAULT`: use sempre `DEFAULT`. Com `ACCOUNT_RESTRICTION`, `Z_API` ou `CHATWOOT` respondem `422` (`ACCOUNT_RESTRICTION only supports DEFAULT payload format`). Os eventos da plataforma (cobrança e `CHANNEL_DISCONNECTED`) também só são entregues em `DEFAULT`.",
             "default": "DEFAULT",
             "example": "DEFAULT"
           },
@@ -519,12 +792,17 @@
           },
           "events": {
             "type": "array",
-            "description": "Se enviado, substitui os eventos que a API conhece — somente eventos de template (senão → `422`). Um evento gravado que a API ainda não conhece é mantido. Não pode ser vazio (`400`).",
-            "items": { "$ref": "#/components/schemas/TemplateEvent" }
+            "description": "Somente eventos da conta: `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY`, os cinco `BILLING_*`, `ACCOUNT_RESTRICTION` e `CHANNEL_DISCONNECTED`. Evento de canal resulta em `422`; nome inexistente, nulo ou em branco resulta em `400`. Se enviado, substitui os eventos que a API conhece; não pode ser vazio (`400`).",
+            "items": {
+              "$ref": "#/components/schemas/TemplateEvent"
+            }
           },
           "status": {
             "type": "string",
-            "enum": ["ENABLED", "DISABLED"],
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ],
             "description": "`DISABLED` pausa a entrega de eventos sem excluir o webhook Outro valor retorna `400`."
           },
           "signing": {
@@ -533,16 +811,36 @@
           },
           "authType": {
             "type": "string",
-            "enum": ["NONE", "BEARER", "API_KEY", "BASIC", "CUSTOM_HEADER"],
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
             "description": "`NONE` limpa a autenticação; os demais reconfiguram"
           },
-          "token": { "type": "string", "description": "Credencial para `BEARER`" },
-          "key": { "type": "string", "description": "Credencial para `API_KEY`" },
-          "auth": { "$ref": "#/components/schemas/WebhookAuth" },
+          "token": {
+            "type": "string",
+            "description": "Credencial para `BEARER`"
+          },
+          "key": {
+            "type": "string",
+            "description": "Credencial para `API_KEY`"
+          },
+          "auth": {
+            "$ref": "#/components/schemas/WebhookAuth"
+          },
           "payloadFormat": {
             "type": "string",
-            "enum": ["DEFAULT"],
-            "description": "**Ignorado** para webhooks de template"
+            "enum": [
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
+            ],
+            "description": "O webhook global é entregue em `DEFAULT`: use sempre `DEFAULT`. Com `ACCOUNT_RESTRICTION`, `Z_API` ou `CHATWOOT` respondem `422` (`ACCOUNT_RESTRICTION only supports DEFAULT payload format`). Os eventos da plataforma (cobrança e `CHANNEL_DISCONNECTED`) também só são entregues em `DEFAULT`. No `PATCH`, deixar o webhook com eventos da plataforma em outro formato responde `422` (`Platform events are delivered only in DEFAULT payload format`).",
+            "default": "DEFAULT",
+            "example": "DEFAULT"
           },
           "customAttributes": {
             "type": "object",
@@ -556,15 +854,41 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["NONE", "BEARER", "API_KEY", "BASIC", "CUSTOM_HEADER"],
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
             "example": "BEARER"
           },
-          "token": { "type": "string", "description": "Token para `BEARER`", "example": "meu-token-secreto" },
-          "key": { "type": "string", "description": "Chave para `API_KEY`" },
-          "username": { "type": "string", "description": "Usuário para `BASIC`" },
-          "password": { "type": "string", "description": "Senha para `BASIC`" },
-          "headerName": { "type": "string", "description": "Nome do header para `CUSTOM_HEADER`", "example": "X-Api-Key" },
-          "headerValue": { "type": "string", "description": "Valor do header para `CUSTOM_HEADER`" }
+          "token": {
+            "type": "string",
+            "description": "Token para `BEARER`",
+            "example": "meu-token-secreto"
+          },
+          "key": {
+            "type": "string",
+            "description": "Chave para `API_KEY`"
+          },
+          "username": {
+            "type": "string",
+            "description": "Usuário para `BASIC`"
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha para `BASIC`"
+          },
+          "headerName": {
+            "type": "string",
+            "description": "Nome do header para `CUSTOM_HEADER`",
+            "example": "X-Api-Key"
+          },
+          "headerValue": {
+            "type": "string",
+            "description": "Valor do header para `CUSTOM_HEADER`"
+          }
         }
       },
       "WebhookAuthInfo": {
@@ -573,7 +897,13 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["NONE", "BEARER", "API_KEY", "BASIC", "CUSTOM_HEADER"],
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
             "example": "NONE"
           },
           "configured": {
@@ -585,7 +915,17 @@
       },
       "TemplateEvent": {
         "type": "string",
-        "enum": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY", "CHANNEL_DISCONNECTED", "BILLING_PAYMENT_FAILED", "BILLING_PAYMENT_RECOVERED", "BILLING_SUBSCRIPTION_CANCELED", "BILLING_INSTANCE_SUSPENDED", "BILLING_INSTANCE_RELEASED", "ACCOUNT_RESTRICTION"],
+        "enum": [
+          "UPDATE_TEMPLATE_STATUS",
+          "UPDATE_TEMPLATE_CATEGORY",
+          "CHANNEL_DISCONNECTED",
+          "BILLING_PAYMENT_FAILED",
+          "BILLING_PAYMENT_RECOVERED",
+          "BILLING_SUBSCRIPTION_CANCELED",
+          "BILLING_INSTANCE_SUSPENDED",
+          "BILLING_INSTANCE_RELEASED",
+          "ACCOUNT_RESTRICTION"
+        ],
         "description": "Eventos de conta aceitos: `UPDATE_TEMPLATE_STATUS` (atualização de status do template — aprovado/rejeitado etc.), `UPDATE_TEMPLATE_CATEGORY` (atualização de categoria do template) e `CHANNEL_DISCONNECTED` (aviso de desconexão de canal, com o motivo em código; veja a página Aviso de desconexão de canal). Também: os eventos de cobrança (`BILLING_PAYMENT_FAILED`, `BILLING_PAYMENT_RECOVERED`, `BILLING_SUBSCRIPTION_CANCELED`, `BILLING_INSTANCE_SUSPENDED`, `BILLING_INSTANCE_RELEASED`) e a restrição da conta na Meta (`ACCOUNT_RESTRICTION`); veja a página Eventos de cobrança e de restrição da conta."
       },
       "TemplateWebhookResponse": {
@@ -623,12 +963,20 @@
           "events": {
             "type": "array",
             "description": "Eventos de template configurados Evento gravado que a API ainda não conhece não aparece aqui.",
-            "items": { "$ref": "#/components/schemas/TemplateEvent" },
-            "example": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"]
+            "items": {
+              "$ref": "#/components/schemas/TemplateEvent"
+            },
+            "example": [
+              "UPDATE_TEMPLATE_STATUS",
+              "UPDATE_TEMPLATE_CATEGORY"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["ENABLED", "DISABLED"],
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ],
             "description": "Status atual do webhook",
             "example": "ENABLED"
           },
@@ -637,11 +985,17 @@
             "description": "Indica se a assinatura HMAC está habilitada",
             "example": false
           },
-          "auth": { "$ref": "#/components/schemas/WebhookAuthInfo" },
+          "auth": {
+            "$ref": "#/components/schemas/WebhookAuthInfo"
+          },
           "payloadFormat": {
             "type": "string",
-            "enum": ["DEFAULT"],
-            "description": "Sempre `DEFAULT` para webhooks de template",
+            "enum": [
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
+            ],
+            "description": "Formato de entrega. `DEFAULT` nos webhooks globais criados pela API.",
             "example": "DEFAULT"
           },
           "customAttributes": {
@@ -663,7 +1017,9 @@
       },
       "TemplateWebhookCreatedResponse": {
         "allOf": [
-          { "$ref": "#/components/schemas/TemplateWebhookResponse" },
+          {
+            "$ref": "#/components/schemas/TemplateWebhookResponse"
+          },
           {
             "type": "object",
             "properties": {
@@ -680,7 +1036,9 @@
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "string" }
+          "error": {
+            "type": "string"
+          }
         }
       }
     },
@@ -688,7 +1046,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key gerada no painel de Segurança do Omni Z-API"
+        "description": "Secret Key gerada no painel de Segurança do Z-API Omni"
       }
     }
   }

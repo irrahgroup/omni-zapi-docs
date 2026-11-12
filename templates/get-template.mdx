@@ -1,0 +1,32 @@
+---
+title: "Consultar template"
+description: "Consulte um template do WABA pelo ID"
+openapi: "/pt/templates/openapi.json GET /whatsapp/businesses/{wabaId}/templates/{templateId}"
+---
+
+## Conceituação
+
+Retorna um template do WABA pelo `templateId` exato, com os mesmos campos de [Listar templates](/templates/list-templates): `id`, `name`, `status`, `category`, `language`, `parameter_format`, `message_send_ttl_seconds` e `components`. O template vem direto no corpo, sem o envelope `data`.
+
+Use para acompanhar um template específico, como conferir o `status` depois de [criar](/templates/create-template) ou [editar](/templates/update-template). Para saber da aprovação sem consultar, o caminho preferido é o [webhook de templates](/webhooks/template-webhooks).
+
+<Warning>
+  A resposta sai do registro da plataforma. Template criado direto na Meta só aparece depois de [Sincronizar templates](/templates/sync-templates).
+</Warning>
+
+### Erros
+
+| Status | Quando |
+|---|---|
+| `400` | Header `Authorization` ausente, chave malformada ou inexistente (`Authorization invalid`), ou IP fora da lista de IPs permitidos da Secret Key |
+| `404` | `{"error": "Resource not found"}`. O mesmo corpo vale para WABA de outro workspace, WABA inexistente e template que não pertence ao WABA |
+| `502` | `integration_unavailable`: falha temporária. Tente de novo em instantes |
+| `504` | `integration_timeout`: a leitura não terminou em 50 segundos. Repetir é seguro |
+
+<Note>
+  O `wabaId` sai de [Listar WABAs](/templates/list-businesses). O `templateId` sai de [Listar templates](/templates/list-templates) ou do retorno de [Criar template](/templates/create-template). `sync` e `media` não são aceitos como `templateId`.
+</Note>
+
+## Veja também
+
+- [Introdução](/templates/introduction)

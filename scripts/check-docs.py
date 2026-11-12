@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Linter de paridade da documentacao Omni Z-API.
+Linter de paridade da documentacao Z-API Omni.
 
 Roda na raiz do repo (onde vive o docs.json):
     python3 scripts/check-docs.py
@@ -181,6 +181,7 @@ def check_imports():
 
 OVERVIEW_ROW = {
     'Texto': 'TEXT',
+    'Link': 'LINK',
     'Imagem': 'IMAGE',
     'Áudio': 'AUDIO',
     'Vídeo': 'VIDEO',
@@ -191,13 +192,14 @@ OVERVIEW_ROW = {
     'Botões rápidos': 'INTERACTIVE_BUTTON',
     'Botões de ação': 'INTERACTIVE_ACTION',
     'Template pré-aprovado': 'TEMPLATE',
-    'Flows': 'FLOW',
+    'Flows': 'INTERACTIVE_FLOW',
     'Reação (emoji)': 'REACTION',
+    'Editar texto': 'EDIT',
     'Pedir localização': 'LOCATION_REQUEST',
     'Lista de opções': 'INTERACTIVE_LIST',
-    'Catálogo': 'CATALOG',
-    'Produto': 'PRODUCT',
-    'Multi-produto': 'PRODUCT_LIST',
+    'Catálogo': 'INTERACTIVE_CATALOG',
+    'Produto': 'INTERACTIVE_SINGLE_PRODUCT',
+    'Multi-produto': 'INTERACTIVE_MULTI_PRODUCT',
     'Detalhes do pedido': 'ORDER_DETAILS',
     'Status do pedido': 'ORDER_STATUS',
 }
@@ -289,22 +291,23 @@ painel nao esta ao lado, e o proprio linter avisa se as duas discordarem.
 """
 METHOD_STATUS = {
     'TEXT': 'live',
+    'LINK': 'live',
     'IMAGE': 'live',
     'AUDIO': 'live',
     'VIDEO': 'live',
-    'DOCUMENT': 'soon',
+    'DOCUMENT': 'live',
     'STICKER': 'live',
     'LOCATION': 'broken',
     'LOCATION_REQUEST': 'soon',
     'CONTACT': 'broken',
-    'REACTION': 'soon',
+    'REACTION': 'live',
     'INTERACTIVE_BUTTON': 'live',
     'INTERACTIVE_ACTION': 'live',
-    'INTERACTIVE_LIST': 'soon',
-    'FLOW': 'soon',
-    'CATALOG': 'soon',
-    'PRODUCT': 'soon',
-    'PRODUCT_LIST': 'soon',
+    'INTERACTIVE_LIST': 'live',
+    'INTERACTIVE_FLOW': 'live',
+    'INTERACTIVE_CATALOG': 'live',
+    'INTERACTIVE_SINGLE_PRODUCT': 'live',
+    'INTERACTIVE_MULTI_PRODUCT': 'live',
     'ORDER_DETAILS': 'soon',
     'ORDER_STATUS': 'soon',
     'TEMPLATE': 'live',

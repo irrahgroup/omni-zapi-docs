@@ -1,14 +1,14 @@
 ---
 title: "SDK origins"
 description: "Allow the domains that can call the connection SDK and diagnose silent failures"
-openapi: "/en/channels/openapi-sdk-info.json GET /instances/{channelId}/sdk-info"
+openapi: "/en/channels/openapi-sdk-info.json GET /v1/channels/{channelId}/sdk-info"
 ---
 
 ## Concepts
 
 The connection SDK resolves `{ success: false }` **without saying why**. In practice it fails through two very different paths, and this endpoint solves the first one.
 
-## Failure 1 — origin not allowed
+## Failure 1: origin not allowed
 
 The SDK only works from domains registered in `allowOrigins`. If the browser origin is not on the list, it aborts with:
 
@@ -20,7 +20,7 @@ Use this endpoint **before** calling the SDK to find out whether the current ori
 
 ```javascript
 const info = await fetch(
-  `https://api.omni.z-api.io/instances/${channelId}/sdk-info`,
+  `https://api.omni.z-api.io/v1/channels/${channelId}/sdk-info`,
   { headers: { Authorization: YOUR_PUBLIC_KEY } },
 ).then((r) => r.json());
 
@@ -28,16 +28,16 @@ const allowed = info.allowOrigins.includes(window.location.origin);
 ```
 
 <Note>
-  The Omni Z-API dashboard domain is always accepted, even when it is not in `allowOrigins`. You only need to register **your** domains — including `http://localhost:3000` for development.
+  The Z-API Omni dashboard origins always appear inside `allowOrigins`: the workspace origins come first, then `https://app.hubmessage.io` and `https://app.omni.z-api.io`. You only need to register **your** domains, including `http://localhost:3000` for development.
 </Note>
 
 <Warning>
   Registering origins is done in the dashboard, under **Security**. There is no public endpoint for it.
 </Warning>
 
-## Failure 2 — popup blocked
+## Failure 2: popup blocked
 
-The SDK opens a window with `window.open`. If you call `client.connect()` **after an `await`**, the user gesture is already lost and the browser blocks the popup — the SDK also returns `{ success: false }`.
+The SDK opens a window with `window.open`. If you call `client.connect()` **after an `await`**, the user gesture is already lost and the browser blocks the popup, and the SDK also returns `{ success: false }`.
 
 ```javascript
 // Wrong: the await consumes the click gesture
@@ -56,11 +56,53 @@ async function onClick() {
 
 ## Authentication
 
-This is the **only** endpoint that accepts the Public Key, and it goes raw in the header — no `Bearer`:
+This endpoint and [List Messenger pages](/en/channels/list-messenger-pages) are the ones that accept the Public Key. It goes raw in the header, with no `Bearer`:
 
 ```bash
-curl https://api.omni.z-api.io/instances/CHANNEL_ID/sdk-info \
+curl https://api.omni.z-api.io/v1/channels/CHANNEL_ID/sdk-info \
   -H "Authorization: YOUR_PUBLIC_KEY"
 ```
 
 That is intentional: the endpoint is called from the frontend, where the [Public Key may be exposed](/en/authentication).
+
+<Note>
+  The routes `/instances/{channelId}/sdk-info`, `/devices/{channelId}/sdk-info` and `/channels/{channelId}/sdk-info`, with or without the `/v1` prefix, answer the same and keep working.
+</Note>
+
+## Response
+
+```json
+{
+  "middleware": "META_WHATSAPP",
+  "appId": "1234567890123456",
+  "appConfig": "987654321098765",
+  "allowOrigins": [
+    "https://app.suaempresa.com",
+    "http://localhost:3000",
+    "https://app.hubmessage.io",
+    "https://app.omni.z-api.io"
+  ],
+  "appCustom": false,
+  "appInstagramId": null
+}
+```
+
+| Field | What it is |
+|---|---|
+| `middleware` | Channel type, for example `META_WHATSAPP` |
+| `appId` and `appConfig` | The Meta app the SDK uses |
+| `allowOrigins` | Allowed origins: the workspace ones, then the dashboard ones |
+| `appCustom` | `true` when the workspace uses its own app |
+| `appInstagramId` | Instagram app ID |
+
+## Errors
+
+| Status | Body | When |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Public Key missing, malformed or unknown |
+| `404` | `{"error":"Instance not found"}` | Channel does not exist or belongs to another workspace |
+| `404` | `{"error":"app configuration not found"}` | No app is configured for the channel type |
+
+## See also
+
+- [Introduction](/en/channels/introduction)

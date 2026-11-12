@@ -1,0 +1,29 @@
+---
+title: "Enviar ubicación"
+description: "Envía una ubicación por WhatsApp"
+openapi: "/es/z-api/openapi.json POST /send-location"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+
+Envía una ubicación. Cuando llegan `latitude` y `longitude`, el mensaje es de ubicación, aunque el cuerpo traiga `message` o archivos: esos campos no se envían.
+
+<Note>
+  <ZapiResponseText lang="es" />
+</Note>
+
+Las coordenadas se verifican **antes** de la autenticación. Acepta cuerpo JSON o `application/x-www-form-urlencoded`. Un valor booleano, objeto o lista en `latitude` o `longitude` también se rechaza con `400`.
+
+### Errores
+
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente o vacío |
+| `400` | `latitude and longitude are required` | `latitude` o `longitude` ausente o vacío |
+| `400` | `latitude must be a decimal number between -90 and 90` | `latitude` fuera del formato decimal, fuera del rango o con más de 32 caracteres |
+| `400` | `longitude must be a decimal number between -180 and 180` | `longitude` fuera del formato decimal, fuera del rango o con más de 32 caracteres |
+
+## Véase también
+
+- [Mensajes: errores comunes](/es/z-api/messages/introduction#errores-comunes)
+- [Limitaciones y rechazos](/es/z-api/limitations)

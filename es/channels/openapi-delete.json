@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Partner: eliminar canal",
+    "title": "Z-API Omni - Eliminar canal",
     "version": "1.0.0"
   },
   "servers": [
@@ -17,18 +17,18 @@
   "paths": {
     "/v1/channels/{channelId}": {
       "delete": {
-        "summary": "Eliminar canal (Partner)",
-        "description": "Elimina un canal. Solo se permite el borrado cuando el canal no tiene una suscripción activa (estado `CANCELED`, `TRIAL` o `PENDING`). Requiere el rol ENTERPRISE.",
-        "operationId": "partnerDeleteChannel",
+        "summary": "Eliminar canal",
+        "description": "Elimina un canal. Solo se permite eliminar con el canal desconectado y sin suscripción activa. Requiere el rol ENTERPRISE.",
+        "operationId": "deleteChannel",
         "tags": [
-          "Partners"
+          "Canales"
         ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
-            "description": "ID del canal (obtenido con Crear canal)",
+            "description": "ID del canal (obtenido en Crear canal o Listar canales)",
             "schema": {
               "type": "string",
               "example": "019E4C54B1B375A28970B605CA9B03C3"
@@ -42,83 +42,88 @@
               "schema": {
                 "$ref": "#/components/schemas/DeleteRequest"
               },
-              "examples": {
-                "withReason": {
-                  "summary": "Con motivo de eliminación",
-                  "value": {
-                    "cancelReason": "El cliente cerró la empresa"
-                  }
-                },
-                "withoutReason": {
-                  "summary": "Sin motivo (body omitido)",
-                  "value": {}
-                }
+              "example": {
+                "cancelReason": "El cliente cerró la empresa"
               }
             }
           }
         },
         "responses": {
           "204": {
-            "description": "Canal eliminado correctamente. No se devuelve contenido."
+            "description": "Canal eliminado. No se devuelve contenido."
           },
           "400": {
-            "description": "Autorización no válida o ausente",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "example": {
-                  "error": 400,
-                  "message": "Authorization invalid"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "description": "Canal no encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "example": {
-                  "error": 404,
-                  "message": "Instance not found"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Regla de negocio incumplida",
+            "description": "Secret Key ausente, mal formada o inexistente, IP fuera de la lista de IPs permitidas o solicitud inválida",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fuera de la lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente o de otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cuenta sin el rol ENTERPRISE, o regla de negocio incumplida. En los errores de negocio, el código viene en `error.type`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BusinessError"
+                    }
+                  ]
+                },
+                "examples": {
                   "enterpriseRequired": {
                     "summary": "Cuenta sin el rol ENTERPRISE",
                     "value": {
-                      "error": 422,
-                      "message": "Channel deletion requires ENTERPRISE role"
+                      "error": "Channel deletion requires ENTERPRISE role"
                     }
                   },
                   "channelConnected": {
-                    "summary": "El canal sigue conectado",
+                    "summary": "Canal todavía conectado",
                     "value": {
-                      "error": 422,
-                      "message": "INSTANCE_STILL_CONNECTED"
+                      "error": {
+                        "type": "INSTANCE_STILL_CONNECTED"
+                      }
                     }
                   },
                   "activeSubscription": {
                     "summary": "Canal con suscripción activa (PAID o CANCELLATION_PROCESS)",
                     "value": {
-                      "error": 422,
-                      "message": "INSTANCE_HAS_ACTIVE_SUBSCRIPTION"
+                      "error": {
+                        "type": "INSTANCE_HAS_ACTIVE_SUBSCRIPTION"
+                      }
                     }
                   }
                 }
@@ -126,11 +131,11 @@
             }
           },
           "502": {
-            "description": "Fallo en la integración con el servicio interno",
+            "description": "Falla de integración. La operación no se completó; vuelve a intentarlo en unos instantes.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InternalError"
+                  "$ref": "#/components/schemas/ErrorWithMessage"
                 },
                 "example": {
                   "error": "integration_unavailable",
@@ -144,52 +149,56 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Token no válido o ausente.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "example": {
-              "error": 401,
-              "message": "Unauthorized"
-            }
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo del error"
           }
         }
-      }
-    },
-    "schemas": {
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estable del error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto del error, en inglés"
+          }
+        }
+      },
       "DeleteRequest": {
         "type": "object",
         "properties": {
           "cancelReason": {
             "type": "string",
-            "description": "Motivo de la eliminación (opcional, pero recomendado con fines de auditoría)",
-            "example": "El cliente cerró la empresa"
+            "description": "Motivo de la eliminación (opcional, recomendado para auditoría)"
           }
         }
       },
-      "InternalError": {
+      "BusinessError": {
         "type": "object",
         "properties": {
           "error": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer"
-          },
-          "message": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Código de negocio del error"
+              },
+              "message": {
+                "type": "string",
+                "description": "Texto descriptivo del error"
+              },
+              "details": {
+                "description": "Detalles adicionales, cuando los hay"
+              }
+            }
           }
         }
       }
@@ -198,7 +207,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+        "description": "Secret Key generada en Seguridad, en el panel de Z-API Omni. El prefijo `Bearer` es opcional."
       }
     }
   }

@@ -1,0 +1,42 @@
+---
+title: "Reactivate webhook"
+description: "Reactivate a webhook whose delivery was suspended"
+openapi: "/en/webhooks/openapi-central.json POST /v1/webhooks/{webhookId}/reactivate"
+---
+
+## Overview
+
+Reactivates a webhook with `state` `SUSPENDED`. The request has no body. It works for channel, default or global webhooks.
+
+<Note>
+  Delivery is only suspended where automatic suspension is on for the workspace brand, together with the 3rd failure notice. Where it is off, the notices do not disable the webhook. See [Failure notices](/en/webhooks/central#failure-notices).
+</Note>
+
+The reactivation:
+
+- clears the suspension and resets the failure sequence;
+- sends the workspace Owner and Managers an email saying who reactivated it.
+
+The response is `200` with the same fields as an item of [Webhook health](/en/webhooks/webhooks-health): `state` `ACTIVE`, `consecutiveFailures` `0` and `suspendedAt` `null`. The start of the closed episode appears in `retainedSince` on the next health query.
+
+Reactivating a webhook that is not suspended returns `200` with its current state, with no effect.
+
+<Warning>
+  **Changing the URL or the `status` through `PATCH` does not reactivate the webhook.** Use this route.
+</Warning>
+
+<Warning>
+  **Retained events are not resent automatically.** After reactivating, request the [bulk resend](/en/webhooks/resend-deliveries) with `episode` `current` and repeat every 2 minutes while `remaining` is greater than zero, before `oldestExpiresAt`.
+</Warning>
+
+### Errors
+
+| Case | Response |
+|---|---|
+| Webhook that does not exist or belongs to another workspace | `404` |
+
+The authentication, IP and inactive workspace errors are in [Webhook center](/en/webhooks/central#errors-common-to-every-route).
+
+## See also
+
+- [Webhook center](/en/webhooks/central)

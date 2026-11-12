@@ -1,0 +1,138 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Desconectar WhatsApp Web",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/zapi/disconnect": {
+      "post": {
+        "summary": "Desconectar WhatsApp Web",
+        "description": "Desconecta a sessão do WhatsApp Web de um canal `Z_API_WHATSAPP`. Sem corpo. Para reconectar, gere um novo QR Code. Não exige ENTERPRISE.",
+        "operationId": "zapiDisconnect",
+        "tags": [
+          "Canais"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID do canal (obtido em Criar canal ou Listar canais)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Com `true`, a sessão foi desconectada. Com `false`, nada mudou.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                },
+                "example": true
+              }
+            }
+          },
+          "400": {
+            "description": "Secret Key ausente, malformada ou inexistente, IP fora da lista de IPs liberados ou requisição inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fora da lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente ou de outro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha de integração. A operação não foi concluída; tente de novo em alguns instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo do erro"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estável do erro"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto do erro, em inglês"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada em Segurança, no painel do Z-API Omni. O prefixo `Bearer` é opcional."
+      }
+    }
+  }
+}

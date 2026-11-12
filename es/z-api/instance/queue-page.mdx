@@ -1,0 +1,31 @@
+---
+title: "Listar la cola por página"
+description: "Lista la cola por página, siempre una página vacía y última"
+openapi: "/es/z-api/openapi.json POST /queue"
+---
+
+## Conceptos
+
+En Z-API, la cola guarda los mensajes que todavía no salieron. En WhatsApp Oficial, el mensaje se entrega a la API oficial en el momento del envío, así que no hay cola por canal. Esta ruta existe para que tu código de Z-API siga funcionando y responde siempre vacío. El cuerpo (`pageSize`, `pagingState`) no se lee.
+
+```json
+{
+  "messages": [],
+  "pagingState": null,
+  "hasMore": false
+}
+```
+
+### Errores
+
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `404` | `instance not found` | El `id` o el `token` del path no existe |
+| `422` | `queue route is not available through this compatibility route for Z_API_WHATSAPP instances yet` | El canal es del tipo `Z_API_WHATSAPP` |
+
+Los errores de [autenticación](/es/z-api/authentication) valen aquí también.
+
+## Véase también
+
+- [Estado de la instancia](/es/z-api/instance/status)
+- [Limitaciones y rechazos](/es/z-api/limitations)

@@ -1,0 +1,281 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Enviar catálogo",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Enviar catálogo",
+        "description": "Envia uma mensagem que abre o catálogo conectado à conta.",
+        "operationId": "sendInteractiveCatalogMessage",
+        "tags": [
+          "Mensagens"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID do canal",
+            "schema": {
+              "type": "string",
+              "example": "SEU_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCatalogRequest"
+              },
+              "examples": {
+                "catalog": {
+                  "summary": "Catálogo com produto de capa",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_CATALOG",
+                      "body": {
+                        "message": "Chegaram novidades na loja. Toque para ver o catálogo completo."
+                      },
+                      "footer": {
+                        "message": "Preços válidos enquanto durar o estoque"
+                      },
+                      "action": {
+                        "id": "SKU-1042"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Mensagem enviada com sucesso",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Secret Key ausente, malformada ou inexistente (`Authorization invalid`), IP fora da lista de IPs (`<ip> not allowed`) ou corpo que não serve para o tipo da mensagem (`code` `VALIDATION_ERROR`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorText"
+                },
+                {
+                  "$ref": "#/components/schemas/SendError"
+                }
+              ]
+            },
+            "examples": {
+              "authorization": {
+                "summary": "Secret Key inválida",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "validation": {
+                "summary": "Corpo inválido",
+                "value": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.body': is required for message type INTERACTIVE_CATALOG"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Canal desconectado. A mensagem não foi enviada: conecte o canal de novo e repita o envio.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendCatalogRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Telefone do destinatário (DDI + DDD + número)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Tipo da mensagem",
+                "enum": [
+                  "INTERACTIVE_CATALOG"
+                ]
+              },
+              "body": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Texto da mensagem"
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              },
+              "footer": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Texto do rodapé. Opcional"
+                  }
+                }
+              },
+              "action": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Nome da ação. Se vazio, vale `catalog_message`"
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "ID do produto (SKU) usado como capa"
+                  }
+                }
+              },
+              "messageIdReply": {
+                "type": "string",
+                "description": "ID da mensagem que será respondida, com citação. Opcional"
+              },
+              "messageIdForwarded": {
+                "type": "string",
+                "description": "ID da mensagem encaminhada. Opcional"
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID da mensagem enviada: hexadecimal de 32 caracteres maiúsculos"
+          }
+        }
+      },
+      "ErrorText": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Texto do erro"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora da recusa, em UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Categoria do erro",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Código do caso. Só vem quando o caso tem um código próprio",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada no painel de Segurança do Z-API Omni"
+      }
+    }
+  }
+}

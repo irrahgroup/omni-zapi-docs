@@ -1,23 +1,30 @@
 ---
 title: "Enviar imagen"
-description: "Envía mensajes con imágenes por WhatsApp"
+description: "Envía imágenes por WhatsApp"
 openapi: "/es/z-api/openapi.json POST /send-image"
 ---
 
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Conceptos
-
-Método para enviar imágenes. Puedes enviar la imagen de dos formas: mediante **URL** o mediante **Base64**.
-
-<Warning>
-  Al enviarla en Base64 es obligatorio incluir el prefijo con el tipo de imagen, por ejemplo: `data:image/png;base64,`. Para validarlo, pega el Base64 completo en la barra de direcciones del navegador y comprueba que la imagen se muestra correctamente.
-</Warning>
+Envía una imagen, por **URL** o por **Base64**.
 
 <Note>
   <ZapiResponseText lang="es" />
 </Note>
 
 <Note>
-  Los límites de tamaño y los formatos admitidos siguen las políticas de WhatsApp. Consulta la [documentación oficial de WhatsApp](https://developers.facebook.com/docs/whatsapp/api/media) para más detalles.
+  Los límites de tamaño y de formato siguen las políticas de WhatsApp. Consulta la [documentación oficial de WhatsApp](https://developers.facebook.com/docs/whatsapp/api/media).
 </Note>
+
+### Errores
+
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente o vacío |
+| `400` | `invalid image: must be a valid URL or base64 data URI` | El campo no es una URL `http`/`https` ni un Base64 con prefijo `data:` |
+| `422` | `message has no content this route can send` | El cuerpo no trae el campo del archivo ni `message`, por lo que no hay contenido para enviar |
+
+## Véase también
+
+- [Mensajes: errores comunes](/es/z-api/messages/introduction#errores-comunes)
+- [Limitaciones y rechazos](/es/z-api/limitations)

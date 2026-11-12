@@ -1,0 +1,32 @@
+---
+title: "Consultar plantilla"
+description: "Consulta una plantilla de la WABA por su ID"
+openapi: "/es/templates/openapi.json GET /whatsapp/businesses/{wabaId}/templates/{templateId}"
+---
+
+## Conceptos
+
+Devuelve una plantilla de la WABA por su `templateId` exacto, con los mismos campos de [Listar plantillas](/es/templates/list-templates): `id`, `name`, `status`, `category`, `language`, `parameter_format`, `message_send_ttl_seconds` y `components`. La plantilla viene directamente en el cuerpo, sin el envoltorio `data`.
+
+Úsalo para seguir una plantilla específica, como comprobar el `status` después de [crearla](/es/templates/create-template) o [editarla](/es/templates/update-template). Para enterarte de la aprobación sin consultar, el camino preferido es el [webhook de plantillas](/es/webhooks/template-webhooks).
+
+<Warning>
+  La respuesta sale del registro de la plataforma. Una plantilla creada directamente en Meta solo aparece después de [Sincronizar plantillas](/es/templates/sync-templates).
+</Warning>
+
+### Errores
+
+| Status | Cuándo |
+|---|---|
+| `400` | Header `Authorization` ausente, clave mal formada o inexistente (`Authorization invalid`), o IP fuera de la lista de IPs permitidas de la Secret Key |
+| `404` | `{"error": "Resource not found"}`. El mismo cuerpo vale para una WABA de otro workspace, una WABA inexistente y una plantilla que no pertenece a la WABA |
+| `502` | `integration_unavailable`: falla temporal. Inténtalo de nuevo en unos instantes |
+| `504` | `integration_timeout`: la lectura no terminó en 50 segundos. Repetir es seguro |
+
+<Note>
+  El `wabaId` sale de [Listar WABAs](/es/templates/list-businesses). El `templateId` sale de [Listar plantillas](/es/templates/list-templates) o de la respuesta de [Crear plantilla](/es/templates/create-template). `sync` y `media` no se aceptan como `templateId`.
+</Note>
+
+## Véase también
+
+- [Introducción](/es/templates/introduction)

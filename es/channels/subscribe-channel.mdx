@@ -1,34 +1,55 @@
 ---
 title: "Suscribir canal"
-description: "Añade un canal a la suscripción existente una vez completado el pago en el panel"
+description: "Incluye un canal en la suscripción de la cuenta, con o sin checkout"
 openapi: "/es/channels/openapi-subscribe.json GET /v1/channels/{channelId}/subscribe"
 ---
 
 import { EnterpriseText } from '/snippets/notes.mdx';
 
-import { projectName } from '/snippets/variables.mdx';
-
-## Conceptos
-
-Vincula un canal a la suscripción activa de Stripe de la cuenta. El canal se **añade automáticamente** a la suscripción existente y se incluye en la próxima factura un cargo proporcional al periodo que queda del ciclo.
-
-<Note>
-  El pago lo realiza previamente el usuario en el panel de {projectName}. Este endpoint debe llamarse una vez completado el checkout en el panel, para activar el canal mediante la API.
-</Note>
-
 <Warning>
   <EnterpriseText lang="es" />
 </Warning>
 
-Ejemplo de respuesta:
+## Conceptos
+
+Incluye el canal en la suscripción de la cuenta. Úsalo después de [Crear canal](/es/channels/create-channel): el canal nace en `TRIAL` por 2 días y, para mantenerlo, hay que suscribirlo.
+
+### La respuesta tiene dos formas
+
+**Con un pago pendiente**, la respuesta trae `checkoutId` y `url`. Envía al usuario a la `url` para completar el pago. Si informaste `redirectUrl` en la query, el checkout vuelve a esa dirección al final.
+
+```json
+{
+  "checkoutId": "cs_a1B2c3D4e5F6",
+  "url": "https://checkout.stripe.com/c/pay/cs_a1B2c3D4e5F6"
+}
+```
+
+**Sin checkout**, la suscripción se actualiza al momento y la respuesta trae `type` `SUBSCRIPTION_UPDATED`. El cargo proporcional al resto del ciclo entra en la próxima factura.
 
 ```json
 {
   "type": "SUBSCRIPTION_UPDATED",
-  "message": "Canal activo. Se incluirá un cargo proporcional en la próxima factura."
+  "message": "Canal activo. El cargo proporcional se incluirá en la próxima factura."
 }
 ```
 
+### Errores
+
+| Estado | Cuerpo | Cuándo |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, mal formada o inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fuera de la [lista de IPs](/es/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente o de otro workspace |
+| `422` | `{"error":"Channel subscription requires ENTERPRISE role"}` | Cuenta sin el rol ENTERPRISE |
+| `422` | `{"error":{"type":"CREDIT_LIMIT_EXCEEDED", ...}}` | Se alcanzó el límite de crédito de la cuenta |
+| `422` | `{"error":{"type":"SUBSCRIPTION_TERMINATED", ...}}` | Suscripción finalizada; no se pueden añadir canales |
+| `502` | `{"error":"integration_unavailable", ...}` | Falla de integración; vuelve a intentarlo en unos instantes |
+
 <Note>
-  El `channelId` se obtiene a través del endpoint [Crear canal](/es/channels/create-channel).
+  El `channelId` se obtiene mediante el endpoint [Crear canal](/es/channels/create-channel) o [Listar canales](/es/channels/list-channels).
 </Note>
+
+## Véase también
+
+- [Introducción](/es/channels/introduction)

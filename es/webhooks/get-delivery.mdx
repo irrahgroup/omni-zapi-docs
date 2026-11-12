@@ -1,0 +1,51 @@
+---
+title: "Consultar entrega"
+description: "Ve una entrega con todos los intentos, la petición enviada y la respuesta de tu servidor"
+openapi: "/es/webhooks/openapi-central.json GET /v1/webhooks/deliveries/{deliveryId}"
+---
+
+## Conceptos
+
+Devuelve una entrega con los mismos campos de la [lista de entregas](/es/webhooks/list-deliveries) y, en lugar del número de intentos, la lista `attempts[]`, en orden de `attemptNumber`. El `deliveryId` es un UUID y sale de la lista de entregas o del header `x-webhook-delivery-id`.
+
+### Campos de cada intento
+
+| Campo | Qué trae |
+|---|---|
+| `attemptNumber` | Número del intento, el mismo del header `x-webhook-attempt` |
+| `origin` | `AUTOMATIC` (programación de reintentos), `MANUAL_RESEND` (reenvío por la central) o `SYSTEM` |
+| `resentBy` | Quién pidió el reenvío, en `MANUAL_RESEND` |
+| `attemptedAt` | Cuándo ocurrió el intento |
+| `outcome` | Resultado del intento, con los mismos valores de `lastOutcome` |
+| `httpStatus` | Status HTTP de la respuesta. `null` cuando no hubo respuesta (timeout, error de conexión o de DNS) |
+| `latencyMs` | Tiempo hasta la respuesta, en milisegundos |
+| `errorClass`, `errorMessage` | El error, cuando no hubo respuesta |
+| `url`, `requestHeaders` | La URL llamada y los headers enviados, enmascarados |
+| `requestBody`, `requestBodyTruncated` | El cuerpo enviado y si se cortó |
+| `responseBody`, `responseBodyTruncated` | La respuesta de tu servidor y si se cortó |
+
+Con la Secret Key, los cuerpos llegan completos y `bodyHidden` llega `false`.
+
+### Qué aparece enmascarado
+
+- Los valores de `Authorization`, `X-API-Key`, tu header personalizado y `X-Webhook-Signature` aparecen como `***`.
+- El segmento de la URL después de `/token/` aparece como `{token}`.
+- El valor de cada parámetro de la query de la URL aparece como `{masked}`.
+
+### Límites de lo que se guarda
+
+Los cuerpos guardados de la petición y de la respuesta tienen un límite de tamaño. Por encima de él, el cuerpo se corta y el campo `...Truncated` correspondiente llega `true`. Una entrega con la petición cortada no se puede reenviar (`notResendableReason` `TRUNCATED`).
+
+### Errores
+
+| Caso | Respuesta |
+|---|---|
+| `deliveryId` que no es UUID | `400` con `{"error": {"message": "deliveryId invalido"}}` |
+| Entrega inexistente, expirada (fuera de la retención) o de otro workspace | `404` |
+| La consulta superó los 5 segundos | `503`. Inténtalo de nuevo |
+
+Los errores de autenticación, de IP y de workspace inactivo están en [Central de webhooks](/es/webhooks/central#errores-comunes-a-todas-las-rutas).
+
+## Véase también
+
+- [Central de webhooks](/es/webhooks/central)

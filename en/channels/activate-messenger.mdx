@@ -1,0 +1,60 @@
+---
+title: "Activate Messenger"
+description: "Finish on the backend the connection of a META_MESSENGER channel with the chosen page"
+openapi: "/en/channels/openapi-activate-messenger.json POST /v1/channels/{channelId}/activate-messenger"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_MESSENGER" lang="en" />
+
+## Overview
+
+Finishes the connection of a `META_MESSENGER` channel with the page the user chose. It is the last step of [Connect Messenger](/en/connect/messenger).
+
+First, call [List Messenger pages](/en/channels/list-messenger-pages): it returns the `pageId` and `accessToken` of each page. The `redirectUri` comes from the SDK result.
+
+Use the Secret Key, from your backend. Does not require ENTERPRISE.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/CHANNEL_ID/activate-messenger \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_SECRET_KEY" \
+  -d '{"pageId": "102938475601234", "accessToken": "EAAG...", "redirectUri": "https://app.omni.z-api.io/oauth/proxy-messenger"}'
+```
+
+On success, the response has the linked page:
+
+```json
+{"pageId": "102938475601234", "connected": true, "pageName": "Minha Loja", "pageCategory": "Shopping", "displayName": "Minha Loja"}
+```
+
+### Automatic reconnection
+
+If the account is already active on the provider and the channel is disconnected with an active subscription (`PAID`, `TRIAL`, `BOLETO_PENDING` or `CANCELLATION_PROCESS`), Z-API Omni undoes the previous connection and activates again on its own. Otherwise, the API answers `422` with the provider error in `error`.
+
+The activation has a 50-second limit. If it goes past, the API answers `504`: with `integration_timeout`, nothing changed and you can retry; with `outcome_unknown`, the previous connection was already undone, so check the channel with [Get channel](/en/channels/get-channel) before retrying.
+
+### Errors
+
+| Status | Body | When |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key missing, malformed or unknown |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP outside the [IP list](/en/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Channel does not exist or belongs to another workspace |
+| `422` | `{"error":{...}}` | The provider refused the activation; the provider error comes in `error` |
+| `502` | `{"error":"integration_unavailable", ...}` | Integration failure; try again in a few moments |
+| `504` | `{"error":"integration_timeout", ...}` | Went past the 50-second limit and nothing changed on the channel; you can retry |
+| `504` | `{"error":"outcome_unknown", ...}` | Went past the limit after undoing the previous connection; check with [Get channel](/en/channels/get-channel) before retrying |
+
+### After the activation
+
+Check the channel with [Get channel](/en/channels/get-channel). To switch to another page later, deactivate with [Deactivate Messenger](/en/channels/deactivate-messenger) and connect again.
+
+<Note>
+  The `channelId` comes from the [Create channel](/en/channels/create-channel) endpoint or from [List channels](/en/channels/list-channels).
+</Note>
+
+## See also
+
+- [Introduction](/en/channels/introduction)

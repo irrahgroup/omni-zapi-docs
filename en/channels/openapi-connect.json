@@ -1,32 +1,47 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Connect Channel",
+    "title": "Z-API Omni - Connect Meta WhatsApp channel",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/connect": {
       "post": {
         "summary": "Connect Meta WhatsApp channel",
-        "description": "Finalizes the connection of a **META_WHATSAPP** channel with the data returned by the `@omnizapi/connect` SDK. Exclusive to WhatsApp Official API (Meta) channels.",
+        "description": "Finishes the connection of a `META_WHATSAPP` channel with the data returned by the `@omnizapi/connect` SDK. It is exclusive to the Official WhatsApp: the other channels have their own route. Does not require ENTERPRISE.",
         "operationId": "connectMetaChannel",
-        "tags": ["Channels"],
+        "tags": [
+          "Channels"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
-            "description": "Channel ID (obtained via Create channel)",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "description": "Channel ID (from Create channel or List channels)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ConnectChannelRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/ConnectChannelRequest"
+              },
               "example": {
                 "wabaId": "428083093730937",
                 "phoneId": "123456789012345",
@@ -38,21 +53,104 @@
         },
         "responses": {
           "200": {
-            "description": "Channel connected successfully",
+            "description": "Connection result. `success` has the same value as `connected`.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
-                "example": { "success": true }
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectChannelResponse"
+                },
+                "example": {
+                  "phoneId": "123456789012345",
+                  "connected": true,
+                  "success": true,
+                  "isCoexistence": false,
+                  "phoneConnected": "5511999999999",
+                  "businessName": "Minha Empresa"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "409": {
-            "description": "Channel already connected to the same `phoneId`, and Meta confirms the number is working. Nothing changes in the channel and the `code` is not used. To renew the connection of the same number, disconnect first. Recognize it by the `error` field, which is stable; `message` is always in English.",
+          "400": {
+            "description": "Secret Key missing, malformed or unknown, IP outside the allowed IP list, or invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ChannelAlreadyConnectedError" },
-                "example": { "error": "channel_already_connected", "message": "Channel already connected" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Invalid Secret Key",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP outside the list",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
+                  "wabaIdRequired": {
+                    "summary": "Missing wabaId",
+                    "value": {
+                      "error": "wabaId is required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel does not exist or belongs to another workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The same number is already connected and working on Meta. The API refuses and does not spend the `code`. To renew the connection of the same number, disconnect first with `PUT /v1/channels/{channelId}/disconnect`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "channel_already_connected",
+                  "message": "Channel already connected"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Integration failure. The operation was not completed; try again in a few moments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "The connection went past the time limit and the result is not known. Check the channel state with Get channel before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "outcome_unknown"
+                }
               }
             }
           }
@@ -61,52 +159,89 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Invalid or missing token.",
-        "content": {
-          "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error reason"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Stable error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error text, in English"
+          }
+        }
+      },
+      "ConnectChannelRequest": {
+        "type": "object",
+        "required": [
+          "wabaId"
+        ],
+        "properties": {
+          "wabaId": {
+            "type": "string",
+            "description": "ID of the WhatsApp Business Account (WABA) chosen in the Embedded Signup. It is the only field validated by the API."
+          },
+          "phoneId": {
+            "type": "string",
+            "description": "ID of the chosen number. Needed to complete the connection."
+          },
+          "code": {
+            "type": "string",
+            "description": "Authorization code returned by Meta. Needed to complete the connection."
+          },
+          "coexistence": {
+            "type": "boolean",
+            "description": "Whether the number was connected in coexistence with the WhatsApp Business app"
+          }
+        }
+      },
+      "ConnectChannelResponse": {
+        "type": "object",
+        "properties": {
+          "phoneId": {
+            "type": "string",
+            "description": "ID of the connected number"
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Whether the channel was connected"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Same value as `connected`"
+          },
+          "isCoexistence": {
+            "type": "boolean",
+            "description": "Whether the connection is in coexistence"
+          },
+          "phoneConnected": {
+            "type": "string",
+            "description": "Connected number, with country code"
+          },
+          "businessName": {
+            "type": "string",
+            "description": "Business name on Meta"
           }
         }
       }
     },
-    "schemas": {
-      "ConnectChannelRequest": {
-        "type": "object",
-        "required": ["wabaId", "phoneId", "code", "coexistence"],
-        "properties": {
-          "wabaId": { "type": "string", "description": "WhatsApp Business Account ID" },
-          "phoneId": { "type": "string", "description": "Phone number ID" },
-          "code": { "type": "string", "description": "Authorization code generated by WhatsApp" },
-          "coexistence": { "type": "boolean", "description": "Whether the number is in coexistence mode" }
-        }
-      },
-      "SuccessResponse": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean", "description": "Indicates whether the operation was successful" }
-        }
-      },
-      "ChannelAlreadyConnectedError": {
-        "type": "object",
-        "required": ["error", "message"],
-        "properties": {
-          "error": { "type": "string", "enum": ["channel_already_connected"], "description": "Stable refusal code" },
-          "message": { "type": "string", "description": "Fixed text, always in English" }
-        }
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
-        }
-      }
-    },
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "Secret Key generated in the Omni Z-API Security panel" }
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in Security, on the Z-API Omni dashboard. The `Bearer` prefix is optional."
+      }
     }
   }
 }

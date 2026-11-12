@@ -1,0 +1,60 @@
+---
+title: "Ativar Instagram"
+description: "Finalize no backend a conexão de um canal META_INSTAGRAM"
+openapi: "/pt/channels/openapi-activate-instagram.json POST /v1/channels/{channelId}/activate-instagram"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_INSTAGRAM" lang="pt" />
+
+## Conceituação
+
+Finaliza a conexão de um canal `META_INSTAGRAM`. É o último passo de [Conectar Instagram](/connect/instagram): o SDK devolve `code` e `redirectUri`, e o seu backend chama esta rota com os dois. Sem `code`, a API aceita `igId` e `accessToken`.
+
+Use a Secret Key, do seu backend. Não exige ENTERPRISE.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-instagram \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{"code": "AQBx7f...", "redirectUri": "https://app.omni.z-api.io/oauth/proxy-instagram"}'
+```
+
+A ativação usa o app do Instagram próprio do workspace, se houver; senão, o app padrão.
+
+Com sucesso, a resposta traz a conta conectada:
+
+```json
+{"id": "17841400000000000", "connected": true, "username": "minhaloja", "name": "Minha Loja", "displayName": "minhaloja"}
+```
+
+### Reconexão automática
+
+Se a conta já estiver ativa no provedor e o canal estiver desconectado com assinatura ativa (`PAID`, `TRIAL`, `BOLETO_PENDING` ou `CANCELLATION_PROCESS`), o Z-API Omni desfaz a conexão anterior e ativa de novo sozinho. Caso contrário, a API responde `422` com o erro do provedor em `error`.
+
+A ativação tem prazo de 50 segundos. Se passar, a API responde `504`: com `integration_timeout`, nada mudou e você pode repetir; com `outcome_unknown`, a conexão anterior já foi desfeita, então confira o canal com [Consultar canal](/channels/get-channel) antes de repetir.
+
+### Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, malformada ou inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fora da [lista de IPs](/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `422` | `{"error":{...}}` | O provedor recusou a ativação; o erro do provedor vem em `error` |
+| `502` | `{"error":"integration_unavailable", ...}` | Falha de integração; tente de novo em alguns instantes |
+| `504` | `{"error":"integration_timeout", ...}` | Passou do prazo de 50 segundos e nada mudou no canal; pode repetir |
+| `504` | `{"error":"outcome_unknown", ...}` | Passou do prazo depois de desfazer a conexão anterior; confira com [Consultar canal](/channels/get-channel) antes de repetir |
+
+### Depois da ativação
+
+Confira o canal com [Consultar canal](/channels/get-channel). Para trocar de conta depois, desative com [Desativar Instagram](/channels/deactivate-instagram) e conecte de novo.
+
+<Note>
+  O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel) ou de [Listar canais](/channels/list-channels).
+</Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

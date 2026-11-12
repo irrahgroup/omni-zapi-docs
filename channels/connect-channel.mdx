@@ -5,14 +5,16 @@ openapi: "/pt/channels/openapi-connect.json POST /v1/channels/{channelId}/connec
 ---
 
 import { projectName, frontendUrl } from '/snippets/variables.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
 
+<ChannelSupport type="CONNECT" lang="pt" />
 
 ## Visão geral
 
 Após [criar um canal](/channels/create-channel) do tipo `META_WHATSAPP`, você precisa **conectá-lo** a um número do WhatsApp Business. Existem duas formas:
 
-- **Pelo painel** — Fluxo guiado diretamente no [Dashboard](https://app.omni.z-api.io)
-- **Via SDK + API** — Integre o fluxo de conexão no seu sistema
+- **Pelo painel**: Fluxo guiado diretamente no [Dashboard](https://app.omni.z-api.io)
+- **Via SDK + API**: Integre o fluxo de conexão no seu sistema
 
 ## Conexão pelo painel
 
@@ -25,7 +27,7 @@ Use este fluxo quando quiser que o **seu usuário** conecte o canal de dentro do
 O fluxo tem 3 etapas:
 
 <Steps>
-  <Step title="Frontend — Iniciar conexão com o SDK">
+  <Step title="Frontend: Iniciar conexão com o SDK">
     No **frontend** da sua aplicação, use o SDK para iniciar o fluxo de conexão. O SDK vai abrir o processo de autenticação com o WhatsApp e retornar as informações necessárias.
 
     ```javascript
@@ -46,7 +48,7 @@ O fluxo tem 3 etapas:
       A `publicKey` pode ser exposta no frontend. Veja mais em [Autenticação](/authentication).
     </Tip>
   </Step>
-  <Step title="Frontend → Backend — Enviar dados">
+  <Step title="Frontend → Backend: Enviar dados">
     O SDK retorna um objeto com as informações da conexão. Envie esses dados para o **backend** da sua aplicação:
 
     ```json
@@ -65,7 +67,7 @@ O fluxo tem 3 etapas:
     | `code` | string | Código de autorização gerado pelo WhatsApp |
     | `coexistence` | boolean | Se o número está em modo de coexistência |
   </Step>
-  <Step title="Backend — Finalizar conexão via API">
+  <Step title="Backend: Finalizar conexão via API">
     No **backend**, chame a API de conexão passando os dados recebidos do frontend:
 
     `POST /v1/channels/{channelId}/connect`
@@ -104,10 +106,6 @@ Se o canal já está conectado ao **mesmo número** (`phoneId`), e a Meta confir
 - Se o número caiu na Meta, o `connect` segue normalmente e reconecta o canal.
 - Se o integrador mandar outro `phoneId`, o `connect` troca o número, como antes.
 
-<Note>
-  **Formas diferentes por canal.** No WhatsApp Oficial, o canal já conectado responde `409` com `channel_already_connected`. No Instagram, no Messenger e no Telegram, a ativação de um canal já ativo continua respondendo `422`, com o erro do provedor no campo `error` (por exemplo, `INSTAGRAM_META_IS_ALREADY_ACTIVATED`).
-</Note>
-
 ## Fluxo resumido
 
 ```
@@ -120,6 +118,36 @@ Frontend (SDK)              →  Backend (API)
                             5. Canal conectado ✓
 ```
 
+## Resposta
+
+Esta rota é só do WhatsApp Oficial e não exige ENTERPRISE. A API valida só o `wabaId`; `code` e `phoneId` são necessários para concluir a conexão. Com sucesso, responde `200`, e `success` tem o mesmo valor de `connected`:
+
+```json
+{
+  "phoneId": "123456789012345",
+  "connected": true,
+  "success": true,
+  "isCoexistence": false,
+  "phoneConnected": "5511999999999",
+  "businessName": "Minha Empresa"
+}
+```
+
+## Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"wabaId is required"}` | Corpo sem `wabaId`, por exemplo com o retorno do SDK de outro canal |
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, malformada ou inexistente |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `409` | `{"error":"channel_already_connected","message":"Channel already connected"}` | O mesmo número já está conectado |
+| `502` | `{"error":"integration_unavailable", ...}` | Falha de integração; tente de novo em alguns instantes |
+| `504` | `{"error":"outcome_unknown", ...}` | O resultado não é conhecido; confira o estado do canal com [Consultar canal](/channels/get-channel) antes de repetir |
+
 <Note>
   Após a conexão, o canal está pronto para enviar e receber mensagens. Use o `channelId` nos endpoints de [mensagens livres](/messages/introduction) e [templates](/templates/introduction).
 </Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

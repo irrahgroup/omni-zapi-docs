@@ -1,0 +1,30 @@
+---
+title: "Send GIF"
+description: "Send a GIF via WhatsApp, delivered as an image"
+openapi: "/en/z-api/openapi.json POST /send-gif"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+
+Sends a GIF, by **URL** or by **Base64**. The message is delivered as an **image**. The field can also be named `gifUrl`.
+
+<Note>
+  <ZapiResponseText lang="en" />
+</Note>
+
+<Note>
+  Size and format limits follow WhatsApp policies. See the [official WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/media).
+</Note>
+
+### Errors
+
+| Status | `error` response | When |
+|---|---|---|
+| `400` | `phone is required` | `phone` missing or empty |
+| `400` | `invalid media format: must be URL or base64 data URI` | The field is neither an `http`/`https` URL nor a Base64 with a `data:` prefix |
+| `422` | `message has no content this route can send` | The body has neither the media field nor `message`, so there is nothing to send |
+
+## See also
+
+- [Messages: common errors](/en/z-api/messages/introduction#common-errors)
+- [Limitations and refusals](/en/z-api/limitations)

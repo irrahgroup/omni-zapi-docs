@@ -1,21 +1,32 @@
 ---
 title: "Send button list"
-description: "Send messages with quick selection buttons"
+description: "Send messages with quick reply buttons"
 openapi: "/en/z-api/openapi.json POST /send-button-list"
 ---
 
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Overview
-
-Method for sending messages with quick selection buttons. The recipient can choose from the presented options, which work as a reply to the message.
-
-Optionally, you can include an **image** or **video** with the buttons by adding the `image` or `video` field inside `buttonList`.
-
-<Warning>
-  Send only `image` or `video`, never both at the same time.
-</Warning>
+Sends a message with up to 3 quick reply buttons. The recipient picks one, and the choice arrives as a reply.
 
 <Note>
   <ZapiResponseText lang="en" />
 </Note>
+
+The size limits come from WhatsApp: a message of up to 1024 characters, 3 buttons, button text of up to 20 characters and an `id` of up to 256. When a limit is exceeded, the response is `422` with the field text, such as `message must be at most 1024 characters in a button list` or `buttonList.buttons[0].label must be at most 20 characters`. The body must carry `label` in each button: the old name `text` is not read.
+
+### Errors
+
+| Status | `error` response | When |
+|---|---|---|
+| `400` | `phone is required` | `phone` missing or empty |
+| `422` | `message is required for a button list` | `message` missing or empty |
+| `422` | `buttonList.buttons is required` | `buttonList.buttons` missing or empty |
+| `422` | `buttonList.buttons must have at most 3 buttons` | More than 3 buttons |
+| `422` | `buttonList.buttons[0].label is required` | Button without `label` (the number in brackets is the button position) |
+| `422` | `buttonList.buttons labels must be unique` | Two buttons with the same `label` (the same applies to `id`: `buttonList.buttons ids must be unique`) |
+| `422` | `buttonList accepts headerImage or headerVideo, not both` | `headerImage` and `headerVideo` together |
+
+## See also
+
+- [Messages: common errors](/en/z-api/messages/introduction#common-errors)
+- [Limitations and refusals](/en/z-api/limitations)

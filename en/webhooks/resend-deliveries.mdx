@@ -1,0 +1,65 @@
+---
+title: "Resend deliveries in bulk"
+description: "Resend the deliveries that failed in a webhook's current failure episode"
+openapi: "/en/webhooks/openapi-central.json POST /v1/webhooks/deliveries/resend"
+---
+
+## Overview
+
+Resends the deliveries that failed in a webhook's **current failure episode**. The body is always:
+
+```json
+{ "webhookId": "A1B2C3D4E5F6789012345678901234AB", "episode": "current" }
+```
+
+The batch takes the webhook's `FAILED`, `NOT_SENT`, `EXPIRED` and `UNKNOWN` deliveries whose last attempt is at or after the first failure of the sequence, including the ones that arrived later. Deliveries with a resend in progress are left out. Each delivery is resent as in [Resend delivery](/en/webhooks/resend-delivery): to the webhook's current URL, authentication and secret, with the same `X-Webhook-Delivery-Id` and a greater `X-Webhook-Attempt`.
+
+There is no bulk resend by filter: without `webhookId`, or with `episode` other than `current`, the response is `400`.
+
+### Response
+
+The response is `202`:
+
+| Field | What it means |
+|---|---|
+| `queued` | Deliveries queued by this request, up to 1,000 |
+| `remaining` | Deliveries of the episode still left. A delivery whose resend failed counts here again |
+| `skippedTruncated` | Deliveries skipped because the body was cut |
+| `skippedNotResendable` | Deliveries skipped for another refusal reason |
+| `dailyRemaining` | How many resends still fit in this webhook's daily cap |
+| `oldestExpiresAt` | When the oldest retained deliveries leave the plan retention. Whatever is not resent by then is lost |
+
+### How to resend everything
+
+1. Fix your server first: the batch uses the webhook's current configuration.
+2. Request the batch.
+3. While `remaining` is greater than zero, request the next batch 2 minutes later, before `oldestExpiresAt`.
+4. Follow the result in [List deliveries](/en/webhooks/list-deliveries) with `webhookId` and `status=RESENT` or `status=FAILED`.
+
+### Limits
+
+| What | Limit |
+|---|---|
+| Deliveries per request | 1,000 |
+| Batches per webhook | 1 every 2 minutes |
+| Resends per webhook per day | 50,000, counting single and bulk resends |
+
+Above a limit, the response is `429`.
+
+### Errors
+
+| Case | Response |
+|---|---|
+| Without `webhookId` | `400` with `{"error": {"message": "webhookId e obrigatorio"}}` |
+| `episode` other than `current` | `400` with `{"error": {"message": "o reenvio em lote exige episode=current"}}` |
+| Webhook that does not exist or belongs to another workspace | `404` |
+| Webhook suspended or disabled | `422` with `details.reason` `WEBHOOK_SUSPENDED` or `WEBHOOK_DISABLED` |
+| Less than 2 minutes since the previous batch | `429` with `{"error": {"message": "O proximo lote deste webhook pode ser pedido em ate 2 minutos."}}` |
+| Daily cap reached | `429` |
+| The query took longer than 5 seconds | `503`. Try again |
+
+The authentication, IP and inactive workspace errors are in [Webhook center](/en/webhooks/central#errors-common-to-every-route).
+
+## See also
+
+- [Webhook center](/en/webhooks/central)

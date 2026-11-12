@@ -1,53 +1,113 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Desconectar Canal",
+    "title": "Z-API Omni - Desconectar canal Meta WhatsApp",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/disconnect": {
       "put": {
         "summary": "Desconectar canal Meta WhatsApp",
-        "description": "Desconecta um canal **META_WHATSAPP** da API Oficial do WhatsApp. Limpa todos os dados de conexão (WABA, phone ID, coexistência) e marca o canal como desconectado.",
+        "description": "Desconecta um canal `META_WHATSAPP` da API Oficial do WhatsApp e limpa os dados da conexão (WABA, phone ID, número conectado e coexistência). Não exige ENTERPRISE.",
         "operationId": "disconnectMetaChannel",
-        "tags": ["Canais"],
+        "tags": [
+          "Canais"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
-            "description": "ID do canal",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "description": "ID do canal (obtido em Criar canal ou Listar canais)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Canal desconectado com sucesso",
+            "description": "Com `true`, o canal fica desconectado e os dados da conexão são limpos. Com `false`, nada muda no canal.",
             "content": {
               "application/json": {
-                "schema": { "type": "boolean" },
+                "schema": {
+                  "type": "boolean"
+                },
                 "example": true
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": {
-            "description": "Canal não encontrado",
+          "400": {
+            "description": "Secret Key ausente, malformada ou inexistente, IP fora da lista de IPs liberados ou requisição inválida",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 404, "message": "Channel not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fora da lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Chamada com token OAuth de app conectado ou do MCP. Esta rota não está aberta ao OAuth: use a Secret Key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "insufficient_scope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente ou de outro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
               }
             }
           },
           "502": {
-            "description": "Erro de integração com o serviço externo",
+            "description": "Falha de integração. A operação não foi concluída; tente de novo em alguns instantes.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 502, "message": "Integration error" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
               }
             }
           }
@@ -56,23 +116,27 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Token inválido ou ausente.",
-        "content": {
-          "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
-          }
-        }
-      }
-    },
     "schemas": {
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string",
+            "description": "Motivo do erro"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estável do erro"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto do erro, em inglês"
+          }
         }
       }
     },
@@ -80,7 +144,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key gerada no painel de Segurança do Omni Z-API"
+        "description": "Secret Key gerada em Segurança, no painel do Z-API Omni. O prefixo `Bearer` é opcional."
       }
     }
   }

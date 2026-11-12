@@ -1,0 +1,74 @@
+---
+title: "Listar páginas do Messenger"
+description: "Liste as páginas do Facebook autorizadas no OAuth para escolher a do canal"
+openapi: "/pt/channels/openapi-list-messenger-pages.json POST /v1/channels/{channelId}/list-messenger-pages"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_MESSENGER" lang="pt" />
+
+## Conceituação
+
+Devolve as páginas do Facebook que o usuário autorizou no OAuth, para ele escolher qual vincular ao canal `META_MESSENGER`. É o passo do meio de [Conectar Messenger](/connect/messenger).
+
+Normalmente o SDK chama esta rota pelo método `getListMessengerPages`. Esta página é para quem integra sem o SDK.
+
+### Autenticação
+
+Esta rota usa a **Public Key**, não a Secret Key, porque é chamada do frontend. Ela vai crua no header, sem `Bearer`. O outro endpoint que aceita a Public Key é [Origens do SDK](/channels/sdk-info).
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/list-messenger-pages \
+  -H "Content-Type: application/json" \
+  -H "Authorization: SUA_PUBLIC_KEY" \
+  -d '{"code": "AQD8h2...", "redirectUri": "https://app.omni.z-api.io/oauth/proxy-messenger"}'
+```
+
+Envie o `code` devolvido pelo OAuth do Facebook e a mesma `redirectUri` usada nele.
+
+### Resposta
+
+Um array, com uma entrada por página:
+
+```json
+[{"pageId": "102938475601234", "name": "Minha Loja", "accessToken": "EAAG...", "category": "Shopping"}]
+```
+
+Mostre a lista, deixe o usuário escolher e envie o `pageId` e o `accessToken` da página escolhida para o seu backend, que finaliza com [Ativar Messenger](/channels/activate-messenger).
+
+### Canal ainda ativo no provedor
+
+Se o canal Messenger ainda estiver ativo no provedor, a rota responde `422`:
+
+```json
+{
+  "error": {
+    "errors": [
+      {
+        "name": "...",
+        "description": "The Messenger channel is still active on the provider. Deactivate it with POST /channels/{id}/deactivate-messenger using the Secret Key, then list the pages again."
+      }
+    ]
+  }
+}
+```
+
+Desative o canal com [Desativar Messenger](/channels/deactivate-messenger), usando a Secret Key, e liste as páginas de novo.
+
+### Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Public Key ausente, malformada ou inexistente |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `404` | `{"error":"app configuration not found"}` | Não há app configurado para o Messenger |
+| `422` | `{"error":{"errors":[...]}}` | O canal Messenger ainda está ativo no provedor (veja acima) |
+
+<Note>
+  O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel) ou de [Listar canais](/channels/list-channels).
+</Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

@@ -1,15 +1,15 @@
 ---
 title: "Introduction"
-description: "Understand how free messages work in Omni Z-API"
+description: "Understand how free messages work in Z-API Omni"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
 ## What are free messages?
 
-Free messages are messages you send **without needing an approved template**. You can send text, image, audio, video, document — any supported format — with complete freedom of content.
+Free messages are messages you send **without needing an approved template**. You can send text, image, audio, video, document or any other supported format, with complete freedom of content.
 
-The only condition: the [conversation window](/en/conversation-window) of **24 hours** must be open.
+On Meta Cloud API, the condition is that the [conversation window](/en/conversation-window) of **24 hours** is open.
 
 ## When can I use them?
 
@@ -23,6 +23,8 @@ Customer sends message → Window opens (24h) → You send free messages
 
 If the customer hasn't sent a message in the last 24 hours, the window is closed. In this case, the only option is to send a **Meta-approved template** through the [Send template](/en/messages/send-template) endpoint.
 
+The API does not check the window: a free message outside it is accepted with `200`, but Meta does not deliver it, and the failure arrives through the status webhook.
+
 After the customer **replies** to the template, the window reopens and you can use free messages again.
 
 ```
@@ -35,7 +37,7 @@ Window closed → Send template → Customer replies → Window reopens (24h)
 
 ## Available types
 
-All endpoints in this section use the same route:
+All sending endpoints in this section use the same route:
 
 `POST /v1/channels/{channelId}/messages`
 
@@ -44,6 +46,7 @@ What changes is the `content.type` field:
 | Type | Description |
 |---|---|
 | `TEXT` | Simple text message |
+| `LINK` | Text with a link and a preview |
 | `IMAGE` | Image message |
 | `AUDIO` | Audio message |
 | `VIDEO` | Video message |
@@ -52,17 +55,25 @@ What changes is the `content.type` field:
 | `LOCATION` | Location message |
 | `INTERACTIVE_ACTION` | Message with action buttons (URL and call) |
 | `INTERACTIVE_BUTTON` | Message with quick reply buttons |
-| `INTERACTIVE_LIST` | List of options in sections — *in development* |
-| `DOCUMENT` | File up to 100 MB, by URL or Base64 |
-| `REACTION` | Emoji on a message in the conversation — *in development* |
-| `LOCATION_REQUEST` | Asks for the customer's location — *in development* |
-| `FLOW` | Opens a published flow — *in development* |
-| `CATALOG` | Opens the account catalog — *in development* |
-| `PRODUCT` | One catalog product — *in development* |
-| `PRODUCT_LIST` | Showcase with sections — *in development* |
-| `ORDER_DETAILS` | Invoice with payment — *in development* |
-| `ORDER_STATUS` | Order progress — *in development* |
+| `INTERACTIVE_LIST` | List of options in sections |
+| `DOCUMENT` | File by URL or Base64 |
+| `REACTION` | Emoji on a message in the conversation |
+| `INTERACTIVE_FLOW` | Opens a Meta form (Flow) |
+| `INTERACTIVE_CATALOG` | Opens the account catalog |
+| `INTERACTIVE_SINGLE_PRODUCT` | One catalog product |
+| `INTERACTIVE_MULTI_PRODUCT` | Showcase with product sections |
 | `TEMPLATE` | Meta-approved template (outside the 24h window) |
+| `LOCATION_REQUEST` | Asks for the customer's location: *in development* |
+| `ORDER_DETAILS` | Invoice with payment: *in development* |
+| `ORDER_STATUS` | Order progress: *in development* |
+
+The types in development do not exist in the API yet: a call with them is refused with `400`.
+
+To change the text of a message already sent, use [Edit message](/en/messages/edit-message), which has its own route.
+
+## Replying to a message
+
+On [catalog](/en/messages/send-catalog), [flow](/en/messages/send-flow), [option list](/en/messages/send-interactive-list) and [product](/en/messages/send-product) messages, the `content.messageIdReply` field makes the message reply to another one, with a quote, and `content.messageIdForwarded` marks a forwarded message.
 
 ## API response
 
@@ -74,11 +85,24 @@ When the send is accepted, the API responds with `200` and the message identifie
 }
 ```
 
-The `messageId` is a 32-character uppercase hexadecimal string. Store this value: you need it to react to the message later.
+The `messageId` is a 32-character uppercase hexadecimal string. Store this value: you need it to react to the message and to edit it later.
 
 <Note>
-  This is the same value your webhook receives as `message._id`. Use it to reconcile the send call with the event you receive — see the [payload structure](/en/webhooks/payloads).
+  This is the same value your webhook receives as `message._id`. Use it to reconcile the send call with the event you receive. See the [payload structure](/en/webhooks/payloads).
 </Note>
+
+### What the 200 means
+
+The `200` means the message was **accepted and entered the sending queue**. It does not confirm that the
+message reached the customer: the channel can still refuse the delivery, for example outside the 24-hour
+window, with a type the channel does not have or with a file the channel does not accept.
+
+Follow the delivery through the status and delivery events of the [channel webhook](/en/webhooks/channel-webhooks).
+
+<Warning>
+  Repeating the same request with the Secret Key can duplicate the send: each accepted call becomes a message.
+  On `502` or `504`, check the webhook before repeating, because the request may have been accepted.
+</Warning>
 
 ## Send errors
 
@@ -106,14 +130,46 @@ If the channel is not connected at the time of the call, the API responds `422` 
 
 To send again, reconnect the channel (see [Connect a channel](/en/connect/introduction)) and repeat the call.
 
+### Type the channel does not have
+
+The API only refuses right away when the type does not exist on the channel and the type's [Availability per channel](/en/channels/message-support) marks the refusal. It answers `422` with `code` `BUSINESS_RULE_VIOLATION`, with no `subCode`, and the message is not sent. The reason comes in `message`, such as `"[UNSUPPORTED_CHANNEL_TYPE] O canal META_INSTAGRAM nao suporta mensagens do tipo LOCATION"`.
+
+In the other cases where the channel does not have the type, the API accepts with `200`, the message is not sent, and the failure arrives through the status webhook.
+
+### Refused media
+
+For image, audio, video, document and sticker, the API checks the attachment before sending. When it refuses,
+it responds `400` with `code` `VALIDATION_ERROR` and one of these `subCode` values:
+
+| `subCode` | When |
+|---|---|
+| `MEDIA_TOO_LARGE` | The file is above the channel limit |
+| `MEDIA_MIME_NOT_ALLOWED` | The file format is not accepted for the type |
+| `MEDIA_CAPTION_TOO_LONG` | The caption is longer than 1024 characters |
+| `MEDIA_URL_REQUIRED` | The attachment came without `url` |
+| `MEDIA_INVALID_URL` | The `url` is not a valid address |
+| `MEDIA_INVALID_DATA_URL` | The Base64 in `url` is malformed or missing the `;base64,` marker |
+
+The limits per channel are on the page of each media type, like [Send image](/en/messages/send-image).
+
 ### Other errors
 
 | Status | `code` | When |
 |---|---|---|
-| `400` | `VALIDATION_ERROR` | The body does not fit the message type: a `content.type` that does not exist or a missing required field. The field comes in `message`, like `"Field 'content.type': invalid value"` |
+| `400` | `VALIDATION_ERROR` | The body does not fit the message type: a `content.type` that does not exist or a missing required field. The field comes in `message`, like `"Field 'content.type': invalid value"` or `"Field 'content.body': is required for message type REACTION"` |
 | `422` | `BUSINESS_RULE_VIOLATION` | Another send rule refused the message. Without `subCode`, the reason is only in `message` |
-| `502` | — | Failure on our side while processing the send. The body carries `"error": "integration_unavailable"`, or `code` with the fixed `message` `"Message sending failed"` |
+| `502` | | Failure on our side while processing the send. The body carries `"error": "integration_unavailable"`, or `code` with the fixed `message` `"Message sending failed"` |
 
-<Note>
-  Refusals made before the message moves on to sending, such as an invalid Secret Key or an inactive subscription, come in another format, with only the `error` field.
-</Note>
+### Refusals before sending
+
+Refusals made before the message moves on to sending come in another format, with only the `error` field:
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `"Authorization invalid"` | Invalid or missing Secret Key |
+| `400` | `"203.0.113.10 not allowed"` | The source IP is outside the allowed IP list |
+| `400` | `"message payload is required"` | The body came empty (`{}`) |
+| `404` | `"instance not found"` | There is no instance for the Secret Key sent |
+| `422` | `"instance is not provisioned"` | The instance has not been provisioned yet |
+| `422` | `"instance subscription is not active"` | The instance subscription is not active |
+| `422` | `"You are blocked, contact support."` | The account is blocked. Contact support |

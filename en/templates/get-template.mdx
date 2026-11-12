@@ -1,0 +1,32 @@
+---
+title: "Get template"
+description: "Get one template of the WABA by its ID"
+openapi: "/en/templates/openapi.json GET /whatsapp/businesses/{wabaId}/templates/{templateId}"
+---
+
+## Overview
+
+Returns one template of the WABA by its exact `templateId`, with the same fields as [List templates](/en/templates/list-templates): `id`, `name`, `status`, `category`, `language`, `parameter_format`, `message_send_ttl_seconds` and `components`. The template comes straight in the body, without the `data` envelope.
+
+Use it to follow a specific template, such as checking the `status` after you [create](/en/templates/create-template) or [edit](/en/templates/update-template) it. To learn about the approval without polling, the preferred path is the [template webhook](/en/webhooks/template-webhooks).
+
+<Warning>
+  The response comes from the platform's records. A template created directly at Meta only shows up after [Sync templates](/en/templates/sync-templates).
+</Warning>
+
+### Errors
+
+| Status | When |
+|---|---|
+| `400` | Missing `Authorization` header, malformed or unknown key (`Authorization invalid`), or IP not in the Secret Key's allowed IP list |
+| `404` | `{"error": "Resource not found"}`. The same body is returned for a WABA from another workspace, a WABA that does not exist and a template that does not belong to the WABA |
+| `502` | `integration_unavailable`: temporary failure. Try again in a few moments |
+| `504` | `integration_timeout`: the read did not finish within 50 seconds. Retrying is safe |
+
+<Note>
+  The `wabaId` comes from [List WABAs](/en/templates/list-businesses). The `templateId` comes from [List templates](/en/templates/list-templates) or from the [Create template](/en/templates/create-template) response. `sync` and `media` are not accepted as `templateId`.
+</Note>
+
+## See also
+
+- [Introduction](/en/templates/introduction)

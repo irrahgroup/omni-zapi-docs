@@ -1,22 +1,26 @@
 ---
-title: "Create template webhook"
-description: "Register a template webhook (independent of any instance)"
+title: "Create global webhook"
+description: "Register a global webhook for account events (independent of any instance)"
 openapi: "/en/webhooks/openapi-template.json POST /v1/webhooks"
 ---
 
 ## Overview
 
-Creates a template webhook. It does not depend on an instance — the `instanceId` is stored as `null` automatically — and receives only WhatsApp template events.
+Creates a global webhook. It does not depend on an instance (the `instanceId` is stored as `null` automatically) and receives only account events.
 
-The `events` field accepts **only** `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY` and `CHANNEL_DISCONNECTED`. A channel event results in `422`.
+The `events` field accepts **only** the 9 account events: `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY`, the five billing events (`BILLING_PAYMENT_FAILED`, `BILLING_PAYMENT_RECOVERED`, `BILLING_SUBSCRIPTION_CANCELED`, `BILLING_INSTANCE_SUSPENDED`, `BILLING_INSTANCE_RELEASED`), `ACCOUNT_RESTRICTION` and `CHANNEL_DISCONNECTED`. What each one means is in [Accepted events](/en/webhooks/template-webhooks#accepted-events). A channel event results in `422`.
 
 <Note>
   The body, origins and reason codes of `CHANNEL_DISCONNECTED` are in [Channel disconnection notice](/en/webhooks/channel-disconnected).
 </Note>
 
-### `payloadFormat` is ignored
+### Delivery format: use `DEFAULT`
 
-For template webhooks the format is always `DEFAULT`. You may omit the field; if sent (any value), it is silently discarded and persisted as `DEFAULT`.
+The global webhook is delivered in the `DEFAULT` format. Send `payloadFormat` `DEFAULT` or omit the field.
+
+| Case | Response |
+|---|---|
+| `events` with `ACCOUNT_RESTRICTION` and `payloadFormat` `Z_API` or `CHATWOOT` | `422` with `{"error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"}` |
 
 ### HMAC signing
 
@@ -42,3 +46,7 @@ Event names are accepted in any letter case. The invalid-name response does not 
 <Note>
   After creation, routing may take up to ~5 min to reflect (cache TTL).
 </Note>
+
+## See also
+
+- [Global webhook (account events)](/en/webhooks/template-webhooks)

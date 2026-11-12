@@ -1,0 +1,43 @@
+---
+title: "Desativar Messenger"
+description: "Desconecte um canal META_MESSENGER e limpe o vínculo no provedor"
+openapi: "/pt/channels/openapi-deactivate-social.json POST /v1/channels/{channelId}/deactivate-messenger"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_MESSENGER" lang="pt" />
+
+## Conceituação
+
+Desconecta um canal `META_MESSENGER` e limpa o vínculo com a conta, página ou bot. Sem corpo.
+
+Use para trocar de página do Facebook ou resolver o `422` de [Listar páginas do Messenger](/channels/list-messenger-pages), que aparece quando o canal ainda está ativo no provedor.
+
+Use a Secret Key, do seu backend. Não exige ENTERPRISE.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/deactivate-messenger \
+  -H "Authorization: Bearer SUA_SECRET_KEY"
+```
+
+A resposta é um booleano. Com `true`, o canal fica desconectado e o vínculo é limpo. Com `false`, nada muda no canal.
+
+Para conectar de novo, refaça a conexão pelo SDK e finalize com [Ativar Messenger](/channels/activate-messenger). As rotas equivalentes dos outros canais sociais são [Desativar Instagram](/channels/deactivate-instagram), [Desativar Messenger](/channels/deactivate-messenger) e [Desativar Telegram](/channels/deactivate-telegram).
+
+### Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, malformada ou inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fora da [lista de IPs](/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Falha de integração; tente de novo em alguns instantes |
+
+<Note>
+  O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel) ou de [Listar canais](/channels/list-channels).
+</Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

@@ -45,37 +45,44 @@ El tipo viene del canal, no de la llamada. Defines el tipo en [Crear canal](/es/
     El objeto devuelto cambia según el canal. Consulta la tabla de abajo.
   </Step>
   <Step title="Tú finalizas en el backend">
-    Envía el resultado a [`POST /v1/channels/{channelId}/connect`](/es/channels/connect-channel) usando la Secret Key.
+    Envía el resultado a tu backend y llama a la ruta de finalización del tipo de canal, con la Secret Key. Cada canal tiene su propia ruta: consulta la sección Finalizar la conexión en el backend, más abajo.
   </Step>
 </Steps>
 
 ## Flujo de autorización por canal
 
-| Canal | Cómo autoriza | Página |
-|---|---|---|
-| **Meta Cloud API** | Embedded Signup de Meta | [Meta WhatsApp](/es/connect/meta-whatsapp) |
-| **WhatsApp Web** | Código QR | [WhatsApp Web](/es/connect/whatsapp-web) |
-| **Instagram** | OAuth de Instagram | [Instagram](/es/connect/instagram) |
-| **Messenger** | OAuth de Facebook + elección de página | [Messenger](/es/connect/messenger) |
-| **Telegram** | Token del bot | [Telegram](/es/connect/telegram) |
+|  | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|---|---|---|---|---|
+| **Cómo autoriza** | Embedded Signup de Meta | Código QR | OAuth de Instagram | OAuth de Facebook + elección de página | Token del bot |
+| **Página** | [Meta WhatsApp](/es/connect/meta-whatsapp) | [WhatsApp Web](/es/connect/whatsapp-web) | [Instagram](/es/connect/instagram) | [Messenger](/es/connect/messenger) | [Telegram](/es/connect/telegram) |
 
 ## La respuesta cambia según el canal
 
-Todos devuelven `success` y `channelId`. El resto depende del tipo:
+Todos devuelven `success`, `channelId` y `type`, el tipo de canal. El resto depende del tipo:
 
 | Campo | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
 |---|:---:|:---:|:---:|:---:|:---:|
-| `code` | ✅ | — | ✅ | ✅ | — |
-| `wabaId` | ✅ | — | — | — | — |
-| `phoneId` | ✅ | — | — | — | — |
-| `coexistence` | ✅ | — | — | — | — |
-| `accessToken` | — | — | ✅ | ✅ | — |
-| `pageId` | — | — | — | ✅ | — |
-| `botToken` | — | — | — | — | ✅ |
+| `code` | ✅ | ❌ | ✅ | ✅ | ❌ |
+| `wabaId` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `phoneId` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `coexistence` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `redirectUri` | ❌ | ❌ | ✅ | ✅ | ❌ |
+| `accessToken` | ❌ | ❌ | ✅ | ✅ | ❌ |
+| `pageId` | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `botToken` | ❌ | ❌ | ❌ | ❌ | ✅ |
 
-<Note>
-  No trates estos campos manualmente. Envía el objeto completo a tu backend y reenvíalo tal cual al endpoint de conexión: él sabe qué hacer con cada tipo.
-</Note>
+## Finalizar la conexión en el backend
+
+Envía el objeto completo a tu backend. Allí, usa el campo `type` para elegir la ruta de finalización y arma el cuerpo a partir del resultado del SDK, siempre con la Secret Key:
+
+|  | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|---|---|---|---|---|
+| **Ruta de finalización** | [`POST /v1/channels/{channelId}/connect`](/es/channels/connect-channel) | Sin finalización | [`POST /v1/channels/{channelId}/activate-instagram`](/es/channels/activate-instagram) | [`POST /v1/channels/{channelId}/activate-messenger`](/es/channels/activate-messenger) | [`POST /v1/channels/{channelId}/activate-telegram`](/es/channels/activate-telegram) |
+| **Cuerpo, a partir del resultado del SDK** | `code`, `wabaId`, `phoneId` y `coexistence` | El canal se conecta cuando se escanea el código QR. Compruébalo con [`GET /v1/channels/{channelId}/zapi/status`](/es/channels/zapi-status) | `{"code", "redirectUri"}` | `{"pageId", "accessToken", "redirectUri"}`. La página y el `accessToken` vienen de [Listar páginas de Messenger](/es/channels/list-messenger-pages); consulta [Messenger](/es/connect/messenger) | `{"token": "<botToken del SDK>"}`. El campo se llama `token`, no `botToken` |
+
+<Warning>
+  `POST /v1/channels/{channelId}/connect` es solo de WhatsApp Oficial. Con el resultado de otro canal, responde `400` con `{"error":"wabaId is required"}`.
+</Warning>
 
 <Warning>
   La conexión solo funciona desde dominios autorizados, y el SDK falla en silencio cuando el origen no está en la lista. Lee [Orígenes del SDK](/es/channels/sdk-info) antes de integrar.

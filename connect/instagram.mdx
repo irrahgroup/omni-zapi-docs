@@ -19,7 +19,7 @@ O código é o mesmo de qualquer canal:
 ```javascript
 const client = OmniZapi.newClient({ publicKey: 'SUA_PUBLIC_KEY' });
 const response = await client.connect({ channelId: 'ID_DO_CANAL' });
-// response: { success, channelId, code, accessToken }
+// response: { success, channelId, type, code, accessToken, redirectUri }
 ```
 
 O SDK abre uma janela em `instagram.com/oauth/authorize` com estes escopos:
@@ -29,7 +29,7 @@ O SDK abre uma janela em `instagram.com/oauth/authorize` com estes escopos:
 | `instagram_business_basic` | Ler dados básicos da conta profissional |
 | `instagram_business_manage_messages` | Enviar e receber mensagens diretas |
 
-Depois que o usuário autoriza, o SDK devolve `code` e `accessToken`. Repasse o objeto inteiro para [finalizar a conexão](/channels/connect-channel).
+Depois que o usuário autoriza, o SDK devolve `code`, `accessToken` e `redirectUri`. No seu backend, finalize com [Ativar Instagram](/channels/activate-instagram) (`POST /v1/channels/{channelId}/activate-instagram`), enviando `code` e `redirectUri` com a Secret Key.
 
 ## O que muda no Instagram
 
@@ -57,7 +57,7 @@ Para falar depois disso existem dois caminhos, ambos da Meta:
 <Warning>
   **O Instagram não tem template pré-aprovado.** A edge `message_templates` do Graph API existe apenas no node `Page`; nenhum node do Instagram a expõe.
 
-  O Omni Z-API conecta o Instagram por **Instagram Login** (escopos `instagram_business_basic` e `instagram_business_manage_messages`), que corresponde ao node `IGUserForIGOnlyAPI` — sem template e sem token de marketing.
+  O Z-API Omni conecta o Instagram por **Instagram Login** (escopos `instagram_business_basic` e `instagram_business_manage_messages`), que corresponde ao node `IGUserForIGOnlyAPI`, sem template e sem token de marketing.
 </Warning>
 
 O que você tem para falar depois da janela:
@@ -67,5 +67,5 @@ O que você tem para falar depois da janela:
 | ***Human agent tag*** | estende a janela de 24 h para **7 dias**, para atendimento humano |
 
 <Note>
-  Se o seu caso exige template ou mensagem de marketing recorrente no Instagram, o caminho seria conectar via **Facebook Login** com a conta vinculada a uma página — outro modelo de integração, que o Omni Z-API não usa hoje.
+  Se o seu caso exige template ou mensagem de marketing recorrente no Instagram, o caminho seria conectar via **Facebook Login** com a conta vinculada a uma página, outro modelo de integração, que o Z-API Omni não usa hoje.
 </Note>

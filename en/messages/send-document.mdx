@@ -1,10 +1,18 @@
 ---
 title: "Send document"
 description: "Send a PDF, a spreadsheet or another file by URL or Base64"
+openapi: "/en/messages/openapi-document.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
+import { MediaLimits } from '/snippets/media-limits.mdx';
+
+<WindowRule lang="en" template="with a document header" href="/en/templates/models/custom" />
+
+<ChannelSupport type="DOCUMENT" lang="en" />
+
+<MediaLimits lang="en" />
 
 ## Overview
 
@@ -13,60 +21,9 @@ Sends a file to the contact. The `content.type` field is `DOCUMENT`.
 The name the customer sees is built from `name` and `extension`: `"name": "invoice"` with `"extension": "pdf"`
 arrives as `invoice.pdf`, with the PDF icon.
 
-<WindowRule lang="en" template="with a document header" href="/en/templates/models/custom" />
-
-<ChannelSupport type="DOCUMENT" lang="en" />
-
-## Request body
-
-By URL:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "https://yourstore.com/invoice.pdf",
-        "name": "invoice",
-        "extension": "pdf",
-        "caption": "Here is your invoice"
-      }
-    ]
-  }
-}
-```
-
-By Base64, with the file type prefix in the `url` itself:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "data:application/pdf;base64,JVBERi0xLjQK...",
-        "name": "invoice",
-        "extension": "pdf",
-        "caption": "Here is your invoice"
-      }
-    ]
-  }
-}
-```
-
-## Attachment fields
-
-| Field | Description |
-|---|---|
-| `url` | The `https` address of the file, or the Base64 content with the type prefix, like `data:application/pdf;base64,` |
-| `name` | File name, **without** the extension |
-| `extension` | Extension, without the dot: `pdf`, `xlsx`, `docx`. It is what defines the icon. Without it, the file arrives with no name |
-| `caption` | Caption, shown with the file |
-
 ## Rules
+
+The `content.attachments` field is required: without it, the API answers `400` with `VALIDATION_ERROR`. Without `name`, the file arrives with no name.
 
 | Rule | Value |
 |---|---|
@@ -74,18 +31,12 @@ By Base64, with the file type prefix in the `url` itself:
 | Types | PDF, Word, Excel, PowerPoint, text |
 | Caption | up to 1024 characters |
 
-## What changes on each channel
-
-| Channel | How the file goes |
-|---|---|
-| Meta Cloud API and WhatsApp Web | By URL or Base64. Name and caption arrive as you sent them |
-| Telegram | **URL only.** For PDF, ZIP and GIF, the name shown is the one at the end of the URL |
-| Instagram | **PDF only, URL only**, with no name and no caption |
-
-The conditions are explained in [what each channel accepts](/en/channels/message-support#document-on-instagram-and-telegram).
-
 ## When the channel refuses the file
 
 The API answers `200` with the `messageId` as soon as it accepts the request. If the channel later refuses the
 file, for example a Base64 on Telegram or a spreadsheet on Instagram, the message does not arrive, and the
 failure comes in the message status webhook (`MESSAGE_STATUS`). See [channel webhooks](/en/webhooks/channel-webhooks).
+
+## See also
+
+- [Introduction](/en/messages/introduction)

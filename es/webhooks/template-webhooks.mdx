@@ -1,18 +1,18 @@
 ---
-title: "Webhooks de plantilla"
-description: "Recibe los eventos de plantilla de WhatsApp con independencia de la instancia"
+title: "Webhook global (eventos de la cuenta)"
+description: "Recibe los eventos de la cuenta, como plantillas, facturación y desconexión de canal, con independencia de la instancia"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
-## ¿Qué son los webhooks de plantilla?
+## ¿Qué es el webhook global?
 
-A diferencia de los webhooks **de canal**, {projectName} ofrece **webhooks de plantilla**: endpoints que reciben exclusivamente los eventos de plantilla de WhatsApp y que **no** dependen de una instancia (`instanceId = null`).
+A diferencia de los webhooks **de canal** y del **predeterminado**, el webhook global recibe solo los **eventos de la cuenta**: plantillas de WhatsApp, facturación, restricción de la cuenta en Meta y desconexión de canal. **No** depende de una instancia (`instanceId = null`).
 
 Conviven con las rutas de webhook por canal, que se mantienen sin cambios. El enrutamiento de los eventos de plantilla lo realiza el servicio interno con independencia de la instancia.
 
 <Note>
-  Los conceptos comunes a los dos tipos de webhook (quién puede gestionarlos, reglas de la URL, autenticación, firma HMAC y formatos de payload) están en la [Introducción](/es/webhooks/introduction).
+  Los conceptos comunes a los tres tipos de webhook (quién puede gestionarlos, reglas de la URL, autenticación, firma HMAC y formatos de payload) están en la [Introducción](/es/webhooks/introduction).
 </Note>
 
 ## Autenticación
@@ -23,9 +23,9 @@ Todas las rutas exigen el header:
 Authorization: Bearer <secret-key>
 ```
 
-## Eventos de plantilla admitidos
+## Eventos admitidos
 
-Un webhook de plantilla admite **únicamente** eventos de cuenta: los de plantilla, el aviso de desconexión de canal (`CHANNEL_DISCONNECTED`), los eventos de facturación y la restricción de la cuenta en Meta (`ACCOUNT_RESTRICTION`). Enviar un evento de canal devuelve `422`.
+El webhook global admite **únicamente** eventos de cuenta: los de plantilla, el aviso de desconexión de canal (`CHANNEL_DISCONNECTED`), los eventos de facturación y la restricción de la cuenta en Meta (`ACCOUNT_RESTRICTION`). Enviar un evento de canal devuelve `422`.
 
 | Valor (exacto, SNAKE_CASE) | Significado |
 |---|---|
@@ -38,9 +38,9 @@ Un webhook de plantilla admite **únicamente** eventos de cuenta: los de plantil
 ## Reglas de negocio
 
 1. **Alcance de los eventos (obligatorio).**
-   - Webhook **de plantilla** → solo admite eventos de cuenta (plantilla, `CHANNEL_DISCONNECTED`, facturación y `ACCOUNT_RESTRICTION`). Un evento de canal → `422`.
+   - Webhook **global** → solo admite eventos de cuenta (plantilla, `CHANNEL_DISCONNECTED`, facturación y `ACCOUNT_RESTRICTION`). Un evento de canal → `422`.
    - Webhook **de canal** → **no** puede suscribirse a eventos de plantilla → `422`.
-2. **`payloadFormat` se ignora.** En los webhooks de plantilla el formato es siempre `DEFAULT`. El campo se puede omitir; si se envía (con cualquier valor, incluido `CHATWOOT`), se descarta de forma silenciosa y se persiste como `DEFAULT`.
+2. **Usa `payloadFormat` `DEFAULT`.** El webhook global se entrega en `DEFAULT`; omite el campo o envía `DEFAULT`. Con `ACCOUNT_RESTRICTION`, `Z_API` o `CHATWOOT` devuelven `422` con `{"error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"}`. Los eventos de la plataforma (facturación y `CHANNEL_DISCONNECTED`) solo se entregan en `DEFAULT`: un `PATCH` que dejaría el webhook con esos eventos en otro formato devuelve `422` con `{"error": "Platform events are delivered only in DEFAULT payload format"}`.
 3. **`instanceId` se guarda como `null`** automáticamente: en estas rutas no hay campo de instancia. `channelId` también llega como `null`.
 
 ## Observaciones importantes
@@ -50,26 +50,26 @@ Un webhook de plantilla admite **únicamente** eventos de cuenta: los de plantil
 </Note>
 
 <Note>
-  **Caché del enrutador.** Tras crear o modificar un webhook de plantilla, el enrutamiento puede tardar hasta unos 5 min en reflejar el cambio (TTL de la caché).
+  **Caché del enrutador.** Tras crear o modificar el webhook global, el enrutamiento puede tardar hasta unos 5 min en reflejar el cambio (TTL de la caché).
 </Note>
 
 ## Gestión
 
 <CardGroup cols={2}>
-  <Card title="Crear webhook de plantilla" icon="plus" href="/es/webhooks/create-template-webhook">
-    Registra un nuevo endpoint de plantilla.
+  <Card title="Crear webhook global" icon="plus" href="/es/webhooks/create-template-webhook">
+    Registra un nuevo endpoint para los eventos de la cuenta.
   </Card>
-  <Card title="Listar webhooks de plantilla" icon="list" href="/es/webhooks/list-template-webhooks">
-    Consulta todos los webhooks de plantilla del tenant.
+  <Card title="Listar webhooks globales" icon="list" href="/es/webhooks/list-template-webhooks">
+    Consulta todos los webhooks globales del workspace.
   </Card>
-  <Card title="Consultar webhook de plantilla" icon="magnifying-glass" href="/es/webhooks/get-template-webhook">
-    Busca un webhook de plantilla concreto.
+  <Card title="Consultar webhook global" icon="magnifying-glass" href="/es/webhooks/get-template-webhook">
+    Busca un webhook global concreto.
   </Card>
-  <Card title="Actualizar webhook de plantilla" icon="pen" href="/es/webhooks/update-template-webhook">
+  <Card title="Actualizar webhook global" icon="pen" href="/es/webhooks/update-template-webhook">
     Actualiza la URL, los eventos, la autenticación o el estado.
   </Card>
-  <Card title="Eliminar webhook de plantilla" icon="trash" href="/es/webhooks/delete-template-webhook">
-    Elimina permanentemente un webhook de plantilla.
+  <Card title="Eliminar webhook global" icon="trash" href="/es/webhooks/delete-template-webhook">
+    Elimina permanentemente un webhook global.
   </Card>
   <Card title="Estructura de los payloads" icon="brackets-curly" href="/es/webhooks/template-payloads">
     Ejemplos reales de los payloads que se reciben para cada evento de plantilla.

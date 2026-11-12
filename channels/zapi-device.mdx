@@ -1,0 +1,54 @@
+---
+title: "Consultar aparelho"
+description: "Veja o número e o aparelho conectados a um canal WhatsApp Web"
+openapi: "/pt/channels/openapi-zapi-device.json GET /v1/channels/{channelId}/zapi/device"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="WEB_ROUTES" lang="pt" />
+
+## Conceituação
+
+Devolve os dados do número e do aparelho conectados a um canal `Z_API_WHATSAPP` (WhatsApp Web).
+
+Use a Secret Key, do seu backend. Não exige ENTERPRISE.
+
+```json
+{
+  "phone": "5511999999999",
+  "imgUrl": "https://pps.whatsapp.net/v/t61.24694-24/foto.jpg",
+  "name": "Loja",
+  "device": {"sessionName": "Z-API Omni", "deviceModel": "iPhone 15"},
+  "originalDevice": "iphone",
+  "sessionId": 0,
+  "isBusiness": true
+}
+```
+
+| Campo | O que é |
+|---|---|
+| `phone` | Número conectado, com DDI |
+| `imgUrl` | URL da foto do perfil |
+| `name` | Nome do perfil no WhatsApp |
+| `device.sessionName` | Nome da sessão em **Aparelhos conectados** |
+| `device.deviceModel` | Modelo do celular |
+| `isBusiness` | `true` quando o número é do WhatsApp Business |
+| `originalDevice`, `sessionId` | Informativos |
+
+### Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, malformada ou inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fora da [lista de IPs](/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Falha de integração; tente de novo em alguns instantes |
+
+<Note>
+  O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel) ou de [Listar canais](/channels/list-channels).
+</Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

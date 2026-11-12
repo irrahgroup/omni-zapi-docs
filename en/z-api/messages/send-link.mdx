@@ -1,19 +1,28 @@
 ---
 title: "Send link"
-description: "Send messages with link preview via WhatsApp"
+description: "Send messages with a link"
 openapi: "/en/z-api/openapi.json POST /send-link"
 ---
 
+<Warning>
+  The Z-API fields `linkUrl` and `linkDescription` are not read by this route. Use `canonicalUrl` and `description`.
+</Warning>
+
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Overview
-
-Method for sending messages with link preview, including image, title, and description.
-
-<Warning>
-  Links are only clickable if the recipient has your number saved in their contacts or has previously started a conversation with you.
-</Warning>
+Sends a message with a link. The body is handled as a link when it has `message` and `canonicalUrl` (or `matchedText`).
 
 <Note>
   <ZapiResponseText lang="en" />
 </Note>
+
+### Errors
+
+| Status | `error` response | When |
+|---|---|---|
+| `400` | `phone is required` | `phone` missing or empty |
+
+## See also
+
+- [Messages: common errors](/en/z-api/messages/introduction#common-errors)
+- [Limitations and refusals](/en/z-api/limitations)

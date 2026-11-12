@@ -1,22 +1,26 @@
 ---
-title: "Crear webhook de plantilla"
-description: "Registra un webhook de plantilla (independiente de la instancia)"
+title: "Crear webhook global"
+description: "Registra un webhook global para los eventos de la cuenta (independiente de la instancia)"
 openapi: "/es/webhooks/openapi-template.json POST /v1/webhooks"
 ---
 
 ## Conceptos
 
-Crea un webhook de plantilla. No depende de ninguna instancia —el `instanceId` se guarda como `null` automáticamente— y recibe únicamente los eventos de plantilla de WhatsApp.
+Crea un webhook global. No depende de ninguna instancia (el `instanceId` se guarda como `null` automáticamente) y recibe únicamente los eventos de la cuenta.
 
-El campo `events` admite **solo** `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY` y `CHANNEL_DISCONNECTED`. Un evento de canal devuelve `422`.
+El campo `events` admite **solo** los 9 eventos de la cuenta: `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY`, los cinco eventos de facturación (`BILLING_PAYMENT_FAILED`, `BILLING_PAYMENT_RECOVERED`, `BILLING_SUBSCRIPTION_CANCELED`, `BILLING_INSTANCE_SUSPENDED`, `BILLING_INSTANCE_RELEASED`), `ACCOUNT_RESTRICTION` y `CHANNEL_DISCONNECTED`. Lo que significa cada uno está en [Eventos admitidos](/es/webhooks/template-webhooks#eventos-admitidos). Un evento de canal devuelve `422`.
 
 <Note>
   El cuerpo, los orígenes y los códigos del motivo de `CHANNEL_DISCONNECTED` están en [Aviso de desconexión de canal](/es/webhooks/channel-disconnected).
 </Note>
 
-### `payloadFormat` se ignora
+### Formato de entrega: usa `DEFAULT`
 
-En los webhooks de plantilla el formato es siempre `DEFAULT`. Puedes omitir el campo; si lo envías (con cualquier valor), se descarta de forma silenciosa y se persiste como `DEFAULT`.
+El webhook global se entrega en el formato `DEFAULT`. Envía `payloadFormat` `DEFAULT` u omite el campo.
+
+| Caso | Respuesta |
+|---|---|
+| `events` con `ACCOUNT_RESTRICTION` y `payloadFormat` `Z_API` o `CHATWOOT` | `422` con `{"error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"}` |
 
 ### Firma HMAC
 
@@ -42,3 +46,7 @@ El nombre del evento se acepta en mayúsculas o minúsculas. La respuesta de nom
 <Note>
   Tras la creación, el enrutamiento puede tardar hasta unos 5 min en reflejar el cambio (TTL de la caché).
 </Note>
+
+## Véase también
+
+- [Webhook global (eventos de la cuenta)](/es/webhooks/template-webhooks)

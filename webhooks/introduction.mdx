@@ -1,6 +1,6 @@
 ---
 title: "Introdução"
-description: "Receba eventos em tempo real do Omni Z-API no seu sistema via webhooks"
+description: "Receba eventos em tempo real do Z-API Omni no seu sistema via webhooks"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
@@ -12,11 +12,11 @@ Webhooks são notificações HTTP que o {projectName} envia ao seu servidor quan
 Em vez de o seu sistema consultar a API periodicamente (polling), o {projectName} **envia os eventos para você** assim que acontecem.
 
 ```
-Evento acontece → Omni Z-API → POST para sua URL → Seu sistema processa
+Evento acontece → Z-API Omni → POST para sua URL → Seu sistema processa
 ```
 
 <Note>
-  Qualquer secret key válida de um workspace ativo pode gerenciar webhooks, de canal e de template. Não é preciso nenhuma role específica na conta. Se o workspace não estiver ativo, as chamadas de webhook retornam `422` com `{"error": "Webhook management requires an active workspace"}`.
+  Qualquer secret key válida de um workspace ativo pode gerenciar webhooks: de canal, padrão e global. Não é preciso nenhuma role específica na conta. Se o workspace não estiver ativo, as chamadas de webhook retornam `422` com `{"error": "Webhook management requires an active workspace"}`.
 </Note>
 
 ## Tipos de webhook
@@ -27,8 +27,8 @@ O {projectName} tem três tipos de webhook. O que **muda** entre eles são os ev
   <Card title="Webhooks de canal" icon="hashtag" href="/webhooks/channel-webhooks">
     Recebem os eventos de um canal específico (mensagens, entrega, conexão).
   </Card>
-  <Card title="Webhooks de template" icon="brackets-curly" href="/webhooks/template-webhooks">
-    Recebem os eventos de template do WhatsApp, independentes de instância.
+  <Card title="Webhook global (eventos da conta)" icon="brackets-curly" href="/webhooks/template-webhooks">
+    Recebe os eventos da conta (templates do WhatsApp, cobrança, restrição da conta e desconexão de canal), sem depender de instância.
   </Card>
   <Card title="Webhook padrão" icon="layer-group" href="/webhooks/default-webhooks">
     Recebe os eventos de todos os canais do workspace que não têm webhook próprio.
@@ -41,17 +41,17 @@ O {projectName} suporta três formatos de payload:
 
 | Formato | Descrição |
 |---|---|
-| `DEFAULT` | Formato padrão do Omni Z-API |
+| `DEFAULT` | Formato padrão do Z-API Omni |
 | `Z_API` | Formato compatível com a Z-API — mantém a estrutura que suas integrações já tratam, ideal para quem está migrando |
 | `CHATWOOT` | Formato esperado pelo Chatwoot, para plugar o canal direto na caixa de entrada dele |
 
 <Note>
-  `payloadFormat` vale apenas para **webhooks de canal**. Nos [webhooks de template](/webhooks/template-webhooks) o formato é sempre `DEFAULT` e o campo é descartado.
+  O [webhook global](/webhooks/template-webhooks) é entregue em `DEFAULT`: use sempre `DEFAULT` nele. Com `ACCOUNT_RESTRICTION` ou com os eventos da plataforma (cobrança e `CHANNEL_DISCONNECTED`), outro formato responde `422`. O webhook padrão não aceita `CHATWOOT`.
 </Note>
 
 ## URL do webhook
 
-Ao criar um webhook, e ao trocar a URL de um webhook existente, o {projectName} confere a `url` antes de gravar. As regras valem para os dois tipos de webhook.
+Ao criar um webhook, e ao trocar a URL de um webhook existente, o {projectName} confere a `url` antes de gravar. As regras valem para os três tipos de webhook.
 
 | Regra | Se não for atendida |
 |---|---|
@@ -104,3 +104,8 @@ Quando habilitado:
 <Warning>
   O `secret` é exibido **apenas** na resposta de criação ou de atualização com `signing: true`. Armazene-o com segurança — ele não pode ser recuperado depois.
 </Warning>
+
+## Entrega e acompanhamento
+
+- Como cada evento é entregue, quando é enviado de novo e como deduplicar: [Entrega e novas tentativas](/webhooks/delivery).
+- Para ver as entregas de cada webhook, o estado de cada um e reenviar o que falhou: [Central de webhooks](/webhooks/central).

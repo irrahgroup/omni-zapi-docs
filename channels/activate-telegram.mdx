@@ -1,0 +1,60 @@
+---
+title: "Ativar Telegram"
+description: "Finalize no backend a conexão de um canal BOT_TELEGRAM com o token do bot"
+openapi: "/pt/channels/openapi-activate-telegram.json POST /v1/channels/{channelId}/activate-telegram"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_TELEGRAM" lang="pt" />
+
+## Conceituação
+
+Finaliza a conexão de um canal `BOT_TELEGRAM` com o token do bot. É o último passo de [Conectar Telegram](/connect/telegram).
+
+O SDK devolve o token em `botToken`, mas o campo desta rota se chama `token`:
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-telegram \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{"token": "123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"}'
+```
+
+Use a Secret Key, do seu backend. Não exige ENTERPRISE.
+
+Com sucesso, a resposta traz o bot conectado:
+
+```json
+{"externalId": "123456789", "connected": true, "displayName": "minhaloja_bot"}
+```
+
+### Reconexão automática
+
+Se a conta já estiver ativa no provedor e o canal estiver desconectado com assinatura ativa (`PAID`, `TRIAL`, `BOLETO_PENDING` ou `CANCELLATION_PROCESS`), o Z-API Omni desfaz a conexão anterior e ativa de novo sozinho. Caso contrário, a API responde `422` com o erro do provedor em `error`.
+
+A ativação tem prazo de 50 segundos. Se passar, a API responde `504`: com `integration_timeout`, nada mudou e você pode repetir; com `outcome_unknown`, a conexão anterior já foi desfeita, então confira o canal com [Consultar canal](/channels/get-channel) antes de repetir.
+
+### Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, malformada ou inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fora da [lista de IPs](/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `422` | `{"error":{...}}` | O provedor recusou a ativação; o erro do provedor vem em `error` |
+| `502` | `{"error":"integration_unavailable", ...}` | Falha de integração; tente de novo em alguns instantes |
+| `504` | `{"error":"integration_timeout", ...}` | Passou do prazo de 50 segundos e nada mudou no canal; pode repetir |
+| `504` | `{"error":"outcome_unknown", ...}` | Passou do prazo depois de desfazer a conexão anterior; confira com [Consultar canal](/channels/get-channel) antes de repetir |
+
+### Depois da ativação
+
+Confira o canal com [Consultar canal](/channels/get-channel). Para trocar de bot depois, desative com [Desativar Telegram](/channels/deactivate-telegram) e conecte de novo.
+
+<Note>
+  O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel) ou de [Listar canais](/channels/list-channels).
+</Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

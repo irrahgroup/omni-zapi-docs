@@ -12,7 +12,7 @@ Channel webhooks are associated with a specific channel via `channelId` and rece
 A single channel can have **multiple webhooks** with different configurations — for example, one for messages and another for connection events.
 
 <Note>
-  The concepts common to both webhook types (who can manage webhooks, URL rules, authentication, HMAC signing, and payload formats) are in the [Introduction](/en/webhooks/introduction).
+  The concepts common to all three webhook types (who can manage webhooks, URL rules, authentication, HMAC signing, and payload formats) are in the [Introduction](/en/webhooks/introduction).
 </Note>
 
 ## Available events
@@ -30,12 +30,39 @@ A single channel can have **multiple webhooks** with different configurations �
 | `INITIAL_DATA` | Initial data sync when channel connects |
 | `BLOCK` | Contact block event |
 
+## Events by channel type
+
+Each channel type emits only some events. When you create or update a channel webhook, the events are checked against the channel type.
+
+| Event | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|:---:|:---:|:---:|:---:|:---:|
+| `MESSAGE_RECEIVED` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `MESSAGE_DELIVERY` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `MESSAGE_STATUS` | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `RECEIVED_AND_DELIVERY` | ❌ | ✅ | ✅ | ✅ | ✅ |
+| `PRESENCE_CHAT` | ❌ | ✅ | ❌ | ❌ | ❌ |
+| `CONNECTED` | ✅ | ✅ | ❌ | ❌ | ✅ |
+| `DISCONNECTED` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `INITIAL_DATA` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `RECEIVED_STATUS` | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `BLOCK` | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+No channel type accepts `RECEIVED_STATUS` or `BLOCK`.
+
+An event the channel type does not emit is refused with `422`, and nothing is saved:
+
+```json
+{ "error": "Events [PRESENCE_CHAT] are not supported by middleware META_WHATSAPP" }
+```
+
+On `PATCH`, an event already stored on the webhook is still accepted, even outside the table: this way an old webhook can be edited and the event removed.
+
 <Note>
   `DISCONNECTED` stays as it is, with no reason code. To receive the disconnection of every channel in the workspace in one place, with a reason code, see the [Channel disconnection notice](/en/webhooks/channel-disconnected).
 </Note>
 
 <Note>
-  Channel webhooks **cannot** subscribe to template events (`422`). To receive WhatsApp template events, use the [Template webhooks](/en/webhooks/template-webhooks).
+  Channel webhooks **cannot** subscribe to template events (`422`). To receive WhatsApp template events, use the [Global webhook](/en/webhooks/template-webhooks).
 </Note>
 
 ## Management

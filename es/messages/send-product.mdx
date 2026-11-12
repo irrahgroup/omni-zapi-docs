@@ -1,45 +1,22 @@
 ---
 title: "Enviar producto"
 description: "Manda un producto del catálogo, con foto, nombre y precio"
+openapi: "/es/messages/openapi-product.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
-  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
-</Warning>
+<WindowRule lang="es" template="de producto único" href="/es/templates/models/spm" />
+
+<ChannelSupport type="INTERACTIVE_SINGLE_PRODUCT" lang="es" />
 
 ## Conceptos
 
-Envía un único producto del catálogo. La foto, el nombre y el precio salen de Commerce Manager.
+Envía un único producto del catálogo. La foto, el nombre y el precio vienen de Commerce Manager.
 
-El campo `content.type` será `PRODUCT`.
+El campo `content.type` es `INTERACTIVE_SINGLE_PRODUCT`.
 
-<WindowRule lang="es" template="de producto único" href="/es/templates/models/spm" />
+## Véase también
 
-<ChannelSupport type="PRODUCT" lang="es" />
-
-## Cuerpo de la petición
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "PRODUCT",
-    "message": "Este es el producto por el que preguntaste.",
-    "footer": "Stock limitado",
-    "catalogId": "1234567890",
-    "productRetailerId": "SKU-1042"
-  }
-}
-```
-
-## Reglas
-
-| Regla | Valor |
-|---|---|
-| `catalogId` y `productRetailerId` | los dos obligatorios |
-| Mensaje y pie | opcionales |
-| SKU inexistente | Meta lo rechaza y no entrega el mensaje |
+- [Errores al enviar](/es/messages/introduction#errores-al-enviar)

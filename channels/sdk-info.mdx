@@ -1,14 +1,14 @@
 ---
 title: "Origens do SDK"
 description: "Libere os domínios que podem chamar o SDK de conexão e diagnostique falhas silenciosas"
-openapi: "/pt/channels/openapi-sdk-info.json GET /instances/{channelId}/sdk-info"
+openapi: "/pt/channels/openapi-sdk-info.json GET /v1/channels/{channelId}/sdk-info"
 ---
 
 ## Conceituação
 
 O SDK de conexão resolve `{ success: false }` **sem dizer o motivo**. Na prática ele falha por dois caminhos muito diferentes, e este endpoint resolve o primeiro.
 
-## Falha 1 — origem não liberada
+## Falha 1: origem não liberada
 
 O SDK só funciona a partir de domínios cadastrados em `allowOrigins`. Se a origem do navegador não estiver na lista, ele aborta com:
 
@@ -20,7 +20,7 @@ Use este endpoint **antes** de chamar o SDK para saber se a origem atual está l
 
 ```javascript
 const info = await fetch(
-  `https://api.omni.z-api.io/instances/${channelId}/sdk-info`,
+  `https://api.omni.z-api.io/v1/channels/${channelId}/sdk-info`,
   { headers: { Authorization: SUA_PUBLIC_KEY } },
 ).then((r) => r.json());
 
@@ -28,16 +28,16 @@ const liberado = info.allowOrigins.includes(window.location.origin);
 ```
 
 <Note>
-  O domínio do painel do Omni Z-API é sempre aceito, mesmo sem constar em `allowOrigins`. Você só precisa cadastrar os **seus** domínios — inclusive `http://localhost:3000` para desenvolvimento.
+  As origens do painel do Z-API Omni aparecem sempre dentro de `allowOrigins`: primeiro vêm as origens do workspace, depois `https://app.hubmessage.io` e `https://app.omni.z-api.io`. Você só precisa cadastrar os **seus** domínios, inclusive `http://localhost:3000` para desenvolvimento.
 </Note>
 
 <Warning>
   Cadastrar origens é feito no painel, em **Segurança**. Não há endpoint público para isso.
 </Warning>
 
-## Falha 2 — popup bloqueado
+## Falha 2: popup bloqueado
 
-O SDK abre uma janela com `window.open`. Se você chamar `client.connect()` **depois de um `await`**, o gesto do usuário já se perdeu e o navegador bloqueia o popup — o SDK também devolve `{ success: false }`.
+O SDK abre uma janela com `window.open`. Se você chamar `client.connect()` **depois de um `await`**, o gesto do usuário já se perdeu e o navegador bloqueia o popup, e o SDK também devolve `{ success: false }`.
 
 ```javascript
 // Errado: o await consome o gesto do clique
@@ -56,11 +56,53 @@ async function onClick() {
 
 ## Autenticação
 
-Este é o **único** endpoint que aceita a Public Key, e ela vai crua no header — sem `Bearer`:
+Este endpoint e o de [Listar páginas do Messenger](/channels/list-messenger-pages) são os que aceitam a Public Key. Ela vai crua no header, sem `Bearer`:
 
 ```bash
-curl https://api.omni.z-api.io/instances/ID_DO_CANAL/sdk-info \
+curl https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/sdk-info \
   -H "Authorization: SUA_PUBLIC_KEY"
 ```
 
 Isso é intencional: o endpoint é chamado do frontend, onde a [Public Key pode ser exposta](/authentication).
+
+<Note>
+  As rotas `/instances/{channelId}/sdk-info`, `/devices/{channelId}/sdk-info` e `/channels/{channelId}/sdk-info`, com ou sem o prefixo `/v1`, respondem o mesmo e continuam funcionando.
+</Note>
+
+## Resposta
+
+```json
+{
+  "middleware": "META_WHATSAPP",
+  "appId": "1234567890123456",
+  "appConfig": "987654321098765",
+  "allowOrigins": [
+    "https://app.suaempresa.com",
+    "http://localhost:3000",
+    "https://app.hubmessage.io",
+    "https://app.omni.z-api.io"
+  ],
+  "appCustom": false,
+  "appInstagramId": null
+}
+```
+
+| Campo | O que é |
+|---|---|
+| `middleware` | Tipo do canal, por exemplo `META_WHATSAPP` |
+| `appId` e `appConfig` | O app da Meta que o SDK usa |
+| `allowOrigins` | Origens liberadas: as do workspace e depois as do painel |
+| `appCustom` | `true` quando o workspace usa app próprio |
+| `appInstagramId` | ID do app do Instagram |
+
+## Erros
+
+| Status | Corpo | Quando |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Public Key ausente, malformada ou inexistente |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente ou de outro workspace |
+| `404` | `{"error":"app configuration not found"}` | Não há app configurado para o tipo do canal |
+
+## Veja também
+
+- [Introdução](/channels/introduction)

@@ -1,6 +1,6 @@
 ---
 title: "Autenticación"
-description: "Cómo generar y utilizar tus credenciales de API en Omni Z-API"
+description: "Cómo generar y utilizar tus credenciales de API en Z-API Omni"
 ---
 
 import { projectName, frontendUrl } from '/snippets/variables.mdx';
@@ -18,6 +18,8 @@ La Public Key la utiliza el SDK de conexión de canales ([`@omnizapi/connect`](h
 <Note>
   La Public Key se puede exponer en el frontend de tu aplicación, ya que sus permisos se limitan únicamente a la conexión de canales.
 </Note>
+
+Dos rutas de la API aceptan la Public Key: [Orígenes del SDK](/es/channels/sdk-info) y [Listar páginas de Messenger](/es/channels/list-messenger-pages). En las demás, usa la Secret Key.
 
 Ejemplo de uso:
 
@@ -47,6 +49,27 @@ curl -X GET https://api.omni.z-api.io/whatsapp/businesses \
 ```
 
 ---
+
+## Errores comunes
+
+Estos errores valen para las rutas de la API, en cualquier área de producto (canales, plantillas, mensajes, webhooks). El cuerpo es `{"error": "<texto>"}`. Cuando el error viene de un servicio interno en JSON, el campo `error` trae ese objeto.
+
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `400` | `Authorization invalid` | Header `Authorization` ausente, o clave malformada o inexistente |
+| `400` | `<ip> not allowed` | El IP de origen no está en la [lista de IPs](/es/security/ip-restriction) del workspace. Cuando no se identifica el IP de origen: `ip not allowed` |
+| `400` | `Required request body is missing` | Cuerpo ausente o ilegible en una ruta que exige cuerpo |
+| `404` | `Instance not found` (`instance not found` en las rutas de mensajes) | El canal no existe o es de otro workspace |
+| `422` | `instance is not provisioned` | Rutas de mensajes: el canal todavía no terminó de aprovisionarse |
+| `422` | `instance subscription is not active` | Rutas de mensajes: el canal no tiene suscripción activa |
+| `422` | `You are blocked, contact support.` | Rutas de mensajes: el workspace está bloqueado |
+| `422` | `operation not supported for this instance` | Rutas de mensajes: el tipo del canal no acepta la operación |
+| `502` | `integration_unavailable` | Falla en un servicio interno. La respuesta trae `message`. Intenta de nuevo en unos instantes |
+| `504` | `integration_timeout` | El servicio no respondió a tiempo. En una lectura, repetir es seguro |
+| `504` | `outcome_unknown` | Se acabó el plazo en una operación que cambia datos. Verifica el estado antes de repetir |
+| `504` | `template_sync_timeout` | La sincronización de plantillas con Meta superó el plazo y sigue en curso. Lista las plantillas de nuevo en unos instantes |
+
+Las rutas de [mensajes](/es/messages/introduction) y la [compatibilidad con Z-API](/es/z-api/limitations) tienen errores propios, descritos en cada sección.
 
 ## Resumen
 

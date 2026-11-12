@@ -4,9 +4,17 @@ description: "Crea un canal nuevo mediante la API"
 openapi: "/es/channels/openapi-create.json POST /v1/channels"
 ---
 
+import { EnterpriseText } from '/snippets/notes.mdx';
+
+<Warning>
+  <EnterpriseText lang="es" />
+</Warning>
+
 ## Conceptos
 
 Crea un canal nuevo. Una vez creado, el canal debe conectarse (desde el panel o con el SDK) para poder empezar a enviar y recibir mensajes.
+
+El canal nace en `TRIAL` por 2 días; para mantenerlo, suscríbelo con [Suscribir canal](/es/channels/subscribe-channel).
 
 El `id` devuelto es el `channelId` que se usa en todas las llamadas a la API.
 
@@ -21,9 +29,9 @@ Cuando la creación se autentica con la **Secret Key** del workspace, la respues
 }
 ```
 
-Es el mismo token que [Consultar canal](/es/channels/get-channel) devuelve con la Secret Key. Úsalo en las rutas de código QR y de estado del canal, sin tener que consultar el canal después de crearlo.
+Es el mismo token que [Consultar canal](/es/channels/get-channel) devuelve con la Secret Key. El token identifica el canal en las rutas con el formato de Z-API, con el token en la ruta. Las rutas de esta referencia usan la Secret Key en el header Authorization.
 
-Cuando el canal se crea con el **token OAuth** de una app autorizada, la respuesta sigue trayendo solo el `id`: la clave `token` no aparece. Trata el campo como opcional.
+Crear canal acepta solo la Secret Key.
 
 Las respuestas de error no cambian y no traen token.
 
@@ -59,5 +67,23 @@ El nombre del canal es único entre los canales activos del workspace. Si otro c
 - Reconozca el rechazo por el campo `error`, que es estable. El `message` siempre está en inglés y se puede mostrar al usuario.
 
 <Note>
-**Cambio de comportamiento.** A partir del **[fecha a confirmar]**, `POST /v1/channels` rechaza con `409 channel_name_in_use` el nombre ya usado por otro canal activo del workspace. Antes, la creación aceptaba nombres repetidos. Los canales existentes no cambian, incluso los que ya tienen el nombre repetido. Si su integración crea canales con nombres repetidos, trate el `409` eligiendo otro nombre.
+  Los canales creados antes de esta regla no cambian, incluso los que tienen el nombre repetido. Si tu integración crea canales con nombres repetidos, trata el `409` eligiendo otro nombre.
 </Note>
+
+### Errores
+
+| Estado | Cuerpo | Cuándo |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, mal formada o inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fuera de la [lista de IPs](/es/security/ip-restriction) |
+| `400` | `{"error":"type is required"}` | Cuerpo sin `type` |
+| `400` | `{"error":"Required request body is missing"}` | `type` fuera de la lista de tipos, o JSON inválido |
+| `409` | `{"error":"channel_name_in_use", ...}` | Nombre ya usado por otro canal activo |
+| `422` | `{"error":"channel_type_not_enabled","message":"Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."}` | WhatsApp Web no habilitado en el workspace |
+| `422` | `{"error":"Channel creation requires ENTERPRISE role"}` | Cuenta sin el rol ENTERPRISE |
+| `502` | `{"error":"integration_unavailable", ...}` | Falla de integración; vuelve a intentarlo en unos instantes |
+| `504` | | La creación no respondió a tiempo; antes de repetir, revisa en [Listar canales](/es/channels/list-channels) si el canal se creó |
+
+## Véase también
+
+- [Introducción](/es/channels/introduction)

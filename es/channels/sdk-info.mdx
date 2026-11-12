@@ -1,14 +1,14 @@
 ---
 title: "Orígenes del SDK"
 description: "Autoriza los dominios que pueden llamar al SDK de conexión y diagnostica fallos silenciosos"
-openapi: "/es/channels/openapi-sdk-info.json GET /instances/{channelId}/sdk-info"
+openapi: "/es/channels/openapi-sdk-info.json GET /v1/channels/{channelId}/sdk-info"
 ---
 
 ## Conceptos
 
 El SDK de conexión resuelve `{ success: false }` **sin decir el motivo**. En la práctica falla por dos caminos muy distintos, y este endpoint resuelve el primero.
 
-## Fallo 1 — origen no autorizado
+## Fallo 1: origen no autorizado
 
 El SDK solo funciona desde dominios registrados en `allowOrigins`. Si el origen del navegador no está en la lista, aborta con:
 
@@ -20,7 +20,7 @@ Usa este endpoint **antes** de llamar al SDK para saber si el origen actual est�
 
 ```javascript
 const info = await fetch(
-  `https://api.omni.z-api.io/instances/${channelId}/sdk-info`,
+  `https://api.omni.z-api.io/v1/channels/${channelId}/sdk-info`,
   { headers: { Authorization: SU_PUBLIC_KEY } },
 ).then((r) => r.json());
 
@@ -28,14 +28,14 @@ const permitido = info.allowOrigins.includes(window.location.origin);
 ```
 
 <Note>
-  El dominio del panel de Omni Z-API se acepta siempre, aunque no figure en `allowOrigins`. Solo tienes que registrar **tus** dominios, incluido `http://localhost:3000` para desarrollo.
+  Los orígenes del panel de Z-API Omni aparecen siempre dentro de `allowOrigins`: primero vienen los orígenes del workspace y después `https://app.hubmessage.io` y `https://app.omni.z-api.io`. Solo tienes que registrar **tus** dominios, incluido `http://localhost:3000` para desarrollo.
 </Note>
 
 <Warning>
   El registro de orígenes se hace en el panel, en **Seguridad**. No hay endpoint público para eso.
 </Warning>
 
-## Fallo 2 — popup bloqueado
+## Fallo 2: popup bloqueado
 
 El SDK abre una ventana con `window.open`. Si llamas a `client.connect()` **después de un `await`**, el gesto del usuario ya se perdió y el navegador bloquea el popup: el SDK también devuelve `{ success: false }`.
 
@@ -56,11 +56,53 @@ async function onClick() {
 
 ## Autenticación
 
-Este es el **único** endpoint que acepta la Public Key, y va en crudo en el header, sin `Bearer`:
+Este endpoint y el de [Listar páginas de Messenger](/es/channels/list-messenger-pages) son los que aceptan la Public Key. Va en crudo en el header, sin `Bearer`:
 
 ```bash
-curl https://api.omni.z-api.io/instances/ID_DEL_CANAL/sdk-info \
+curl https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/sdk-info \
   -H "Authorization: SU_PUBLIC_KEY"
 ```
 
 Es intencionado: el endpoint se llama desde el frontend, donde la [Public Key se puede exponer](/es/authentication).
+
+<Note>
+  Las rutas `/instances/{channelId}/sdk-info`, `/devices/{channelId}/sdk-info` y `/channels/{channelId}/sdk-info`, con o sin el prefijo `/v1`, responden igual y siguen funcionando.
+</Note>
+
+## Respuesta
+
+```json
+{
+  "middleware": "META_WHATSAPP",
+  "appId": "1234567890123456",
+  "appConfig": "987654321098765",
+  "allowOrigins": [
+    "https://app.suaempresa.com",
+    "http://localhost:3000",
+    "https://app.hubmessage.io",
+    "https://app.omni.z-api.io"
+  ],
+  "appCustom": false,
+  "appInstagramId": null
+}
+```
+
+| Campo | Qué es |
+|---|---|
+| `middleware` | Tipo de canal, por ejemplo `META_WHATSAPP` |
+| `appId` y `appConfig` | La app de Meta que usa el SDK |
+| `allowOrigins` | Orígenes permitidos: los del workspace y después los del panel |
+| `appCustom` | `true` cuando el workspace usa su propia app |
+| `appInstagramId` | ID de la app de Instagram |
+
+## Errores
+
+| Estado | Cuerpo | Cuándo |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Public Key ausente, mal formada o inexistente |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente o de otro workspace |
+| `404` | `{"error":"app configuration not found"}` | No hay app configurada para el tipo de canal |
+
+## Véase también
+
+- [Introducción](/es/channels/introduction)

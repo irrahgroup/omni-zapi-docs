@@ -1,0 +1,301 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Send document",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Send document",
+        "description": "Sends a file to the contact, by URL or Base64.",
+        "operationId": "sendDocumentMessage",
+        "tags": [
+          "Messages"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "YOUR_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendDocumentRequest"
+              },
+              "examples": {
+                "url": {
+                  "summary": "By URL",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "DOCUMENT",
+                      "attachments": [
+                        {
+                          "url": "https://sualoja.com/nota-fiscal.pdf",
+                          "name": "nota-fiscal",
+                          "extension": "pdf",
+                          "caption": "Segue a sua nota fiscal"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "base64": {
+                  "summary": "By Base64",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "DOCUMENT",
+                      "attachments": [
+                        {
+                          "url": "data:application/pdf;base64,JVBERi0xLjQK...",
+                          "name": "nota-fiscal",
+                          "extension": "pdf",
+                          "caption": "Segue a sua nota fiscal"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Message sent successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Secret Key missing, malformed or nonexistent (`Authorization invalid`), IP outside the IP list (`<ip> not allowed`) or a body that does not fit the message type (`code` `VALIDATION_ERROR`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorText"
+                },
+                {
+                  "$ref": "#/components/schemas/SendError"
+                }
+              ]
+            },
+            "examples": {
+              "authorization": {
+                "summary": "Invalid Secret Key",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "validation": {
+                "summary": "Invalid body",
+                "value": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.body': is required for message type DOCUMENT"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Channel disconnected. The message was not sent: connect the channel again and repeat the send.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendDocumentRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Recipient phone (country code + area code + number)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Message type",
+                "enum": [
+                  "DOCUMENT"
+                ]
+              },
+              "attachments": {
+                "type": "array",
+                "description": "Files of the send. Required",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "`https` address of the file, or the Base64 content with the type prefix"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "File name, without the extension"
+                    },
+                    "extension": {
+                      "type": "string",
+                      "description": "Extension, without the dot"
+                    },
+                    "mimeType": {
+                      "type": "string",
+                      "description": "MIME type. If `extension` is missing, the extension is derived from it"
+                    },
+                    "caption": {
+                      "type": "string",
+                      "description": "Caption, shown with the file"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "File title"
+                    },
+                    "pageCount": {
+                      "type": "integer",
+                      "description": "Page count"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "Attachment identifier"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID of the sent message: 32 uppercase hexadecimal characters"
+          }
+        }
+      },
+      "ErrorText": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error text"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the refusal, in UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error category",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Case code. Only present when the case has its own code",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error description. The text may change: handle the error by `code` and `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in the Z-API Omni Security panel"
+      }
+    }
+  }
+}

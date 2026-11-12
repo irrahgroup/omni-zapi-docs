@@ -1,0 +1,332 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Enviar multi-produto",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Enviar multi-produto",
+        "description": "Envia uma vitrine com produtos do catálogo agrupados em seções.",
+        "operationId": "sendInteractiveMultiProductMessage",
+        "tags": [
+          "Mensagens"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID do canal",
+            "schema": {
+              "type": "string",
+              "example": "SEU_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendProductListRequest"
+              },
+              "examples": {
+                "productList": {
+                  "summary": "Vitrine com uma seção",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_MULTI_PRODUCT",
+                      "header": {
+                        "message": "Seleção da semana"
+                      },
+                      "body": {
+                        "message": "Separamos alguns produtos para você."
+                      },
+                      "footer": {
+                        "message": "Entrega em todo o Brasil"
+                      },
+                      "action": {
+                        "catalogId": "1234567890"
+                      },
+                      "attachments": [
+                        {
+                          "title": "Camisetas",
+                          "list": [
+                            {
+                              "id": "SKU-1042"
+                            },
+                            {
+                              "id": "SKU-1043"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Mensagem enviada com sucesso",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Secret Key ausente, malformada ou inexistente (`Authorization invalid`), IP fora da lista de IPs (`<ip> not allowed`) ou corpo que não serve para o tipo da mensagem (`code` `VALIDATION_ERROR`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorText"
+                },
+                {
+                  "$ref": "#/components/schemas/SendError"
+                }
+              ]
+            },
+            "examples": {
+              "authorization": {
+                "summary": "Secret Key inválida",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "validation": {
+                "summary": "Corpo inválido",
+                "value": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.body': is required for message type INTERACTIVE_MULTI_PRODUCT"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Canal desconectado. A mensagem não foi enviada: conecte o canal de novo e repita o envio.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendProductListRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Telefone do destinatário (DDI + DDD + número)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body",
+              "action",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Tipo da mensagem",
+                "enum": [
+                  "INTERACTIVE_MULTI_PRODUCT"
+                ]
+              },
+              "header": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Texto do cabeçalho. Opcional"
+                  }
+                }
+              },
+              "body": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Texto da mensagem"
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              },
+              "footer": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Texto do rodapé. Opcional"
+                  }
+                }
+              },
+              "action": {
+                "type": "object",
+                "properties": {
+                  "catalogId": {
+                    "type": "string",
+                    "description": "ID do catálogo"
+                  }
+                },
+                "required": [
+                  "catalogId"
+                ]
+              },
+              "attachments": {
+                "type": "array",
+                "description": "Seções da vitrine",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "description": "Título da seção"
+                    },
+                    "list": {
+                      "type": "array",
+                      "description": "Produtos da seção",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "ID do produto (SKU) no catálogo"
+                          }
+                        },
+                        "required": [
+                          "id"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "list"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID da mensagem enviada: hexadecimal de 32 caracteres maiúsculos"
+          }
+        }
+      },
+      "ErrorText": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Texto do erro"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora da recusa, em UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Categoria do erro",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Código do caso. Só vem quando o caso tem um código próprio",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada no painel de Segurança do Z-API Omni"
+      }
+    }
+  }
+}

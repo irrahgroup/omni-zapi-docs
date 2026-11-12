@@ -1,0 +1,264 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Activar Instagram",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/activate-instagram": {
+      "post": {
+        "summary": "Activar Instagram",
+        "description": "Finaliza la conexión de un canal `META_INSTAGRAM`. Usa la app de Instagram propia del workspace, si existe; si no, la app predeterminada. No requiere ENTERPRISE. Si la cuenta ya está activa en el proveedor y el canal está desconectado con suscripción activa (`PAID`, `TRIAL`, `BOLETO_PENDING` o `CANCELLATION_PROCESS`), Z-API Omni deshace la conexión anterior y activa de nuevo por sí solo; en caso contrario, responde `422` con el error del proveedor.",
+        "operationId": "activateInstagram",
+        "tags": [
+          "Canales"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal (obtenido en Crear canal o Listar canales)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateInstagramRequest"
+              },
+              "example": {
+                "code": "AQBx7f...",
+                "redirectUri": "https://app.omni.z-api.io/oauth/proxy-instagram"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Canal activado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivateInstagramResponse"
+                },
+                "example": {
+                  "id": "17841400000000000",
+                  "connected": true,
+                  "username": "minhaloja",
+                  "name": "Minha Loja",
+                  "displayName": "minhaloja"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Secret Key ausente, mal formada o inexistente, IP fuera de la lista de IPs permitidas o solicitud inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fuera de la lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente o de otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El proveedor rechazó la activación. El error del proveedor viene en `error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falla de integración. La operación no se completó; vuelve a intentarlo en unos instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "La activación superó el plazo de 50 segundos. Con `integration_timeout`, nada cambió en el canal y puedes repetir. Con `outcome_unknown`, la conexión anterior ya se deshizo y el resultado no se conoce: revisa el canal con Consultar canal antes de repetir.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "examples": {
+                  "integrationTimeout": {
+                    "summary": "Nada cambió",
+                    "value": {
+                      "error": "integration_timeout"
+                    }
+                  },
+                  "outcomeUnknown": {
+                    "summary": "Resultado desconocido",
+                    "value": {
+                      "error": "outcome_unknown"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo del error"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estable del error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto del error, en inglés"
+          }
+        }
+      },
+      "ActivateInstagramRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "`code` devuelto por la autorización OAuth"
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "`redirectUri` del resultado del SDK (la misma usada en OAuth)"
+          },
+          "igId": {
+            "type": "string",
+            "description": "ID de la cuenta de Instagram"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "Token de acceso de la cuenta"
+          }
+        }
+      },
+      "ActivateInstagramResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID de la cuenta de Instagram"
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Si el canal quedó conectado"
+          },
+          "username": {
+            "type": "string",
+            "description": "Usuario de la cuenta"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre de la cuenta"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Nombre visible del canal"
+          }
+        }
+      },
+      "ProviderError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Nombre del error"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Texto del error"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en Seguridad, en el panel de Z-API Omni. El prefijo `Bearer` es opcional."
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Partner: Get Channel",
+    "title": "Z-API Omni - Get channel",
     "version": "1.0.0"
   },
   "servers": [
@@ -17,11 +17,11 @@
   "paths": {
     "/v1/channels/{channelId}": {
       "get": {
-        "summary": "Get channel (Partner)",
+        "summary": "Get channel",
         "description": "Returns the data of a channel in the key's workspace, along with the webhooks registered on it. Requires the ENTERPRISE role.",
         "operationId": "partnerGetChannel",
         "tags": [
-          "Partners"
+          "Channels"
         ],
         "parameters": [
           {
@@ -59,20 +59,50 @@
                     "value": {
                       "error": "Authorization invalid"
                     }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP outside the list",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
                   }
                 }
               }
             }
           },
-          "422": {
-            "description": "Account without the ENTERPRISE role",
+          "401": {
+            "description": "OAuth token of a connected app or the MCP is invalid, expired or revoked",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": "Channel listing requires ENTERPRISE role"
+                  "error": "invalid_token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "OAuth token without the `channels:read` scope, or call from an IP outside the workspace IP list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "insufficientScope": {
+                    "summary": "Insufficient scope",
+                    "value": {
+                      "error": "insufficient_scope"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP outside the list",
+                    "value": {
+                      "error": "ip_not_allowed"
+                    }
+                  }
                 }
               }
             }
@@ -86,6 +116,19 @@
                 },
                 "example": {
                   "error": "Channel not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Account without the ENTERPRISE role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Channel listing requires ENTERPRISE role"
                 }
               }
             }
@@ -216,7 +259,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generated in the Omni Z-API Security panel"
+        "description": "Secret Key generated in the Z-API Omni Security panel"
       }
     }
   }

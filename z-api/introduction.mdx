@@ -1,50 +1,46 @@
 ---
 title: "Z-API Compatibilidade"
-description: "Migre da Z-API para o Omni Z-API sem quebrar suas integrações"
+description: "Migre da Z-API para o Z-API Omni sem quebrar suas integrações"
 ---
 
-import { projectName, zapiBaseUrl, zapiOriginalUrl, frontendUrl, supportEmail } from '/snippets/variables.mdx';
+import { supportEmail } from '/snippets/variables.mdx';
 
 ## O que é a versão Z-API Compatibilidade?
 
-A versão **Z-API Compatibilidade** foi criada para facilitar a migração de clientes que hoje utilizam a Z-API e desejam migrar para o {projectName} como sua solução oficial de API para WhatsApp.
+A versão **Z-API Compatibilidade** responde no formato da Z-API. Quem já integra a Z-API migra para o Z-API Omni trocando a base URL e o header de autenticação, e segue enviando com os mesmos corpos e lendo as mesmas respostas. O endereço é `https://zapi.omni.z-api.io`.
 
-Sabemos que trocar de provedor de API pode ser um processo trabalhoso — especialmente quando você já tem integrações rodando em produção. Por isso, desenvolvemos essa camada de compatibilidade que mantém a mesma estrutura que você já conhece.
-
-## O que muda na prática?
-
-<Note>
-  As únicas mudanças necessárias na sua aplicação são a **base URL** e o **header de autenticação**. Além disso, por utilizar a API oficial do WhatsApp, algumas funcionalidades da Z-API não estão disponíveis. Consulte a página de [Limitações da API Oficial](/z-api/limitations) para mais detalhes.
-</Note>
+Ela atende **somente canais WhatsApp Oficial** (`META_WHATSAPP`, a API oficial da Meta). As rotas da Z-API que o WhatsApp Oficial não tem, ou que ainda não estão disponíveis, são recusadas com uma resposta clara. A lista completa está em [Limitações e recusas](/z-api/limitations).
 
 <Warning>
-  A versão Z-API Compatibilidade funciona **somente com canais WhatsApp Oficial** (API oficial da Meta). Um envio para canal de outro tipo, como Instagram, Messenger ou Telegram, é recusado com `422`:
+  Um envio para um canal de outro tipo (WhatsApp Web, Instagram, Messenger ou Telegram) é recusado com `422`:
 
   ```json
   { "error": "instance middleware is not META_WHATSAPP" }
   ```
 
-  Para enviar por esses canais, use as [rotas de mensagens do {projectName}](/messages/introduction).
+  Um canal WhatsApp Oficial sem assinatura ativa também recebe `422`, com `{ "error": "instance subscription is not active" }`. Para enviar pelos outros canais, use as [rotas de mensagens do Z-API Omni](/messages/introduction).
 </Warning>
 
-|  | Z-API | Omni Z-API |
+## O que muda na prática
+
+|  | Z-API | Z-API Omni |
 |---|---|---|
 | **Base URL** | `https://api.z-api.io` | `https://zapi.omni.z-api.io` |
-| **Autenticação** | `Client-Token` | `Authorization: Bearer {secret}` |
+| **Autenticação** | Header `Client-Token` | Header `Authorization` com a Secret Key, com ou sem `Bearer` ([Autenticação](/z-api/authentication)) |
+| **Path** | `/instances/{id}/token/{token}/...` | `/instances/`, `/devices/` ou `/channels/` (equivalentes) |
 | **Nomenclatura** | `instance_id` | `channel_id` |
-| **Path** | `/instances/` | `/instances/` ou `/channels/` |
-| **Payloads** | — | Mesma estrutura |
-| **Webhooks** | — | Mesma estrutura |
+| **Corpo e resposta dos envios** | Formato Z-API | O mesmo formato nas rotas que enviam ([Mensagens](/z-api/messages/introduction)) |
+| **Webhooks** | Formato Z-API | Configure `payloadFormat` `Z_API` no webhook do canal ou no webhook padrão ([Webhooks](/webhooks/introduction)) |
 
-### Sobre nomenclatura
+### Sobre a nomenclatura
 
-No {projectName}, o que antes era chamado de **instância** (`instance_id`) agora é tratado como **canal** (`channel_id`). O conceito é o mesmo — representa a conexão com um número de WhatsApp — mas adotamos o termo "canal" por ser mais abrangente, já que o {projectName} suporta múltiplos canais de mensagem além do WhatsApp.
+No Z-API Omni, o que antes era chamado de **instância** (`instance_id`) é tratado como **canal** (`channel_id`). O conceito é o mesmo: a conexão com um número de WhatsApp. O termo "canal" é mais abrangente porque o Z-API Omni tem outros canais de mensagem além do WhatsApp.
 
 <Note>
-  Para compatibilidade, a API aceita tanto `/instances/` quanto `/channels/` no path. Se você está migrando da Z-API, pode manter `/instances/` sem problema — suas integrações continuam funcionando. Para novas integrações, recomendamos usar `/channels/`.
+  A API aceita `/instances/`, `/devices/` e `/channels/` no path, com o mesmo comportamento. Quem migra da Z-API pode manter `/instances/`. Em integrações novas, use `/channels/`.
 </Note>
 
-Ou seja, se hoje sua aplicação faz uma chamada como:
+Se hoje a sua aplicação faz uma chamada como:
 
 ```bash
 curl -X POST https://api.z-api.io/instances/SUA_INSTANCIA/token/SEU_TOKEN/send-text \
@@ -53,56 +49,51 @@ curl -X POST https://api.z-api.io/instances/SUA_INSTANCIA/token/SEU_TOKEN/send-t
   -d '{"phone": "5511999999999", "message": "Olá!"}'
 ```
 
-Basta trocar para:
+Troque a base URL e o header de autenticação:
 
 ```bash
 curl -X POST https://zapi.omni.z-api.io/channels/SEU_CANAL/token/SEU_TOKEN/send-text \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer SEU_SECRET" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
   -d '{"phone": "5511999999999", "message": "Olá!"}'
 ```
 
-Note que **apenas a base URL e o header de autenticação mudaram** — o path e body são idênticos.
+O `SEU_CANAL` é o `id` do canal e o `SEU_TOKEN` é o `token` dele, devolvidos ao [criar o canal](/channels/create-channel) e ao [consultá-lo](/channels/get-channel). A Secret Key é gerada no menu **Segurança** do painel.
 
-O secret para o header `Authorization` é gerado no painel do Omni Z-API ao criar sua instância. Os payloads de envio e os bodys dos webhooks mantêm exatamente a mesma estrutura, garantindo que suas integrações continuem funcionando sem quebras.
+## O que a compatibilidade cobre
 
-## Por que migrar?
+| Grupo | O que responde |
+|---|---|
+| [Mensagens](/z-api/messages/introduction) | 42 rotas `send-*` e de pedido. Parte envia, parte é recusada com `422`. Cada rota está na tabela da introdução de mensagens |
+| [Instância](/z-api/instance/status) | `status`, `me`, `device` e a fila (`queue`), no formato da Z-API |
+| Rotas da Z-API sem equivalente | 149 rotas (grupos, contatos, chats, catálogo, comunidades, canais, perfil comercial, privacidade e etiquetas, entre outras) recusadas com `422` |
+| Outras rotas | Método errado responde `405`; rota que não existe responde `404` |
 
-<CardGroup cols={2}>
-  <Card title="API Oficial do WhatsApp" icon="whatsapp">
-    Utilize a API oficial do WhatsApp Business com toda a segurança e estabilidade que isso proporciona.
-  </Card>
-  <Card title="Menor risco de bloqueio" icon="shield-check">
-    Por utilizar a API oficial do WhatsApp, o risco de banimento é significativamente menor comparado a soluções não oficiais.
-  </Card>
-  <Card title="Migração simples" icon="arrow-right-arrow-left">
-    Troque apenas a base URL e pronto — suas integrações continuam funcionando.
-  </Card>
-  <Card title="Suporte dedicado" icon="headset">
-    Conte com o suporte da equipe {projectName} durante todo o processo de migração.
-  </Card>
-</CardGroup>
+A resposta de cada caso está em [Limitações e recusas](/z-api/limitations).
 
 ## Como migrar
 
 <Steps>
-  <Step title="Crie sua conta no Omni Z-API">
+  <Step title="Crie sua conta no Z-API Omni">
     Acesse o [Dashboard](https://app.omni.z-api.io) e crie sua conta.
   </Step>
-  <Step title="Configure sua instância">
-    Crie uma nova instância e conecte seu número de WhatsApp.
+  <Step title="Crie e conecte um canal WhatsApp Oficial">
+    Crie um canal do tipo WhatsApp Oficial e conecte o número. Veja [Conectar WhatsApp Oficial](/connect/meta-whatsapp).
   </Step>
-  <Step title="Atualize a base URL e autenticação">
-    Substitua `https://api.z-api.io` por `https://zapi.omni.z-api.io` e troque o header `Client-Token` por `Authorization: Bearer SEU_SECRET`.
+  <Step title="Atualize a base URL e a autenticação">
+    Troque `https://api.z-api.io` por `https://zapi.omni.z-api.io` e o header `Client-Token` por `Authorization: Bearer SUA_SECRET_KEY`.
+  </Step>
+  <Step title="Confira as rotas que você usa">
+    Compare as rotas da sua integração com [Mensagens](/z-api/messages/introduction) e com [Limitações e recusas](/z-api/limitations). Uma rota recusada responde `422` com o motivo, e nada é enviado.
   </Step>
   <Step title="Configure os webhooks">
-    Atualize a URL de callback dos webhooks no Dashboard para apontar para o seu servidor. Os eventos recebidos terão a mesma estrutura de antes.
+    Aponte os webhooks do canal para o seu servidor e use `payloadFormat` `Z_API` para manter o formato. Veja [Webhooks](/webhooks/introduction).
   </Step>
   <Step title="Teste e valide">
-    Faça testes de envio e recebimento para garantir que tudo está funcionando corretamente.
+    Faça testes de envio e de recebimento antes de trocar o tráfego de produção.
   </Step>
 </Steps>
 
 <Info>
-  Precisa de ajuda na migração? Entre em contato pelo e-mail [{supportEmail}](mailto:{supportEmail}).
+  Precisa de ajuda na migração? Escreva para [{supportEmail}](mailto:{supportEmail}).
 </Info>

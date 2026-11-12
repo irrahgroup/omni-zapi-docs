@@ -1,65 +1,24 @@
 ---
 title: "Enviar lista de opciones"
 description: "Envía una lista de secciones y opciones que el cliente elige con un toque"
+openapi: "/es/messages/openapi-interactive-list.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que ya conozcas el
-  formato y planifiques la integración — el cuerpo y los límites de abajo son los que valdrán cuando suba.
-
-  Mientras tanto, para ofrecer opciones usa los [botones de respuesta rápida](/es/messages/send-interactive-button),
-  que aceptan hasta 3 opciones.
-</Warning>
+<ChannelSupport type="INTERACTIVE_LIST" lang="es" />
 
 ## Conceptos
 
-Envía un mensaje con una lista de opciones agrupadas en secciones. El cliente toca el botón, abre la lista y
-elige una fila; la elección vuelve a tu webhook.
+Envía un mensaje con una lista de opciones agrupadas en secciones. El cliente toca el botón, abre la lista y elige una fila.
 
-El campo `content.type` será `INTERACTIVE_LIST`.
+El campo `content.type` es `INTERACTIVE_LIST`.
 
-Es el formato para cuando las opciones no caben en botones: menú, catálogo de servicios, horarios, sucursales.
-Hasta 3 opciones, prefiere los [botones de respuesta rápida](/es/messages/send-interactive-button), que exigen
-un toque menos.
+Es el formato para cuando las opciones no caben en botones: menú, catálogo de servicios, horarios, sucursales. Hasta 3 opciones, prefiere los [botones de respuesta rápida](/es/messages/send-interactive-button).
 
-<ChannelSupport type="INTERACTIVE_LIST" lang="es" />
+## Reglas
 
-## Cuerpo de la petición
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "INTERACTIVE_LIST",
-    "header": "Menú",
-    "message": "Elige una opción",
-    "footer": "Entrega en 40 min",
-    "button": "Ver opciones",
-    "sections": [
-      {
-        "title": "Pizzas",
-        "rows": [
-          { "id": "pizza_marg", "title": "Margherita", "description": "Salsa, muzzarella y albahaca" },
-          { "id": "pizza_pep", "title": "Pepperoni", "description": "Salsa, muzzarella y pepperoni" }
-        ]
-      },
-      {
-        "title": "Bebidas",
-        "rows": [
-          { "id": "gaseosa_lata", "title": "Gaseosa lata", "description": "350 ml" }
-        ]
-      }
-    ]
-  }
-}
-```
-
-`header` y `footer` son opcionales. El `id` de cada fila lo eliges tú y es lo que vuelve en el webhook cuando
-el cliente la selecciona.
-
-## Límites de Meta
+Límites publicados por Meta para la lista. La API reenvía la lista como llegó, y Meta rechaza lo que pase del límite.
 
 | Regla | Límite |
 |---|---|
@@ -70,27 +29,8 @@ el cliente la selecciona.
 | Descripción de la fila | 72 caracteres |
 | `id` de la fila | único dentro del mensaje |
 
-<Warning>
-  El límite de filas es **total**, no por sección. Diez secciones con diez filas cada una se rechaza — el
-  máximo son diez filas repartidas entre las secciones que quieras.
-</Warning>
+El límite de filas es **en total**, no por sección.
 
-## La respuesta del cliente
+## Véase también
 
-Cuando el cliente elige una fila, tu webhook recibe la elección con el mismo `id` que mandaste:
-
-```json
-{
-  "id": "pizza_marg",
-  "title": "Margherita",
-  "description": "Salsa, muzzarella y albahaca"
-}
-```
-
-Es por el `id` que tu aplicación identifica la opción, sin depender del texto mostrado — que puede cambiar sin
-romper la integración.
-
-<Note>
-  Detalles de la regla de Meta Cloud API en [ventana de conversación](/es/conversation-window). Mira la
-  [qué acepta cada canal](/es/channels/message-support) para todos los canales.
-</Note>
+- [Errores al enviar](/es/messages/introduction#errores-al-enviar)

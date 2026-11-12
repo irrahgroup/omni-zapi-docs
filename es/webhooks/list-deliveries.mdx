@@ -1,0 +1,54 @@
+---
+title: "Listar entregas"
+description: "Lista las entregas de eventos a los webhooks del workspace"
+openapi: "/es/webhooks/openapi-central.json GET /v1/webhooks/deliveries"
+---
+
+## Conceptos
+
+Lista las entregas de eventos a los webhooks del workspace de la Secret Key, de la más reciente a la más antigua. La respuesta no trae total: cuando hay más elementos, trae `nextCursor`; en la última página, `nextCursor` llega `null`.
+
+### Filtros
+
+Todos los filtros son opcionales.
+
+| Parámetro | Valor |
+|---|---|
+| `webhookId` | ID del webhook |
+| `status` | `SUCCEEDED`, `RETRYING`, `FAILED`, `NOT_SENT`, `EXPIRED`, `UNKNOWN` o `RESENT`. Consulta [Status de las entregas](/es/webhooks/central#status-de-las-entregas) |
+| `eventType` | Un evento de webhook de canal (`MESSAGE_RECEIVED`, `MESSAGE_DELIVERY`, `MESSAGE_STATUS`, `RECEIVED_STATUS`, `RECEIVED_AND_DELIVERY`, `CONNECTED`, `DISCONNECTED`, `PRESENCE_CHAT`, `INITIAL_DATA`, `BLOCK`) o `UPDATE_TEMPLATE_STATUS` y `UPDATE_TEMPLATE_CATEGORY`. Se acepta en mayúsculas o minúsculas |
+| `eventId` | ID del evento (UUID), el mismo del header `x-webhook-event-id` |
+| `from`, `to` | Período, en ISO-8601 UTC. Por defecto: las últimas 24 horas |
+| `limit` | Elementos por página. Por defecto 50, máximo 100 |
+| `cursor` | El `nextCursor` de la página anterior |
+
+Un `from` anterior a la retención del plan se ajusta a su inicio, sin error, y la respuesta trae `fromAdjusted: true`.
+
+### Campos de cada entrega
+
+- `attempts` es el número del último intento.
+- `lastHttpStatus` llega `null` cuando el último intento no tuvo respuesta de tu servidor (timeout, error de conexión o de DNS). No lo trates como entero obligatorio.
+- `lastOutcome`: `SUCCEEDED`, `HTTP_ERROR`, `TIMEOUT`, `CONNECTION_ERROR`, `DESTINATION_REFUSED`, `NOT_SENT_CIRCUIT_OPEN`, `NOT_SENT_SUSPENDED` o `EXPIRED`.
+- `notSentReason` (`SUSPENDED` o `CIRCUIT_OPEN`) solo llega con `status` `NOT_SENT`.
+- `resentAt` solo llega con `status` `RESENT`.
+- `resendable` indica si la entrega se puede reenviar ahora; cuando no se puede, `notResendableReason` indica por qué (`TRUNCATED`, `WEBHOOK_SUSPENDED` o `WEBHOOK_DISABLED`).
+- Los campos sin valor llegan `null`, nunca ausentes.
+
+### Errores
+
+| Caso | Respuesta |
+|---|---|
+| `eventType` fuera de la lista | `400` con `{"error": {"message": "eventType invalido"}}` |
+| `status` fuera de la lista | `400` con `{"error": {"message": "status invalido"}}` |
+| `from` igual o posterior a `to` | `400` con `{"error": {"message": "from deve ser anterior a to"}}` |
+| Fecha fuera de ISO-8601 | `400` con `{"error": {"message": "<campo> deve ser uma data ISO-8601"}}` |
+| `limit` fuera de 1 a 100 | `400` con `{"error": {"message": "limit deve ser de 1 a 100"}}` |
+| `eventId` que no es UUID | `400` con `{"error": {"message": "eventId invalido"}}` |
+| `cursor` que no se decodifica | `400` con `{"error": {"message": "cursor invalido"}}` |
+| La consulta superó los 5 segundos | `503`. Pide un período más corto o inténtalo de nuevo |
+
+Los errores de autenticación, de IP y de workspace inactivo están en [Central de webhooks](/es/webhooks/central#errores-comunes-a-todas-las-rutas).
+
+## Véase también
+
+- [Central de webhooks](/es/webhooks/central)

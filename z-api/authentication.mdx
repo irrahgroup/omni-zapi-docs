@@ -1,51 +1,19 @@
 ---
 title: "Autenticação"
-description: "Como gerar e utilizar suas credenciais de API no Omni Z-API"
+description: "Como autenticar as chamadas da compatibilidade com a Z-API"
 ---
 
-import { projectName, frontendUrl } from '/snippets/variables.mdx';
+## Credenciais
 
-## API Credentials
+Cada chamada leva duas credenciais: o `id` e o `token` do canal, no path, e a **Secret Key** do workspace, no header `Authorization`. O header `Client-Token` da Z-API não é usado.
 
-Diferente da Z-API que utiliza o header `Client-Token`, o {projectName} trabalha com um par de chaves: **Public Key** e **Secret Key**.
+| Onde | Credencial | Exemplo |
+|---|---|---|
+| Path | `id` do canal | `/channels/{id}/token/{token}/send-text` |
+| Path | `token` do canal | `/channels/{id}/token/{token}/send-text` |
+| Header | Secret Key | `Authorization: Bearer SUA_SECRET_KEY` ou `Authorization: SUA_SECRET_KEY` |
 
-Para gerar suas credenciais, acesse o menu **Segurança** no painel: [Segurança](https://app.omni.z-api.io/app/security).
-
----
-
-## Public Key
-
-A Public Key é utilizada **exclusivamente** pelo SDK de conexão de canais. Com ela, você pode conectar canais (como WhatsApp, Telegram, etc.) diretamente dentro do seu sistema, sem precisar acessar o painel do {projectName}.
-
-<Note>
-  A Public Key pode ser exposta no frontend da sua aplicação, pois ela tem permissões limitadas apenas à conexão de canais.
-</Note>
-
-Exemplo de uso com o SDK:
-
-```javascript
-import { OmniZapi } from '@omnizapi/connect';
-
-const omni = new OmniZapi({
-  publicKey: 'SUA_PUBLIC_KEY'
-});
-```
-
-<Tip>
-  Instale o SDK via npm: [`@omnizapi/connect`](https://www.npmjs.com/package/@omnizapi/connect)
-</Tip>
-
----
-
-## Secret Key
-
-A Secret Key é utilizada para autenticação nas APIs do {projectName}. Ela deve ser enviada no header `Authorization` como Bearer token.
-
-<Warning>
-  A Secret Key **nunca** deve ser exposta no frontend. Utilize-a apenas no backend da sua aplicação.
-</Warning>
-
-Exemplo de uso nas chamadas de API:
+O prefixo `Bearer` é opcional. A Secret Key é gerada no menu **Segurança** do painel ([Segurança](https://app.omni.z-api.io/app/security)) e tem só letras minúsculas, dígitos e `_`. Um valor com outros caracteres é recusado.
 
 ```bash
 curl -X POST https://zapi.omni.z-api.io/channels/SEU_CANAL/token/SEU_TOKEN/send-text \
@@ -54,11 +22,35 @@ curl -X POST https://zapi.omni.z-api.io/channels/SEU_CANAL/token/SEU_TOKEN/send-
   -d '{"phone": "5511999999999", "message": "Olá!"}'
 ```
 
----
+<Warning>
+  A Secret Key **nunca** deve ir para o frontend. Use-a só no backend da sua aplicação.
+</Warning>
 
-## Resumo
+A Secret Key precisa ser do mesmo workspace do canal. A Public Key não vale nestas rotas.
+
+## Ordem das verificações e respostas
+
+A API confere, nesta ordem, e para na primeira que falha:
+
+| Verificação | Resposta quando falha |
+|---|---|
+| Canal com o `id` e o `token` do path | `404` com `{"error": "instance not found"}` |
+| Header `Authorization` presente | `400` com `{"error": "Authorization invalid"}` |
+| Secret Key com o formato válido e do workspace do canal | `422` com `{"error": "Authorization invalid"}` |
+| Workspace não bloqueado | `422` com `{"error": "You are blocked, contact support."}` |
+| IP de origem na [lista de IPs](/security/ip-restriction), quando o workspace tem lista | `400` com `{"error": "203.0.113.10 not allowed"}`, com o IP recusado no lugar do exemplo |
+
+Um `id` ou um `token` errado responde o mesmo `instance not found`, sem dizer qual dos dois falhou. Se a API não conseguir validar a Secret Key, a resposta é `502` com `{"error": "failed to validate authorization"}`.
+
+Uma `latitude` ou `longitude` inválida é recusada com `400` antes dessas verificações, e no `send-location` a coordenada ausente também. Veja [Enviar localização](/z-api/messages/send-location).
+
+## Public Key e Secret Key
+
+O Z-API Omni trabalha com um par de chaves, geradas em [Segurança](https://app.omni.z-api.io/app/security):
 
 | Chave | Uso | Pode expor no frontend? |
 |---|---|---|
 | **Public Key** | SDK de conexão de canais | Sim |
-| **Secret Key** | Chamadas de API (header `Authorization`) | Não, apenas backend |
+| **Secret Key** | Chamadas de API, inclusive estas rotas (header `Authorization`) | Não, apenas backend |
+
+Instale o SDK de conexão pelo npm: [`@omnizapi/connect`](https://www.npmjs.com/package/@omnizapi/connect).

@@ -1,0 +1,54 @@
+---
+title: "Get device"
+description: "See the number and device connected to a WhatsApp Web channel"
+openapi: "/en/channels/openapi-zapi-device.json GET /v1/channels/{channelId}/zapi/device"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="WEB_ROUTES" lang="en" />
+
+## Overview
+
+Returns the data of the number and device connected to a `Z_API_WHATSAPP` (WhatsApp Web) channel.
+
+Use the Secret Key, from your backend. Does not require ENTERPRISE.
+
+```json
+{
+  "phone": "5511999999999",
+  "imgUrl": "https://pps.whatsapp.net/v/t61.24694-24/foto.jpg",
+  "name": "Loja",
+  "device": {"sessionName": "Z-API Omni", "deviceModel": "iPhone 15"},
+  "originalDevice": "iphone",
+  "sessionId": 0,
+  "isBusiness": true
+}
+```
+
+| Field | What it is |
+|---|---|
+| `phone` | Connected number, with country code |
+| `imgUrl` | Profile picture URL |
+| `name` | Profile name on WhatsApp |
+| `device.sessionName` | Session name in **Linked devices** |
+| `device.deviceModel` | Phone model |
+| `isBusiness` | `true` when the number uses WhatsApp Business |
+| `originalDevice`, `sessionId` | Informative |
+
+### Errors
+
+| Status | Body | When |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key missing, malformed or unknown |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP outside the [IP list](/en/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Channel does not exist or belongs to another workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Integration failure; try again in a few moments |
+
+<Note>
+  The `channelId` comes from the [Create channel](/en/channels/create-channel) endpoint or from [List channels](/en/channels/list-channels).
+</Note>
+
+## See also
+
+- [Introduction](/en/channels/introduction)

@@ -1,17 +1,27 @@
 ---
 title: "Enviar reacción"
-description: "Envía una reacción (emoji) a un mensaje existente"
+description: "Reacciona a un mensaje con un emoji"
 openapi: "/es/z-api/openapi.json POST /send-reaction"
 ---
 
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Conceptos
-
-Método para enviar una reacción con emoji a un mensaje existente. Funciona tanto con mensajes enviados como recibidos.
-
-Para usar este endpoint necesitas el `messageId` del mensaje que recibirá la reacción.
+Envía una reacción con emoji a un mensaje. Indica el `messageId` del mensaje que recibe la reacción.
 
 <Note>
   <ZapiResponseText lang="es" />
 </Note>
+
+### Errores
+
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente o vacío |
+| `422` | `messageId is required to react to a message` | `messageId` ausente o vacío |
+| `422` | `reaction is required` | `reaction` ausente o vacío |
+| `422` | `reaction must be an emoji` | `reaction` tiene espacios, letras o es demasiado largo para ser un emoji |
+
+## Véase también
+
+- [Mensajes: errores comunes](/es/z-api/messages/introduction#errores-comunes)
+- [Limitaciones y rechazos](/es/z-api/limitations)

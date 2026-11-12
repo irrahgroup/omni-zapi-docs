@@ -45,37 +45,44 @@ The type comes from the channel, not from the call. You set the type in [Create 
     The returned object changes depending on the channel. See the table below.
   </Step>
   <Step title="You finish on the backend">
-    Send the result to [`POST /v1/channels/{channelId}/connect`](/en/channels/connect-channel) using the Secret Key.
+    Send the result to your backend and call the finishing route for the channel type, with the Secret Key. Each channel has its own route: see the Finish the connection on the backend section below.
   </Step>
 </Steps>
 
 ## Authorization flow per channel
 
-| Channel | How it authorizes | Page |
-|---|---|---|
-| **Meta Cloud API** | Meta Embedded Signup | [Meta WhatsApp](/en/connect/meta-whatsapp) |
-| **WhatsApp Web** | QR Code | [WhatsApp Web](/en/connect/whatsapp-web) |
-| **Instagram** | Instagram OAuth | [Instagram](/en/connect/instagram) |
-| **Messenger** | Facebook OAuth + page selection | [Messenger](/en/connect/messenger) |
-| **Telegram** | Bot token | [Telegram](/en/connect/telegram) |
+|  | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|---|---|---|---|---|
+| **How it authorizes** | Meta Embedded Signup | QR Code | Instagram OAuth | Facebook OAuth + page selection | Bot token |
+| **Page** | [Meta WhatsApp](/en/connect/meta-whatsapp) | [WhatsApp Web](/en/connect/whatsapp-web) | [Instagram](/en/connect/instagram) | [Messenger](/en/connect/messenger) | [Telegram](/en/connect/telegram) |
 
 ## The response changes per channel
 
-All of them return `success` and `channelId`. The rest depends on the type:
+All of them return `success`, `channelId` and `type`, the channel type. The rest depends on the type:
 
 | Field | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
 |---|:---:|:---:|:---:|:---:|:---:|
-| `code` | ✅ | — | ✅ | ✅ | — |
-| `wabaId` | ✅ | — | — | — | — |
-| `phoneId` | ✅ | — | — | — | — |
-| `coexistence` | ✅ | — | — | — | — |
-| `accessToken` | — | — | ✅ | ✅ | — |
-| `pageId` | — | — | — | ✅ | — |
-| `botToken` | — | — | — | — | ✅ |
+| `code` | ✅ | ❌ | ✅ | ✅ | ❌ |
+| `wabaId` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `phoneId` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `coexistence` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `redirectUri` | ❌ | ❌ | ✅ | ✅ | ❌ |
+| `accessToken` | ❌ | ❌ | ✅ | ✅ | ❌ |
+| `pageId` | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `botToken` | ❌ | ❌ | ❌ | ❌ | ✅ |
 
-<Note>
-  Do not handle these fields manually. Send the whole object to your backend and forward it as-is to the connect endpoint — it knows what to do with each type.
-</Note>
+## Finish the connection on the backend
+
+Send the whole object to your backend. There, use the `type` field to pick the finishing route and build the body from the SDK result, always with the Secret Key:
+
+|  | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|---|---|---|---|---|
+| **Finishing route** | [`POST /v1/channels/{channelId}/connect`](/en/channels/connect-channel) | No finishing step | [`POST /v1/channels/{channelId}/activate-instagram`](/en/channels/activate-instagram) | [`POST /v1/channels/{channelId}/activate-messenger`](/en/channels/activate-messenger) | [`POST /v1/channels/{channelId}/activate-telegram`](/en/channels/activate-telegram) |
+| **Body, from the SDK result** | `code`, `wabaId`, `phoneId` and `coexistence` | The channel connects when the QR Code is scanned. Check it with [`GET /v1/channels/{channelId}/zapi/status`](/en/channels/zapi-status) | `{"code", "redirectUri"}` | `{"pageId", "accessToken", "redirectUri"}`. The page and the `accessToken` come from [List Messenger pages](/en/channels/list-messenger-pages); see [Messenger](/en/connect/messenger) | `{"token": "<botToken from the SDK>"}`. The field is named `token`, not `botToken` |
+
+<Warning>
+  `POST /v1/channels/{channelId}/connect` is only for the Official WhatsApp. With the result of another channel, it answers `400` with `{"error":"wabaId is required"}`.
+</Warning>
 
 <Warning>
   Connecting only works from allowed domains, and the SDK fails silently when the origin is not on the list. Read [SDK origins](/en/channels/sdk-info) before integrating.

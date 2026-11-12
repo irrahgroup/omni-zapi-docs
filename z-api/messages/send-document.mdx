@@ -1,23 +1,31 @@
 ---
 title: "Enviar documento"
-description: "Envie documentos (PDF, DOC, XLS, etc) via WhatsApp"
-openapi: "POST /send-document/{extension}"
+description: "Envie documentos (PDF, DOC, XLS e outros) via WhatsApp"
+openapi: "/pt/z-api/openapi.json POST /send-document/{extension}"
 ---
 
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Conceituação
-
-Método para envio de documentos. A extensão do arquivo deve ser informada no path da URL (ex: `/send-document/pdf`). Você pode enviar por **URL** ou por **Base64**.
-
-<Warning>
-  Ao enviar em Base64, é obrigatório incluir o prefixo com o tipo do documento, por exemplo: `data:application/pdf;base64,`.
-</Warning>
+Envia um documento, por **URL** ou por **Base64**. A extensão do arquivo vai no path (`/send-document/pdf`).
 
 <Note>
   <ZapiResponseText lang="pt" />
 </Note>
 
 <Note>
-  Os limites de tamanho e formatos suportados seguem as políticas do WhatsApp. Consulte a [documentação oficial do WhatsApp](https://developers.facebook.com/docs/whatsapp/api/media) para mais detalhes.
+  Os limites de tamanho e de formato seguem as políticas do WhatsApp. Consulte a [documentação oficial do WhatsApp](https://developers.facebook.com/docs/whatsapp/api/media).
 </Note>
+
+### Erros
+
+| Status | Resposta `error` | Quando |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente ou vazio |
+| `400` | `invalid document: must be a valid URL or base64 data URI` | O campo não é uma URL `http`/`https` nem um Base64 com prefixo `data:` |
+| `422` | `message has no content this route can send` | O corpo não traz o campo da mídia nem `message`, então não há conteúdo para enviar |
+| `422` | `message editing is not supported for this channel` | `editDocumentMessageId` ou `editMessageId` no corpo |
+
+## Veja também
+
+- [Mensagens: erros comuns](/z-api/messages/introduction#erros-comuns)
+- [Limitações e recusas](/z-api/limitations)

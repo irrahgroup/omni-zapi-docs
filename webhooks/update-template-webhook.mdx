@@ -1,16 +1,16 @@
 ---
-title: "Atualizar webhook de template"
-description: "Atualize a configuração de um webhook de template existente"
+title: "Atualizar webhook global"
+description: "Atualize a configuração de um webhook global existente"
 openapi: "/pt/webhooks/openapi-template.json PATCH /v1/webhooks/{webhookId}"
 ---
 
 ## Conceituação
 
-Atualiza parcialmente a configuração de um webhook de template. Apenas os campos enviados no body são atualizados — os demais permanecem inalterados.
+Atualiza parcialmente a configuração de um webhook global. Apenas os campos enviados no body são atualizados; os demais permanecem inalterados.
 
 ### Atualizar eventos
 
-Se enviar o campo `events`, a lista substitui os eventos existentes e deve conter **somente** eventos de conta: os de template e o `CHANNEL_DISCONNECTED` (senão → `422`):
+Se enviar o campo `events`, a lista substitui os eventos existentes e deve conter **somente** eventos da conta: `UPDATE_TEMPLATE_STATUS`, `UPDATE_TEMPLATE_CATEGORY`, os cinco eventos de cobrança (`BILLING_PAYMENT_FAILED`, `BILLING_PAYMENT_RECOVERED`, `BILLING_SUBSCRIPTION_CANCELED`, `BILLING_INSTANCE_SUSPENDED`, `BILLING_INSTANCE_RELEASED`), `ACCOUNT_RESTRICTION` e `CHANNEL_DISCONNECTED` (senão → `422`). Veja [Eventos aceitos](/webhooks/template-webhooks#eventos-aceitos):
 
 ```json
 { "events": ["UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"] }
@@ -51,10 +51,21 @@ Para reativar, envie `{ "status": "ENABLED" }`.
 
 Um `status` diferente de `ENABLED` e `DISABLED` retorna `400` com `{"error": "status must be one of [ENABLED, DISABLED]"}`.
 
-### `payloadFormat` continua ignorado
+### Formato de entrega: use `DEFAULT`
 
-Para webhooks de template o formato é sempre `DEFAULT`, mesmo que enviado na atualização.
+O webhook global é entregue no formato `DEFAULT`. Envie `payloadFormat` `DEFAULT` ou omita o campo.
+
+| Caso | Resposta |
+|---|---|
+| `events` com `ACCOUNT_RESTRICTION` e `payloadFormat` `Z_API` ou `CHATWOOT` | `422` com `{"error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"}` |
+| O webhook ficaria com eventos da plataforma (cobrança ou `CHANNEL_DISCONNECTED`) em formato diferente de `DEFAULT` | `422` com `{"error": "Platform events are delivered only in DEFAULT payload format"}` |
+
+A conferência usa o estado final que o pedido deixaria: os eventos enviados (ou os já gravados, se `events` for omitido) e o formato enviado (ou o já gravado). Nada é alterado quando o pedido é recusado.
 
 <Note>
   Após a alteração, o roteamento pode levar até ~5 min para refletir (TTL de cache).
 </Note>
+
+## Veja também
+
+- [Webhook global (eventos da conta)](/webhooks/template-webhooks)

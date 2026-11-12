@@ -1,38 +1,57 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Enviar Áudio",
+    "title": "Z-API Omni - Enviar Áudio",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/messages": {
       "post": {
         "summary": "Enviar áudio",
         "description": "Envia uma mensagem de áudio.",
         "operationId": "sendAudioMessage",
-        "tags": ["Mensagens"],
+        "tags": [
+          "Mensagens"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
             "description": "ID do canal",
-            "schema": { "type": "string", "example": "SEU_CHANNEL_ID" }
+            "schema": {
+              "type": "string",
+              "example": "SEU_CHANNEL_ID"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/SendAudioRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/SendAudioRequest"
+              },
               "example": {
-                "recipient": { "identifier": "5511999999999" },
+                "recipient": {
+                  "identifier": "5511999999999"
+                },
                 "content": {
                   "type": "AUDIO",
                   "attachments": [
-                    { "url": "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" }
+                    {
+                      "url": "https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"
+                    }
                   ]
                 }
               }
@@ -40,9 +59,21 @@
           }
         },
         "responses": {
-          "200": { "$ref": "#/components/responses/MessageSuccess" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ChannelDisconnected" }
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
         }
       }
     }
@@ -50,29 +81,175 @@
   "components": {
     "responses": {
       "MessageSuccess": {
-        "description": "Mensagem enviada com sucesso",
+        "description": "Mensagem aceita e colocada na fila de envio. A entrega é confirmada depois, pelos eventos de status do webhook.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/MessageResponse" },
-            "example": { "messageId": "01A0C92D0C957FE98B73C8BA0CACF741" }
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
           }
         }
       },
-      "Unauthorized": {
-        "description": "Token inválido ou ausente.",
+      "BadRequest": {
+        "description": "Requisição recusada antes do envio: Secret Key inválida, IP fora da lista permitida, corpo ausente ou corpo que não serve para o tipo da mensagem.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "authorizationInvalid": {
+                "summary": "Secret Key inválida ou ausente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ipNotAllowed": {
+                "summary": "IP de origem fora da lista de IPs permitidos",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "payloadRequired": {
+                "summary": "Corpo vazio ({})",
+                "value": {
+                  "error": "message payload is required"
+                }
+              },
+              "validationError": {
+                "summary": "Campo obrigatório ausente para o tipo",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.attachments': is required for message type AUDIO"
+                }
+              },
+              "mediaTooLarge": {
+                "summary": "Arquivo acima do limite do canal",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "subCode": "MEDIA_TOO_LARGE",
+                  "message": "Mídia excede o limite do canal META_INSTAGRAM para image: 9437184 bytes (máx 8388608)"
+                }
+              }
+            }
           }
         }
       },
-      "ChannelDisconnected": {
-        "description": "Canal desconectado. A mensagem não foi enviada: conecte o canal de novo e repita o envio.",
+      "InstanceNotFound": {
+        "description": "Instância não encontrada para a Secret Key informada.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/SendError" },
-            "example": { "timestamp": "2026-10-22T14:00:00.123Z", "code": "BUSINESS_RULE_VIOLATION", "subCode": "CHANNEL_DISCONNECTED", "message": "Channel is disconnected" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "instanceNotFound": {
+                "summary": "Instância não encontrada",
+                "value": {
+                  "error": "instance not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Envio recusado por uma regra: canal desconectado, instância sem provisionamento, assinatura inativa, conta bloqueada ou tipo que o canal não tem.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "channelDisconnected": {
+                "summary": "Canal desconectado: conecte o canal de novo e repita o envio",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "CHANNEL_DISCONNECTED",
+                  "message": "Channel is disconnected"
+                }
+              },
+              "businessRule": {
+                "summary": "Tipo que o canal não tem (exemplo: localização no Instagram)",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "message": "[UNSUPPORTED_CHANNEL_TYPE] O canal META_INSTAGRAM nao suporta mensagens do tipo LOCATION"
+                }
+              },
+              "instanceNotProvisioned": {
+                "summary": "Instância sem provisionamento",
+                "value": {
+                  "error": "instance is not provisioned"
+                }
+              },
+              "subscriptionInactive": {
+                "summary": "Assinatura da instância inativa",
+                "value": {
+                  "error": "instance subscription is not active"
+                }
+              },
+              "blocked": {
+                "summary": "Conta bloqueada",
+                "value": {
+                  "error": "You are blocked, contact support."
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Falha do nosso lado ao processar o pedido. Confira o webhook de status antes de repetir: o pedido pode ter sido aceito.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "integrationUnavailable": {
+                "summary": "Falha temporária: tente de novo em instantes",
+                "value": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              },
+              "sendingFailed": {
+                "summary": "Falha interna ao processar o pedido",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "INTEGRATION_ERROR",
+                  "message": "Message sending failed"
+                }
+              }
+            }
           }
         }
       }
@@ -80,28 +257,51 @@
     "schemas": {
       "SendAudioRequest": {
         "type": "object",
-        "required": ["recipient", "content"],
+        "required": [
+          "recipient",
+          "content"
+        ],
         "properties": {
           "recipient": {
             "type": "object",
-            "required": ["identifier"],
+            "required": [
+              "identifier"
+            ],
             "properties": {
-              "identifier": { "type": "string", "description": "Telefone do destinatário (DDI + DDD + número)", "example": "5511999999999" }
+              "identifier": {
+                "type": "string",
+                "description": "Identificador do destinatário no canal: telefone com DDI e DDD no WhatsApp (5511999999999), IGSID no Instagram, PSID no Messenger e chat_id no Telegram",
+                "example": "5511999999999"
+              }
             }
           },
           "content": {
             "type": "object",
-            "required": ["type", "attachments"],
+            "required": [
+              "type",
+              "attachments"
+            ],
             "properties": {
-              "type": { "type": "string", "description": "Tipo da mensagem", "enum": ["AUDIO"] },
+              "type": {
+                "type": "string",
+                "description": "Tipo da mensagem",
+                "enum": [
+                  "AUDIO"
+                ]
+              },
               "attachments": {
                 "type": "array",
                 "description": "Lista de anexos",
                 "items": {
                   "type": "object",
-                  "required": ["url"],
+                  "required": [
+                    "url"
+                  ],
                   "properties": {
-                    "url": { "type": "string", "description": "URL do áudio" }
+                    "url": {
+                      "type": "string",
+                      "description": "URL do áudio"
+                    }
                   }
                 }
               }
@@ -112,28 +312,57 @@
       "MessageResponse": {
         "type": "object",
         "properties": {
-          "messageId": { "type": "string", "description": "ID da mensagem enviada — hexadecimal de 32 caracteres maiúsculos" }
+          "messageId": {
+            "type": "string",
+            "description": "ID da mensagem no Z-API Omni: hexadecimal de 32 caracteres maiúsculos. É o mesmo valor de message._id no webhook"
+          }
         }
       },
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string",
+            "description": "Motivo da recusa"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detalhe da recusa, quando houver"
+          }
         }
       },
       "SendError": {
         "type": "object",
         "properties": {
-          "timestamp": { "type": "string", "format": "date-time", "description": "Data e hora da recusa, em UTC" },
-          "code": { "type": "string", "description": "Categoria do erro", "example": "BUSINESS_RULE_VIOLATION" },
-          "subCode": { "type": "string", "description": "Código do caso. Só vem quando o caso tem um código próprio", "example": "CHANNEL_DISCONNECTED" },
-          "message": { "type": "string", "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`", "example": "Channel is disconnected" }
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora da recusa, em UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Categoria do erro",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Código do caso. Só vem quando o caso tem um código próprio",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`",
+            "example": "Channel is disconnected"
+          }
         }
       }
     },
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "Secret Key gerada no painel de Segurança do Omni Z-API" }
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada no painel de Segurança do Z-API Omni"
+      }
     }
   }
 }

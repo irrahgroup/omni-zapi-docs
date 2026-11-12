@@ -1,0 +1,266 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Enviar reacción",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Enviar reacción",
+        "description": "Aplica un emoji a un mensaje que ya está en la conversación.",
+        "operationId": "sendReactionMessage",
+        "tags": [
+          "Mensajes"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal",
+            "schema": {
+              "type": "string",
+              "example": "SU_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendReactionRequest"
+              },
+              "examples": {
+                "add": {
+                  "summary": "Reaccionar con un emoji",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "REACTION",
+                      "body": {
+                        "message": "👍",
+                        "id": "01A0C92D0C957FE98B73C8BA0CACF741"
+                      }
+                    }
+                  }
+                },
+                "remove": {
+                  "summary": "Quitar la reacción",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "REACTION",
+                      "body": {
+                        "message": "",
+                        "id": "01A0C92D0C957FE98B73C8BA0CACF741"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Mensaje enviado correctamente",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Secret Key ausente, malformada o inexistente (`Authorization invalid`), IP fuera de la lista de IPs (`<ip> not allowed`) o cuerpo que no sirve para el tipo de mensaje (`code` `VALIDATION_ERROR`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ErrorText"
+                },
+                {
+                  "$ref": "#/components/schemas/SendError"
+                }
+              ]
+            },
+            "examples": {
+              "authorization": {
+                "summary": "Secret Key inválida",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "validation": {
+                "summary": "Cuerpo inválido",
+                "value": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.body': is required for message type REACTION"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Canal desconectado. El mensaje no se envió: conecta el canal de nuevo y repite el envío.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendReactionRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Teléfono del destinatario (código de país + código de área + número)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Tipo del mensaje",
+                "enum": [
+                  "REACTION"
+                ]
+              },
+              "body": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Emoji de la reacción. Vacío quita la reacción"
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "ID del mensaje objetivo (`messageId` del envío o `message._id` del webhook)"
+                  }
+                },
+                "required": [
+                  "message",
+                  "id"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID del mensaje enviado: hexadecimal de 32 caracteres en mayúsculas"
+          }
+        }
+      },
+      "ErrorText": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Texto del error"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha y hora del rechazo, en UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Categoría del error",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Código del caso. Solo viene cuando el caso tiene un código propio",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Descripción del error. El texto puede cambiar: trata el error por `code` y `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Z-API Omni"
+      }
+    }
+  }
+}

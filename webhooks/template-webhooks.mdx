@@ -1,18 +1,18 @@
 ---
-title: "Webhooks de template"
-description: "Receba os eventos de template do WhatsApp de forma independente de instância"
+title: "Webhook global (eventos da conta)"
+description: "Receba os eventos da conta, como templates, cobrança e desconexão de canal, sem depender de instância"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
-## O que são webhooks de template?
+## O que é o webhook global?
 
-Diferente dos webhooks **de canal**, o {projectName} oferece **webhooks de template** — endpoints que recebem exclusivamente os eventos de template do WhatsApp e **não** dependem de uma instância (`instanceId = null`).
+Diferente dos webhooks **de canal** e do **padrão**, o webhook global recebe só os **eventos da conta**: templates do WhatsApp, cobrança, restrição da conta na Meta e desconexão de canal. Ele **não** depende de uma instância (`instanceId = null`).
 
 Eles convivem com as rotas de webhook por canal, que permanecem inalteradas. O roteamento dos eventos de template é feito pelo serviço interno independentemente da instância.
 
 <Note>
-  Os conceitos comuns aos dois tipos de webhook (quem pode gerenciar, regras da URL, autenticação, assinatura HMAC e formatos de payload) estão na [Introdução](/webhooks/introduction).
+  Os conceitos comuns aos três tipos de webhook (quem pode gerenciar, regras da URL, autenticação, assinatura HMAC e formatos de payload) estão na [Introdução](/webhooks/introduction).
 </Note>
 
 ## Autenticação
@@ -23,9 +23,9 @@ Todas as rotas exigem o header:
 Authorization: Bearer <secret-key>
 ```
 
-## Eventos de template aceitos
+## Eventos aceitos
 
-Um webhook de template aceita **somente** eventos de conta: os de template, o aviso de desconexão de canal (`CHANNEL_DISCONNECTED`), os eventos de cobrança e a restrição da conta na Meta (`ACCOUNT_RESTRICTION`). Enviar um evento de canal resulta em `422`.
+O webhook global aceita **somente** eventos de conta: os de template, o aviso de desconexão de canal (`CHANNEL_DISCONNECTED`), os eventos de cobrança e a restrição da conta na Meta (`ACCOUNT_RESTRICTION`). Enviar um evento de canal resulta em `422`.
 
 | Valor (exato, SNAKE_CASE) | Significado |
 |---|---|
@@ -38,9 +38,9 @@ Um webhook de template aceita **somente** eventos de conta: os de template, o av
 ## Regras de negócio
 
 1. **Escopo dos eventos (obrigatório).**
-   - Webhook **de template** → só aceita eventos de conta (template, `CHANNEL_DISCONNECTED`, cobrança e `ACCOUNT_RESTRICTION`). Evento de canal → `422`.
+   - Webhook **global** → só aceita eventos de conta (template, `CHANNEL_DISCONNECTED`, cobrança e `ACCOUNT_RESTRICTION`). Evento de canal → `422`.
    - Webhook **de canal** → **não** pode assinar eventos de template → `422`.
-2. **`payloadFormat` é ignorado.** Para webhooks de template o formato é sempre `DEFAULT`. O campo pode ser omitido; se enviado (qualquer valor, inclusive `CHATWOOT`), é silenciosamente descartado e persistido como `DEFAULT`.
+2. **Use `payloadFormat` `DEFAULT`.** O webhook global é entregue em `DEFAULT`; omita o campo ou envie `DEFAULT`. Com `ACCOUNT_RESTRICTION`, `Z_API` ou `CHATWOOT` respondem `422` com `{"error": "ACCOUNT_RESTRICTION only supports DEFAULT payload format"}`. Os eventos da plataforma (cobrança e `CHANNEL_DISCONNECTED`) só são entregues em `DEFAULT`: um `PATCH` que deixaria o webhook com esses eventos em outro formato responde `422` com `{"error": "Platform events are delivered only in DEFAULT payload format"}`.
 3. **`instanceId` gravado como `null`** automaticamente — não há campo de instância nestas rotas. `channelId` também vem `null`.
 
 ## Observações importantes
@@ -50,26 +50,26 @@ Um webhook de template aceita **somente** eventos de conta: os de template, o av
 </Note>
 
 <Note>
-  **Cache do roteador.** Após criar ou alterar um webhook de template, o roteamento pode levar até ~5 min para refletir (TTL de cache).
+  **Cache do roteador.** Após criar ou alterar o webhook global, o roteamento pode levar até ~5 min para refletir (TTL de cache).
 </Note>
 
 ## Gerenciamento
 
 <CardGroup cols={2}>
-  <Card title="Criar webhook de template" icon="plus" href="/webhooks/create-template-webhook">
-    Registre um novo endpoint de template.
+  <Card title="Criar webhook global" icon="plus" href="/webhooks/create-template-webhook">
+    Registre um novo endpoint para os eventos da conta.
   </Card>
-  <Card title="Listar webhooks de template" icon="list" href="/webhooks/list-template-webhooks">
-    Veja todos os webhooks de template do tenant.
+  <Card title="Listar webhooks globais" icon="list" href="/webhooks/list-template-webhooks">
+    Veja todos os webhooks globais do workspace.
   </Card>
-  <Card title="Detalhar webhook de template" icon="magnifying-glass" href="/webhooks/get-template-webhook">
-    Busque um webhook de template específico.
+  <Card title="Detalhar webhook global" icon="magnifying-glass" href="/webhooks/get-template-webhook">
+    Busque um webhook global específico.
   </Card>
-  <Card title="Atualizar webhook de template" icon="pen" href="/webhooks/update-template-webhook">
+  <Card title="Atualizar webhook global" icon="pen" href="/webhooks/update-template-webhook">
     Atualize URL, eventos, autenticação ou status.
   </Card>
-  <Card title="Remover webhook de template" icon="trash" href="/webhooks/delete-template-webhook">
-    Exclua permanentemente um webhook de template.
+  <Card title="Remover webhook global" icon="trash" href="/webhooks/delete-template-webhook">
+    Exclua permanentemente um webhook global.
   </Card>
   <Card title="Estrutura dos payloads" icon="brackets-curly" href="/webhooks/template-payloads">
     Exemplos reais dos payloads recebidos para cada evento de template.

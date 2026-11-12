@@ -45,37 +45,44 @@ O tipo vem do canal, não da chamada. Você define o tipo em [Criar canal](/chan
     O objeto de retorno muda conforme o canal. Veja a tabela abaixo.
   </Step>
   <Step title="Você finaliza no backend">
-    Envie o retorno para [`POST /v1/channels/{channelId}/connect`](/channels/connect-channel) usando a Secret Key.
+    Envie o retorno para o seu backend e chame a rota de finalização do tipo do canal, com a Secret Key. Cada canal tem a sua rota: veja a seção Finalizar a conexão no backend, abaixo.
   </Step>
 </Steps>
 
 ## Fluxo de autorização por canal
 
-| Canal | Como autoriza | Página |
-|---|---|---|
-| **Meta Cloud API** | Embedded Signup da Meta | [Meta WhatsApp](/connect/meta-whatsapp) |
-| **WhatsApp Web** | QR Code | [WhatsApp Web](/connect/whatsapp-web) |
-| **Instagram** | OAuth do Instagram | [Instagram](/connect/instagram) |
-| **Messenger** | OAuth do Facebook + escolha da página | [Messenger](/connect/messenger) |
-| **Telegram** | Token do bot | [Telegram](/connect/telegram) |
+|  | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|---|---|---|---|---|
+| **Como autoriza** | Embedded Signup da Meta | QR Code | OAuth do Instagram | OAuth do Facebook + escolha da página | Token do bot |
+| **Página** | [Meta WhatsApp](/connect/meta-whatsapp) | [WhatsApp Web](/connect/whatsapp-web) | [Instagram](/connect/instagram) | [Messenger](/connect/messenger) | [Telegram](/connect/telegram) |
 
 ## O retorno muda por canal
 
-Todos devolvem `success` e `channelId`. O resto depende do tipo:
+Todos devolvem `success`, `channelId` e `type`, o tipo do canal. O resto depende do tipo:
 
 | Campo | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
 |---|:---:|:---:|:---:|:---:|:---:|
-| `code` | ✅ | — | ✅ | ✅ | — |
-| `wabaId` | ✅ | — | — | — | — |
-| `phoneId` | ✅ | — | — | — | — |
-| `coexistence` | ✅ | — | — | — | — |
-| `accessToken` | — | — | ✅ | ✅ | — |
-| `pageId` | — | — | — | ✅ | — |
-| `botToken` | — | — | — | — | ✅ |
+| `code` | ✅ | ❌ | ✅ | ✅ | ❌ |
+| `wabaId` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `phoneId` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `coexistence` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `redirectUri` | ❌ | ❌ | ✅ | ✅ | ❌ |
+| `accessToken` | ❌ | ❌ | ✅ | ✅ | ❌ |
+| `pageId` | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `botToken` | ❌ | ❌ | ❌ | ❌ | ✅ |
 
-<Note>
-  Não trate esses campos manualmente. Mande o objeto inteiro para o seu backend e repasse como veio ao endpoint de conexão — ele sabe o que fazer com cada tipo.
-</Note>
+## Finalizar a conexão no backend
+
+Mande o objeto inteiro para o seu backend. Lá, use o campo `type` para escolher a rota de finalização e monte o corpo a partir do retorno do SDK, sempre com a Secret Key:
+
+|  | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
+|---|---|---|---|---|---|
+| **Rota de finalização** | [`POST /v1/channels/{channelId}/connect`](/channels/connect-channel) | Sem finalização | [`POST /v1/channels/{channelId}/activate-instagram`](/channels/activate-instagram) | [`POST /v1/channels/{channelId}/activate-messenger`](/channels/activate-messenger) | [`POST /v1/channels/{channelId}/activate-telegram`](/channels/activate-telegram) |
+| **Corpo, a partir do retorno do SDK** | `code`, `wabaId`, `phoneId` e `coexistence` | O canal conecta quando o QR Code é lido. Confira com [`GET /v1/channels/{channelId}/zapi/status`](/channels/zapi-status) | `{"code", "redirectUri"}` | `{"pageId", "accessToken", "redirectUri"}`. A página e o `accessToken` vêm de [Listar páginas do Messenger](/channels/list-messenger-pages); veja [Messenger](/connect/messenger) | `{"token": "<botToken do SDK>"}`. O campo se chama `token`, não `botToken` |
+
+<Warning>
+  `POST /v1/channels/{channelId}/connect` é só do WhatsApp Oficial. Com o retorno de outro canal, ele responde `400` com `{"error":"wabaId is required"}`.
+</Warning>
 
 <Warning>
   A conexão só funciona a partir de domínios liberados, e o SDK falha em silêncio quando a origem não está na lista. Leia [Origens do SDK](/channels/sdk-info) antes de integrar.

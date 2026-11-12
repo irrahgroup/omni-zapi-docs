@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Partner: List Channels",
+    "title": "Z-API Omni - List channels",
     "version": "1.0.0"
   },
   "servers": [
@@ -17,11 +17,11 @@
   "paths": {
     "/v1/channels": {
       "get": {
-        "summary": "List channels (Partner)",
+        "summary": "List channels",
         "description": "Lists the channels of the key's workspace, newest first, with pagination and optional filters. Requires the ENTERPRISE role.",
         "operationId": "partnerListChannels",
         "tags": [
-          "Partners"
+          "Channels"
         ],
         "parameters": [
           {
@@ -125,6 +125,49 @@
                     "summary": "type",
                     "value": {
                       "error": "type must be one of [META_WHATSAPP, Z_API_WHATSAPP, META_INSTAGRAM, META_MESSENGER, BOT_TELEGRAM]"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP outside the list",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "OAuth token of a connected app or the MCP is invalid, expired or revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_token"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "OAuth token without the `channels:read` scope, or call from an IP outside the workspace IP list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "insufficientScope": {
+                    "summary": "Insufficient scope",
+                    "value": {
+                      "error": "insufficient_scope"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP outside the list",
+                    "value": {
+                      "error": "ip_not_allowed"
                     }
                   }
                 }
@@ -275,7 +318,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generated in the Omni Z-API Security panel"
+        "description": "Secret Key generated in the Z-API Omni Security panel"
       }
     }
   }

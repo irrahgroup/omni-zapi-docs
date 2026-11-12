@@ -1,0 +1,60 @@
+---
+title: "Activate Telegram"
+description: "Finish on the backend the connection of a BOT_TELEGRAM channel with the bot token"
+openapi: "/en/channels/openapi-activate-telegram.json POST /v1/channels/{channelId}/activate-telegram"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="ACTIVATE_TELEGRAM" lang="en" />
+
+## Overview
+
+Finishes the connection of a `BOT_TELEGRAM` channel with the bot token. It is the last step of [Connect Telegram](/en/connect/telegram).
+
+The SDK returns the token in `botToken`, but the field of this route is named `token`:
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/CHANNEL_ID/activate-telegram \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_SECRET_KEY" \
+  -d '{"token": "123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"}'
+```
+
+Use the Secret Key, from your backend. Does not require ENTERPRISE.
+
+On success, the response has the connected bot:
+
+```json
+{"externalId": "123456789", "connected": true, "displayName": "minhaloja_bot"}
+```
+
+### Automatic reconnection
+
+If the account is already active on the provider and the channel is disconnected with an active subscription (`PAID`, `TRIAL`, `BOLETO_PENDING` or `CANCELLATION_PROCESS`), Z-API Omni undoes the previous connection and activates again on its own. Otherwise, the API answers `422` with the provider error in `error`.
+
+The activation has a 50-second limit. If it goes past, the API answers `504`: with `integration_timeout`, nothing changed and you can retry; with `outcome_unknown`, the previous connection was already undone, so check the channel with [Get channel](/en/channels/get-channel) before retrying.
+
+### Errors
+
+| Status | Body | When |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key missing, malformed or unknown |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP outside the [IP list](/en/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Channel does not exist or belongs to another workspace |
+| `422` | `{"error":{...}}` | The provider refused the activation; the provider error comes in `error` |
+| `502` | `{"error":"integration_unavailable", ...}` | Integration failure; try again in a few moments |
+| `504` | `{"error":"integration_timeout", ...}` | Went past the 50-second limit and nothing changed on the channel; you can retry |
+| `504` | `{"error":"outcome_unknown", ...}` | Went past the limit after undoing the previous connection; check with [Get channel](/en/channels/get-channel) before retrying |
+
+### After the activation
+
+Check the channel with [Get channel](/en/channels/get-channel). To switch to another bot later, deactivate with [Deactivate Telegram](/en/channels/deactivate-telegram) and connect again.
+
+<Note>
+  The `channelId` comes from the [Create channel](/en/channels/create-channel) endpoint or from [List channels](/en/channels/list-channels).
+</Note>
+
+## See also
+
+- [Introduction](/en/channels/introduction)

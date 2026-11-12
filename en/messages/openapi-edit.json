@@ -1,0 +1,403 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Edit Message",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages/{messageId}": {
+      "put": {
+        "summary": "Edit message",
+        "description": "Replaces the text of a text message already sent by the channel.",
+        "operationId": "editMessage",
+        "tags": [
+          "Messages"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "YOUR_CHANNEL_ID"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "description": "Message to edit: the messageId returned on sending, or the identifier of a message content in the webhook",
+            "schema": {
+              "type": "string",
+              "example": "019E6F1A93FE78DCB54332F9FF0CCAE7"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditMessageRequest"
+              },
+              "example": {
+                "content": {
+                  "type": "TEXT",
+                  "body": {
+                    "message": "Corrected text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EditSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "EditSuccess": {
+        "description": "Edit accepted and queued. The 200 does not confirm that the provider applied the edit.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "019E6F1A93FE78DCB54332F9FF0CCAE7"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Request refused before sending: invalid Secret Key, IP outside the allowed list, missing body or a body that does not fit the message type.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "authorizationInvalid": {
+                "summary": "Invalid or missing Secret Key",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ipNotAllowed": {
+                "summary": "Source IP outside the allowed IP list",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "bodyMissing": {
+                "summary": "Request without a body",
+                "value": {
+                  "error": "Required request body is missing"
+                }
+              },
+              "payloadRequired": {
+                "summary": "Empty body ({})",
+                "value": {
+                  "error": "message payload is required"
+                }
+              },
+              "contentRequired": {
+                "summary": "Body without content",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content': content is required"
+                }
+              },
+              "onlyText": {
+                "summary": "Content that is not text",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.type': only TEXT content can be edited"
+                }
+              },
+              "messageRequired": {
+                "summary": "Required field missing for the type",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.body.message': content.body.message is required"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Instance not found, or a message that does not exist or does not belong to this channel.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "instanceNotFound": {
+                "summary": "Instance not found",
+                "value": {
+                  "error": "instance not found"
+                }
+              },
+              "messageNotFound": {
+                "summary": "Message not found on this channel",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "NOT_FOUND",
+                  "message": "Message not found: 019E6F1A93FE78DCB54332F9FF0CCAE7"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Edit refused: channel without editing, channel disconnected, message that cannot be edited, editing time expired, or an instance refusal.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "editNotSupported": {
+                "summary": "Channel without editing (WhatsApp Official, Instagram, Messenger)",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "EDIT_NOT_SUPPORTED",
+                  "message": "Message editing is not supported for this channel type"
+                }
+              },
+              "channelDisconnected": {
+                "summary": "Channel disconnected: connect the channel again and repeat the request",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "CHANNEL_DISCONNECTED",
+                  "message": "Channel is disconnected"
+                }
+              },
+              "messageNotEditable": {
+                "summary": "Message that is not a text sent by the channel and accepted by the provider",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "MESSAGE_NOT_EDITABLE",
+                  "message": "Only text messages sent by this channel and accepted by the provider can be edited"
+                }
+              },
+              "editWindowExpired": {
+                "summary": "15 minutes have passed since sending (WhatsApp Web)",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "EDIT_WINDOW_EXPIRED",
+                  "message": "Message can no longer be edited: the provider allows editing for 15 minutes after sending"
+                }
+              },
+              "instanceNotProvisioned": {
+                "summary": "Instance not provisioned",
+                "value": {
+                  "error": "instance is not provisioned"
+                }
+              },
+              "subscriptionInactive": {
+                "summary": "Instance subscription inactive",
+                "value": {
+                  "error": "instance subscription is not active"
+                }
+              },
+              "blocked": {
+                "summary": "Account blocked",
+                "value": {
+                  "error": "You are blocked, contact support."
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Failure on our side while processing the request. Check the status webhook before retrying: the request may have been accepted.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "integrationUnavailable": {
+                "summary": "Temporary failure: try again in a few moments",
+                "value": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              },
+              "editingFailed": {
+                "summary": "Internal failure while processing the edit",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "INTEGRATION_ERROR",
+                  "message": "Message editing failed"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "EditMessageRequest": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "object",
+            "description": "New content. Only text can be edited",
+            "required": [
+              "type",
+              "body"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Type of the new content. TEXT only",
+                "enum": [
+                  "TEXT"
+                ]
+              },
+              "body": {
+                "type": "object",
+                "required": [
+                  "message"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "New message text"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "Z-API Omni ID of the edited message"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Reason for the refusal"
+          },
+          "message": {
+            "type": "string",
+            "description": "Refusal detail, when there is one"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the refusal, in UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error category",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Case code. Present only when the case has its own code",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error description. The text may change: handle the error by `code` and `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in the Z-API Omni Security panel"
+      }
+    }
+  }
+}

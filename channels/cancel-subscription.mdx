@@ -6,17 +6,19 @@ openapi: "/pt/channels/openapi-cancel.json DELETE /v1/channels/{channelId}/cance
 
 import { EnterpriseText } from '/snippets/notes.mdx';
 
-## Conceituação
-
-Solicita o cancelamento da assinatura de um canal. O cancelamento não é imediato — o canal entra no status `CANCELLATION_PROCESS` e permanece ativo até o fim do período já pago. Após esse período, o status muda para `CANCELED`.
-
-O parâmetro de query `cancel=true` é obrigatório como confirmação explícita do cancelamento.
-
-O campo `cancelReason` no body é opcional, mas recomendado para fins de auditoria.
-
 <Warning>
   <EnterpriseText lang="pt" />
 </Warning>
+
+## Conceituação
+
+Solicita o cancelamento da assinatura de um canal. O cancelamento não é imediato: o canal entra no status `CANCELLATION_PROCESS` e permanece ativo até o fim do período já pago. Após esse período, o status muda para `CANCELED`.
+
+O parâmetro de query `cancel=true` é obrigatório como confirmação explícita do cancelamento.
+
+O corpo é obrigatório: sem ele, a API responde `400` com `{"error":"Required request body is missing"}`. Envie ao menos `{}`. O campo `cancelReason` é opcional, mas recomendado para fins de auditoria.
+
+Sem o parâmetro `cancel`, a API responde `400` com `{"error":"Required parameter 'cancel' is missing"}`; com um valor que não é booleano, `{"error":"Invalid value for parameter 'cancel'"}`.
 
 ### Status após o cancelamento
 
@@ -32,3 +34,7 @@ O campo `cancelReason` no body é opcional, mas recomendado para fins de auditor
 <Note>
   O `channelId` é obtido através do endpoint [Criar canal](/channels/create-channel).
 </Note>
+
+## Veja também
+
+- [Introdução](/channels/introduction)

@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Templates API",
+    "title": "Z-API Omni - Templates API",
     "description": "API para gerenciamento de templates de mensagem do WhatsApp Business",
     "version": "1.0.0"
   },
@@ -22,7 +22,7 @@
         "description": "Retorna a lista de WABAs (WhatsApp Business Accounts) disponíveis para o token autenticado.",
         "operationId": "listBusinesses",
         "tags": [
-          "Templates"
+          "Templates (WhatsApp)"
         ],
         "responses": {
           "200": {
@@ -48,8 +48,8 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/AuthBadRequest"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -63,10 +63,10 @@
     "/whatsapp/businesses/{wabaId}/templates": {
       "get": {
         "summary": "Listar templates",
-        "description": "Retorna a lista de templates de um WABA. A estrutura dos `components` varia conforme a categoria e configuração de cada template.",
+        "description": "Retorna todos os templates do WABA de uma vez, sem paginação e sem filtros: a lista sai do registro da plataforma, atualizado por Sincronizar templates e pelos eventos de status da Meta. Filtre do seu lado. A estrutura dos `components` varia conforme a categoria e configuração de cada template.",
         "operationId": "listTemplates",
         "tags": [
-          "Templates"
+          "Templates (WhatsApp)"
         ],
         "parameters": [
           {
@@ -77,51 +77,6 @@
             "schema": {
               "type": "string",
               "example": "428083093730937"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "description": "Quantidade de templates por página (paginação por cursor da Meta)",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "example": 25
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "description": "Filtra por status de aprovação",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "PENDING",
-                "APPROVED",
-                "REJECTED"
-              ],
-              "example": "APPROVED"
-            }
-          },
-          {
-            "name": "before",
-            "in": "query",
-            "required": false,
-            "description": "Cursor da página anterior, devolvido em `paging.cursors.before`",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "after",
-            "in": "query",
-            "required": false,
-            "description": "Cursor da página seguinte, devolvido em `paging.cursors.after`",
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -184,8 +139,8 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -200,7 +155,7 @@
         "description": "Cria um novo template de mensagem e envia para aprovação da Meta.",
         "operationId": "createTemplate",
         "tags": [
-          "Templates"
+          "Templates (WhatsApp)"
         ],
         "parameters": [
           {
@@ -241,10 +196,7 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/MetaError"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+            "$ref": "#/components/responses/TemplateBadRequest"
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
@@ -259,12 +211,102 @@
       }
     },
     "/whatsapp/businesses/{wabaId}/templates/{templateId}": {
+      "get": {
+        "summary": "Consultar template",
+        "description": "Retorna um template do WABA pelo `templateId` exato, com os mesmos campos da lista e sem o envelope `data`. A resposta sai do registro da plataforma: template criado direto na Meta só aparece depois de Sincronizar templates.",
+        "operationId": "getTemplate",
+        "tags": [
+          "Templates (WhatsApp)"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID do WABA (obtido via Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "description": "ID exato do template (obtido via Listar templates ou no retorno de Criar template). `sync` e `media` não são aceitos como `templateId`",
+            "schema": {
+              "type": "string",
+              "example": "1900296177408890"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Template"
+                },
+                "example": {
+                  "id": "1900296177408890",
+                  "name": "confirm_account",
+                  "status": "APPROVED",
+                  "category": "AUTHENTICATION",
+                  "language": "pt_BR",
+                  "parameter_format": "POSITIONAL",
+                  "message_send_ttl_seconds": 600,
+                  "components": [
+                    {
+                      "type": "BODY",
+                      "text": "Seu código de verificação é *{{1}}*. Para sua segurança, não o compartilhe.",
+                      "add_security_recommendation": true,
+                      "example": {
+                        "body_text": [
+                          [
+                            "123456"
+                          ]
+                        ]
+                      }
+                    },
+                    {
+                      "type": "BUTTONS",
+                      "buttons": [
+                        {
+                          "type": "URL",
+                          "text": "Copiar código",
+                          "url": "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp{{1}}",
+                          "example": [
+                            "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp123456"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "502": {
+            "$ref": "#/components/responses/IntegrationUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
+          }
+        }
+      },
       "put": {
-        "summary": "Editar template",
+        "summary": "Atualizar template",
         "description": "Edita um template existente e reenvia para aprovação da Meta.",
         "operationId": "updateTemplate",
         "tags": [
-          "Templates"
+          "Templates (WhatsApp)"
         ],
         "parameters": [
           {
@@ -333,10 +375,7 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/MetaError"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+            "$ref": "#/components/responses/TemplateBadRequest"
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
@@ -350,11 +389,11 @@
         }
       },
       "delete": {
-        "summary": "Deletar template",
+        "summary": "Remover template",
         "description": "Remove um template existente do WABA.",
         "operationId": "deleteTemplate",
         "tags": [
-          "Templates"
+          "Templates (WhatsApp)"
         ],
         "parameters": [
           {
@@ -390,20 +429,22 @@
         ],
         "responses": {
           "200": {
-            "description": "Template deletado com sucesso",
+            "description": "Template removido. O corpo é o booleano `true`",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "type": "boolean",
+                  "description": "`true` quando a remoção foi aceita"
                 },
-                "example": {
-                  "success": true
-                }
+                "example": true
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -420,7 +461,7 @@
         "description": "Força a sincronização dos templates com a Meta, atualizando os status (PENDING, APPROVED, REJECTED) e demais informações.",
         "operationId": "syncTemplates",
         "tags": [
-          "Templates"
+          "Templates (WhatsApp)"
         ],
         "parameters": [
           {
@@ -487,8 +528,11 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -505,7 +549,7 @@
         "description": "Envia a mídia do HEADER e devolve o `header_handle` exigido pela Meta.\n\nA Meta não aceita o arquivo direto na criação do template: ela exige o handle da Resumable Upload API, que depende do token da aplicação. Este endpoint faz esse intermédio.\n\nAceita dois formatos, escolhidos pelo `Content-Type`: o arquivo em `multipart/form-data` ou o link público da mídia em `application/json`.",
         "operationId": "uploadTemplateMedia",
         "tags": [
-          "Templates"
+          "Templates (WhatsApp)"
         ],
         "parameters": [
           {
@@ -575,7 +619,7 @@
             }
           },
           "400": {
-            "description": "Requisição inválida — `file` ausente ou vazio, `url` ausente ou em branco, JSON inválido ou secret key inválida",
+            "description": "Requisição inválida: `file` ausente ou vazio, `url` ausente ou em branco, JSON inválido, header `Authorization` ausente, chave malformada ou inexistente, ou IP fora da lista de IPs permitidos da Secret Key",
             "content": {
               "application/json": {
                 "schema": {
@@ -650,138 +694,155 @@
           }
         }
       }
-    },
-    "/whatsapp/businesses/{wabaId}/template-library": {
-      "get": {
-        "summary": "Listar biblioteca de templates",
-        "description": "Retorna os templates prontos da biblioteca da Meta, que podem ser criados sem passar por revisão.",
-        "operationId": "listTemplateLibrary",
-        "tags": [
-          "Templates"
-        ],
-        "parameters": [
-          {
-            "name": "wabaId",
-            "in": "path",
-            "required": true,
-            "description": "ID do WABA (obtido via Listar WABAs)",
-            "schema": {
-              "type": "string",
-              "example": "428083093730937"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Templates da biblioteca",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TemplateLibraryResponse"
-                },
-                "example": {
-                  "data": [
-                    {
-                      "name": "order_confirmation_1",
-                      "category": "UTILITY",
-                      "languages": [
-                        "pt_BR",
-                        "en_US",
-                        "es_ES"
-                      ],
-                      "body": "Ola {{1}}, seu pedido {{2}} foi confirmado."
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Token inválido ou ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
     "responses": {
-      "MethodNotAllowed": {
-        "description": "Método não permitido.",
+      "AuthBadRequest": {
+        "description": "Autenticação recusada. O header `Authorization` está ausente, a chave está malformada ou não existe (`Authorization invalid`), ou o IP de origem está fora da lista de IPs permitidos da Secret Key (`<ip> not allowed`). O prefixo `Bearer` é opcional.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
-            "example": {
-              "error": 405,
-              "message": "Method not allowed"
-            }
-          }
-        }
-      },
-      "MetaError": {
-        "description": "Erro retornado pela Meta ao processar a requisição.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/MetaError"
-            },
-            "example": {
-              "error": {
-                "timestamp": "2026-10-19T12:00:00Z",
-                "status": 422,
-                "errors": [
-                  {
-                    "description": "",
-                    "name": "META_WHATSAPP_ERROR",
-                    "message": "Sua mensagem não pode ser enviada pois ela tem conteúdo que outras pessoas no Facebook denunciaram como abusivo.",
-                    "code": "368"
-                  }
-                ]
+            "examples": {
+              "authorization_invalid": {
+                "summary": "Chave ausente, malformada ou inexistente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ip_not_allowed": {
+                "summary": "IP fora da lista de IPs permitidos da Secret Key",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
               }
             }
           }
         }
       },
-      "Unauthorized": {
-        "description": "Token inválido ou ausente.",
+      "BadRequest": {
+        "description": "Autenticação recusada. O header `Authorization` está ausente, a chave está malformada ou não existe (`Authorization invalid`), ou o IP de origem está fora da lista de IPs permitidos da Secret Key (`<ip> not allowed`). O prefixo `Bearer` é opcional.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
-            "example": {
-              "error": 401,
-              "message": "Unauthorized"
+            "examples": {
+              "authorization_invalid": {
+                "summary": "Chave ausente, malformada ou inexistente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ip_not_allowed": {
+                "summary": "IP fora da lista de IPs permitidos da Secret Key",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "business_id_required": {
+                "summary": "WABA não informado",
+                "value": {
+                  "error": "Business id is required"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TemplateBadRequest": {
+        "description": "Requisição recusada antes de chegar à Meta: autenticação recusada (header `Authorization` ausente, chave malformada ou inexistente, ou IP fora da lista de IPs permitidos da Secret Key), corpo ausente ou template vazio.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "authorization_invalid": {
+                "summary": "Chave ausente, malformada ou inexistente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ip_not_allowed": {
+                "summary": "IP fora da lista de IPs permitidos da Secret Key",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "template_payload_required": {
+                "summary": "Template vazio",
+                "value": {
+                  "error": "Template payload is required"
+                }
+              },
+              "request_body_missing": {
+                "summary": "Corpo da requisição ausente",
+                "value": {
+                  "error": "Required request body is missing"
+                }
+              },
+              "business_id_required": {
+                "summary": "WABA não informado",
+                "value": {
+                  "error": "Business id is required"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Recurso não encontrado. O mesmo corpo vale para WABA de outro workspace, WABA inexistente e template que não pertence ao WABA.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "not_found": {
+                "summary": "Resource not found",
+                "value": {
+                  "error": "Resource not found"
+                }
+              }
             }
           }
         }
       },
       "UnprocessableEntity": {
-        "description": "A requisição não pôde ser processada devido a um erro de validação.",
+        "description": "A Meta ou a plataforma recusou a operação. Quando a recusa vem da Meta, o corpo traz `error.errors[]` com `code`, `subCode`, `name`, `message` e `description`. Guarde `timestamp`, `code` e `subCode` para falar com o suporte. Sem detalhe da recusa, `error` vem como texto.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/UnprocessableEntity"
             },
-            "example": {
-              "error": {
-                "errors": [
-                  {
-                    "code": "100",
-                    "name": "META_WHATSAPP_ERROR",
-                    "subCode": "2388024",
-                    "message": "Invalid parameter",
-                    "description": "There is already Portuguese (BR) content for this template. You can create a new template and try again."
+            "examples": {
+              "meta_rejection": {
+                "summary": "Recusa da Meta",
+                "value": {
+                  "error": {
+                    "timestamp": "2026-11-09T12:00:00Z",
+                    "status": 400,
+                    "errors": [
+                      {
+                        "code": "100",
+                        "name": "META_WHATSAPP_ERROR",
+                        "subCode": "2388024",
+                        "message": "Invalid parameter",
+                        "description": "There is already Portuguese (BR) content for this template. You can create a new template and try again."
+                      }
+                    ]
                   }
-                ]
+                }
+              },
+              "no_details": {
+                "summary": "Recusa sem detalhe",
+                "value": {
+                  "error": "The operation could not be completed right now. Try again in a few moments."
+                }
               }
             }
           }
@@ -1111,52 +1172,12 @@
           }
         }
       },
-      "MetaError": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "object",
-            "description": "Recusa da Meta, no envelope `errors` repassado pelo serviço de templates.",
-            "properties": {
-              "timestamp": {
-                "type": "string"
-              },
-              "status": {
-                "type": "integer"
-              },
-              "errors": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "description": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "Tipo do erro (ex: META_WHATSAPP_ERROR)"
-                    },
-                    "message": {
-                      "type": "string",
-                      "description": "Mensagem de erro da Meta"
-                    },
-                    "code": {
-                      "type": "string",
-                      "description": "Código de erro da Meta"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
       "Error": {
         "type": "object",
         "properties": {
           "error": {
-            "type": "integer",
-            "description": "Código do erro"
+            "type": "string",
+            "description": "Código ou mensagem do erro"
           },
           "message": {
             "type": "string",
@@ -1167,28 +1188,54 @@
       "UnprocessableEntity": {
         "type": "object",
         "properties": {
-          "errors": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "subCode": {
-                  "type": "string"
-                },
-                "message": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
+          "error": {
+            "description": "Detalhe da recusa (objeto) ou, quando não há detalhe, a mensagem em texto.",
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "timestamp": {
+                    "type": "string",
+                    "description": "Momento da recusa"
+                  },
+                  "status": {
+                    "type": "integer",
+                    "description": "Status HTTP informado no detalhe da recusa"
+                  },
+                  "errors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Código de erro da Meta"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Tipo do erro (ex: META_WHATSAPP_ERROR)"
+                        },
+                        "subCode": {
+                          "type": "string",
+                          "description": "Subcódigo de erro da Meta"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Mensagem de erro"
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "Explicação da recusa"
+                        }
+                      }
+                    }
+                  }
                 }
+              },
+              {
+                "type": "string"
               }
-            }
+            ]
           }
         }
       },
@@ -1198,43 +1245,6 @@
           "h": {
             "type": "string",
             "description": "Handle a ser usado como `example` do componente HEADER na criação do template"
-          }
-        }
-      },
-      "TemplateLibraryResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "Nome do template na biblioteca"
-                },
-                "category": {
-                  "type": "string",
-                  "enum": [
-                    "UTILITY",
-                    "MARKETING",
-                    "AUTHENTICATION"
-                  ],
-                  "description": "Categoria"
-                },
-                "languages": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  },
-                  "description": "Idiomas disponíveis"
-                },
-                "body": {
-                  "type": "string",
-                  "description": "Prévia do corpo do template"
-                }
-              }
-            }
           }
         }
       },
@@ -1565,7 +1575,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key gerada no painel de Segurança do Omni Z-API"
+        "description": "Secret Key gerada no painel de Segurança do Z-API Omni. O prefixo `Bearer` é opcional."
       }
     }
   }

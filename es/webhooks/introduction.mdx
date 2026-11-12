@@ -1,6 +1,6 @@
 ---
 title: "Introducción"
-description: "Recibe eventos en tiempo real de Omni Z-API en tu sistema mediante webhooks"
+description: "Recibe eventos en tiempo real de Z-API Omni en tu sistema mediante webhooks"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
@@ -12,11 +12,11 @@ Los webhooks son notificaciones HTTP que {projectName} envía a tu servidor cuan
 En lugar de que tu sistema consulte la API periódicamente (polling), {projectName} **te envía los eventos** en el momento en que ocurren.
 
 ```
-Ocurre un evento → Omni Z-API → POST a tu URL → Tu sistema lo procesa
+Ocurre un evento → Z-API Omni → POST a tu URL → Tu sistema lo procesa
 ```
 
 <Note>
-  Cualquier secret key válida de un workspace activo puede gestionar webhooks, tanto de canal como de plantilla. No hace falta ningún rol específico en tu cuenta. Si el workspace no está activo, las llamadas de webhooks devuelven `422` con `{"error": "Webhook management requires an active workspace"}`.
+  Cualquier secret key válida de un workspace activo puede gestionar webhooks: de canal, predeterminado y global. No hace falta ningún rol específico en tu cuenta. Si el workspace no está activo, las llamadas de webhooks devuelven `422` con `{"error": "Webhook management requires an active workspace"}`.
 </Note>
 
 ## Tipos de webhook
@@ -27,8 +27,8 @@ Ocurre un evento → Omni Z-API → POST a tu URL → Tu sistema lo procesa
   <Card title="Webhooks de canal" icon="hashtag" href="/es/webhooks/channel-webhooks">
     Reciben los eventos de un canal concreto (mensajes, entrega, conexión).
   </Card>
-  <Card title="Webhooks de plantilla" icon="brackets-curly" href="/es/webhooks/template-webhooks">
-    Reciben los eventos de plantilla de WhatsApp, con independencia de la instancia.
+  <Card title="Webhook global (eventos de la cuenta)" icon="brackets-curly" href="/es/webhooks/template-webhooks">
+    Recibe los eventos de la cuenta (plantillas de WhatsApp, facturación, restricción de la cuenta y desconexión de canal), con independencia de la instancia.
   </Card>
   <Card title="Webhook predeterminado" icon="layer-group" href="/es/webhooks/default-webhooks">
     Recibe los eventos de todos los canales del workspace que no tienen webhook propio.
@@ -41,17 +41,17 @@ Ocurre un evento → Omni Z-API → POST a tu URL → Tu sistema lo procesa
 
 | Formato | Descripción |
 |---|---|
-| `DEFAULT` | Formato estándar de Omni Z-API |
+| `DEFAULT` | Formato estándar de Z-API Omni |
 | `Z_API` | Formato compatible con Z-API: mantiene la estructura que tus integraciones ya procesan, ideal si estás migrando |
 | `CHATWOOT` | El formato que espera Chatwoot, para conectar el canal directamente a su bandeja de entrada |
 
 <Note>
-  `payloadFormat` solo aplica a los **webhooks de canal**. En los [webhooks de plantilla](/es/webhooks/template-webhooks) el formato es siempre `DEFAULT` y el campo se descarta.
+  El [webhook global](/es/webhooks/template-webhooks) se entrega en `DEFAULT`: usa siempre `DEFAULT` en él. Con `ACCOUNT_RESTRICTION` o con los eventos de la plataforma (facturación y `CHANNEL_DISCONNECTED`), otro formato devuelve `422`. El webhook predeterminado no admite `CHATWOOT`.
 </Note>
 
 ## URL del webhook
 
-Al crear un webhook, y al cambiar la URL de uno existente, {projectName} comprueba la `url` antes de guardarla. Las reglas valen para los dos tipos de webhook.
+Al crear un webhook, y al cambiar la URL de uno existente, {projectName} comprueba la `url` antes de guardarla. Las reglas valen para los tres tipos de webhook.
 
 | Regla | Si no se cumple |
 |---|---|
@@ -104,3 +104,8 @@ Cuando está habilitada:
 <Warning>
   El `secret` se muestra **únicamente** en la respuesta de creación o de actualización con `signing: true`. Guárdalo de forma segura: no se puede recuperar después.
 </Warning>
+
+## Entrega y seguimiento
+
+- Cómo se entrega cada evento, cuándo se envía de nuevo y cómo deduplicar: [Entrega y reintentos](/es/webhooks/delivery).
+- Para ver las entregas de cada webhook, el estado de cada uno y reenviar lo que falló: [Central de webhooks](/es/webhooks/central).

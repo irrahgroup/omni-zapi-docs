@@ -1,27 +1,33 @@
 ---
 title: "Enviar botões de ação"
-description: "Envie mensagens com botões de ação (ligar, URL, resposta rápida)"
-openapi: "POST /send-button-actions"
+description: "Envie mensagens com um botão de link ou botões de resposta"
+openapi: "/pt/z-api/openapi.json POST /send-button-actions"
 ---
+
+<Warning>
+  Botões `CALL` (ligar) e o link de copiar código não são suportados, e os tipos `URL` e `REPLY` não podem ir juntos. Todas as recusas estão em [Limitações e recusas](/z-api/limitations#recusas-por-campo-em-rotas-que-enviam).
+</Warning>
 
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Conceituação
-
-Método para envio de mensagens com botões de ação. Existem três tipos de botão:
-
-- **CALL** — Botão para ligar para um número
-- **URL** — Botão para abrir um link
-- **REPLY** — Botão de resposta rápida
-
-<Warning>
-  Não combine os três tipos de botão na mesma mensagem. Envie botões de **CALL + URL** juntos, e botões de **REPLY** separadamente. Combinar todos causa erro no WhatsApp.
-</Warning>
-
-<Tip>
-  Para botões de copiar código, use o formato de URL: `https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=SEU_CODIGO`
-</Tip>
+Envia uma mensagem com botões. Um botão `URL` abre um link. Botões `REPLY` são de resposta rápida, como em [Enviar lista de botões](/z-api/messages/send-button-list).
 
 <Note>
   <ZapiResponseText lang="pt" />
 </Note>
+
+Os limites de tamanho e de quantidade vêm do WhatsApp. Quando um limite é excedido, a resposta é `422` com o texto do campo, como `buttonActions[0].label must be at most 20 characters` ou `title must be at most 60 characters`.
+
+### Erros
+
+| Status | Resposta `error` | Quando |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente ou vazio |
+| `422` | `call button is not supported for this channel` | Algum botão é do tipo `CALL` |
+| `422` | `only one URL button is supported for this channel` | Mais de um botão `URL` |
+| `422` | `title and footer with REPLY buttons are not available for this channel yet` | Botões `REPLY` com `title` ou `footer` |
+
+## Veja também
+
+- [Mensagens: erros comuns](/z-api/messages/introduction#erros-comuns)
+- [Limitações e recusas](/z-api/limitations)

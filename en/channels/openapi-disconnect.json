@@ -1,53 +1,113 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Disconnect Channel",
+    "title": "Z-API Omni - Disconnect Meta WhatsApp channel",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/disconnect": {
       "put": {
         "summary": "Disconnect Meta WhatsApp channel",
-        "description": "Disconnects a **META_WHATSAPP** channel from the WhatsApp Official API. Clears all connection data (WABA, phone ID, coexistence) and marks the channel as disconnected.",
+        "description": "Disconnects a `META_WHATSAPP` channel from the WhatsApp Official API and clears the connection data (WABA, phone ID, connected number and coexistence). Does not require ENTERPRISE.",
         "operationId": "disconnectMetaChannel",
-        "tags": ["Channels"],
+        "tags": [
+          "Channels"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
-            "description": "Channel ID",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "description": "Channel ID (from Create channel or List channels)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Channel disconnected successfully",
+            "description": "With `true`, the channel is disconnected and the connection data is cleared. With `false`, nothing changes on the channel.",
             "content": {
               "application/json": {
-                "schema": { "type": "boolean" },
+                "schema": {
+                  "type": "boolean"
+                },
                 "example": true
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "404": {
-            "description": "Channel not found",
+          "400": {
+            "description": "Secret Key missing, malformed or unknown, IP outside the allowed IP list, or invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 404, "message": "Channel not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Invalid Secret Key",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP outside the list",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Call made with the OAuth token of a connected app or the MCP. This route is not open to OAuth: use the Secret Key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "insufficient_scope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel does not exist or belongs to another workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
               }
             }
           },
           "502": {
-            "description": "External service integration error",
+            "description": "Integration failure. The operation was not completed; try again in a few moments.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 502, "message": "Integration error" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
               }
             }
           }
@@ -56,23 +116,27 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Invalid or missing token.",
-        "content": {
-          "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
-          }
-        }
-      }
-    },
     "schemas": {
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string",
+            "description": "Error reason"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Stable error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error text, in English"
+          }
         }
       }
     },
@@ -80,7 +144,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generated in the Omni Z-API Security panel"
+        "description": "Secret Key generated in Security, on the Z-API Omni dashboard. The `Bearer` prefix is optional."
       }
     }
   }

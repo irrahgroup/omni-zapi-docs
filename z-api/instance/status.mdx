@@ -1,0 +1,39 @@
+---
+title: "Status da instância"
+description: "Veja se o canal está conectado"
+openapi: "/pt/z-api/openapi.json GET /status"
+---
+
+## Conceituação
+
+Diz se o canal está conectado. Responde no formato da Z-API.
+
+```json
+{
+  "connected": true,
+  "error": "You are already connected",
+  "smartphoneConnected": true
+}
+```
+
+| Campo | O que diz |
+|---|---|
+| `connected` | `true` quando o canal está conectado |
+| `error` | Texto de situação: `You are already connected` quando conectado, `You are not connected` quando não |
+| `smartphoneConnected` | Sempre igual a `connected` |
+
+O estado vem da conexão registrada pela plataforma. A assinatura do canal não entra nesta resposta.
+
+### Erros
+
+| Status | Resposta `error` | Quando |
+|---|---|---|
+| `404` | `instance not found` | O `id` ou o `token` do path não existe |
+| `422` | `instance status route is not available through this compatibility route for Z_API_WHATSAPP instances yet` | O canal é do tipo `Z_API_WHATSAPP` |
+| `502` | `failed to read instance data` | A plataforma não respondeu. Tente de novo |
+
+Os erros de [autenticação](/z-api/authentication) valem aqui também.
+
+## Veja também
+
+- [Z-API Compatibilidade](/z-api/introduction)

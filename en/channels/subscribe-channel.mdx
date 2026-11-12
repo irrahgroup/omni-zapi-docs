@@ -1,34 +1,55 @@
 ---
 title: "Subscribe channel"
-description: "Add a channel to an existing subscription after payment is completed in the dashboard"
+description: "Add a channel to the account subscription, with or without checkout"
 openapi: "/en/channels/openapi-subscribe.json GET /v1/channels/{channelId}/subscribe"
 ---
 
-import { projectName } from '/snippets/variables.mdx';
-
 import { EnterpriseText } from '/snippets/notes.mdx';
-
-## Overview
-
-Links a channel to the account's active Stripe subscription. The channel is **automatically added** to the existing subscription and a prorated charge for the remaining billing period is included on the next invoice.
-
-<Note>
-  Payment is completed beforehand by the user in the {projectName} dashboard. This endpoint should be called after the checkout is completed in the dashboard to activate the channel via API.
-</Note>
 
 <Warning>
   <EnterpriseText lang="en" />
 </Warning>
 
-Example response:
+## Overview
+
+Adds the channel to the account subscription. Use it after [Create channel](/en/channels/create-channel): the channel starts in `TRIAL` for 2 days and, to keep it, it must be subscribed.
+
+### The response comes in two forms
+
+**With a payment to make**, the response has `checkoutId` and `url`. Send the user to the `url` to complete the payment. If you sent `redirectUrl` in the query, the checkout returns to that address at the end.
+
+```json
+{
+  "checkoutId": "cs_a1B2c3D4e5F6",
+  "url": "https://checkout.stripe.com/c/pay/cs_a1B2c3D4e5F6"
+}
+```
+
+**Without checkout**, the subscription is updated right away and the response has `type` `SUBSCRIPTION_UPDATED`. The charge prorated to the rest of the cycle goes on the next invoice.
 
 ```json
 {
   "type": "SUBSCRIPTION_UPDATED",
-  "message": "Channel active. Prorated charge will be included on the next invoice."
+  "message": "Channel active. A prorated charge will be added to the next invoice."
 }
 ```
 
+### Errors
+
+| Status | Body | When |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key missing, malformed or unknown |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP outside the [IP list](/en/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Channel does not exist or belongs to another workspace |
+| `422` | `{"error":"Channel subscription requires ENTERPRISE role"}` | Account without the ENTERPRISE role |
+| `422` | `{"error":{"type":"CREDIT_LIMIT_EXCEEDED", ...}}` | Account credit limit reached |
+| `422` | `{"error":{"type":"SUBSCRIPTION_TERMINATED", ...}}` | Subscription terminated; channels cannot be added |
+| `502` | `{"error":"integration_unavailable", ...}` | Integration failure; try again in a few moments |
+
 <Note>
-  The `channelId` is obtained from the [Create channel](/en/channels/create-channel) endpoint.
+  The `channelId` comes from the [Create channel](/en/channels/create-channel) endpoint or from [List channels](/en/channels/list-channels).
 </Note>
+
+## See also
+
+- [Introduction](/en/channels/introduction)

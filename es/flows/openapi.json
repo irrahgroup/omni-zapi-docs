@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Flows de WhatsApp",
+    "title": "Z-API Omni - Flows de WhatsApp",
     "description": "API para crear y gestionar WhatsApp Flows (formularios nativos dentro de la conversación)",
     "version": "1.0.0"
   },
@@ -19,10 +19,10 @@
     "/whatsapp/businesses/{wabaId}/flows": {
       "get": {
         "summary": "Listar flows",
-        "description": "Devuelve los flows de la WABA, con nombre, categorías y estado de publicación.",
+        "description": "Devuelve todos los flows de la WABA de una vez, con nombre, categorías y estado de publicación. No hay paginación. Con `sync=true`, sincroniza con Meta antes de listar.",
         "operationId": "listFlows",
         "tags": [
-          "Flows"
+          "Flows (WhatsApp)"
         ],
         "parameters": [
           {
@@ -36,15 +36,14 @@
             }
           },
           {
-            "name": "limit",
+            "name": "sync",
             "in": "query",
             "required": false,
-            "description": "Cantidad de flows por página",
+            "description": "Cuando es `true`, sincroniza los flows con Meta antes de listar. Sin él, la lista sale del registro de la plataforma. La lista viene completa, sin paginación",
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "example": 25
+              "type": "boolean",
+              "default": false,
+              "example": false
             }
           }
         ],
@@ -73,12 +72,40 @@
               }
             }
           },
-          "401": {
-            "description": "Token no válido o ausente.",
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "description": "Meta o la plataforma rechazó la operación. Mira el formato del cuerpo en el ejemplo.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/UnprocessableEntity"
+                },
+                "examples": {
+                  "meta_rejection": {
+                    "summary": "Rechazo de Meta",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-11-09T12:00:00Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "100",
+                            "name": "META_WHATSAPP_ERROR",
+                            "message": "Invalid parameter",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "no_details": {
+                    "summary": "Rechazo sin detalle",
+                    "value": {
+                      "error": "The operation could not be completed right now. Try again in a few moments."
+                    }
+                  }
                 }
               }
             }
@@ -96,7 +123,7 @@
         "description": "Crea un flow. El `flow_json` es la definición de las pantallas en JSON, enviada como string. Con `publish: true` el flow nace publicado; si no, queda en `DRAFT`.",
         "operationId": "createFlow",
         "tags": [
-          "Flows"
+          "Flows (WhatsApp)"
         ],
         "parameters": [
           {
@@ -129,7 +156,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Flow creado",
             "content": {
               "application/json": {
@@ -142,7 +169,7 @@
                   "categories": [
                     "APPOINTMENT_BOOKING"
                   ],
-                  "status": "PUBLISHED",
+                  "status": "DRAFT",
                   "endpoint_uri": null,
                   "validation_errors": []
                 }
@@ -150,31 +177,39 @@
             }
           },
           "400": {
-            "description": "Petición no válida: `flow_json` mal formado o categoría inexistente",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Token no válido o ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/FlowBadRequest"
           },
           "422": {
-            "description": "Regla de negocio incumplida: un flow publicado no admite cambios en el `flow_json`, o eliminación de un flow fuera de `DRAFT`",
+            "description": "Meta o la plataforma rechazó la operación: `flow_json` mal formado, categoría inexistente u otra regla de Meta. Mira el formato del cuerpo en el ejemplo.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/UnprocessableEntity"
+                },
+                "examples": {
+                  "meta_rejection": {
+                    "summary": "Rechazo de Meta",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-11-09T12:00:00Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "100",
+                            "name": "META_WHATSAPP_ERROR",
+                            "message": "Invalid parameter",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "no_details": {
+                    "summary": "Rechazo sin detalle",
+                    "value": {
+                      "error": "The operation could not be completed right now. Try again in a few moments."
+                    }
+                  }
                 }
               }
             }
@@ -194,7 +229,7 @@
         "description": "Fuerza la sincronización de los flows con Meta, actualizando estados e incidencias de validación.",
         "operationId": "syncFlows",
         "tags": [
-          "Flows"
+          "Flows (WhatsApp)"
         ],
         "parameters": [
           {
@@ -233,12 +268,40 @@
               }
             }
           },
-          "401": {
-            "description": "Token no válido o ausente.",
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "description": "Meta o la plataforma rechazó la operación. Mira el formato del cuerpo en el ejemplo.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/UnprocessableEntity"
+                },
+                "examples": {
+                  "meta_rejection": {
+                    "summary": "Rechazo de Meta",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-11-09T12:00:00Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "100",
+                            "name": "META_WHATSAPP_ERROR",
+                            "message": "Invalid parameter",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "no_details": {
+                    "summary": "Rechazo sin detalle",
+                    "value": {
+                      "error": "The operation could not be completed right now. Try again in a few moments."
+                    }
+                  }
                 }
               }
             }
@@ -258,7 +321,7 @@
         "description": "Devuelve un flow concreto, incluido su `flow_json` y las incidencias de validación de Meta.",
         "operationId": "getFlow",
         "tags": [
-          "Flows"
+          "Flows (WhatsApp)"
         ],
         "parameters": [
           {
@@ -314,22 +377,40 @@
               }
             }
           },
-          "401": {
-            "description": "Token no válido o ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
-          "404": {
-            "description": "Flow no encontrado",
+          "422": {
+            "description": "Flow inexistente o de otro workspace, o rechazo de Meta al consultarlo.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/UnprocessableEntity"
+                },
+                "examples": {
+                  "meta_rejection": {
+                    "summary": "Rechazo de Meta",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-11-09T12:00:00Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "100",
+                            "name": "META_WHATSAPP_ERROR",
+                            "message": "Invalid parameter",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "no_details": {
+                    "summary": "Rechazo sin detalle",
+                    "value": {
+                      "error": "The operation could not be completed right now. Try again in a few moments."
+                    }
+                  }
                 }
               }
             }
@@ -347,7 +428,7 @@
         "description": "Actualiza un flow existente. Todos los campos son opcionales: solo cambian los que envías. Un flow `PUBLISHED` no admite cambios en el `flow_json`.",
         "operationId": "updateFlow",
         "tags": [
-          "Flows"
+          "Flows (WhatsApp)"
         ],
         "parameters": [
           {
@@ -394,7 +475,7 @@
                 },
                 "example": {
                   "id": "1122334455667788",
-                  "name": "agendamento_consulta",
+                  "name": "agendamento_consulta_v2",
                   "categories": [
                     "APPOINTMENT_BOOKING"
                   ],
@@ -406,41 +487,39 @@
             }
           },
           "400": {
-            "description": "Petición no válida: `flow_json` mal formado o categoría inexistente",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Token no válido o ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Flow no encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/FlowBadRequest"
           },
           "422": {
-            "description": "Regla de negocio incumplida: un flow publicado no admite cambios en el `flow_json`, o eliminación de un flow fuera de `DRAFT`",
+            "description": "Meta o la plataforma rechazó la operación: flow inexistente o de otro workspace, `flow_json` mal formado, categoría inexistente, o flow publicado que no admite cambios en el `flow_json`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/UnprocessableEntity"
+                },
+                "examples": {
+                  "meta_rejection": {
+                    "summary": "Rechazo de Meta",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-11-09T12:00:00Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "100",
+                            "name": "META_WHATSAPP_ERROR",
+                            "message": "Invalid parameter",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "no_details": {
+                    "summary": "Rechazo sin detalle",
+                    "value": {
+                      "error": "The operation could not be completed right now. Try again in a few moments."
+                    }
+                  }
                 }
               }
             }
@@ -458,7 +537,7 @@
         "description": "Elimina permanentemente un flow. Solo se pueden eliminar flows en `DRAFT`.",
         "operationId": "deleteFlow",
         "tags": [
-          "Flows"
+          "Flows (WhatsApp)"
         ],
         "parameters": [
           {
@@ -483,35 +562,52 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Flow eliminado. No se devuelve contenido."
-          },
-          "401": {
-            "description": "Token no válido o ausente.",
+          "200": {
+            "description": "Flow eliminado. El cuerpo es el booleano `true`",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
+                  "type": "boolean",
+                  "description": "`true` cuando la eliminación fue aceptada"
+                },
+                "example": true
               }
             }
           },
-          "404": {
-            "description": "Flow no encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "422": {
-            "description": "Regla de negocio incumplida: un flow publicado no admite cambios en el `flow_json`, o eliminación de un flow fuera de `DRAFT`",
+            "description": "Flow inexistente o de otro workspace, o flow fuera de `DRAFT`, que no se puede eliminar.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/UnprocessableEntity"
+                },
+                "examples": {
+                  "meta_rejection": {
+                    "summary": "Rechazo de Meta",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-11-09T12:00:00Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "100",
+                            "name": "META_WHATSAPP_ERROR",
+                            "message": "Invalid parameter",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "no_details": {
+                    "summary": "Rechazo sin detalle",
+                    "value": {
+                      "error": "The operation could not be completed right now. Try again in a few moments."
+                    }
+                  }
                 }
               }
             }
@@ -531,7 +627,7 @@
         "description": "Publica el flow y lo deja disponible para usarlo en mensajes. Una vez publicado, el `flow_json` ya no se puede cambiar.",
         "operationId": "publishFlow",
         "tags": [
-          "Flows"
+          "Flows (WhatsApp)"
         ],
         "parameters": [
           {
@@ -576,32 +672,40 @@
               }
             }
           },
-          "401": {
-            "description": "Token no válido o ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Flow no encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "422": {
-            "description": "Regla de negocio incumplida: un flow publicado no admite cambios en el `flow_json`, o eliminación de un flow fuera de `DRAFT`",
+            "description": "Flow inexistente o de otro workspace, o rechazo de Meta al publicar (por ejemplo, pendientes de validación en el `flow_json`).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/UnprocessableEntity"
+                },
+                "examples": {
+                  "meta_rejection": {
+                    "summary": "Rechazo de Meta",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-11-09T12:00:00Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "100",
+                            "name": "META_WHATSAPP_ERROR",
+                            "message": "Invalid parameter",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "no_details": {
+                    "summary": "Rechazo sin detalle",
+                    "value": {
+                      "error": "The operation could not be completed right now. Try again in a few moments."
+                    }
+                  }
                 }
               }
             }
@@ -621,7 +725,7 @@
         "description": "Marca el flow como `DEPRECATED`. Deja de aceptar nuevas aperturas, pero las sesiones en curso continúan.",
         "operationId": "deprecateFlow",
         "tags": [
-          "Flows"
+          "Flows (WhatsApp)"
         ],
         "parameters": [
           {
@@ -666,32 +770,40 @@
               }
             }
           },
-          "401": {
-            "description": "Token no válido o ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Flow no encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "422": {
-            "description": "Regla de negocio incumplida: un flow publicado no admite cambios en el `flow_json`, o eliminación de un flow fuera de `DRAFT`",
+            "description": "Flow inexistente o de otro workspace, o rechazo de Meta al descontinuar.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/UnprocessableEntity"
+                },
+                "examples": {
+                  "meta_rejection": {
+                    "summary": "Rechazo de Meta",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-11-09T12:00:00Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "100",
+                            "name": "META_WHATSAPP_ERROR",
+                            "message": "Invalid parameter",
+                            "description": ""
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "no_details": {
+                    "summary": "Rechazo sin detalle",
+                    "value": {
+                      "error": "The operation could not be completed right now. Try again in a few moments."
+                    }
+                  }
                 }
               }
             }
@@ -874,10 +986,12 @@
         "type": "object",
         "properties": {
           "error": {
-            "type": "integer"
+            "type": "string",
+            "description": "Código o mensaje del error"
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "description": "Descripción del error"
           }
         }
       },
@@ -893,15 +1007,136 @@
             "description": "Mensaje para quien integra"
           }
         }
+      },
+      "UnprocessableEntity": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "description": "Detalle del rechazo (objeto) o, cuando no hay detalle, el mensaje en texto.",
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "timestamp": {
+                    "type": "string",
+                    "description": "Momento del rechazo"
+                  },
+                  "status": {
+                    "type": "integer",
+                    "description": "Status HTTP informado en el detalle del rechazo"
+                  },
+                  "errors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Código de error de Meta"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Tipo del error (ej: META_WHATSAPP_ERROR)"
+                        },
+                        "subCode": {
+                          "type": "string",
+                          "description": "Subcódigo de error de Meta"
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Mensaje de error"
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "Explicación del rechazo"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        }
       }
     },
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
-        "scheme": "bearer"
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Z-API Omni. El prefijo `Bearer` es opcional."
       }
     },
     "responses": {
+      "BadRequest": {
+        "description": "Autenticación rechazada. El header `Authorization` falta, la clave está mal formada o no existe (`Authorization invalid`), o la IP de origen está fuera de la lista de IPs permitidas de la Secret Key (`<ip> not allowed`). El prefijo `Bearer` es opcional.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "authorization_invalid": {
+                "summary": "Clave ausente, mal formada o inexistente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ip_not_allowed": {
+                "summary": "IP fuera de la lista de IPs permitidas de la Secret Key",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "business_id_required": {
+                "summary": "WABA no informada",
+                "value": {
+                  "error": "Business id is required"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FlowBadRequest": {
+        "description": "Petición rechazada antes de llegar a Meta: autenticación rechazada (header `Authorization` ausente, clave mal formada o inexistente, o IP fuera de la lista de IPs permitidas de la Secret Key) o cuerpo ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "authorization_invalid": {
+                "summary": "Clave ausente, mal formada o inexistente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ip_not_allowed": {
+                "summary": "IP fuera de la lista de IPs permitidas de la Secret Key",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "request_body_missing": {
+                "summary": "Cuerpo de la petición ausente",
+                "value": {
+                  "error": "Required request body is missing"
+                }
+              },
+              "business_id_required": {
+                "summary": "WABA no informada",
+                "value": {
+                  "error": "Business id is required"
+                }
+              }
+            }
+          }
+        }
+      },
       "IntegrationUnavailable": {
         "description": "Falla temporal de un servicio interno. Intenta de nuevo en unos instantes.",
         "content": {

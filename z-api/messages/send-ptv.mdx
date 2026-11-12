@@ -1,0 +1,30 @@
+---
+title: "Enviar PTV"
+description: "Envie um vídeo pela rota PTV, entregue como vídeo comum"
+openapi: "/pt/z-api/openapi.json POST /send-ptv"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+
+Aceita o corpo da rota PTV da Z-API, por **URL** ou por **Base64**. A mensagem é entregue como **vídeo comum**, não como vídeo circular.
+
+<Note>
+  <ZapiResponseText lang="pt" />
+</Note>
+
+<Note>
+  Os limites de tamanho e de formato seguem as políticas do WhatsApp. Consulte a [documentação oficial do WhatsApp](https://developers.facebook.com/docs/whatsapp/api/media).
+</Note>
+
+### Erros
+
+| Status | Resposta `error` | Quando |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente ou vazio |
+| `400` | `invalid ptv: must be a valid URL or base64 data URI` | O campo não é uma URL `http`/`https` nem um Base64 com prefixo `data:` |
+| `422` | `message has no content this route can send` | O corpo não traz o campo da mídia nem `message`, então não há conteúdo para enviar |
+
+## Veja também
+
+- [Mensagens: erros comuns](/z-api/messages/introduction#erros-comuns)
+- [Limitações e recusas](/z-api/limitations)

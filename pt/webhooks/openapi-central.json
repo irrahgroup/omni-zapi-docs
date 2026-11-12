@@ -1,0 +1,1727 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Central de webhooks",
+    "description": "Consulte as entregas de eventos aos seus webhooks, reenvie entregas, veja o estado de cada webhook e reative um webhook suspenso. Todas as rotas usam a Secret Key do workspace (o prefixo `Bearer` é opcional) e existem também sem o prefixo `/v1`. Qualquer papel de workspace pode usar; o plano `ENTERPRISE` não é exigido.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/webhooks/deliveries": {
+      "get": {
+        "summary": "Listar entregas",
+        "description": "Lista as entregas de eventos aos webhooks do workspace da Secret Key, da mais nova para a mais antiga, sem total. Todos os filtros são opcionais. Sem `from` e `to`, vale o período das últimas 24 horas. A lista mostra só o que está dentro da retenção atual do plano.",
+        "operationId": "listWebhookDeliveries",
+        "tags": [
+          "Central de webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "webhookId",
+            "in": "query",
+            "required": false,
+            "description": "Só as entregas deste webhook.",
+            "schema": {
+              "type": "string",
+              "example": "A1B2C3D4E5F6789012345678901234AB"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Só as entregas neste status. Outro valor responde `400`.",
+            "schema": {
+              "$ref": "#/components/schemas/DeliveryStatus"
+            }
+          },
+          {
+            "name": "eventType",
+            "in": "query",
+            "required": false,
+            "description": "Só as entregas deste tipo de evento. Aceita maiúsculas ou minúsculas. Outro valor responde `400` com `eventType invalido`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "MESSAGE_RECEIVED",
+                "MESSAGE_DELIVERY",
+                "MESSAGE_STATUS",
+                "RECEIVED_STATUS",
+                "RECEIVED_AND_DELIVERY",
+                "CONNECTED",
+                "DISCONNECTED",
+                "PRESENCE_CHAT",
+                "INITIAL_DATA",
+                "BLOCK",
+                "UPDATE_TEMPLATE_STATUS",
+                "UPDATE_TEMPLATE_CATEGORY"
+              ],
+              "example": "MESSAGE_RECEIVED"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "query",
+            "required": false,
+            "description": "Só as entregas deste evento (UUID, o mesmo do header `x-webhook-event-id`). Outro formato responde `400`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "9a8b7c6d-5e4f-5a3b-8c2d-1e0f9a8b7c6d"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Início do período, em ISO-8601 UTC. Precisa ser anterior a `to`. Um `from` anterior à retenção do plano é ajustado ao começo dela, sem erro, e a resposta traz `fromAdjusted: true`.",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-10-12T00:00:00Z"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Fim do período, em ISO-8601 UTC.",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-10-13T00:00:00Z"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Itens por página, de 1 a 100. Fora disso, `400`.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "O `nextCursor` da página anterior, sem alteração. Um valor que não decodifica responde `400`.",
+            "schema": {
+              "type": "string",
+              "example": "eyJjIjoxfQ"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Uma página de entregas. `nextCursor` vem `null` na última página.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "deliveryId": "3f2b1c9e-7a41-5d2e-9b8c-1e2f3a4b5c6d",
+                      "eventId": "9a8b7c6d-5e4f-5a3b-8c2d-1e0f9a8b7c6d",
+                      "webhookId": "A1B2C3D4E5F6789012345678901234AB",
+                      "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "eventType": "MESSAGE_RECEIVED",
+                      "eventCreatedAt": "2026-10-12T12:00:00Z",
+                      "status": "FAILED",
+                      "attempts": 7,
+                      "lastAttemptAt": "2026-10-13T08:36:00Z",
+                      "lastHttpStatus": 503,
+                      "lastOutcome": "HTTP_ERROR",
+                      "nextAttemptAt": null,
+                      "resendable": true,
+                      "notResendableReason": null,
+                      "notSentReason": null,
+                      "resentAt": null
+                    }
+                  ],
+                  "nextCursor": "eyJjIjoxfQ",
+                  "fromAdjusted": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Header `Authorization` ausente ou inválido, IP de origem fora da lista do workspace, ou filtro inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CentralError"
+                    }
+                  ]
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
+                  "invalidEventType": {
+                    "summary": "`eventType` fora da lista",
+                    "value": {
+                      "error": {
+                        "message": "eventType invalido"
+                      }
+                    }
+                  },
+                  "invalidStatus": {
+                    "summary": "`status` fora da lista",
+                    "value": {
+                      "error": {
+                        "message": "status invalido"
+                      }
+                    }
+                  },
+                  "fromAfterTo": {
+                    "summary": "`from` igual ou posterior a `to`",
+                    "value": {
+                      "error": {
+                        "message": "from deve ser anterior a to"
+                      }
+                    }
+                  },
+                  "invalidDate": {
+                    "summary": "Data fora do ISO-8601",
+                    "value": {
+                      "error": {
+                        "message": "from deve ser uma data ISO-8601"
+                      }
+                    }
+                  },
+                  "invalidLimit": {
+                    "summary": "`limit` fora de 1 a 100",
+                    "value": {
+                      "error": {
+                        "message": "limit deve ser de 1 a 100"
+                      }
+                    }
+                  },
+                  "invalidEventId": {
+                    "summary": "`eventId` que não é UUID",
+                    "value": {
+                      "error": {
+                        "message": "eventId invalido"
+                      }
+                    }
+                  },
+                  "invalidCursor": {
+                    "summary": "`cursor` que não decodifica",
+                    "value": {
+                      "error": {
+                        "message": "cursor invalido"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workspace sem configuração ativa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "inactiveWorkspace": {
+                    "summary": "Workspace sem configuração ativa",
+                    "value": {
+                      "error": "Webhook management requires an active workspace"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha ao concluir a operação agora. Tente de novo em instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationError"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A consulta ao histórico passou de 5 segundos ou o histórico não respondeu. Peça um período menor ou tente de novo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "O historico de webhooks nao respondeu a tempo. Tente um periodo menor ou tente de novo em instantes."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/deliveries/{deliveryId}": {
+      "get": {
+        "summary": "Detalhar entrega",
+        "description": "Retorna uma entrega com todas as tentativas, em ordem de `attemptNumber`, incluindo o pedido enviado e a resposta do seu servidor. Credenciais, assinatura, token na URL e valores da query aparecem mascarados.",
+        "operationId": "getWebhookDelivery",
+        "tags": [
+          "Central de webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "description": "ID da entrega (UUID), vindo de `deliveryId` na lista de entregas. Outro formato responde `400`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f2b1c9e-7a41-5d2e-9b8c-1e2f3a4b5c6d"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A entrega e as tentativas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryDetail"
+                },
+                "example": {
+                  "deliveryId": "3f2b1c9e-7a41-5d2e-9b8c-1e2f3a4b5c6d",
+                  "eventId": "9a8b7c6d-5e4f-5a3b-8c2d-1e0f9a8b7c6d",
+                  "webhookId": "A1B2C3D4E5F6789012345678901234AB",
+                  "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                  "eventType": "MESSAGE_RECEIVED",
+                  "eventCreatedAt": "2026-10-12T12:00:00Z",
+                  "status": "FAILED",
+                  "lastAttemptAt": "2026-10-13T08:36:00Z",
+                  "lastHttpStatus": 503,
+                  "lastOutcome": "HTTP_ERROR",
+                  "nextAttemptAt": null,
+                  "resendable": true,
+                  "notResendableReason": null,
+                  "notSentReason": null,
+                  "resentAt": null,
+                  "attempts": [
+                    {
+                      "attemptNumber": 1,
+                      "origin": "AUTOMATIC",
+                      "resentBy": null,
+                      "attemptedAt": "2026-10-12T12:00:00Z",
+                      "outcome": "HTTP_ERROR",
+                      "httpStatus": 503,
+                      "latencyMs": 412,
+                      "errorClass": null,
+                      "errorMessage": null,
+                      "url": "https://app.suaempresa.com/webhooks/omni-zapi?key={masked}",
+                      "requestHeaders": {
+                        "Content-Type": "application/json",
+                        "X-Webhook-Attempt": "1",
+                        "Authorization": "***",
+                        "X-Webhook-Signature": "***"
+                      },
+                      "requestBody": "{\"type\":\"MESSAGE_RECEIVED\"}",
+                      "requestBodyTruncated": false,
+                      "responseBody": "Service Unavailable",
+                      "responseBodyTruncated": false
+                    }
+                  ],
+                  "bodyHidden": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Header `Authorization` ausente ou inválido, IP de origem fora da lista do workspace, ou `deliveryId` que não é UUID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CentralError"
+                    }
+                  ]
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
+                  "invalidDeliveryId": {
+                    "summary": "`deliveryId` que não é UUID",
+                    "value": {
+                      "error": {
+                        "message": "deliveryId invalido"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entrega inexistente, expirada (fora da retenção) ou de outro workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentralError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workspace sem configuração ativa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "inactiveWorkspace": {
+                    "summary": "Workspace sem configuração ativa",
+                    "value": {
+                      "error": "Webhook management requires an active workspace"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha ao concluir a operação agora. Tente de novo em instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationError"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A consulta ao histórico passou de 5 segundos ou o histórico não respondeu. Peça um período menor ou tente de novo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "O historico de webhooks nao respondeu a tempo. Tente um periodo menor ou tente de novo em instantes."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/deliveries/{deliveryId}/resend": {
+      "post": {
+        "summary": "Reenviar entrega",
+        "description": "Faz uma tentativa nova da entrega, sem corpo no pedido. Vai para a URL, a autenticação e o segredo **atuais** do webhook, com o corpo guardado e os mesmos `X-Webhook-Event-Id` e `X-Webhook-Delivery-Id`. O `X-Webhook-Attempt` é sempre maior que o da tentativa anterior. Limite: 1 reenvio por minuto por entrega.",
+        "operationId": "resendWebhookDelivery",
+        "tags": [
+          "Central de webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "description": "ID da entrega (UUID), vindo de `deliveryId` na lista de entregas. Outro formato responde `400`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "3f2b1c9e-7a41-5d2e-9b8c-1e2f3a4b5c6d"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Reenvio aceito. A entrega aparece com `status` `RESENT` até o resultado chegar, por no máximo 1 hora. Se a confirmação demorar, a resposta traz também `message`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResendResponse"
+                },
+                "examples": {
+                  "sent": {
+                    "summary": "Reenvio enviado",
+                    "value": {
+                      "deliveryId": "3f2b1c9e-7a41-5d2e-9b8c-1e2f3a4b5c6d",
+                      "attemptNumber": 8
+                    }
+                  },
+                  "maybeSent": {
+                    "summary": "Confirmação demorou",
+                    "value": {
+                      "deliveryId": "3f2b1c9e-7a41-5d2e-9b8c-1e2f3a4b5c6d",
+                      "attemptNumber": 8,
+                      "message": "O reenvio pode ter sido enviado; confira o resultado em alguns minutos."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Header `Authorization` ausente ou inválido, IP de origem fora da lista do workspace, ou `deliveryId` que não é UUID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CentralError"
+                    }
+                  ]
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
+                  "invalidDeliveryId": {
+                    "summary": "`deliveryId` que não é UUID",
+                    "value": {
+                      "error": {
+                        "message": "deliveryId invalido"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entrega inexistente, expirada, de webhook excluído ou de outro workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentralError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workspace sem configuração ativa; ou a entrega não pode ser reenviada agora: o motivo vem em `error.details.reason`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CentralError"
+                    }
+                  ]
+                },
+                "examples": {
+                  "inactiveWorkspace": {
+                    "summary": "Workspace sem configuração ativa",
+                    "value": {
+                      "error": "Webhook management requires an active workspace"
+                    }
+                  },
+                  "truncated": {
+                    "summary": "TRUNCATED",
+                    "value": {
+                      "error": {
+                        "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+                        "message": "O corpo desta entrega passou do limite guardado e nao pode ser reenviado.",
+                        "details": {
+                          "reason": "TRUNCATED"
+                        }
+                      }
+                    }
+                  },
+                  "webhookSuspended": {
+                    "summary": "WEBHOOK_SUSPENDED",
+                    "value": {
+                      "error": {
+                        "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+                        "message": "O envio deste webhook esta suspenso. Reative o webhook antes de reenviar.",
+                        "details": {
+                          "reason": "WEBHOOK_SUSPENDED"
+                        }
+                      }
+                    }
+                  },
+                  "webhookDisabled": {
+                    "summary": "WEBHOOK_DISABLED",
+                    "value": {
+                      "error": {
+                        "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+                        "message": "O webhook esta desabilitado. Habilite o webhook antes de reenviar.",
+                        "details": {
+                          "reason": "WEBHOOK_DISABLED"
+                        }
+                      }
+                    }
+                  },
+                  "unreadableBody": {
+                    "summary": "UNREADABLE_BODY",
+                    "value": {
+                      "error": {
+                        "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+                        "message": "O corpo guardado desta entrega nao pode ser lido e nao pode ser reenviado.",
+                        "details": {
+                          "reason": "UNREADABLE_BODY"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Acima do limite de reenvio.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentralError"
+                },
+                "examples": {
+                  "perDelivery": {
+                    "summary": "Mais de 1 reenvio por minuto",
+                    "value": {
+                      "error": {
+                        "message": "Esta entrega ja foi reenviada no ultimo minuto. Tente de novo em instantes."
+                      }
+                    }
+                  },
+                  "inProgress": {
+                    "summary": "Outro reenvio da entrega em andamento",
+                    "value": {
+                      "error": {
+                        "message": "Outro reenvio desta entrega esta em andamento. Tente de novo em instantes."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha ao concluir a operação agora. Tente de novo em instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationError"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "O reenvio não foi enviado. Tente de novo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "O reenvio nao foi enviado; tente de novo."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/deliveries/resend": {
+      "post": {
+        "summary": "Reenviar entregas em lote",
+        "description": "Reenvia as entregas `FAILED`, `NOT_SENT`, `EXPIRED` e `UNKNOWN` do episódio atual de falha de um webhook: as que tiveram a última tentativa a partir da primeira falha da sequência, inclusive as que chegaram depois. Cada pedido coloca até 1.000 entregas na fila. Repita a cada 2 minutos enquanto `remaining` for maior que zero, antes de `oldestExpiresAt`. Não há reenvio em lote por filtro.",
+        "operationId": "resendWebhookDeliveries",
+        "tags": [
+          "Central de webhooks"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkResendRequest"
+              },
+              "example": {
+                "webhookId": "A1B2C3D4E5F6789012345678901234AB",
+                "episode": "current"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Lote aceito.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResendResponse"
+                },
+                "example": {
+                  "queued": 1000,
+                  "remaining": 3200,
+                  "skippedTruncated": 3,
+                  "skippedNotResendable": 2,
+                  "dailyRemaining": 49000,
+                  "oldestExpiresAt": "2026-10-13T06:00:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Header `Authorization` ausente ou inválido, IP de origem fora da lista do workspace, ou corpo sem `webhookId` ou com `episode` diferente de `current`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CentralError"
+                    }
+                  ]
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
+                  "webhookIdRequired": {
+                    "summary": "Sem `webhookId`",
+                    "value": {
+                      "error": {
+                        "message": "webhookId e obrigatorio"
+                      }
+                    }
+                  },
+                  "episodeRequired": {
+                    "summary": "`episode` diferente de `current`",
+                    "value": {
+                      "error": {
+                        "message": "o reenvio em lote exige episode=current"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook inexistente ou de outro workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentralError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workspace sem configuração ativa; ou webhook suspenso ou desabilitado: o motivo vem em `error.details.reason`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CentralError"
+                    }
+                  ]
+                },
+                "examples": {
+                  "inactiveWorkspace": {
+                    "summary": "Workspace sem configuração ativa",
+                    "value": {
+                      "error": "Webhook management requires an active workspace"
+                    }
+                  },
+                  "webhookSuspended": {
+                    "summary": "WEBHOOK_SUSPENDED",
+                    "value": {
+                      "error": {
+                        "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+                        "message": "O envio deste webhook esta suspenso. Reative o webhook antes de reenviar.",
+                        "details": {
+                          "reason": "WEBHOOK_SUSPENDED"
+                        }
+                      }
+                    }
+                  },
+                  "webhookDisabled": {
+                    "summary": "WEBHOOK_DISABLED",
+                    "value": {
+                      "error": {
+                        "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+                        "message": "O webhook esta desabilitado. Habilite o webhook antes de reenviar.",
+                        "details": {
+                          "reason": "WEBHOOK_DISABLED"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Acima do limite de reenvio.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentralError"
+                },
+                "examples": {
+                  "batchInterval": {
+                    "summary": "Menos de 2 minutos desde o lote anterior",
+                    "value": {
+                      "error": {
+                        "message": "O proximo lote deste webhook pode ser pedido em ate 2 minutos."
+                      }
+                    }
+                  },
+                  "dailyCap": {
+                    "summary": "Teto de 50.000 reenvios no dia",
+                    "value": {
+                      "error": {
+                        "message": "O webhook ja atingiu o limite de 50000 reenvios hoje. Os retidos que restam expiram a partir de 2026-10-13T06:00:00Z."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha ao concluir a operação agora. Tente de novo em instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationError"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A consulta ao histórico passou de 5 segundos ou o histórico não respondeu. Peça um período menor ou tente de novo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "O historico de webhooks nao respondeu a tempo. Tente um periodo menor ou tente de novo em instantes."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/health": {
+      "get": {
+        "summary": "Estado dos webhooks",
+        "description": "Retorna a retenção atual do workspace e o estado de cada webhook dele: de canal, padrão e global. Os campos sem valor vêm `null`, nunca ausentes.",
+        "operationId": "getWebhooksHealth",
+        "tags": [
+          "Central de webhooks"
+        ],
+        "responses": {
+          "200": {
+            "description": "Retenção e estado dos webhooks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "retentionDays": 1,
+                  "webhooks": [
+                    {
+                      "webhookId": "A1B2C3D4E5F6789012345678901234AB",
+                      "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                      "description": "Pedidos",
+                      "payloadFormat": "DEFAULT",
+                      "state": "FAILING",
+                      "consecutiveFailures": 5,
+                      "failingSince": "2026-10-12T10:00:00Z",
+                      "lastFailureAt": "2026-10-12T11:30:00Z",
+                      "lastSuccessAt": "2026-10-12T09:58:00Z",
+                      "alertsGiven": 1,
+                      "alertPending": false,
+                      "suspendedAt": null,
+                      "episodeStartedAt": "2026-10-12T10:00:00Z",
+                      "retainedSince": null
+                    },
+                    {
+                      "webhookId": "B2C3D4E5F6789012345678901234AB12",
+                      "channelId": "019E4C54B1B375A28970B605CA9B03C4",
+                      "description": "Atendimento",
+                      "payloadFormat": "CHATWOOT",
+                      "state": "NO_HISTORY",
+                      "consecutiveFailures": null,
+                      "failingSince": null,
+                      "lastFailureAt": null,
+                      "lastSuccessAt": null,
+                      "alertsGiven": null,
+                      "alertPending": false,
+                      "suspendedAt": null,
+                      "episodeStartedAt": null,
+                      "retainedSince": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Header `Authorization` ausente ou inválido, IP de origem fora da lista do workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CentralError"
+                    }
+                  ]
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workspace sem configuração ativa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "inactiveWorkspace": {
+                    "summary": "Workspace sem configuração ativa",
+                    "value": {
+                      "error": "Webhook management requires an active workspace"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha ao concluir a operação agora. Tente de novo em instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationError"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/{webhookId}/reactivate": {
+      "post": {
+        "summary": "Reativar webhook",
+        "description": "Reativa um webhook suspenso, sem corpo no pedido: limpa a suspensão e zera a sequência de falhas. O Owner e os Managers do workspace recebem um e-mail com quem reativou. Um webhook que não está suspenso responde `200` com o estado atual, sem efeito. Os eventos retidos não são reenviados sozinhos: use o reenvio em lote.",
+        "operationId": "reactivateWebhook",
+        "tags": [
+          "Central de webhooks"
+        ],
+        "parameters": [
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "description": "ID do webhook (de canal, padrão ou global).",
+            "schema": {
+              "type": "string",
+              "example": "A1B2C3D4E5F6789012345678901234AB"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado do webhook depois da reativação, com os mesmos campos de um item de `GET /v1/webhooks/health`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookHealth"
+                },
+                "example": {
+                  "webhookId": "A1B2C3D4E5F6789012345678901234AB",
+                  "channelId": "019E4C54B1B375A28970B605CA9B03C3",
+                  "description": "Pedidos",
+                  "payloadFormat": "DEFAULT",
+                  "state": "ACTIVE",
+                  "consecutiveFailures": 0,
+                  "failingSince": null,
+                  "lastFailureAt": "2026-10-12T19:40:00Z",
+                  "lastSuccessAt": "2026-10-12T09:58:00Z",
+                  "alertsGiven": 0,
+                  "alertPending": false,
+                  "suspendedAt": null,
+                  "episodeStartedAt": null,
+                  "retainedSince": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Header `Authorization` ausente ou inválido, IP de origem fora da lista do workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CentralError"
+                    }
+                  ]
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente ou inválido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origem fora da lista de IPs do workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook inexistente ou de outro workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentralError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Workspace sem configuração ativa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "inactiveWorkspace": {
+                    "summary": "Workspace sem configuração ativa",
+                    "value": {
+                      "error": "Webhook management requires an active workspace"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha ao concluir a operação agora. Tente de novo em instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationError"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DeliveryStatus": {
+        "type": "string",
+        "enum": [
+          "SUCCEEDED",
+          "RETRYING",
+          "FAILED",
+          "NOT_SENT",
+          "EXPIRED",
+          "UNKNOWN",
+          "RESENT"
+        ],
+        "description": "`SUCCEEDED`: o seu servidor respondeu 2xx. `RETRYING`: falhou e terá nova tentativa em `nextAttemptAt`. `FAILED`: falhou e não haverá nova tentativa. `NOT_SENT`: nada foi enviado (webhook suspenso ou circuito aberto). `EXPIRED`: passou das 23 horas sem sucesso. `UNKNOWN`: a próxima tentativa devia ter acontecido há mais de 1 hora e não há registro dela. `RESENT`: reenviada há menos de 1 hora, aguardando o resultado.",
+        "example": "FAILED"
+      },
+      "Outcome": {
+        "type": "string",
+        "enum": [
+          "SUCCEEDED",
+          "HTTP_ERROR",
+          "TIMEOUT",
+          "CONNECTION_ERROR",
+          "DESTINATION_REFUSED",
+          "NOT_SENT_CIRCUIT_OPEN",
+          "NOT_SENT_SUSPENDED",
+          "EXPIRED"
+        ],
+        "description": "Resultado de uma tentativa: `SUCCEEDED` (2xx), `HTTP_ERROR` (o seu servidor respondeu com outro status), `TIMEOUT` (sem resposta em 5 s), `CONNECTION_ERROR` (erro de conexão, TLS ou DNS), `DESTINATION_REFUSED` (destino recusado), `NOT_SENT_CIRCUIT_OPEN` e `NOT_SENT_SUSPENDED` (nada enviado) e `EXPIRED` (prazo de 23 h encerrado).",
+        "example": "HTTP_ERROR"
+      },
+      "DeliveryFields": {
+        "type": "object",
+        "properties": {
+          "deliveryId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da entrega. É o mesmo do header `x-webhook-delivery-id`.",
+            "example": "3f2b1c9e-7a41-5d2e-9b8c-1e2f3a4b5c6d"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do evento. É o mesmo do header `x-webhook-event-id`.",
+            "example": "9a8b7c6d-5e4f-5a3b-8c2d-1e0f9a8b7c6d"
+          },
+          "webhookId": {
+            "type": "string",
+            "description": "ID do webhook.",
+            "example": "A1B2C3D4E5F6789012345678901234AB"
+          },
+          "channelId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ID do canal do evento. `null` nos eventos da conta.",
+            "example": "019E4C54B1B375A28970B605CA9B03C3"
+          },
+          "eventType": {
+            "type": "string",
+            "description": "Tipo do evento.",
+            "example": "MESSAGE_RECEIVED"
+          },
+          "eventCreatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Quando o evento aconteceu.",
+            "example": "2026-10-12T12:00:00Z"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeliveryStatus"
+          },
+          "lastAttemptAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Quando foi a última tentativa."
+          },
+          "lastHttpStatus": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Status HTTP da última tentativa. `null` quando ela não teve resposta do seu servidor (timeout, erro de conexão ou de DNS): não o trate como inteiro obrigatório.",
+            "example": 503
+          },
+          "lastOutcome": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Outcome"
+              }
+            ],
+            "description": "Resultado da última tentativa."
+          },
+          "nextAttemptAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Quando sai a próxima tentativa. Só com `status` `RETRYING`."
+          },
+          "resendable": {
+            "type": "boolean",
+            "description": "Se a entrega pode ser reenviada agora.",
+            "example": true
+          },
+          "notResendableReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "TRUNCATED",
+              "WEBHOOK_SUSPENDED",
+              "WEBHOOK_DISABLED",
+              null
+            ],
+            "description": "Por que a entrega não pode ser reenviada agora. `null` quando pode."
+          },
+          "notSentReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "SUSPENDED",
+              "CIRCUIT_OPEN",
+              null
+            ],
+            "description": "Só com `status` `NOT_SENT`: `SUSPENDED` (webhook suspenso) ou `CIRCUIT_OPEN` (o destino ficou indisponível até o prazo)."
+          },
+          "resentAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Só com `status` `RESENT`: quando o reenvio foi pedido."
+          }
+        }
+      },
+      "Delivery": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DeliveryFields"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "attempts": {
+                "type": "integer",
+                "description": "Número da última tentativa.",
+                "example": 7
+              }
+            }
+          }
+        ]
+      },
+      "DeliveryPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Delivery"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Envie em `cursor` para a próxima página. `null` na última.",
+            "example": "eyJjIjoxfQ"
+          },
+          "fromAdjusted": {
+            "type": "boolean",
+            "description": "`true` quando o `from` pedido era anterior à retenção do plano e foi ajustado ao começo dela.",
+            "example": false
+          }
+        }
+      },
+      "Attempt": {
+        "type": "object",
+        "properties": {
+          "attemptNumber": {
+            "type": "integer",
+            "description": "Número da tentativa. É o valor do header `x-webhook-attempt`.",
+            "example": 1
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "AUTOMATIC",
+              "MANUAL_RESEND",
+              "SYSTEM"
+            ],
+            "description": "`AUTOMATIC`: tentativa da programação de novas tentativas. `MANUAL_RESEND`: reenvio pedido pela central. `SYSTEM`: registro feito pelo próprio Z-API Omni."
+          },
+          "resentBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Quem pediu o reenvio. Só em `MANUAL_RESEND`."
+          },
+          "attemptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-12T12:00:00Z"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome"
+          },
+          "httpStatus": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Status HTTP da resposta. `null` quando a tentativa não teve resposta.",
+            "example": 503
+          },
+          "latencyMs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Tempo até a resposta, em milissegundos.",
+            "example": 412
+          },
+          "errorClass": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Classe do erro, quando não houve resposta."
+          },
+          "errorMessage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Mensagem do erro, mascarada."
+          },
+          "url": {
+            "type": "string",
+            "description": "URL chamada, mascarada: o segmento depois de `/token/` aparece como `{token}` e o valor de cada parâmetro da query, como `{masked}`.",
+            "example": "https://app.suaempresa.com/webhooks/omni-zapi?key={masked}"
+          },
+          "requestHeaders": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Headers enviados. `Authorization`, `X-API-Key`, o seu header customizado e `X-Webhook-Signature` aparecem como `***`."
+          },
+          "requestBody": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Corpo enviado, guardado até o limite de tamanho."
+          },
+          "requestBodyTruncated": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "`true` quando o corpo passou do limite guardado e foi cortado. Essa entrega não pode ser reenviada."
+          },
+          "responseBody": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Resposta do seu servidor, guardada até o limite de tamanho."
+          },
+          "responseBodyTruncated": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "`true` quando a resposta passou do limite guardado e foi cortada."
+          }
+        }
+      },
+      "DeliveryDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DeliveryFields"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "attempts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Attempt"
+                },
+                "description": "Todas as tentativas, em ordem de `attemptNumber`."
+              },
+              "bodyHidden": {
+                "type": "boolean",
+                "description": "Com a Secret Key, sempre `false`: os corpos vêm preenchidos.",
+                "example": false
+              }
+            }
+          }
+        ]
+      },
+      "ResendResponse": {
+        "type": "object",
+        "properties": {
+          "deliveryId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "3f2b1c9e-7a41-5d2e-9b8c-1e2f3a4b5c6d"
+          },
+          "attemptNumber": {
+            "type": "integer",
+            "description": "Número da tentativa do reenvio. É o `x-webhook-attempt` que chega ao seu servidor.",
+            "example": 8
+          },
+          "message": {
+            "type": "string",
+            "description": "Só quando a confirmação do envio demorou: o reenvio pode ter sido enviado, confira o resultado em alguns minutos."
+          }
+        }
+      },
+      "BulkResendRequest": {
+        "type": "object",
+        "required": [
+          "webhookId",
+          "episode"
+        ],
+        "properties": {
+          "webhookId": {
+            "type": "string",
+            "description": "ID do webhook.",
+            "example": "A1B2C3D4E5F6789012345678901234AB"
+          },
+          "episode": {
+            "type": "string",
+            "enum": [
+              "current"
+            ],
+            "description": "Sempre `current`: o episódio atual de falha do webhook.",
+            "example": "current"
+          }
+        }
+      },
+      "BulkResendResponse": {
+        "type": "object",
+        "properties": {
+          "queued": {
+            "type": "integer",
+            "description": "Entregas colocadas na fila por este pedido (até 1.000).",
+            "example": 1000
+          },
+          "remaining": {
+            "type": "integer",
+            "description": "Entregas do episódio que ainda faltam. Peça o próximo lote 2 minutos depois. Uma entrega cujo reenvio falhou volta a contar aqui.",
+            "example": 3200
+          },
+          "skippedTruncated": {
+            "type": "integer",
+            "description": "Entregas puladas porque o corpo foi truncado.",
+            "example": 3
+          },
+          "skippedNotResendable": {
+            "type": "integer",
+            "description": "Entregas puladas por outro motivo de recusa.",
+            "example": 2
+          },
+          "dailyRemaining": {
+            "type": "integer",
+            "description": "Quantos reenvios ainda cabem no teto do dia deste webhook (50.000).",
+            "example": 49000
+          },
+          "oldestExpiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Quando as entregas retidas mais antigas saem da retenção do plano. O que não for reenviado até lá se perde."
+          }
+        }
+      },
+      "WebhookHealth": {
+        "type": "object",
+        "properties": {
+          "webhookId": {
+            "type": "string",
+            "example": "A1B2C3D4E5F6789012345678901234AB"
+          },
+          "channelId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Canal do webhook. `null` no webhook padrão e no global."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payloadFormat": {
+            "type": "string",
+            "enum": [
+              "DEFAULT",
+              "Z_API",
+              "CHATWOOT"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "FAILING",
+              "SUSPENDED",
+              "DISABLED",
+              "NO_HISTORY"
+            ],
+            "description": "`ACTIVE`: habilitado, sem aviso de falha aberto. `FAILING`: um aviso de falha já foi dado ou está pendente; vale também depois do 3º aviso quando não há suspensão, e o webhook continua recebendo os envios. `SUSPENDED`: o envio foi suspenso depois do 3º aviso. `DISABLED`: você desabilitou o webhook. `NO_HISTORY`: formato `CHATWOOT`, sem histórico, avisos nem suspensão."
+          },
+          "consecutiveFailures": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Falhas seguidas na sequência atual."
+          },
+          "failingSince": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Início da sequência atual de falhas."
+          },
+          "lastFailureAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Última falha."
+          },
+          "lastSuccessAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Último sucesso."
+          },
+          "alertsGiven": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Avisos de falha já dados na sequência atual (0 a 3)."
+          },
+          "alertPending": {
+            "type": "boolean",
+            "description": "`true` quando um aviso está pendente de envio."
+          },
+          "suspendedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Quando o envio foi suspenso. `null` quando não está suspenso."
+          },
+          "episodeStartedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Início do episódio atual de falha: a primeira falha da sequência."
+          },
+          "retainedSince": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Início do episódio que levou à última suspensão, guardado na reativação, para o reenvio em lote dos retidos."
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "retentionDays": {
+            "type": "integer",
+            "description": "Dias de retenção do histórico no plano atual: 3 no `ENTERPRISE`, 1 nos demais.",
+            "example": 1
+          },
+          "webhooks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookHealth"
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Mensagem do erro."
+          }
+        }
+      },
+      "CentralError": {
+        "type": "object",
+        "description": "Erro de validação ou de regra da central. `type` e `details` vêm quando há código estável, como no `422` de reenvio.",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "WEBHOOK_DELIVERY_NOT_RESENDABLE"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "TRUNCATED",
+                      "WEBHOOK_SUSPENDED",
+                      "WEBHOOK_DISABLED",
+                      "UNREADABLE_BODY"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "IntegrationError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "integration_unavailable"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada no painel de Segurança do Z-API Omni"
+      }
+    }
+  }
+}

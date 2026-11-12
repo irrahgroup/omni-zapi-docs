@@ -1,44 +1,72 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Enviar Texto com Botões",
+    "title": "Z-API Omni - Enviar Texto com Botões",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/messages": {
       "post": {
         "summary": "Enviar texto com botões",
         "description": "Envia uma mensagem de texto com botões de resposta rápida.",
         "operationId": "sendInteractiveButtonMessage",
-        "tags": ["Mensagens"],
+        "tags": [
+          "Mensagens"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
             "description": "ID do canal",
-            "schema": { "type": "string", "example": "SEU_CHANNEL_ID" }
+            "schema": {
+              "type": "string",
+              "example": "SEU_CHANNEL_ID"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/SendInteractiveButtonRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/SendInteractiveButtonRequest"
+              },
               "examples": {
                 "text": {
                   "summary": "Texto com botões",
                   "value": {
-                    "recipient": { "identifier": "5511999999999" },
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
                     "content": {
                       "type": "INTERACTIVE_BUTTON",
-                      "body": { "message": "Como você avalia nosso atendimento?" },
+                      "body": {
+                        "message": "Como você avalia nosso atendimento?"
+                      },
                       "attachments": [
-                        { "id": "1", "title": "Ótimo" },
-                        { "id": "2", "title": "Bom" },
-                        { "id": "3", "title": "Regular" }
+                        {
+                          "id": "1",
+                          "title": "Ótimo"
+                        },
+                        {
+                          "id": "2",
+                          "title": "Bom"
+                        },
+                        {
+                          "id": "3",
+                          "title": "Regular"
+                        }
                       ]
                     }
                   }
@@ -46,7 +74,9 @@
                 "withImage": {
                   "summary": "Com imagem",
                   "value": {
-                    "recipient": { "identifier": "5511999999999" },
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
                     "content": {
                       "type": "INTERACTIVE_BUTTON",
                       "body": {
@@ -55,8 +85,14 @@
                         "mimeType": "image/jpeg"
                       },
                       "attachments": [
-                        { "id": "1", "title": "Tenho interesse" },
-                        { "id": "2", "title": "Não, obrigado" }
+                        {
+                          "id": "1",
+                          "title": "Tenho interesse"
+                        },
+                        {
+                          "id": "2",
+                          "title": "Não, obrigado"
+                        }
                       ]
                     }
                   }
@@ -64,7 +100,9 @@
                 "withVideo": {
                   "summary": "Com vídeo",
                   "value": {
-                    "recipient": { "identifier": "5511999999999" },
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
                     "content": {
                       "type": "INTERACTIVE_BUTTON",
                       "body": {
@@ -73,8 +111,14 @@
                         "mimeType": "video/mp4"
                       },
                       "attachments": [
-                        { "id": "1", "title": "Opção A" },
-                        { "id": "2", "title": "Opção B" }
+                        {
+                          "id": "1",
+                          "title": "Opção A"
+                        },
+                        {
+                          "id": "2",
+                          "title": "Opção B"
+                        }
                       ]
                     }
                   }
@@ -84,9 +128,21 @@
           }
         },
         "responses": {
-          "200": { "$ref": "#/components/responses/MessageSuccess" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "422": { "$ref": "#/components/responses/ChannelDisconnected" }
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
         }
       }
     }
@@ -94,29 +150,166 @@
   "components": {
     "responses": {
       "MessageSuccess": {
-        "description": "Mensagem enviada com sucesso",
+        "description": "Mensagem aceita e colocada na fila de envio. A entrega é confirmada depois, pelos eventos de status do webhook.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/MessageResponse" },
-            "example": { "messageId": "01A0C92D0C957FE98B73C8BA0CACF741" }
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
           }
         }
       },
-      "Unauthorized": {
-        "description": "Token inválido ou ausente.",
+      "BadRequest": {
+        "description": "Requisição recusada antes do envio: Secret Key inválida, IP fora da lista permitida, corpo ausente ou corpo que não serve para o tipo da mensagem.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "authorizationInvalid": {
+                "summary": "Secret Key inválida ou ausente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ipNotAllowed": {
+                "summary": "IP de origem fora da lista de IPs permitidos",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "payloadRequired": {
+                "summary": "Corpo vazio ({})",
+                "value": {
+                  "error": "message payload is required"
+                }
+              },
+              "validationError": {
+                "summary": "Campo obrigatório ausente para o tipo",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.body': is required for message type INTERACTIVE_BUTTON"
+                }
+              }
+            }
           }
         }
       },
-      "ChannelDisconnected": {
-        "description": "Canal desconectado. A mensagem não foi enviada: conecte o canal de novo e repita o envio.",
+      "InstanceNotFound": {
+        "description": "Instância não encontrada para a Secret Key informada.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/SendError" },
-            "example": { "timestamp": "2026-10-22T14:00:00.123Z", "code": "BUSINESS_RULE_VIOLATION", "subCode": "CHANNEL_DISCONNECTED", "message": "Channel is disconnected" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "instanceNotFound": {
+                "summary": "Instância não encontrada",
+                "value": {
+                  "error": "instance not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Envio recusado por uma regra: canal desconectado, instância sem provisionamento, assinatura inativa, conta bloqueada ou tipo que o canal não tem.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "channelDisconnected": {
+                "summary": "Canal desconectado: conecte o canal de novo e repita o envio",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "CHANNEL_DISCONNECTED",
+                  "message": "Channel is disconnected"
+                }
+              },
+              "businessRule": {
+                "summary": "Tipo que o canal não tem (exemplo: localização no Instagram)",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "message": "[UNSUPPORTED_CHANNEL_TYPE] O canal META_INSTAGRAM nao suporta mensagens do tipo LOCATION"
+                }
+              },
+              "instanceNotProvisioned": {
+                "summary": "Instância sem provisionamento",
+                "value": {
+                  "error": "instance is not provisioned"
+                }
+              },
+              "subscriptionInactive": {
+                "summary": "Assinatura da instância inativa",
+                "value": {
+                  "error": "instance subscription is not active"
+                }
+              },
+              "blocked": {
+                "summary": "Conta bloqueada",
+                "value": {
+                  "error": "You are blocked, contact support."
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Falha do nosso lado ao processar o pedido. Confira o webhook de status antes de repetir: o pedido pode ter sido aceito.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "integrationUnavailable": {
+                "summary": "Falha temporária: tente de novo em instantes",
+                "value": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              },
+              "sendingFailed": {
+                "summary": "Falha interna ao processar o pedido",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "INTEGRATION_ERROR",
+                  "message": "Message sending failed"
+                }
+              }
+            }
           }
         }
       }
@@ -124,27 +317,58 @@
     "schemas": {
       "SendInteractiveButtonRequest": {
         "type": "object",
-        "required": ["recipient", "content"],
+        "required": [
+          "recipient",
+          "content"
+        ],
         "properties": {
           "recipient": {
             "type": "object",
-            "required": ["identifier"],
+            "required": [
+              "identifier"
+            ],
             "properties": {
-              "identifier": { "type": "string", "description": "Telefone do destinatário (DDI + DDD + número)", "example": "5511999999999" }
+              "identifier": {
+                "type": "string",
+                "description": "Identificador do destinatário no canal: telefone com DDI e DDD no WhatsApp (5511999999999), IGSID no Instagram, PSID no Messenger e chat_id no Telegram",
+                "example": "5511999999999"
+              }
             }
           },
           "content": {
             "type": "object",
-            "required": ["type", "body", "attachments"],
+            "required": [
+              "type",
+              "body",
+              "attachments"
+            ],
             "properties": {
-              "type": { "type": "string", "description": "Tipo da mensagem", "enum": ["INTERACTIVE_BUTTON"] },
+              "type": {
+                "type": "string",
+                "description": "Tipo da mensagem",
+                "enum": [
+                  "INTERACTIVE_BUTTON"
+                ]
+              },
               "body": {
                 "type": "object",
-                "required": ["message"],
+                "required": [
+                  "message"
+                ],
                 "properties": {
-                  "message": { "type": "string", "description": "Texto da mensagem" },
-                  "thumbnail": { "type": "string", "description": "URL de uma imagem ou vídeo (opcional)", "nullable": true },
-                  "mimeType": { "type": "string", "description": "Tipo de mídia do thumbnail (ex: image/jpeg, video/mp4)" }
+                  "message": {
+                    "type": "string",
+                    "description": "Texto da mensagem"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "description": "URL de uma imagem ou vídeo (opcional)",
+                    "nullable": true
+                  },
+                  "mimeType": {
+                    "type": "string",
+                    "description": "Tipo de mídia do thumbnail (ex: image/jpeg, video/mp4)"
+                  }
                 }
               },
               "attachments": {
@@ -152,10 +376,19 @@
                 "description": "Lista de botões de resposta rápida (máximo 3)",
                 "items": {
                   "type": "object",
-                  "required": ["id", "title"],
+                  "required": [
+                    "id",
+                    "title"
+                  ],
                   "properties": {
-                    "id": { "type": "string", "description": "Identificador do botão" },
-                    "title": { "type": "string", "description": "Texto exibido no botão" }
+                    "id": {
+                      "type": "string",
+                      "description": "Identificador do botão"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Texto exibido no botão"
+                    }
                   }
                 }
               }
@@ -166,28 +399,57 @@
       "MessageResponse": {
         "type": "object",
         "properties": {
-          "messageId": { "type": "string", "description": "ID da mensagem enviada — hexadecimal de 32 caracteres maiúsculos" }
+          "messageId": {
+            "type": "string",
+            "description": "ID da mensagem no Z-API Omni: hexadecimal de 32 caracteres maiúsculos. É o mesmo valor de message._id no webhook"
+          }
         }
       },
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string",
+            "description": "Motivo da recusa"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detalhe da recusa, quando houver"
+          }
         }
       },
       "SendError": {
         "type": "object",
         "properties": {
-          "timestamp": { "type": "string", "format": "date-time", "description": "Data e hora da recusa, em UTC" },
-          "code": { "type": "string", "description": "Categoria do erro", "example": "BUSINESS_RULE_VIOLATION" },
-          "subCode": { "type": "string", "description": "Código do caso. Só vem quando o caso tem um código próprio", "example": "CHANNEL_DISCONNECTED" },
-          "message": { "type": "string", "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`", "example": "Channel is disconnected" }
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora da recusa, em UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Categoria do erro",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Código do caso. Só vem quando o caso tem um código próprio",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`",
+            "example": "Channel is disconnected"
+          }
         }
       }
     },
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "Secret Key gerada no painel de Segurança do Omni Z-API" }
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada no painel de Segurança do Z-API Omni"
+      }
     }
   }
 }

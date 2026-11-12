@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Criar Canal",
+    "title": "Z-API Omni - Criar canal",
     "version": "1.0.0"
   },
   "servers": [
@@ -18,11 +18,12 @@
     "/v1/channels": {
       "post": {
         "summary": "Criar canal",
-        "description": "Cria um novo canal.",
+        "description": "Cria um novo canal no workspace da Secret Key. O canal nasce em `TRIAL` por 2 dias; para mantê-lo, assine com Assinar canal. Aceita só a Secret Key. Requer role ENTERPRISE.",
         "operationId": "createChannel",
         "tags": [
           "Canais"
         ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -39,43 +40,121 @@
         },
         "responses": {
           "201": {
-            "description": "Canal criado com sucesso. Com a Secret Key, a resposta traz `id` e `token`; com o token OAuth de um app autorizado, só `id`.",
+            "description": "Canal criado",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateChannelResponse"
                 },
+                "example": {
+                  "id": "019E4C54B1B375A28970B605CA9B03C3",
+                  "token": "F1B29C3D4E5A6B7C8D9E0F1A2B3C4D5E"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Secret Key ausente, malformada ou inexistente, IP fora da lista de IPs liberados ou requisição inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
                 "examples": {
-                  "secretKey": {
-                    "summary": "Autenticado pela Secret Key",
+                  "authorization": {
+                    "summary": "Secret Key inválida",
                     "value": {
-                      "id": "019E4C54B1B375A28970B605CA9B03C3",
-                      "token": "F1B29C3D4E5A6B7C8D9E0F1A2B3C4D5E"
+                      "error": "Authorization invalid"
                     }
                   },
-                  "oauthApp": {
-                    "summary": "Autenticado pelo token OAuth de um app",
+                  "ipNotAllowed": {
+                    "summary": "IP fora da lista",
                     "value": {
-                      "id": "019E4C54B1B375A28970B605CA9B03C3"
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
+                  "typeRequired": {
+                    "summary": "Sem type",
+                    "value": {
+                      "error": "type is required"
+                    }
+                  },
+                  "bodyMissing": {
+                    "summary": "type fora da lista ou JSON inválido",
+                    "value": {
+                      "error": "Required request body is missing"
                     }
                   }
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
           "409": {
             "description": "Nome já usado por outro canal ativo do workspace. A comparação ignora maiúsculas e os espaços das pontas; acento e espaço interno diferenciam. Reconheça pelo campo `error`, que é estável; `message` é sempre em inglês.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChannelNameInUseError"
+                  "$ref": "#/components/schemas/ErrorWithMessage"
                 },
                 "example": {
                   "error": "channel_name_in_use",
                   "message": "A channel with this name already exists in this workspace. Pick another one."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Tipo de canal não habilitado no workspace, ou conta sem role ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorWithMessage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                },
+                "examples": {
+                  "channelTypeNotEnabled": {
+                    "summary": "WhatsApp Web não habilitado",
+                    "value": {
+                      "error": "channel_type_not_enabled",
+                      "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+                    }
+                  },
+                  "enterpriseRequired": {
+                    "summary": "Conta sem role ENTERPRISE",
+                    "value": {
+                      "error": "Channel creation requires ENTERPRISE role"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falha de integração. A operação não foi concluída; tente de novo em alguns instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "A criação não respondeu no prazo. Antes de repetir, confira em Listar canais se o canal foi criado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
                 }
               }
             }
@@ -85,23 +164,29 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Token inválido ou ausente.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "example": {
-              "error": 401,
-              "message": "Unauthorized"
-            }
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Motivo do erro"
           }
         }
-      }
-    },
-    "schemas": {
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Código estável do erro"
+          },
+          "message": {
+            "type": "string",
+            "description": "Texto do erro, em inglês"
+          }
+        }
+      },
       "CreateChannelRequest": {
         "type": "object",
         "required": [
@@ -111,7 +196,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Nome do canal"
+            "description": "Nome do canal, único entre os canais ativos do workspace"
           },
           "type": {
             "type": "string",
@@ -135,38 +220,7 @@
           },
           "token": {
             "type": "string",
-            "description": "Token do canal, o mesmo devolvido por `GET /v1/channels/{channelId}`. Use nas rotas de QR Code e de status do canal. Presente só quando a criação é autenticada pela Secret Key do workspace; com o token OAuth de um app, a chave não aparece na resposta."
-          }
-        }
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      },
-      "ChannelNameInUseError": {
-        "type": "object",
-        "required": [
-          "error",
-          "message"
-        ],
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "channel_name_in_use"
-            ],
-            "description": "Código estável da recusa"
-          },
-          "message": {
-            "type": "string",
-            "description": "Texto fixo, sempre em inglês"
+            "description": "Token do canal, o mesmo devolvido por `GET /v1/channels/{channelId}`. O token identifica o canal nas rotas no formato da Z-API, com o token no caminho. As rotas desta referência usam a Secret Key no header Authorization."
           }
         }
       }
@@ -175,7 +229,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key gerada no painel de Segurança do Omni Z-API"
+        "description": "Secret Key gerada em Segurança, no painel do Z-API Omni. O prefixo `Bearer` é opcional."
       }
     }
   }

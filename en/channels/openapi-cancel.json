@@ -1,48 +1,66 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Partner: Cancel Subscription",
+    "title": "Z-API Omni - Cancel subscription",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/cancel": {
       "delete": {
-        "summary": "Cancel subscription (Partner)",
-        "description": "Requests cancellation of the channel subscription. The channel enters `CANCELLATION_PROCESS` and remains active until the end of the paid period. Requires ENTERPRISE role.",
-        "operationId": "partnerCancelSubscription",
-        "tags": ["Partners"],
+        "summary": "Cancel subscription",
+        "description": "Requests the cancellation of the channel subscription. The channel moves to `CANCELLATION_PROCESS` and stays active until the end of the paid period. The body is required: send at least `{}`. Requires the ENTERPRISE role.",
+        "operationId": "cancelSubscription",
+        "tags": [
+          "Channels"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
-            "description": "Channel ID (obtained via Create channel)",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "description": "Channel ID (from Create channel or List channels)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
           },
           {
             "name": "cancel",
             "in": "query",
             "required": true,
-            "description": "Must be `true` to confirm the cancellation",
-            "schema": { "type": "boolean", "example": true }
+            "description": "Send `true` to confirm the cancellation",
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
           }
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CancelRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/CancelRequest"
+              },
               "examples": {
                 "withReason": {
                   "summary": "With cancellation reason",
                   "value": {
-                    "cancelReason": "Customer closed the company"
+                    "cancelReason": "Customer closed the business"
                   }
                 },
                 "withoutReason": {
-                  "summary": "Without reason (body omitted)",
+                  "summary": "Without reason (empty body)",
                   "value": {}
                 }
               }
@@ -51,33 +69,87 @@
         },
         "responses": {
           "204": {
-            "description": "Cancellation requested successfully. No content returned."
+            "description": "Cancellation requested. No content returned."
           },
           "400": {
-            "description": "Invalid request — `cancel=true` query parameter missing",
+            "description": "Secret Key missing, malformed or unknown, IP outside the allowed IP list, or invalid request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 400, "message": "cancel query param is required" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Invalid Secret Key",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP outside the list",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
+                  "bodyMissing": {
+                    "summary": "Missing body",
+                    "value": {
+                      "error": "Required request body is missing"
+                    }
+                  },
+                  "cancelMissing": {
+                    "summary": "Missing cancel parameter",
+                    "value": {
+                      "error": "Required parameter 'cancel' is missing"
+                    }
+                  },
+                  "cancelInvalid": {
+                    "summary": "Non-boolean cancel",
+                    "value": {
+                      "error": "Invalid value for parameter 'cancel'"
+                    }
+                  }
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": {
-            "description": "Channel not found",
+            "description": "Channel does not exist or belongs to another workspace",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 404, "message": "Channel not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
               }
             }
           },
           "422": {
-            "description": "Business rule violation — account does not have ENTERPRISE role",
+            "description": "Account without the ENTERPRISE role",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 422, "message": "This action requires ENTERPRISE role" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Channel subscription requires ENTERPRISE role"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Integration failure. The operation was not completed; try again in a few moments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
               }
             }
           }
@@ -86,33 +158,36 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Invalid or missing token.",
-        "content": {
-          "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error reason"
           }
         }
-      }
-    },
-    "schemas": {
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Stable error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error text, in English"
+          }
+        }
+      },
       "CancelRequest": {
         "type": "object",
         "properties": {
           "cancelReason": {
             "type": "string",
-            "description": "Cancellation reason (optional, but recommended for auditing)",
-            "example": "Customer closed the company"
+            "description": "Cancellation reason (optional, recommended for auditing)"
           }
-        }
-      },
-      "Error": {
-        "type": "object",
-        "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
         }
       }
     },
@@ -120,7 +195,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generated in the Omni Z-API Security panel"
+        "description": "Secret Key generated in Security, on the Z-API Omni dashboard. The `Bearer` prefix is optional."
       }
     }
   }

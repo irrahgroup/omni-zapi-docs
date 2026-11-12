@@ -53,14 +53,25 @@ app.get('/api/omni/channels/:id/qr-code', requireSessionAndChannelOwnership, asy
   );
   const body = await response.json();
   if (!response.ok) {
-    // El error de la API viene en error.errors[0]; reenvía solo el texto
-    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? null });
+    // El texto del error viene en error.errors[0].description o en message; reenvía solo el texto
+    return res.status(response.status).json({ message: body?.error?.errors?.[0]?.description ?? body?.message ?? null });
   }
   res.json({ qrcode: body.qrcode, connected: body.connected });
 });
 ```
 
-La API devuelve `qrcode`, la imagen del código QR, y `connected`, que es `true` cuando el número ya está conectado. Reenvía los dos tal como llegaron.
+La API devuelve `qrcode`, la imagen del código QR, y `connected`, que es `true` cuando el número ya está conectado. Reenvía los dos tal como llegaron. Consulta [Obtener código QR](/es/channels/zapi-qr-code).
+
+Si WhatsApp Web no está habilitado en el workspace, la API responde `422`, y el texto viene en `message`:
+
+```json
+{
+  "error": "channel_type_not_enabled",
+  "message": "Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."
+}
+```
+
+Después de que el usuario escanee el código QR, comprueba la conexión con [Consultar estado de WhatsApp Web](/es/channels/zapi-status). Para ver el número y el dispositivo conectados, usa [Consultar dispositivo](/es/channels/zapi-device); para desconectar, [Desconectar WhatsApp Web](/es/channels/zapi-disconnect).
 
 <Warning>
   Comprueba la sesión del usuario y que el canal le pertenece **antes** de llamar a la API. Una ruta que entrega el código QR de cualquier canal permite que alguien vincule su propio número a un canal ajeno.

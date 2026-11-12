@@ -1,0 +1,51 @@
+---
+title: "Get QR Code"
+description: "Fetch the connection QR Code of a WhatsApp Web channel"
+openapi: "/en/channels/openapi-zapi-qr-code.json GET /v1/channels/{channelId}/zapi/qr-code/image"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="WEB_QR_CODE" lang="en" />
+
+## Overview
+
+Returns the connection QR Code of a `Z_API_WHATSAPP` (WhatsApp Web) channel. It is the route your backend calls in the `getQRCode` of [Connect WhatsApp Web](/en/connect/whatsapp-web).
+
+Use the Secret Key, from your backend. The Secret Key never reaches the browser. Does not require ENTERPRISE.
+
+There are two forms:
+
+| Route | What `qrcode` carries |
+|---|---|
+| `GET /v1/channels/{channelId}/zapi/qr-code/image` | The QR Code as a base64 image, ready to display. It is the one used in [Connect WhatsApp Web](/en/connect/whatsapp-web) |
+| `GET /v1/channels/{channelId}/zapi/qr-code` | The QR Code value, so you can render the image yourself |
+
+```json
+{"qrcode": "<QR Code image in base64>", "connected": false}
+```
+
+With `connected: true`, the number is already connected and there is no QR Code to scan.
+
+### After the QR Code
+
+1. The user opens WhatsApp on the phone, in **Linked devices**, and scans the QR Code.
+2. Check the connection with [Get WhatsApp Web status](/en/channels/zapi-status). The channel has no finishing step: it connects when the QR Code is scanned.
+
+### Errors
+
+| Status | Body | When |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key missing, malformed or unknown |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP outside the [IP list](/en/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Channel does not exist or belongs to another workspace |
+| `422` | `{"error":"channel_type_not_enabled","message":"Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."}` | WhatsApp Web not enabled for the workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Integration failure; try again in a few moments |
+
+<Note>
+  The `channelId` comes from the [Create channel](/en/channels/create-channel) endpoint or from [List channels](/en/channels/list-channels).
+</Note>
+
+## See also
+
+- [Introduction](/en/channels/introduction)

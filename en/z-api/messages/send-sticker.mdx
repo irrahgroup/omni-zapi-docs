@@ -6,18 +6,25 @@ openapi: "/en/z-api/openapi.json POST /send-sticker"
 
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Overview
-
-Method for sending stickers. You can send via **URL** or **Base64**.
-
-<Warning>
-  When sending as Base64, you must include the prefix with the image type, for example: `data:image/png;base64,`. To validate, paste the full Base64 in the browser address bar and verify the image renders correctly.
-</Warning>
+Sends a sticker, by **URL** or by **Base64**. The field can also be named `stickerUrl`.
 
 <Note>
   <ZapiResponseText lang="en" />
 </Note>
 
 <Note>
-  File size limits and supported formats follow WhatsApp policies. See the [official WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/media) for details.
+  Size and format limits follow WhatsApp policies. See the [official WhatsApp documentation](https://developers.facebook.com/docs/whatsapp/api/media).
 </Note>
+
+### Errors
+
+| Status | `error` response | When |
+|---|---|---|
+| `400` | `phone is required` | `phone` missing or empty |
+| `400` | `invalid media format: must be URL or base64 data URI` | The field is neither an `http`/`https` URL nor a Base64 with a `data:` prefix |
+| `422` | `message has no content this route can send` | The body has neither the media field nor `message`, so there is nothing to send |
+
+## See also
+
+- [Messages: common errors](/en/z-api/messages/introduction#common-errors)
+- [Limitations and refusals](/en/z-api/limitations)

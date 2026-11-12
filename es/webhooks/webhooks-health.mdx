@@ -1,0 +1,43 @@
+---
+title: "Estado de los webhooks"
+description: "Ve la retención del plan y el estado de cada webhook del workspace"
+openapi: "/es/webhooks/openapi-central.json GET /v1/webhooks/health"
+---
+
+## Conceptos
+
+Devuelve la retención actual del workspace (`retentionDays`) y el estado de cada uno de sus webhooks: de canal, predeterminado y global. Usa esta ruta para saber qué webhooks están fallando antes de consultar las entregas.
+
+`retentionDays` es 3 en el rol `ENTERPRISE` y 1 en los demás. Consulta [Retención](/es/webhooks/central).
+
+### Estados
+
+| `state` | Cuándo |
+|---|---|
+| `ACTIVE` | Habilitado, sin aviso de fallo abierto |
+| `FAILING` | Ya se dio un aviso de fallo o está pendiente. Vale también después del 3.er aviso cuando no hay suspensión: el webhook sigue `FAILING` y continúa recibiendo las entregas |
+| `SUSPENDED` | El envío se suspendió después del 3.er aviso. Solo ocurre donde la suspensión automática está activada para la marca del workspace |
+| `DISABLED` | Deshabilitaste el webhook (`status` `DISABLED`) |
+| `NO_HISTORY` | Formato `CHATWOOT`: sin historial, avisos ni suspensión |
+
+### Campos de cada webhook
+
+| Campo | Qué trae |
+|---|---|
+| `webhookId`, `channelId`, `description`, `payloadFormat` | Identificación del webhook. `channelId` llega `null` en el webhook predeterminado y en el global |
+| `consecutiveFailures` | Fallos seguidos en la secuencia actual |
+| `failingSince` | Inicio de la secuencia actual de fallos |
+| `lastFailureAt`, `lastSuccessAt` | Último fallo y último éxito |
+| `alertsGiven` | Avisos de fallo ya dados en la secuencia (0 a 3) |
+| `alertPending` | `true` cuando un aviso está pendiente de envío |
+| `suspendedAt` | Cuándo se suspendió el envío. `null` cuando no está suspendido |
+| `episodeStartedAt` | Inicio del episodio actual de fallo: el primer fallo de la secuencia. El [reenvío en lote](/es/webhooks/resend-deliveries) toma las entregas a partir de él |
+| `retainedSince` | Inicio del episodio que llevó a la última suspensión, guardado en la reactivación |
+
+Los campos sin valor llegan `null`, nunca ausentes. Un webhook `NO_HISTORY` llega con los contadores en `null`.
+
+Los errores de autenticación, de IP y de workspace inactivo están en [Central de webhooks](/es/webhooks/central#errores-comunes-a-todas-las-rutas).
+
+## Véase también
+
+- [Central de webhooks](/es/webhooks/central)

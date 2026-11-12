@@ -1,0 +1,41 @@
+---
+title: "Desconectar WhatsApp Web"
+description: "Desconecta la sesión de WhatsApp Web de un canal"
+openapi: "/es/channels/openapi-zapi-disconnect.json POST /v1/channels/{channelId}/zapi/disconnect"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="WEB_ROUTES" lang="es" />
+
+## Conceptos
+
+Desconecta la sesión de WhatsApp Web de un canal `Z_API_WHATSAPP`. Sin cuerpo.
+
+Usa la Secret Key, desde tu backend. No requiere ENTERPRISE.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/zapi/disconnect \
+  -H "Authorization: Bearer SU_SECRET_KEY"
+```
+
+La respuesta es un booleano. Con `true`, la sesión se desconectó. Con `false`, nada cambió.
+
+Para reconectar, genera un nuevo código QR en [Obtener código QR](/es/channels/zapi-qr-code) y pide al usuario que lo escanee.
+
+### Errores
+
+| Estado | Cuerpo | Cuándo |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, mal formada o inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fuera de la [lista de IPs](/es/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente o de otro workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Falla de integración; vuelve a intentarlo en unos instantes |
+
+<Note>
+  El `channelId` se obtiene mediante el endpoint [Crear canal](/es/channels/create-channel) o [Listar canales](/es/channels/list-channels).
+</Note>
+
+## Véase también
+
+- [Introducción](/es/channels/introduction)

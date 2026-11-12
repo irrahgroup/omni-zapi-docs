@@ -1,0 +1,51 @@
+---
+title: "Obtener código QR"
+description: "Obtén el código QR de conexión de un canal WhatsApp Web"
+openapi: "/es/channels/openapi-zapi-qr-code.json GET /v1/channels/{channelId}/zapi/qr-code/image"
+---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelSupport type="WEB_QR_CODE" lang="es" />
+
+## Conceptos
+
+Devuelve el código QR de conexión de un canal `Z_API_WHATSAPP` (WhatsApp Web). Es la ruta que tu backend llama en el `getQRCode` de [Conectar WhatsApp Web](/es/connect/whatsapp-web).
+
+Usa la Secret Key, desde tu backend. La Secret Key nunca llega al navegador. No requiere ENTERPRISE.
+
+Hay dos formas:
+
+| Ruta | Qué trae `qrcode` |
+|---|---|
+| `GET /v1/channels/{channelId}/zapi/qr-code/image` | El código QR como imagen base64, lista para mostrar. Es la que se usa en [Conectar WhatsApp Web](/es/connect/whatsapp-web) |
+| `GET /v1/channels/{channelId}/zapi/qr-code` | El valor del código QR, para que generes la imagen por tu cuenta |
+
+```json
+{"qrcode": "<imagen del código QR en base64>", "connected": false}
+```
+
+Con `connected: true`, el número ya está conectado y no hay código QR que escanear.
+
+### Después del código QR
+
+1. El usuario abre WhatsApp en el celular, en **Dispositivos vinculados**, y escanea el código QR.
+2. Comprueba la conexión con [Consultar estado de WhatsApp Web](/es/channels/zapi-status). El canal no tiene paso de finalización: se conecta cuando se escanea el código QR.
+
+### Errores
+
+| Estado | Cuerpo | Cuándo |
+|---|---|---|
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, mal formada o inexistente |
+| `400` | `{"error":"203.0.113.10 not allowed"}` | IP fuera de la [lista de IPs](/es/security/ip-restriction) |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente o de otro workspace |
+| `422` | `{"error":"channel_type_not_enabled","message":"Z_API_WHATSAPP channel is not enabled for this workspace. Contact support."}` | WhatsApp Web no habilitado en el workspace |
+| `502` | `{"error":"integration_unavailable", ...}` | Falla de integración; vuelve a intentarlo en unos instantes |
+
+<Note>
+  El `channelId` se obtiene mediante el endpoint [Crear canal](/es/channels/create-channel) o [Listar canales](/es/channels/list-channels).
+</Note>
+
+## Véase también
+
+- [Introducción](/es/channels/introduction)

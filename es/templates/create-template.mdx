@@ -1,14 +1,18 @@
 ---
-title: "Referencia de la API"
+title: "Crear plantilla"
 description: "La llamada que crea la plantilla: ruta, autenticación, respuestas y errores"
 openapi: "/es/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates"
 ---
+
+import { ChannelSupport } from '/snippets/channel-support.mdx';
 
 Esta es la única llamada de creación. **Su cuerpo es el JSON del modelo** que elegiste — no hay una ruta separada por modelo, y mandar el payload de [Modelos](/es/templates/models/overview) ya crea la plantilla.
 
 Acá quedan la mecánica y el retorno: la ruta, el `wabaId`, el schema campo por campo y lo que vuelve en cada caso. El playground de arriba dispara la llamada de verdad.
 
-La plantilla nace con estado `PENDING` y pasa a `APPROVED` o `REJECTED` después de la revisión de Meta. Usa [Sincronizar plantillas](/es/templates/sync-templates) para forzar la actualización del estado.
+La plantilla nace con estado `PENDING` y pasa a `APPROVED` o `REJECTED` después de la revisión de Meta. El camino preferido para conocer el resultado es el [webhook de plantillas](/es/webhooks/template-webhooks), que no depende de canal, suscrito al evento `UPDATE_TEMPLATE_STATUS`: la plataforma avisa cuando Meta decide. Para comprobar una plantilla específica, usa [Consultar plantilla](/es/templates/get-template) con el `id` devuelto aquí. Si el estado parece desactualizado, [Sincronizar plantillas](/es/templates/sync-templates) fuerza la actualización con Meta.
+
+Meta rechaza la plantilla con `422`, y el cuerpo trae el rechazo original en `error.errors[]`. Los `400` son solo de la plataforma: autenticación rechazada, cuerpo ausente o plantilla vacía.
 
 <Note>
   El `wabaId` sale del endpoint de [Listar WABAs](/es/templates/list-businesses).
@@ -18,11 +22,7 @@ La plantilla nace con estado `PENDING` y pasa a `APPROVED` o `REJECTED` después
   El nombre va en `snake_case`, sin espacios ni caracteres especiales, y **no se puede cambiar** después de creado.
 </Warning>
 
-<Warning>
-  Este endpoint está delimitado por **WABA**, así que hoy cubre solo **Meta Cloud API**.
-
-  Instagram y Messenger también tienen plantilla preaprobada — la **Utility Template**, delimitada por página. El soporte para ellos en Omni Z-API está **en implementación**. Mira la [comparación de los tres tipos de plantilla](/es/templates/introduction).
-</Warning>
+<ChannelSupport type="TEMPLATES_API" lang="es" />
 
 <CardGroup cols={3}>
   <Card title="Elegir el modelo" icon="layer-group" href="/es/templates/models/overview">
@@ -35,3 +35,7 @@ La plantilla nace con estado `PENDING` y pasa a `APPROVED` o `REJECTED` después
     Lo que Meta rechaza
   </Card>
 </CardGroup>
+
+## Véase también
+
+- [Introducción](/es/templates/introduction)

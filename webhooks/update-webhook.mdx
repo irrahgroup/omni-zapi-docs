@@ -18,6 +18,7 @@ Ao enviar o campo `events`, a lista substitui os eventos do webhook:
 
 - A lista não pode ser vazia: `"events": []` retorna `400` com `{"error": "Events cannot be empty when provided"}`. Para manter os eventos, omita o campo.
 - Um item nulo, em branco ou com nome que não existe retorna `400` com `{"error": "events contains an unknown or empty event name"}`, e nada é alterado.
+- Um evento que o tipo do canal não emite retorna `422` (veja [Eventos por tipo de canal](/webhooks/channel-webhooks#eventos-por-tipo-de-canal)). Um evento que já estava gravado no webhook continua aceito.
 
 <Note>
   **Evento que a API ainda não conhece.** Um webhook pode ter um evento gravado que esta versão da API ainda não conhece, por exemplo um evento novo assinado pelo painel antes de chegar à API. Esse evento não aparece em `events` nas respostas e é mantido quando você troca os eventos: o `PATCH` substitui só os eventos que a API conhece. Um webhook que só tem eventos assim aparece com `events: []`.
@@ -45,6 +46,38 @@ Se você enviar `signing: true`, um novo `secret` é gerado e retornado nesta re
 
 Para validar a assinatura com o secret novo, veja [Assinatura HMAC](/webhooks/signature).
 
+### Remover a assinatura HMAC
+
+```json
+{ "signing": false }
+```
+
+O webhook deixa de enviar o header `x-webhook-signature`. A resposta traz `"signing": false` e `"secret": null`.
+
+### Alterar a autenticação
+
+Envie a autenticação na forma aninhada, em `auth`, ou na forma plana, com `authType` e a credencial do tipo (`token` para `BEARER`, `key` para `API_KEY`):
+
+```json
+{ "auth": { "type": "BEARER", "token": "novo-token-secreto" } }
+```
+
+```json
+{ "authType": "API_KEY", "key": "nova-chave" }
+```
+
+`BASIC` (`username` e `password`) e `CUSTOM_HEADER` (`headerName` e `headerValue`) só existem na forma aninhada. `authType` `NONE` limpa a autenticação.
+
+### Trocar para o formato `CHATWOOT`
+
+Ao enviar `payloadFormat` `CHATWOOT`, envie junto `customAttributes` com `chatwoot_account_id` e `chatwoot_inbox_id` numéricos maiores que zero:
+
+| Caso | Resposta |
+|---|---|
+| `CHATWOOT` sem `customAttributes` | `400` com `{"error": "Account ID e Inbox ID do Chatwoot sao obrigatorios ao trocar para o formato CHATWOOT"}` |
+| `chatwoot_account_id` ausente, não numérico ou menor que 1 | `400` com `{"error": "Chatwoot Account ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"}` |
+| `chatwoot_inbox_id` ausente, não numérico ou menor que 1 | `400` com `{"error": "Chatwoot Inbox ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"}` |
+
 ### Desabilitar temporariamente
 
 ```json
@@ -62,3 +95,7 @@ Um `status` diferente de `ENABLED` e `DISABLED` retorna `400` com `{"error": "st
 <Note>
   O `webhookId` é obtido no retorno do endpoint [Criar webhook](/webhooks/create-webhook) ou [Listar webhooks](/webhooks/list-webhooks).
 </Note>
+
+## Veja também
+
+- [Webhooks de canal](/webhooks/channel-webhooks)

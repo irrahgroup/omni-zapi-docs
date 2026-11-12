@@ -1,0 +1,265 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Z-API Omni - Activate Messenger",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/activate-messenger": {
+      "post": {
+        "summary": "Activate Messenger",
+        "description": "Finishes the connection of a `META_MESSENGER` channel with the chosen page. The `pageId` and `accessToken` come from List Messenger pages, and the `redirectUri` comes from the SDK result. Does not require ENTERPRISE. If the account is already active on the provider and the channel is disconnected with an active subscription (`PAID`, `TRIAL`, `BOLETO_PENDING` or `CANCELLATION_PROCESS`), Z-API Omni undoes the previous connection and activates again on its own; otherwise, it answers `422` with the provider error.",
+        "operationId": "activateMessenger",
+        "tags": [
+          "Channels"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID (from Create channel or List channels)",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateMessengerRequest"
+              },
+              "example": {
+                "pageId": "102938475601234",
+                "accessToken": "EAAG...",
+                "redirectUri": "https://app.omni.z-api.io/oauth/proxy-messenger"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Channel activated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivateMessengerResponse"
+                },
+                "example": {
+                  "pageId": "102938475601234",
+                  "connected": true,
+                  "pageName": "Minha Loja",
+                  "pageCategory": "Shopping",
+                  "displayName": "Minha Loja"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Secret Key missing, malformed or unknown, IP outside the allowed IP list, or invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Invalid Secret Key",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP outside the list",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel does not exist or belongs to another workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The provider refused the activation. The provider error comes in `error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Integration failure. The operation was not completed; try again in a few moments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "The activation went past the 50-second limit. With `integration_timeout`, nothing changed on the channel and you can retry. With `outcome_unknown`, the previous connection was already undone and the result is not known: check the channel with Get channel before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "examples": {
+                  "integrationTimeout": {
+                    "summary": "Nothing changed",
+                    "value": {
+                      "error": "integration_timeout"
+                    }
+                  },
+                  "outcomeUnknown": {
+                    "summary": "Unknown outcome",
+                    "value": {
+                      "error": "outcome_unknown"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error reason"
+          }
+        }
+      },
+      "ErrorWithMessage": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Stable error code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error text, in English"
+          }
+        }
+      },
+      "ActivateMessengerRequest": {
+        "type": "object",
+        "properties": {
+          "pageId": {
+            "type": "string",
+            "description": "ID of the chosen page"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "Access token of the chosen page"
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "`redirectUri` from the SDK result (the same one used in OAuth)"
+          },
+          "code": {
+            "type": "string",
+            "description": "`code` returned by the OAuth authorization"
+          }
+        }
+      },
+      "ActivateMessengerResponse": {
+        "type": "object",
+        "properties": {
+          "pageId": {
+            "type": "string",
+            "description": "ID of the linked page"
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Whether the channel was connected"
+          },
+          "pageName": {
+            "type": "string",
+            "description": "Page name"
+          },
+          "pageCategory": {
+            "type": "string",
+            "description": "Page category on Facebook"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Channel display name"
+          }
+        }
+      },
+      "ProviderError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Error name"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Error text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in Security, on the Z-API Omni dashboard. The `Bearer` prefix is optional."
+      }
+    }
+  }
+}

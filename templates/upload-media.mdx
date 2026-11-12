@@ -1,5 +1,5 @@
 ---
-title: "Upload de mídia"
+title: "Upload de mídia para template"
 description: "Obtenha o header_handle para templates com HEADER de imagem, vídeo ou documento"
 openapi: "/pt/templates/openapi.json POST /whatsapp/businesses/{wabaId}/templates/media"
 ---
@@ -93,8 +93,12 @@ Isso é configurado no painel, em **Segurança** — não há endpoint público 
 
 | Status | Quando |
 |---|---|
-| `400` | `file` ausente ou vazio, `url` ausente ou em branco, JSON inválido, ou secret key inválida (`{"error": "Authorization invalid"}`) |
+| `400` | `file` ausente ou vazio, `url` ausente ou em branco, JSON inválido, secret key inválida (`{"error": "Authorization invalid"}`) ou IP fora da lista de IPs permitidos da Secret Key (`{"error": "203.0.113.10 not allowed"}`) |
 | `413` | Arquivo acima de 100 MB |
 | `415` | `Content-Type` diferente de `multipart/form-data` e `application/json` |
 | `422` | A plataforma ou a Meta recusou o upload, ou a Meta falhou ao processá-lo (formato, tamanho, token vencido ou Meta fora do ar). O corpo de erro vem em `error`. Códigos mais comuns: `375` (canal sem App ID), `377` (link não permitido), `380` (falha ao baixar o link) |
 | `502` | Plataforma indisponível. Recusa ou falha da Meta não sai como `502`: vem como `422` |
+
+## Veja também
+
+- [Introdução](/templates/introduction)

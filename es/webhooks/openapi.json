@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - API de webhooks",
+    "title": "Z-API Omni - API de webhooks",
     "description": "API para crear y gestionar endpoints de webhook por canal. Cualquier secret key válida de un workspace activo puede usar estas rutas.",
     "version": "1.0.0"
   },
@@ -22,7 +22,7 @@
         "description": "Registra un nuevo endpoint de webhook en el canal. A partir de su creación, los eventos configurados se empiezan a entregar en la URL indicada.",
         "operationId": "createWebhook",
         "tags": [
-          "Webhooks"
+          "Webhook de canal"
         ],
         "parameters": [
           {
@@ -180,6 +180,7 @@
                       ],
                       "status": "ENABLED",
                       "signing": false,
+                      "secret": null,
                       "auth": {
                         "type": "BEARER",
                         "configured": true
@@ -195,13 +196,25 @@
             }
           },
           "400": {
-            "description": "Cuerpo no válido: faltan `url` o `events`, nombre de evento inexistente, `url` con formato no válido o con destino no público, o autenticación incompleta. No se guarda nada.",
+            "description": "Cuerpo no válido: faltan `url` o `events`, nombre de evento inexistente, `url` con formato no válido o con destino no público, o autenticación incompleta. No se guarda nada. También: formato `CHATWOOT` sin `chatwoot_account_id` y `chatwoot_inbox_id` numéricos mayores que cero, o sin autenticación `API_KEY`.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
                   "urlRequired": {
                     "summary": "`url` ausente o en blanco",
                     "value": {
@@ -243,13 +256,41 @@
                     "value": {
                       "error": "Credentials are required when auth type is not NONE"
                     }
+                  },
+                  "chatwootAccountId": {
+                    "summary": "`CHATWOOT` sin `chatwoot_account_id` numérico mayor que cero",
+                    "value": {
+                      "error": "Chatwoot Account ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"
+                    }
+                  },
+                  "chatwootInboxId": {
+                    "summary": "`CHATWOOT` sin `chatwoot_inbox_id` numérico mayor que cero",
+                    "value": {
+                      "error": "Chatwoot Inbox ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"
+                    }
+                  },
+                  "chatwootAuth": {
+                    "summary": "`CHATWOOT` con autenticación distinta de `API_KEY`",
+                    "value": {
+                      "error": "Formato CHATWOOT exige autenticacao API_KEY (selecione 'API Key' no tipo de autenticacao)"
+                    }
                   }
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "404": {
+            "description": "Canal inexistente o de otro workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
           },
           "422": {
             "description": "Workspace sin configuración activa, o un evento que el webhook de canal no admite",
@@ -301,7 +342,7 @@
         "description": "Devuelve todos los webhooks registrados en el canal. Las credenciales de autenticación y el `secret` HMAC no se devuelven por seguridad.",
         "operationId": "listWebhooks",
         "tags": [
-          "Webhooks"
+          "Webhook de canal"
         ],
         "parameters": [
           {
@@ -373,8 +414,29 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "description": "Header `Authorization` ausente o no válido, o IP de origen fuera de la lista del workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
           },
           "422": {
             "description": "Workspace sin configuración activa",
@@ -398,7 +460,7 @@
         "description": "Devuelve los datos de un webhook concreto. Las credenciales y el `secret` no se devuelven.",
         "operationId": "getWebhook",
         "tags": [
-          "Webhooks"
+          "Webhook de canal"
         ],
         "parameters": [
           {
@@ -454,8 +516,29 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "description": "Header `Authorization` ausente o no válido, o IP de origen fuera de la lista del workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Webhook no encontrado",
@@ -490,7 +573,7 @@
         "description": "Actualiza parcialmente la configuración del webhook. Solo se actualizan los campos que se envían.",
         "operationId": "updateWebhook",
         "tags": [
-          "Webhooks"
+          "Webhook de canal"
         ],
         "parameters": [
           {
@@ -560,6 +643,19 @@
                       "token": "novo-token-secreto"
                     }
                   }
+                },
+                "disableSignature": {
+                  "summary": "Quitar la firma HMAC",
+                  "value": {
+                    "signing": false
+                  }
+                },
+                "updateAuthFlat": {
+                  "summary": "Actualizar autenticación (forma plana)",
+                  "value": {
+                    "authType": "API_KEY",
+                    "key": "nova-chave"
+                  }
                 }
               }
             }
@@ -613,6 +709,7 @@
                       ],
                       "status": "DISABLED",
                       "signing": true,
+                      "secret": null,
                       "auth": {
                         "type": "BEARER",
                         "configured": true
@@ -635,6 +732,18 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
                   "emptyEvents": {
                     "summary": "`events` enviado vacío",
                     "value": {
@@ -676,13 +785,28 @@
                     "value": {
                       "error": "Credentials are required when auth type is not NONE"
                     }
+                  },
+                  "chatwootAttributes": {
+                    "summary": "Cambio a `CHATWOOT` sin `customAttributes`",
+                    "value": {
+                      "error": "Account ID e Inbox ID do Chatwoot sao obrigatorios ao trocar para o formato CHATWOOT"
+                    }
+                  },
+                  "chatwootAccountId": {
+                    "summary": "`CHATWOOT` sin `chatwoot_account_id` numérico mayor que cero",
+                    "value": {
+                      "error": "Chatwoot Account ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"
+                    }
+                  },
+                  "chatwootInboxId": {
+                    "summary": "`CHATWOOT` sin `chatwoot_inbox_id` numérico mayor que cero",
+                    "value": {
+                      "error": "Chatwoot Inbox ID e obrigatorio (numero > 0) quando o formato e CHATWOOT"
+                    }
                   }
                 }
               }
             }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Webhook no encontrado",
@@ -747,7 +871,7 @@
         "description": "Elimina permanentemente el webhook. A partir del borrado, ya no se entrega ningún evento en la URL configurada.",
         "operationId": "deleteWebhook",
         "tags": [
-          "Webhooks"
+          "Webhook de canal"
         ],
         "parameters": [
           {
@@ -775,8 +899,29 @@
           "204": {
             "description": "Webhook eliminado correctamente. No se devuelve contenido."
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "description": "Header `Authorization` ausente o no válido, o IP de origen fuera de la lista del workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorizationInvalid": {
+                    "summary": "Header `Authorization` ausente o no válido",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP de origen fuera de la lista de IP del workspace",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Webhook no encontrado",
@@ -809,22 +954,6 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Token no válido o ausente.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "example": {
-              "error": 401,
-              "message": "Unauthorized"
-            }
-          }
-        }
-      }
-    },
     "schemas": {
       "CreateWebhookRequest": {
         "type": "object",
@@ -845,7 +974,7 @@
           },
           "events": {
             "type": "array",
-            "description": "Tipos de evento que se van a recibir. Es obligatorio al menos uno. El nombre se acepta en mayúsculas o minúsculas; un nombre inexistente, nulo o en blanco devuelve `400`.",
+            "description": "Tipos de evento que se van a recibir. Es obligatorio al menos uno. El nombre se acepta en mayúsculas o minúsculas; un nombre inexistente, nulo o en blanco devuelve `400`. Cada evento debe ser emitido por el tipo del canal; si no, `422`. Consulta la matriz en Webhooks de canal.",
             "items": {
               "type": "string",
               "enum": [
@@ -872,6 +1001,25 @@
             "default": false,
             "example": true
           },
+          "authType": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
+            "description": "Tipo de autenticación (forma plana). Alternativa a `auth.type`. `NONE` borra la autenticación."
+          },
+          "token": {
+            "type": "string",
+            "description": "Credencial para `BEARER` (forma plana)."
+          },
+          "key": {
+            "type": "string",
+            "description": "Credencial para `API_KEY` (forma plana)."
+          },
           "auth": {
             "$ref": "#/components/schemas/WebhookAuth"
           },
@@ -882,13 +1030,13 @@
               "Z_API",
               "CHATWOOT"
             ],
-            "description": "Formato del payload entregado al webhook. `DEFAULT` es el formato de Omni Z-API; `Z_API` mantiene la estructura de Z-API para quienes migran; `CHATWOOT` lo entrega en el formato que espera Chatwoot.",
+            "description": "Formato del payload entregado al webhook. `DEFAULT` es el formato de Z-API Omni; `Z_API` mantiene la estructura de Z-API para quienes migran; `CHATWOOT` lo entrega en el formato que espera Chatwoot.",
             "default": "DEFAULT",
             "example": "DEFAULT"
           },
           "customAttributes": {
             "type": "object",
-            "description": "Atributos extra",
+            "description": "Atributos extra. En el formato `CHATWOOT`, obligatorio con `chatwoot_account_id` y `chatwoot_inbox_id` numéricos mayores que cero; la autenticación debe ser `API_KEY`, con la API Key de Chatwoot.",
             "additionalProperties": true,
             "example": {}
           }
@@ -909,7 +1057,7 @@
           },
           "events": {
             "type": "array",
-            "description": "Nueva lista de eventos. Sustituye los eventos que la API conoce; un evento guardado que la API todavía no conoce se mantiene. No puede estar vacía (`400`).",
+            "description": "Nueva lista de eventos. Sustituye los eventos que la API conoce; un evento guardado que la API todavía no conoce se mantiene. No puede estar vacía (`400`). Cada evento debe ser emitido por el tipo del canal (si no, `422`); un evento ya guardado en el webhook sigue aceptado.",
             "items": {
               "type": "string",
               "enum": [
@@ -936,7 +1084,26 @@
           },
           "signing": {
             "type": "boolean",
-            "description": "Habilita o rota la firma HMAC. Genera un `secret` nuevo que se devuelve en la respuesta."
+            "description": "`true` genera un `secret` nuevo, que se devuelve solo en esta respuesta (rota cada vez). `false` quita la firma. Omítelo para no cambiarla."
+          },
+          "authType": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "BEARER",
+              "API_KEY",
+              "BASIC",
+              "CUSTOM_HEADER"
+            ],
+            "description": "Tipo de autenticación (forma plana). Alternativa a `auth.type`. `NONE` borra la autenticación."
+          },
+          "token": {
+            "type": "string",
+            "description": "Credencial para `BEARER` (forma plana)."
+          },
+          "key": {
+            "type": "string",
+            "description": "Credencial para `API_KEY` (forma plana)."
           },
           "auth": {
             "$ref": "#/components/schemas/WebhookAuth"
@@ -957,7 +1124,7 @@
       },
       "WebhookAuth": {
         "type": "object",
-        "description": "Configura cómo se autentica Omni Z-API al llamar a tu URL",
+        "description": "Configura cómo se autentica Z-API Omni al llamar a tu URL",
         "properties": {
           "type": {
             "type": "string",
@@ -1140,7 +1307,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+        "description": "Secret Key generada en el panel de Seguridad de Z-API Omni"
       }
     }
   }

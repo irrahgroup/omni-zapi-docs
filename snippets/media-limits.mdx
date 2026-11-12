@@ -1,0 +1,111 @@
+export const MediaLimits = ({ lang = 'pt' }) => {
+  const ROWS = [
+    ['Meta Cloud API', '5 MB', '16 MB', '16 MB', '100 MB'],
+    ['WhatsApp Web', '5 MB', '16 MB', '16 MB', '100 MB'],
+    ['Instagram', '8 MB', '25 MB', '25 MB', '25 MB'],
+    ['Messenger', '8 MB', '25 MB', '25 MB', '25 MB'],
+    ['Telegram', '5 MB', '20 MB', '20 MB', '20 MB'],
+  ];
+
+  const CODES = [
+    ['MEDIA_TOO_LARGE', {
+      pt: 'o arquivo passa do limite do canal',
+      en: 'the file is above the channel limit',
+      es: 'el archivo supera el límite del canal',
+    }],
+    ['MEDIA_MIME_NOT_ALLOWED', {
+      pt: 'o formato do arquivo não é aceito para o tipo',
+      en: 'the file format is not accepted for the type',
+      es: 'el formato del archivo no se acepta para el tipo',
+    }],
+    ['MEDIA_CAPTION_TOO_LONG', {
+      pt: 'a legenda passa de 1024 caracteres',
+      en: 'the caption is longer than 1024 characters',
+      es: 'la leyenda supera los 1024 caracteres',
+    }],
+    ['MEDIA_URL_REQUIRED', {
+      pt: 'o anexo veio sem `url`',
+      en: 'the attachment came without `url`',
+      es: 'el adjunto vino sin `url`',
+    }],
+    ['MEDIA_INVALID_URL', {
+      pt: 'a `url` não é um endereço válido',
+      en: 'the `url` is not a valid address',
+      es: 'la `url` no es una dirección válida',
+    }],
+    ['MEDIA_INVALID_DATA_URL', {
+      pt: 'o Base64 em `url` está malformado ou sem o marcador `;base64,`',
+      en: 'the Base64 in `url` is malformed or missing the `;base64,` marker',
+      es: 'el Base64 en `url` está malformado o sin el marcador `;base64,`',
+    }],
+  ];
+
+  const L = {
+    pt: {
+      title: 'Limites de mídia por canal',
+      head: ['Canal', 'Imagem', 'Áudio', 'Vídeo', 'Documento'],
+      sticker: 'Sticker na Meta Cloud API: até **100 KB** estático e **500 KB** animado. Legenda na Meta Cloud API: até **1024 caracteres**.',
+      probe: 'A API confere o tamanho que o servidor do arquivo informa. Se ele não informar, o arquivo segue, e uma recusa do canal chega depois, pelo webhook de status.',
+      errors: 'Quando a API recusa a mídia, ela responde `400` com `code` `VALIDATION_ERROR` e um destes `subCode`:',
+    },
+    en: {
+      title: 'Media limits per channel',
+      head: ['Channel', 'Image', 'Audio', 'Video', 'Document'],
+      sticker: 'Sticker on Meta Cloud API: up to **100 KB** static and **500 KB** animated. Caption on Meta Cloud API: up to **1024 characters**.',
+      probe: 'The API checks the size reported by the file server. If the server does not report it, the file goes on, and a channel refusal arrives later, through the status webhook.',
+      errors: 'When the API refuses the media, it answers `400` with `code` `VALIDATION_ERROR` and one of these `subCode` values:',
+    },
+    es: {
+      title: 'Límites de medios por canal',
+      head: ['Canal', 'Imagen', 'Audio', 'Video', 'Documento'],
+      sticker: 'Sticker en Meta Cloud API: hasta **100 KB** estático y **500 KB** animado. Leyenda en Meta Cloud API: hasta **1024 caracteres**.',
+      probe: 'La API verifica el tamaño que informa el servidor del archivo. Si no lo informa, el archivo sigue, y un rechazo del canal llega después, por el webhook de estado.',
+      errors: 'Cuando la API rechaza el medio, responde `400` con `code` `VALIDATION_ERROR` y uno de estos `subCode`:',
+    },
+  }[lang];
+
+  const rich = (text) =>
+    text
+      .split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+      .map((part, i) =>
+        part.startsWith('**') ? (
+          <strong key={i}>{part.slice(2, -2)}</strong>
+        ) : part.startsWith('`') ? (
+          <code key={i}>{part.slice(1, -1)}</code>
+        ) : (
+          part
+        ),
+      );
+
+  return (
+    <div>
+      <p><strong>{L.title}</strong></p>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            {ROWS.map((row) => <th key={row[0]} style={{ textAlign: 'center' }}>{row[0]}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {L.head.slice(1).map((label, k) => (
+            <tr key={label}>
+              <td><strong>{label}</strong></td>
+              {ROWS.map((row) => <td key={row[0]} style={{ textAlign: 'center' }}>{row[k + 1]}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p>{rich(L.sticker)}</p>
+      <p>{rich(L.probe)}</p>
+      <p>{rich(L.errors)}</p>
+      <ul>
+        {CODES.map((c) => (
+          <li key={c[0]}>
+            <code>{c[0]}</code>: {rich(c[1][lang])}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};

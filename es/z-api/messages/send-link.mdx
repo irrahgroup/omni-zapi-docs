@@ -1,19 +1,28 @@
 ---
 title: "Enviar enlace"
-description: "Envía mensajes con vista previa de enlace por WhatsApp"
+description: "Envía mensajes con un enlace"
 openapi: "/es/z-api/openapi.json POST /send-link"
 ---
 
+<Warning>
+  Los campos `linkUrl` y `linkDescription` de Z-API no son leídos por esta ruta. Usa `canonicalUrl` y `description`.
+</Warning>
+
 import { ZapiResponseText } from '/snippets/notes.mdx';
 
-## Conceptos
-
-Método para enviar mensajes con vista previa de enlace, incluyendo imagen, título y descripción.
-
-<Warning>
-  Los enlaces solo son pulsables si el destinatario tiene tu número guardado en su agenda o si ha iniciado una conversación contigo anteriormente.
-</Warning>
+Envía un mensaje con un enlace. El cuerpo se trata como enlace cuando trae `message` y `canonicalUrl` (o `matchedText`).
 
 <Note>
   <ZapiResponseText lang="es" />
 </Note>
+
+### Errores
+
+| Status | Respuesta `error` | Cuándo |
+|---|---|---|
+| `400` | `phone is required` | `phone` ausente o vacío |
+
+## Véase también
+
+- [Mensajes: errores comunes](/es/z-api/messages/introduction#errores-comunes)
+- [Limitaciones y rechazos](/es/z-api/limitations)

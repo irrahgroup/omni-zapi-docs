@@ -5,14 +5,16 @@ openapi: "/es/channels/openapi-connect.json POST /v1/channels/{channelId}/connec
 ---
 
 import { projectName, frontendUrl } from '/snippets/variables.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
 
+<ChannelSupport type="CONNECT" lang="es" />
 
 ## Visión general
 
 Después de [crear un canal](/es/channels/create-channel) del tipo `META_WHATSAPP`, tienes que **conectarlo** a un número de WhatsApp Business. Hay dos formas de hacerlo:
 
-- **Desde el panel** — Flujo guiado directamente en el [Panel](https://app.omni.z-api.io)
-- **Con el SDK + API** — Integra el flujo de conexión en tu sistema
+- **Desde el panel**: Flujo guiado directamente en el [Panel](https://app.omni.z-api.io)
+- **Con el SDK + API**: Integra el flujo de conexión en tu sistema
 
 ## Conexión desde el panel
 
@@ -25,7 +27,7 @@ Usa este flujo cuando quieras que **tu usuario** conecte el canal desde **tu pro
 El flujo consta de 3 etapas:
 
 <Steps>
-  <Step title="Frontend — Iniciar la conexión con el SDK">
+  <Step title="Frontend: Iniciar la conexión con el SDK">
     En el **frontend** de tu aplicación, usa el SDK para iniciar el flujo de conexión. El SDK abrirá el proceso de autenticación con WhatsApp y devolverá la información necesaria.
 
     ```javascript
@@ -46,7 +48,7 @@ El flujo consta de 3 etapas:
       La `publicKey` se puede exponer en el frontend. Más información en [Autenticación](/es/authentication).
     </Tip>
   </Step>
-  <Step title="Frontend → Backend — Enviar los datos">
+  <Step title="Frontend → Backend: Enviar los datos">
     El SDK devuelve un objeto con la información de la conexión. Envía esos datos al **backend** de tu aplicación:
 
     ```json
@@ -65,7 +67,7 @@ El flujo consta de 3 etapas:
     | `code` | string | Código de autorización generado por WhatsApp |
     | `coexistence` | boolean | Indica si el número está en modo de coexistencia |
   </Step>
-  <Step title="Backend — Finalizar la conexión mediante la API">
+  <Step title="Backend: Finalizar la conexión mediante la API">
     En el **backend**, llama a la API de conexión enviando los datos recibidos del frontend:
 
     `POST /v1/channels/{channelId}/connect`
@@ -104,10 +106,6 @@ Si el canal ya está conectado al **mismo número** (`phoneId`) y Meta confirma 
 - Si el número se cayó en Meta, el `connect` sigue normalmente y reconecta el canal.
 - Si envía otro `phoneId`, el `connect` cambia el número, como antes.
 
-<Note>
-  **Formas distintas por canal.** En WhatsApp oficial, el canal ya conectado responde `409` con `channel_already_connected`. En Instagram, Messenger y Telegram, activar un canal que ya está activo sigue respondiendo `422`, con el error del proveedor en el campo `error` (por ejemplo, `INSTAGRAM_META_IS_ALREADY_ACTIVATED`).
-</Note>
-
 ## Flujo resumido
 
 ```
@@ -120,6 +118,36 @@ Frontend (SDK)              →  Backend (API)
                             5. Canal conectado ✓
 ```
 
+## Respuesta
+
+Esta ruta es solo de WhatsApp Oficial y no requiere ENTERPRISE. La API valida solo el `wabaId`; `code` y `phoneId` son necesarios para completar la conexión. Si todo va bien, responde `200`, y `success` tiene el mismo valor que `connected`:
+
+```json
+{
+  "phoneId": "123456789012345",
+  "connected": true,
+  "success": true,
+  "isCoexistence": false,
+  "phoneConnected": "5511999999999",
+  "businessName": "Minha Empresa"
+}
+```
+
+## Errores
+
+| Estado | Cuerpo | Cuándo |
+|---|---|---|
+| `400` | `{"error":"wabaId is required"}` | Cuerpo sin `wabaId`, por ejemplo con el resultado del SDK de otro canal |
+| `400` | `{"error":"Authorization invalid"}` | Secret Key ausente, mal formada o inexistente |
+| `404` | `{"error":"Instance not found"}` | Canal inexistente o de otro workspace |
+| `409` | `{"error":"channel_already_connected","message":"Channel already connected"}` | El mismo número ya está conectado |
+| `502` | `{"error":"integration_unavailable", ...}` | Falla de integración; vuelve a intentarlo en unos instantes |
+| `504` | `{"error":"outcome_unknown", ...}` | El resultado no se conoce; revisa el estado del canal con [Consultar canal](/es/channels/get-channel) antes de repetir |
+
 <Note>
   Una vez establecida la conexión, el canal está listo para enviar y recibir mensajes. Usa el `channelId` en los endpoints de [mensajes libres](/es/messages/introduction) y [plantillas](/es/templates/introduction).
 </Note>
+
+## Véase también
+
+- [Introducción](/es/channels/introduction)

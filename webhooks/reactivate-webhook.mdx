@@ -1,0 +1,42 @@
+---
+title: "Reativar webhook"
+description: "Reative um webhook cujo envio foi suspenso"
+openapi: "/pt/webhooks/openapi-central.json POST /v1/webhooks/{webhookId}/reactivate"
+---
+
+## Conceituação
+
+Reativa um webhook com `state` `SUSPENDED`. O pedido não tem corpo. Vale para webhook de canal, padrão ou global.
+
+<Note>
+  O envio só é suspenso onde a suspensão automática está ligada para a marca do workspace, junto com o 3º aviso de falha. Onde está desligada, os avisos não desativam o webhook. Veja [Avisos de falha](/webhooks/central#avisos-de-falha).
+</Note>
+
+A reativação:
+
+- limpa a suspensão e zera a sequência de falhas;
+- envia ao Owner e aos Managers do workspace um e-mail dizendo quem reativou.
+
+A resposta é `200` com os mesmos campos de um item de [Estado dos webhooks](/webhooks/webhooks-health): `state` `ACTIVE`, `consecutiveFailures` `0` e `suspendedAt` `null`. O início do episódio encerrado aparece em `retainedSince` na próxima consulta do estado.
+
+Reativar um webhook que não está suspenso responde `200` com o estado atual, sem efeito.
+
+<Warning>
+  **Mudar a URL ou o `status` pelo `PATCH` não reativa o webhook.** Use esta rota.
+</Warning>
+
+<Warning>
+  **Os eventos retidos não são reenviados sozinhos.** Depois de reativar, peça o [reenvio em lote](/webhooks/resend-deliveries) com `episode` `current` e repita a cada 2 minutos enquanto `remaining` for maior que zero, antes de `oldestExpiresAt`.
+</Warning>
+
+### Erros
+
+| Caso | Resposta |
+|---|---|
+| Webhook inexistente ou de outro workspace | `404` |
+
+Os erros de autenticação, de IP e de workspace inativo estão em [Central de webhooks](/webhooks/central#erros-comuns-a-todas-as-rotas).
+
+## Veja também
+
+- [Central de webhooks](/webhooks/central)

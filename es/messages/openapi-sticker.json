@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Enviar sticker",
+    "title": "Z-API Omni - Enviar sticker",
     "version": "1.0.0"
   },
   "servers": [
@@ -62,11 +62,17 @@
           "200": {
             "$ref": "#/components/responses/MessageSuccess"
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
           },
           "422": {
-            "$ref": "#/components/responses/ChannelDisconnected"
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -75,7 +81,7 @@
   "components": {
     "responses": {
       "MessageSuccess": {
-        "description": "Mensaje enviado correctamente",
+        "description": "Mensaje aceptado y puesto en la cola de envío. La entrega se confirma después, por los eventos de estado del webhook.",
         "content": {
           "application/json": {
             "schema": {
@@ -87,32 +93,162 @@
           }
         }
       },
-      "Unauthorized": {
-        "description": "Token no válido o ausente.",
+      "BadRequest": {
+        "description": "Solicitud rechazada antes del envío: Secret Key no válida, IP fuera de la lista permitida, cuerpo ausente o cuerpo que no sirve para el tipo de mensaje.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "authorizationInvalid": {
+                "summary": "Secret Key no válida o ausente",
+                "value": {
+                  "error": "Authorization invalid"
+                }
+              },
+              "ipNotAllowed": {
+                "summary": "IP de origen fuera de la lista de IPs permitidas",
+                "value": {
+                  "error": "203.0.113.10 not allowed"
+                }
+              },
+              "payloadRequired": {
+                "summary": "Cuerpo vacío ({})",
+                "value": {
+                  "error": "message payload is required"
+                }
+              },
+              "validationError": {
+                "summary": "Campo obligatorio ausente para el tipo",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.attachments': is required for message type STICKER"
+                }
+              },
+              "mediaTooLarge": {
+                "summary": "Archivo por encima del límite del canal",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "subCode": "MEDIA_TOO_LARGE",
+                  "message": "Mídia excede o limite do canal META_INSTAGRAM para image: 9437184 bytes (máx 8388608)"
+                }
+              }
+            }
+          }
+        }
+      },
+      "InstanceNotFound": {
+        "description": "No se encontró una instancia para la Secret Key enviada.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
-            "example": {
-              "error": 401,
-              "message": "Unauthorized"
+            "examples": {
+              "instanceNotFound": {
+                "summary": "Instancia no encontrada",
+                "value": {
+                  "error": "instance not found"
+                }
+              }
             }
           }
         }
       },
-      "ChannelDisconnected": {
-        "description": "Canal desconectado. El mensaje no se envió: conecta el canal de nuevo y repite el envío.",
+      "Unprocessable": {
+        "description": "Envío rechazado por una regla: canal desconectado, instancia sin aprovisionar, suscripción inactiva, cuenta bloqueada o tipo que el canal no tiene.",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/SendError"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
             },
-            "example": {
-              "timestamp": "2026-10-22T14:00:00.123Z",
-              "code": "BUSINESS_RULE_VIOLATION",
-              "subCode": "CHANNEL_DISCONNECTED",
-              "message": "Channel is disconnected"
+            "examples": {
+              "channelDisconnected": {
+                "summary": "Canal desconectado: conecta el canal de nuevo y repite el envío",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "CHANNEL_DISCONNECTED",
+                  "message": "Channel is disconnected"
+                }
+              },
+              "businessRule": {
+                "summary": "Tipo que el canal no tiene (ejemplo: ubicación en Instagram)",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "message": "[UNSUPPORTED_CHANNEL_TYPE] O canal META_INSTAGRAM nao suporta mensagens do tipo LOCATION"
+                }
+              },
+              "instanceNotProvisioned": {
+                "summary": "Instancia sin aprovisionar",
+                "value": {
+                  "error": "instance is not provisioned"
+                }
+              },
+              "subscriptionInactive": {
+                "summary": "Suscripción de la instancia inactiva",
+                "value": {
+                  "error": "instance subscription is not active"
+                }
+              },
+              "blocked": {
+                "summary": "Cuenta bloqueada",
+                "value": {
+                  "error": "You are blocked, contact support."
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "Falla de nuestro lado al procesar la solicitud. Revisa el webhook de estado antes de repetir: la solicitud puede haber sido aceptada.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SendError"
+                },
+                {
+                  "$ref": "#/components/schemas/Error"
+                }
+              ]
+            },
+            "examples": {
+              "integrationUnavailable": {
+                "summary": "Falla temporal: intenta de nuevo en unos instantes",
+                "value": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              },
+              "sendingFailed": {
+                "summary": "Falla interna al procesar la solicitud",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "INTEGRATION_ERROR",
+                  "message": "Message sending failed"
+                }
+              }
             }
           }
         }
@@ -134,7 +270,7 @@
             "properties": {
               "identifier": {
                 "type": "string",
-                "description": "Teléfono del destinatario (código de país + prefijo + número)",
+                "description": "Identificador del destinatario en el canal: teléfono con código de país y de área en WhatsApp (5511999999999), IGSID en Instagram, PSID en Messenger y chat_id en Telegram",
                 "example": "5511999999999"
               }
             }
@@ -178,7 +314,7 @@
         "properties": {
           "messageId": {
             "type": "string",
-            "description": "ID del mensaje enviado — hexadecimal de 32 caracteres en mayúsculas"
+            "description": "ID del mensaje en Z-API Omni: hexadecimal de 32 caracteres en mayúsculas. Es el mismo valor de message._id en el webhook"
           }
         }
       },
@@ -186,10 +322,12 @@
         "type": "object",
         "properties": {
           "error": {
-            "type": "integer"
+            "type": "string",
+            "description": "Motivo del rechazo"
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "description": "Detalle del rechazo, cuando lo hay"
           }
         }
       },
@@ -223,7 +361,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+        "description": "Secret Key generada en el panel de Seguridad de Z-API Omni"
       }
     }
   }

@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Omni Z-API - Conectar canal",
+    "title": "Z-API Omni - Conectar canal Meta WhatsApp",
     "version": "1.0.0"
   },
   "servers": [
@@ -18,7 +18,7 @@
     "/v1/channels/{channelId}/connect": {
       "post": {
         "summary": "Conectar canal Meta WhatsApp",
-        "description": "Finaliza la conexión de un canal **META_WHATSAPP** con los datos devueltos por el SDK `@omnizapi/connect`. Exclusivo para canales de la API Oficial de WhatsApp (Meta).",
+        "description": "Finaliza la conexión de un canal `META_WHATSAPP` con los datos que devuelve el SDK `@omnizapi/connect`. Es exclusiva de WhatsApp Oficial: los otros canales tienen su propia ruta. No requiere ENTERPRISE.",
         "operationId": "connectMetaChannel",
         "tags": [
           "Canales"
@@ -28,7 +28,7 @@
             "name": "channelId",
             "in": "path",
             "required": true,
-            "description": "ID del canal (obtenido con Crear canal)",
+            "description": "ID del canal (obtenido en Crear canal o Listar canales)",
             "schema": {
               "type": "string",
               "example": "019E4C54B1B375A28970B605CA9B03C3"
@@ -53,31 +53,103 @@
         },
         "responses": {
           "200": {
-            "description": "Canal conectado correctamente",
+            "description": "Resultado de la conexión. `success` tiene el mismo valor que `connected`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "$ref": "#/components/schemas/ConnectChannelResponse"
                 },
                 "example": {
-                  "success": true
+                  "phoneId": "123456789012345",
+                  "connected": true,
+                  "success": true,
+                  "isCoexistence": false,
+                  "phoneConnected": "5511999999999",
+                  "businessName": "Minha Empresa"
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "409": {
-            "description": "Canal ya conectado al mismo `phoneId`, y Meta confirma que el número funciona. Nada cambia en el canal y el `code` no se usa. Para renovar la conexión del mismo número, desconecte antes. Reconózcalo por el campo `error`, que es estable; `message` siempre está en inglés.",
+          "400": {
+            "description": "Secret Key ausente, mal formada o inexistente, IP fuera de la lista de IPs permitidas o solicitud inválida",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChannelAlreadyConnectedError"
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "authorization": {
+                    "summary": "Secret Key inválida",
+                    "value": {
+                      "error": "Authorization invalid"
+                    }
+                  },
+                  "ipNotAllowed": {
+                    "summary": "IP fuera de la lista",
+                    "value": {
+                      "error": "203.0.113.10 not allowed"
+                    }
+                  },
+                  "wabaIdRequired": {
+                    "summary": "Sin wabaId",
+                    "value": {
+                      "error": "wabaId is required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Canal inexistente o de otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El mismo número ya está conectado y funcionando en Meta. La API rechaza y no gasta el `code`. Para renovar la conexión del mismo número, desconecta antes con `PUT /v1/channels/{channelId}/disconnect`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
                 },
                 "example": {
                   "error": "channel_already_connected",
                   "message": "Channel already connected"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falla de integración. La operación no se completó; vuelve a intentarlo en unos instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "La conexión superó el plazo y el resultado no se conoce. Revisa el estado del canal con Consultar canal antes de repetir.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorWithMessage"
+                },
+                "example": {
+                  "error": "outcome_unknown"
                 }
               }
             }
@@ -87,87 +159,79 @@
     }
   },
   "components": {
-    "responses": {
-      "Unauthorized": {
-        "description": "Token no válido o ausente.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            },
-            "example": {
-              "error": 401,
-              "message": "Unauthorized"
-            }
-          }
-        }
-      }
-    },
     "schemas": {
-      "ConnectChannelRequest": {
-        "type": "object",
-        "required": [
-          "wabaId",
-          "phoneId",
-          "code",
-          "coexistence"
-        ],
-        "properties": {
-          "wabaId": {
-            "type": "string",
-            "description": "ID de la cuenta de WhatsApp Business"
-          },
-          "phoneId": {
-            "type": "string",
-            "description": "ID del número de teléfono"
-          },
-          "code": {
-            "type": "string",
-            "description": "Código de autorización generado por WhatsApp"
-          },
-          "coexistence": {
-            "type": "boolean",
-            "description": "Indica si el número está en modo de coexistencia"
-          }
-        }
-      },
-      "SuccessResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "Indica si la operación se realizó correctamente"
-          }
-        }
-      },
       "Error": {
         "type": "object",
         "properties": {
           "error": {
-            "type": "integer"
-          },
-          "message": {
-            "type": "string"
+            "type": "string",
+            "description": "Motivo del error"
           }
         }
       },
-      "ChannelAlreadyConnectedError": {
+      "ErrorWithMessage": {
         "type": "object",
-        "required": [
-          "error",
-          "message"
-        ],
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "channel_already_connected"
-            ],
-            "description": "Código estable del rechazo"
+            "description": "Código estable del error"
           },
           "message": {
             "type": "string",
-            "description": "Texto fijo, siempre en inglés"
+            "description": "Texto del error, en inglés"
+          }
+        }
+      },
+      "ConnectChannelRequest": {
+        "type": "object",
+        "required": [
+          "wabaId"
+        ],
+        "properties": {
+          "wabaId": {
+            "type": "string",
+            "description": "ID de la cuenta de WhatsApp Business (WABA) elegida en el Embedded Signup. Es el único campo que valida la API."
+          },
+          "phoneId": {
+            "type": "string",
+            "description": "ID del número elegido. Necesario para completar la conexión."
+          },
+          "code": {
+            "type": "string",
+            "description": "Código de autorización que devuelve Meta. Necesario para completar la conexión."
+          },
+          "coexistence": {
+            "type": "boolean",
+            "description": "Si el número se conectó en coexistencia con la app de WhatsApp Business"
+          }
+        }
+      },
+      "ConnectChannelResponse": {
+        "type": "object",
+        "properties": {
+          "phoneId": {
+            "type": "string",
+            "description": "ID del número conectado"
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Si el canal quedó conectado"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Mismo valor que `connected`"
+          },
+          "isCoexistence": {
+            "type": "boolean",
+            "description": "Si la conexión es en coexistencia"
+          },
+          "phoneConnected": {
+            "type": "string",
+            "description": "Número conectado, con código de país"
+          },
+          "businessName": {
+            "type": "string",
+            "description": "Nombre de la empresa en Meta"
           }
         }
       }
@@ -176,7 +240,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+        "description": "Secret Key generada en Seguridad, en el panel de Z-API Omni. El prefijo `Bearer` es opcional."
       }
     }
   }
