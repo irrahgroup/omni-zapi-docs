@@ -292,7 +292,7 @@ METHOD_STATUS = {
     'IMAGE': 'live',
     'AUDIO': 'live',
     'VIDEO': 'live',
-    'DOCUMENT': 'soon',
+    'DOCUMENT': 'live',
     'STICKER': 'live',
     'LOCATION': 'broken',
     'LOCATION_REQUEST': 'soon',

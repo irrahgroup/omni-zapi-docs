@@ -8,8 +8,8 @@ para WhatsApp, Instagram, Messenger e Telegram. Muda o canal no endereço, e pro
 
 O que não dá para prometer é que toda plataforma aceite tudo. O Instagram não tem mensagem de
 localização. O Telegram não tem botão de ligar. Catálogo de produto só existe onde existe catálogo.
-**Esses limites são das plataformas, não da nossa API** — e esta página é o mapa deles, para você
-descobrir agora e não no meio do teste.
+**Quase todos esses limites são das plataformas; onde o limite é nosso, a ressalva diz** — e esta
+página é o mapa deles, para você descobrir agora e não no meio do teste.
 
 ## Os cinco canais, em duas linhas cada
 
@@ -61,7 +61,7 @@ descobrir agora e não no meio do teste.
 | Sticker | ✅ | ✅ | ⚠️ | ⚠️ | ✅ |
 | Localização | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Contato | ✅ | ✅ | ❌ | ❌ | ✅ |
-| Reação (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
+| Reação (emoji) | ✅ | ✅ | ✅ | 🔍 | ❌ |
 | Enquete | ❌ | ✅ | ❌ | ❌ | ✅ |
 
 Texto e mídia são o chão comum: funcionam nos cinco, com o mesmo corpo. A exceção é o documento, que no
@@ -90,8 +90,8 @@ abre a lista. Mande as opções como botões rápidos (`INTERACTIVE_BUTTON`).
 
 | Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
 |---|:---:|:---:|:---:|:---:|:---:|
-| Catálogo | ✅ | ⚠️ | ❌ | ❌ | ❌ |
-| Produto | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Catálogo | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Produto | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Multi-produto | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Detalhes do pedido | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ |
 | Status do pedido | ✅ | ⚠️ | ❌ | ❌ | ❌ |
@@ -155,21 +155,20 @@ e [`sendDocument` do Telegram](https://core.telegram.org/bots/api#senddocument).
 
 ### Catálogo, produto e pedido no WhatsApp Web
 
-Funcionam, mas só saem se o
-número conectado for uma conta **WhatsApp Business com produtos cadastrados**. Número pessoal não tem
-catálogo, então não há o que enviar.
+No WhatsApp Web a API não envia catálogo nem produto. A chamada é aceita com `200`, mas a mensagem
+não chega ao cliente.
 
-**O que fazer**: se a loja é a parte importante da sua integração, use a Meta Cloud API. No Web,
-trate o catálogo como um extra que depende de como o cliente configurou o número dele.
+O pedido só sai se o número conectado for uma conta **WhatsApp Business com produtos cadastrados**.
+Número pessoal não tem catálogo, então não há o que enviar.
 
-Fontes: [produto](https://developer.z-api.io/message/send-message-product),
-[catálogo](https://developer.z-api.io/message/send-message-catalog) e
-[pedido](https://developer.z-api.io/message/send-message-order) na Z-API.
+**O que fazer**: se a loja é a parte importante da sua integração, use a Meta Cloud API.
+
+Fonte: [pedido](https://developer.z-api.io/message/send-message-order) na Z-API.
 
 ### Multi-produto só na plataforma oficial
 
-Mandar vários produtos numa mensagem só existe na Meta Cloud API. Na conexão não oficial dá para
-mandar **um produto por vez**, e nos outros canais não há equivalente.
+Mandar vários produtos numa mensagem só existe na Meta Cloud API. Nos outros canais não há
+equivalente.
 
 ### Detalhes do pedido no Messenger e no Telegram
 
@@ -189,6 +188,12 @@ você quer avisar (Messenger) ou cobrar com provedor próprio (Telegram).
 Funciona, só não é um tipo de mensagem: é um **botão de teclado** que pede a localização
 ([`request_location`](https://core.telegram.org/bots/api#replykeyboardmarkup)). Para o cliente dá no
 mesmo, ele toca e a localização chega. Marcamos ✅ porque o resultado é o mesmo.
+
+### Reação no Telegram
+
+No Telegram a API não envia reação. A chamada é aceita com `200`, mas a reação não chega ao cliente.
+
+**O que fazer**: no Telegram, quando precisar confirmar algo ao cliente, responda com texto.
 
 ### Reação no Messenger
 

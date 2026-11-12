@@ -7,9 +7,9 @@ The Omni Z-API promise is a single one: **one call, any channel**. The request b
 WhatsApp, Instagram, Messenger and Telegram. Change the channel in the URL, and that is it.
 
 What cannot be promised is that every platform accepts everything. Instagram has no location message.
-Telegram has no call button. A product catalog only exists where there is a catalog. **Those limits
-belong to the platforms, not to our API** — and this page is the map of them, so you find out now
-instead of in the middle of a test.
+Telegram has no call button. A product catalog only exists where there is a catalog. **Almost all of
+those limits belong to the platforms; where the limit is ours, the caveat says so** — and this page is
+the map of them, so you find out now instead of in the middle of a test.
 
 ## The five channels, two lines each
 
@@ -59,7 +59,7 @@ instead of in the middle of a test.
 | Sticker | ✅ | ✅ | ⚠️ | ⚠️ | ✅ |
 | Location | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Contact | ✅ | ✅ | ❌ | ❌ | ✅ |
-| Reaction (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
+| Reaction (emoji) | ✅ | ✅ | ✅ | 🔍 | ❌ |
 | Poll | ❌ | ✅ | ❌ | ❌ | ✅ |
 
 Text and media are the common ground: they work on all five, with the same body. The exception is the
@@ -88,8 +88,8 @@ button that opens the list. Send the options as quick reply buttons (`INTERACTIV
 
 | Feature | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
 |---|:---:|:---:|:---:|:---:|:---:|
-| Catalog | ✅ | ⚠️ | ❌ | ❌ | ❌ |
-| Product | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Catalog | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Product | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Multi-product | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Order details | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ |
 | Order status | ✅ | ⚠️ | ❌ | ❌ | ❌ |
@@ -153,21 +153,20 @@ and [Telegram `sendDocument`](https://core.telegram.org/bots/api#senddocument).
 
 ### Catalog, product and order on WhatsApp Web
 
-They work, but only go
-out if the connected number is a **WhatsApp Business account with registered products**. A personal
-number has no catalog, so there is nothing to send.
+On WhatsApp Web the API does not send catalogs or products. The call is accepted with `200`, but the
+message does not reach the customer.
 
-**What to do**: if the store is the important part of your integration, use Meta Cloud API. On Web,
-treat the catalog as an extra that depends on how the customer set their number up.
+The order only goes out if the connected number is a **WhatsApp Business account with registered
+products**. A personal number has no catalog, so there is nothing to send.
 
-Sources: [product](https://developer.z-api.io/en/message/send-message-product),
-[catalog](https://developer.z-api.io/en/message/send-message-catalog) and
-[order](https://developer.z-api.io/en/message/send-message-order) on Z-API.
+**What to do**: if the store is the important part of your integration, use Meta Cloud API.
+
+Source: [order](https://developer.z-api.io/en/message/send-message-order) on Z-API.
 
 ### Multi-product only on the official platform
 
-Sending several products in one message only exists on Meta Cloud API. On the unofficial connection
-you can send **one product at a time**, and on the other channels there is no equivalent.
+Sending several products in one message only exists on Meta Cloud API. The other channels have no
+equivalent.
 
 ### Order details on Messenger and Telegram
 
@@ -187,6 +186,13 @@ whether you want to notify (Messenger) or charge with your own provider (Telegra
 It works, it just is not a message type: it is a **keyboard button** that asks for the location
 ([`request_location`](https://core.telegram.org/bots/api#replykeyboardmarkup)). For the customer it is
 the same, they tap and the location arrives. We mark it ✅ because the result is the same.
+
+### Reaction on Telegram
+
+On Telegram the API does not send reactions. The call is accepted with `200`, but the reaction does not
+reach the customer.
+
+**What to do**: on Telegram, when you need to confirm something to the customer, reply with text.
 
 ### Reaction on Messenger
 
