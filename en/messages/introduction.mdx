@@ -74,10 +74,65 @@ When the send is accepted, the API responds with `200` and the message identifie
 }
 ```
 
-The `messageId` is a 32-character uppercase hexadecimal string. Store this value: you need it to react to the message later.
+The `messageId` is a 32-character uppercase hexadecimal string. Store this value: you need it to react to the message or quote it later.
 
 <Note>
   This is the same value your webhook receives as `message._id`. Use it to reconcile the send call with the event you receive — see the [payload structure](/en/webhooks/payloads).
+</Note>
+
+## Replying with a quote
+
+On the Meta Cloud API channel, a message can go out as a reply to another message in the conversation. In the customer's WhatsApp, it shows the excerpt of the original message on top. Send the reference of the quoted message in `content.messageIdReply`:
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEXT",
+    "body": {
+      "message": "Yes, we have it in size M."
+    },
+    "messageIdReply": "01A0C92D0C957FE98B73C8BA0CACF741"
+  }
+}
+```
+
+The reference can be:
+
+- the `messageId` the API returned when sending;
+- the webhook's `message._id`, of a received or sent message;
+- the `identifier` of an item in the webhook's `contents` or `attachments`.
+
+The quoted message must belong to the same channel and to the conversation with the same contact as the `recipient`. For Brazilian numbers, the contact with and without the ninth digit counts as the same.
+
+The types that go out quoted are `TEXT`, `IMAGE`, `AUDIO`, `VIDEO`, `DOCUMENT`, `STICKER`, `LOCATION`, `INTERACTIVE_BUTTON`, `INTERACTIVE_ACTION` and `INTERACTIVE_LIST`. `TEMPLATE`, `REACTION` and `CONTACT` do not go out quoted.
+
+The API finds the quoted message's Meta id on its own. Do not send `content.integrationIdReply`: together with `messageIdReply`, it is ignored; on its own, it makes the API refuse the send.
+
+On the other channels, the reply does not go out quoted: the message reaches the customer as a regular message.
+
+### When the API refuses the quote
+
+The refusal happens before sending: the message is not sent, gets no `messageId` and generates no webhook.
+
+| Status | `subCode` | When |
+|---|---|---|
+| `400` | — | `content.messageIdReply` empty or only spaces, or `content.integrationIdReply` without `content.messageIdReply`. The `code` is `VALIDATION_ERROR`, and the field comes in `message`: `"Field 'content.messageIdReply': ..."` |
+| `422` | `REPLY_NOT_SUPPORTED` | The message type does not go out quoted |
+| `422` | `QUOTED_MESSAGE_NOT_FOUND` | No message in this channel has that reference |
+| `422` | `QUOTED_MESSAGE_OTHER_CHAT` | The quoted message belongs to a conversation with another contact |
+| `422` | `QUOTED_MESSAGE_NOT_ACCEPTED` | Meta refused to send the quoted message, so there is no message to quote on WhatsApp |
+
+In the `422` refusals, the `code` is `BUSINESS_RULE_VIOLATION`.
+
+<Note>
+  To quote a message you have just sent, wait for its `MESSAGE_DELIVERY` webhook. Before that, the quote may return `QUOTED_MESSAGE_NOT_FOUND`: in that case, repeat the call after the webhook.
+</Note>
+
+<Note>
+  Meta delivers the reply without the quoted excerpt when the original message was deleted or is old, usually more than 30 days. The API does not refuse the quote because of the message's age.
 </Note>
 
 ## Send errors
