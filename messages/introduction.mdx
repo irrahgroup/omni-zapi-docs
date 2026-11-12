@@ -74,10 +74,65 @@ Quando o envio é aceito, a API responde `200` com o identificador da mensagem:
 }
 ```
 
-O `messageId` é uma string hexadecimal de 32 caracteres maiúsculos. Guarde esse valor: ele é necessário para reagir à mensagem depois.
+O `messageId` é uma string hexadecimal de 32 caracteres maiúsculos. Guarde esse valor: ele é necessário para reagir à mensagem ou citá-la depois.
 
 <Note>
   Esse é o mesmo valor que chega no seu webhook como `message._id`. Use-o para reconciliar a chamada de envio com o evento recebido — veja a [estrutura dos payloads](/webhooks/payloads).
+</Note>
+
+## Responder citando uma mensagem
+
+No canal Meta Cloud API, a mensagem pode sair como resposta a outra mensagem da conversa. No WhatsApp do cliente, ela aparece com o trecho da mensagem original em cima. Mande a referência da mensagem citada em `content.messageIdReply`:
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "TEXT",
+    "body": {
+      "message": "Temos sim, no tamanho M."
+    },
+    "messageIdReply": "01A0C92D0C957FE98B73C8BA0CACF741"
+  }
+}
+```
+
+A referência pode ser:
+
+- o `messageId` que a API devolveu no envio;
+- o `message._id` do webhook, de mensagem recebida ou enviada;
+- o `identifier` de um item de `contents` ou `attachments` do webhook.
+
+A mensagem citada precisa ser do mesmo canal e da conversa com o mesmo contato do `recipient`. Em número do Brasil, o contato com e sem o nono dígito conta como o mesmo.
+
+Saem citados os tipos `TEXT`, `IMAGE`, `AUDIO`, `VIDEO`, `DOCUMENT`, `STICKER`, `LOCATION`, `INTERACTIVE_BUTTON`, `INTERACTIVE_ACTION` e `INTERACTIVE_LIST`. `TEMPLATE`, `REACTION` e `CONTACT` não saem citados.
+
+A API busca sozinha o id da mensagem citada na Meta. Não mande `content.integrationIdReply`: junto com `messageIdReply`, ele é ignorado; sozinho, faz a API recusar o envio.
+
+Nos outros canais, a resposta não sai citada: a mensagem chega ao cliente como uma mensagem comum.
+
+### Quando a API recusa a citação
+
+A recusa acontece antes do envio: a mensagem não é enviada, não recebe `messageId` e não gera webhook.
+
+| Status | `subCode` | Quando |
+|---|---|---|
+| `400` | — | `content.messageIdReply` vazio ou só com espaços, ou `content.integrationIdReply` sem `content.messageIdReply`. O `code` é `VALIDATION_ERROR`, e o campo vem em `message`: `"Field 'content.messageIdReply': ..."` |
+| `422` | `REPLY_NOT_SUPPORTED` | O tipo da mensagem não sai citado |
+| `422` | `QUOTED_MESSAGE_NOT_FOUND` | Nenhuma mensagem deste canal tem essa referência |
+| `422` | `QUOTED_MESSAGE_OTHER_CHAT` | A mensagem citada é de uma conversa com outro contato |
+| `422` | `QUOTED_MESSAGE_NOT_ACCEPTED` | A Meta recusou o envio da mensagem citada, então não há mensagem para citar no WhatsApp |
+
+Nas recusas `422`, o `code` é `BUSINESS_RULE_VIOLATION`.
+
+<Note>
+  Para citar uma mensagem que você acabou de enviar, espere o webhook `MESSAGE_DELIVERY` dela. Antes disso, a citação pode dar `QUOTED_MESSAGE_NOT_FOUND`: nesse caso, repita a chamada depois do webhook.
+</Note>
+
+<Note>
+  A Meta entrega a resposta sem o trecho citado quando a mensagem original foi apagada ou é antiga, normalmente com mais de 30 dias. A API não recusa a citação pela idade da mensagem.
 </Note>
 
 ## Erros no envio
