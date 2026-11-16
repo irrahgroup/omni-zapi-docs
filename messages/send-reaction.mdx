@@ -1,42 +1,27 @@
 ---
 title: "Enviar reação"
 description: "Reaja com um emoji a uma mensagem da conversa"
+openapi: "/pt/messages/openapi-reaction.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
-  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
-</Warning>
-
 ## Conceituação
 
-Aplica um emoji a uma mensagem que já está na conversa. Para remover, envie a mesma reação com o emoji vazio.
+Aplica um emoji a uma mensagem que já está na conversa, enviada por você ou recebida do cliente. O campo
+`content.type` deve ser `REACTION`.
 
-O campo `content.type` será `REACTION`.
+| Campo | O que vai nele |
+|---|---|
+| `body.id` | O `messageId` da mensagem alvo: o que a API devolveu no envio, ou o `message._id` que chegou no [webhook](/webhooks/payloads) da mensagem recebida |
+| `body.message` | O emoji, um só |
 
 <WindowRule lang="pt" />
 
 <ChannelSupport type="REACTION" lang="pt" />
 
-## Corpo da requisição
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "REACTION",
-    "messageId": "wamid.HBgNNTUxMTk5OTk5OTk5ORUCABIYFjNBMDI...",
-    "emoji": "👍"
-  }
-}
-```
-
-Para remover, mande `"emoji": ""`.
-
-## Regras
+## Regras da Meta Cloud API
 
 | Regra | Valor |
 |---|---|
@@ -45,7 +30,10 @@ Para remover, mande `"emoji": ""`.
 | Reagir a uma reação | não é aceito |
 | Mensagem apagada | não é aceita |
 
+<Warning>
+  O `body.id` é obrigatório. Sem ele, a API aceita a chamada com `200`, mas a reação não é enviada.
+</Warning>
+
 <Note>
-  Reação só gera webhook de **enviado**. Não há confirmação de entrega nem de leitura. Alvo inválido volta
-  com o código `131009`.
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
 </Note>
