@@ -736,6 +736,78 @@ O conteúdo fica em `contents[0]` com `type: "INTERACTIVE_ACTION"`. Cada botão 
 
 ---
 
+### FORM_RESPONSE — Resposta de formulário (Flow)
+
+Quando o cliente envia um [Flow](/flows/introduction) preenchido, o webhook de mensagem recebida traz a resposta em `contents[0]`, com `type: "FORM_RESPONSE"`. Só a Meta Cloud API tem Flows.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `message` | string | Texto legível, com uma linha `Rótulo: valor` por resposta. Valores de mais de uma escolha vêm separados por `, ` |
+| `token` | string | O `flow_token` que a Meta devolve com a resposta |
+| `answers` | array | Uma resposta por campo, na ordem em que a Meta enviou |
+| `answers[].field_id` | string | Chave da resposta, como veio do formulário |
+| `answers[].label` | string | Rótulo gerado a partir da chave: `_` vira espaço e a primeira letra fica maiúscula. `nome_completo` vira `Nome completo` |
+| `answers[].values` | array | Valores respondidos, sempre em lista e em texto. Campo de valor único vem com um item, e valor `null` vem como lista vazia |
+| `answers_parsed` | boolean | `false` quando as respostas não puderam ser lidas. Nesse caso, `answers` vem vazio e `message` traz o texto que a Meta mandou |
+| `raw_answers` | string | As respostas como a Meta mandou: um JSON em texto, com o `flow_token` |
+
+```json
+"contents": [
+  {
+    "@class": ".FormResponseContent",
+    "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0B",
+    "message": "Nome completo: Maria Silva\nServicos: Corte, Barba",
+    "token": "unused",
+    "answers": [
+      {
+        "@class": ".FormAnswerContent",
+        "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0C",
+        "field_id": "nome_completo",
+        "label": "Nome completo",
+        "values": ["Maria Silva"],
+        "type": "FORM_ANSWER"
+      },
+      {
+        "@class": ".FormAnswerContent",
+        "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0D",
+        "field_id": "servicos",
+        "label": "Servicos",
+        "values": ["Corte", "Barba"],
+        "type": "FORM_ANSWER"
+      }
+    ],
+    "answers_parsed": true,
+    "raw_answers": "{\"flow_token\":\"unused\",\"nome_completo\":\"Maria Silva\",\"servicos\":[\"Corte\",\"Barba\"]}",
+    "type": "FORM_RESPONSE"
+  }
+]
+```
+
+No formato `Z_API`, a resposta chega no callback de mensagem recebida com dois blocos:
+
+- `text.message`, com o mesmo texto legível de `message`, para quem só lê texto;
+- `formResponseMessage`, com `token`, `answers` (cada uma com `fieldId`, `label` e `values`) e `answersParsed`. Quando `answersParsed` é `false`, vem também `rawAnswers`, com as respostas como a Meta mandou.
+
+```json
+{
+  "type": "ReceivedCallback",
+  "text": {
+    "message": "Nome completo: Maria Silva\nServicos: Corte, Barba",
+    "type": "text"
+  },
+  "formResponseMessage": {
+    "token": "unused",
+    "answers": [
+      { "fieldId": "nome_completo", "label": "Nome completo", "values": ["Maria Silva"] },
+      { "fieldId": "servicos", "label": "Servicos", "values": ["Corte", "Barba"] }
+    ],
+    "answersParsed": true
+  }
+}
+```
+
+---
+
 ## Callbacks de status
 
 Os eventos de status de uma mensagem trazem o tipo em `contents[0].type` (por exemplo, `DeliveryCallback`, `MessageStatusCallback` ou `ErrorCallback`) e o `_id` da mensagem a que se referem. Use o `_id` para ligar o status à mensagem. Quando a mensagem é encontrada, os campos abaixo dizem de qual mensagem é o status e como ler o destinatário:
@@ -794,3 +866,4 @@ Exemplo de status `RECEIVED` (mensagem entregue ao contato) num canal WhatsApp W
 | `CONTACT_ARRAY` | `contents[0]` | `contacts[]` com `name`, `phones` |
 | `INTERACTIVE_BUTTON` | `contents[0]` | `message`, `buttons[]`, `thumbnail` (se `mediaButtonType: "IMAGE"`) |
 | `INTERACTIVE_ACTION` | `contents[0]` | `message`, `buttons[]` com `type: "URL"\|"CALL"`, `header`, `footer` |
+| `FORM_RESPONSE` | `contents[0]` | `message`, `answers[]` com `field_id`, `label` e `values` |

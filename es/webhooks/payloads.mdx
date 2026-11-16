@@ -736,6 +736,78 @@ El contenido está en `contents[0]` con `type: "INTERACTIVE_ACTION"`. Cada botó
 
 ---
 
+### FORM_RESPONSE — Respuesta de formulario (Flow)
+
+Cuando el cliente envía un [Flow](/es/flows/introduction) completado, el webhook de mensaje recibido trae la respuesta en `contents[0]`, con `type: "FORM_RESPONSE"`. Solo Meta Cloud API tiene Flows.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `message` | string | Texto legible, con una línea `Etiqueta: valor` por respuesta. Los valores de más de una opción vienen separados por `, ` |
+| `token` | string | El `flow_token` que Meta devuelve con la respuesta |
+| `answers` | array | Una respuesta por campo, en el orden en que Meta las envió |
+| `answers[].field_id` | string | Clave de la respuesta, como vino del formulario |
+| `answers[].label` | string | Etiqueta generada a partir de la clave: `_` se convierte en espacio y la primera letra va en mayúscula. `nombre_completo` se convierte en `Nombre completo` |
+| `answers[].values` | array | Valores respondidos, siempre en lista y en texto. Un campo de valor único viene con un elemento, y un valor `null` viene como lista vacía |
+| `answers_parsed` | boolean | `false` cuando no se pudieron leer las respuestas. En ese caso, `answers` viene vacío y `message` trae el texto que Meta envió |
+| `raw_answers` | string | Las respuestas como Meta las envió: un JSON en texto, con el `flow_token` |
+
+```json
+"contents": [
+  {
+    "@class": ".FormResponseContent",
+    "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0B",
+    "message": "Nombre completo: Maria Silva\nServicios: Corte, Barba",
+    "token": "unused",
+    "answers": [
+      {
+        "@class": ".FormAnswerContent",
+        "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0C",
+        "field_id": "nombre_completo",
+        "label": "Nombre completo",
+        "values": ["Maria Silva"],
+        "type": "FORM_ANSWER"
+      },
+      {
+        "@class": ".FormAnswerContent",
+        "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0D",
+        "field_id": "servicios",
+        "label": "Servicios",
+        "values": ["Corte", "Barba"],
+        "type": "FORM_ANSWER"
+      }
+    ],
+    "answers_parsed": true,
+    "raw_answers": "{\"flow_token\":\"unused\",\"nombre_completo\":\"Maria Silva\",\"servicios\":[\"Corte\",\"Barba\"]}",
+    "type": "FORM_RESPONSE"
+  }
+]
+```
+
+En el formato `Z_API`, la respuesta llega en el callback de mensaje recibido con dos bloques:
+
+- `text.message`, con el mismo texto legible de `message`, para quien solo lee texto;
+- `formResponseMessage`, con `token`, `answers` (cada una con `fieldId`, `label` y `values`) y `answersParsed`. Cuando `answersParsed` es `false`, también viene `rawAnswers`, con las respuestas como Meta las envió.
+
+```json
+{
+  "type": "ReceivedCallback",
+  "text": {
+    "message": "Nombre completo: Maria Silva\nServicios: Corte, Barba",
+    "type": "text"
+  },
+  "formResponseMessage": {
+    "token": "unused",
+    "answers": [
+      { "fieldId": "nombre_completo", "label": "Nombre completo", "values": ["Maria Silva"] },
+      { "fieldId": "servicios", "label": "Servicios", "values": ["Corte", "Barba"] }
+    ],
+    "answersParsed": true
+  }
+}
+```
+
+---
+
 ## Callbacks de estado
 
 Los eventos de estado de un mensaje traen el tipo en `contents[0].type` (por ejemplo, `DeliveryCallback`, `MessageStatusCallback` o `ErrorCallback`) y el `_id` del mensaje al que se refieren. Usa el `_id` para vincular el estado con el mensaje. Cuando se encuentra el mensaje, los campos siguientes indican de qué mensaje es el estado y cómo leer el destinatario:
@@ -794,3 +866,4 @@ Ejemplo de estado `RECEIVED` (mensaje entregado al contacto) en un canal WhatsAp
 | `CONTACT_ARRAY` | `contents[0]` | `contacts[]` con `name`, `phones` |
 | `INTERACTIVE_BUTTON` | `contents[0]` | `message`, `buttons[]`, `thumbnail` (si `mediaButtonType: "IMAGE"`) |
 | `INTERACTIVE_ACTION` | `contents[0]` | `message`, `buttons[]` con `type: "URL"\|"CALL"`, `header`, `footer` |
+| `FORM_RESPONSE` | `contents[0]` | `message`, `answers[]` con `field_id`, `label` y `values` |

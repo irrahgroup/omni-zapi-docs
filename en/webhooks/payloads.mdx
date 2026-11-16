@@ -736,6 +736,78 @@ The content is in `contents[0]` with `type: "INTERACTIVE_ACTION"`. Each button i
 
 ---
 
+### FORM_RESPONSE — Form response (Flow)
+
+When the customer submits a filled-in [Flow](/en/flows/introduction), the received message webhook carries the answer in `contents[0]`, with `type: "FORM_RESPONSE"`. Only Meta Cloud API has Flows.
+
+| Field | Type | Description |
+|---|---|---|
+| `message` | string | Readable text, with one `Label: value` line per answer. Values of more than one choice come separated by `, ` |
+| `token` | string | The `flow_token` Meta returns with the answer |
+| `answers` | array | One answer per field, in the order Meta sent them |
+| `answers[].field_id` | string | Answer key, as it came from the form |
+| `answers[].label` | string | Label built from the key: `_` becomes a space and the first letter is capitalized. `full_name` becomes `Full name` |
+| `answers[].values` | array | Answered values, always as a list of text. A single-value field comes with one item, and a `null` value comes as an empty list |
+| `answers_parsed` | boolean | `false` when the answers could not be read. In that case, `answers` comes empty and `message` carries the text Meta sent |
+| `raw_answers` | string | The answers as Meta sent them: JSON as text, with the `flow_token` |
+
+```json
+"contents": [
+  {
+    "@class": ".FormResponseContent",
+    "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0B",
+    "message": "Full name: Maria Silva\nServices: Haircut, Beard",
+    "token": "unused",
+    "answers": [
+      {
+        "@class": ".FormAnswerContent",
+        "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0C",
+        "field_id": "full_name",
+        "label": "Full name",
+        "values": ["Maria Silva"],
+        "type": "FORM_ANSWER"
+      },
+      {
+        "@class": ".FormAnswerContent",
+        "identifier": "019E8A2C4B1F7D3E9A6B5C4D3E2F1A0D",
+        "field_id": "services",
+        "label": "Services",
+        "values": ["Haircut", "Beard"],
+        "type": "FORM_ANSWER"
+      }
+    ],
+    "answers_parsed": true,
+    "raw_answers": "{\"flow_token\":\"unused\",\"full_name\":\"Maria Silva\",\"services\":[\"Haircut\",\"Beard\"]}",
+    "type": "FORM_RESPONSE"
+  }
+]
+```
+
+In the `Z_API` format, the answer arrives in the received message callback with two blocks:
+
+- `text.message`, with the same readable text as `message`, for integrations that only read text;
+- `formResponseMessage`, with `token`, `answers` (each with `fieldId`, `label` and `values`) and `answersParsed`. When `answersParsed` is `false`, `rawAnswers` also comes, with the answers as Meta sent them.
+
+```json
+{
+  "type": "ReceivedCallback",
+  "text": {
+    "message": "Full name: Maria Silva\nServices: Haircut, Beard",
+    "type": "text"
+  },
+  "formResponseMessage": {
+    "token": "unused",
+    "answers": [
+      { "fieldId": "full_name", "label": "Full name", "values": ["Maria Silva"] },
+      { "fieldId": "services", "label": "Services", "values": ["Haircut", "Beard"] }
+    ],
+    "answersParsed": true
+  }
+}
+```
+
+---
+
 ## Status callbacks
 
 Message status events carry the type in `contents[0].type` (for example, `DeliveryCallback`, `MessageStatusCallback` or `ErrorCallback`) and the `_id` of the message they refer to. Use the `_id` to link the status to the message. When the message is found, the fields below tell you which message the status belongs to and how to read the recipient:
@@ -794,3 +866,4 @@ Use `metadata.from_me` to know where the message came from and `recipient.identi
 | `CONTACT_ARRAY` | `contents[0]` | `contacts[]` with `name`, `phones` |
 | `INTERACTIVE_BUTTON` | `contents[0]` | `message`, `buttons[]`, `thumbnail` (when `mediaButtonType: "IMAGE"`) |
 | `INTERACTIVE_ACTION` | `contents[0]` | `message`, `buttons[]` with `type: "URL"\|"CALL"`, `header`, `footer` |
+| `FORM_RESPONSE` | `contents[0]` | `message`, `answers[]` with `field_id`, `label` and `values` |
