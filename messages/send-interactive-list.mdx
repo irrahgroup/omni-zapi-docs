@@ -1,24 +1,15 @@
 ---
 title: "Enviar lista de opções"
 description: "Envie uma lista de seções e opções que o cliente escolhe com um toque"
+openapi: "/pt/messages/openapi-interactive-list.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você já conhecer o
-  formato e planejar a integração — o corpo e os limites abaixo são os que valerão quando ele subir.
-
-  Enquanto isso, para oferecer opções ao cliente use [botões de resposta rápida](/messages/send-interactive-button),
-  que aceitam até 3 opções.
-</Warning>
-
 ## Conceituação
 
 Envia uma mensagem com uma lista de opções agrupadas em seções. O cliente toca no botão, abre a lista e
-escolhe uma linha; a escolha volta no seu webhook.
-
-O campo `content.type` será `INTERACTIVE_LIST`.
+escolhe uma linha. O campo `content.type` deve ser `INTERACTIVE_LIST`.
 
 É o formato para quando as opções não cabem em botões: cardápio, catálogo de serviços, horários, unidades.
 Até 3 opções, prefira os [botões de resposta rápida](/messages/send-interactive-button), que exigem um toque
@@ -26,71 +17,93 @@ a menos.
 
 <ChannelSupport type="INTERACTIVE_LIST" lang="pt" />
 
-## Corpo da requisição
+## Campos
+
+| Campo | O que vai nele |
+|---|---|
+| `body.message` | O texto da mensagem. Obrigatório |
+| `action.message` | O texto do botão que abre a lista. Obrigatório |
+| `attachments` | As seções da lista, uma por item. Obrigatório, com ao menos uma seção |
+| `attachments[].title` | O título da seção. Obrigatório quando há mais de uma seção |
+| `attachments[].list` | As linhas da seção, ao menos uma |
+| `attachments[].list[].id` | O identificador da linha, escolhido por você. Obrigatório |
+| `attachments[].list[].title` | O texto da linha. Obrigatório |
+| `attachments[].list[].description` | Um texto de apoio abaixo da linha. Opcional |
+| `header.message` | O cabeçalho, só texto. Opcional |
+| `footer.message` | O rodapé. Opcional |
+
+Os nomes são os desta página, e não os da Meta Cloud API: o texto do botão vai em `action.message`, e as
+linhas, em `attachments[].list`. Um corpo com `button` e `sections` é recusado por falta de `action.message`.
+
+## Limites na Meta Cloud API
+
+No canal Meta Cloud API, a API confere os limites da Meta antes de aceitar o envio:
+
+| Campo | Limite |
+|---|---|
+| `body.message` | 1024 caracteres |
+| `header.message` | 60 caracteres |
+| `footer.message` | 60 caracteres |
+| `action.message` | 20 caracteres |
+| Linhas | **10 no total, somando todas as seções** |
+| `attachments[].title` | 24 caracteres |
+| `attachments[].list[].id` | 200 caracteres, sem repetir na mesma seção |
+| `attachments[].list[].title` | 24 caracteres |
+| `attachments[].list[].description` | 72 caracteres |
+
+<Warning>
+  O limite de linhas é **no total**, não por seção. Duas seções com seis linhas cada são recusadas: o máximo
+  são dez linhas, distribuídas entre as seções que você quiser.
+</Warning>
+
+O mesmo `id` pode aparecer em seções diferentes. Na mesma seção, não.
+
+## Quando a API recusa a lista
+
+Se falta um campo obrigatório ou um limite é ultrapassado, a API responde `400` com `code`
+`VALIDATION_ERROR`, e a mensagem não é enviada. O `message` nomeia o primeiro campo com problema:
 
 ```json
 {
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "INTERACTIVE_LIST",
-    "header": "Cardápio",
-    "message": "Escolha uma opção",
-    "footer": "Entrega em 40 min",
-    "button": "Ver opções",
-    "sections": [
-      {
-        "title": "Pizzas",
-        "rows": [
-          { "id": "pizza_marg", "title": "Margherita", "description": "Molho, muçarela e manjericão" },
-          { "id": "pizza_pep", "title": "Pepperoni", "description": "Molho, muçarela e pepperoni" }
-        ]
-      },
-      {
-        "title": "Bebidas",
-        "rows": [
-          { "id": "refri_lata", "title": "Refrigerante lata", "description": "350 ml" }
-        ]
-      }
-    ]
-  }
+  "timestamp": "2026-10-22T14:00:00.123Z",
+  "code": "VALIDATION_ERROR",
+  "message": "Field 'content.action.message': is required for message type INTERACTIVE_LIST"
 }
 ```
 
-`header` e `footer` são opcionais. O `id` de cada linha é escolhido por você e é o que volta no webhook
-quando o cliente seleciona.
+A resposta traz só o primeiro problema. Corrigido esse, a próxima chamada pode apontar outro.
 
-## Limites da Meta
-
-| Regra | Limite |
+| Caso | `message` |
 |---|---|
-| Seções | 10 |
-| Linhas | **10 somando todas as seções** |
-| Texto do botão | 20 caracteres |
-| Título da linha | 24 caracteres |
-| Descrição da linha | 72 caracteres |
-| `id` da linha | único dentro da mensagem |
+| Sem o texto do botão | `Field 'content.action.message': is required for message type INTERACTIVE_LIST` |
+| Seção com `list` vazia | `Field 'content.attachments[0].list': must have at least one row` |
+| Mais de 10 linhas | `Field 'content.attachments': must have at most 10 rows across all sections` |
+| Corpo acima do limite | `Field 'content.body.message': must be at most 1024 characters` |
+| `id` repetido na seção | `Field 'content.attachments[0].list[1].id': must be unique within the section` |
 
-<Warning>
-  O limite de linhas é **no total**, não por seção. Dez seções com dez linhas cada é recusado — o máximo é
-  dez linhas distribuídas entre as seções que você quiser.
-</Warning>
+## No WhatsApp Web
+
+Os campos obrigatórios são os mesmos, e os limites da tabela acima não são conferidos. As linhas de todas as
+seções aparecem numa lista só, sem o título da seção, e o rodapé não é enviado.
 
 ## A resposta do cliente
 
-Quando o cliente escolhe uma linha, o seu webhook recebe a escolha com o mesmo `id` que você enviou:
+No canal Meta Cloud API, a escolha do cliente chega ao seu [webhook](/webhooks/payloads) como uma mensagem
+recebida. O conteúdo fica em `contents[0]`:
 
-```json
-{
-  "id": "pizza_marg",
-  "title": "Margherita",
-  "description": "Molho, muçarela e manjericão"
-}
-```
+| Campo | O que traz |
+|---|---|
+| `type` | `BUTTON` |
+| `title` | O `title` da linha escolhida |
+| `description` | A `description` da linha escolhida |
+| `external_information.list_reply_id` | O `id` que você enviou na linha |
 
-É pelo `id` que a sua aplicação identifica a opção, sem depender do texto exibido — que pode mudar sem
-quebrar a integração.
+Identifique a opção pelo `id`, sem depender do texto exibido, que pode mudar sem quebrar a integração.
 
 <Note>
-  Detalhes da regra da Meta Cloud API em [janela de conversa](/conversation-window). Veja a
-  [o que cada canal aceita](/channels/message-support) para todos os canais.
+  Detalhes da regra da Meta Cloud API em [janela de conversa](/conversation-window). Veja [o que cada canal aceita](/channels/message-support) para todos os canais.
+</Note>
+
+<Note>
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
 </Note>

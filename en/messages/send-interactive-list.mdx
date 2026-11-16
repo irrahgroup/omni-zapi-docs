@@ -1,95 +1,110 @@
 ---
 title: "Send option list"
 description: "Send a list of sections and options the customer picks with one tap"
+openapi: "/en/messages/openapi-interactive-list.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
-  shape and plan the integration — the body and the limits below are the ones that will apply when it ships.
-
-  In the meantime, to offer options use [quick reply buttons](/en/messages/send-interactive-button),
-  which take up to 3 options.
-</Warning>
-
 ## Overview
 
 Sends a message with a list of options grouped into sections. The customer taps the button, opens the list
-and picks a row; the choice comes back on your webhook.
-
-The `content.type` field will be `INTERACTIVE_LIST`.
+and picks a row. The `content.type` field must be `INTERACTIVE_LIST`.
 
 It is the format for when the options don't fit in buttons: a menu, a service catalog, time slots, branches.
 Up to 3 options, prefer [quick reply buttons](/en/messages/send-interactive-button), which take one tap less.
 
 <ChannelSupport type="INTERACTIVE_LIST" lang="en" />
 
-## Request body
+## Fields
 
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "INTERACTIVE_LIST",
-    "header": "Menu",
-    "message": "Pick an option",
-    "footer": "Delivery in 40 min",
-    "button": "See options",
-    "sections": [
-      {
-        "title": "Pizzas",
-        "rows": [
-          { "id": "pizza_marg", "title": "Margherita", "description": "Sauce, mozzarella and basil" },
-          { "id": "pizza_pep", "title": "Pepperoni", "description": "Sauce, mozzarella and pepperoni" }
-        ]
-      },
-      {
-        "title": "Drinks",
-        "rows": [
-          { "id": "soda_can", "title": "Soda can", "description": "350 ml" }
-        ]
-      }
-    ]
-  }
-}
-```
-
-`header` and `footer` are optional. The `id` of each row is yours to choose and is what comes back on the
-webhook when the customer selects it.
-
-## Meta's limits
-
-| Rule | Limit |
+| Field | What goes in it |
 |---|---|
-| Sections | 10 |
-| Rows | **10 across all sections combined** |
-| Button text | 20 characters |
-| Row title | 24 characters |
-| Row description | 72 characters |
-| Row `id` | unique within the message |
+| `body.message` | The message text. Required |
+| `action.message` | The text of the button that opens the list. Required |
+| `attachments` | The list sections, one per item. Required, with at least one section |
+| `attachments[].title` | The section title. Required when there is more than one section |
+| `attachments[].list` | The section rows, at least one |
+| `attachments[].list[].id` | The row identifier, chosen by you. Required |
+| `attachments[].list[].title` | The row text. Required |
+| `attachments[].list[].description` | Supporting text below the row. Optional |
+| `header.message` | The header, text only. Optional |
+| `footer.message` | The footer. Optional |
+
+The names are the ones on this page, not the Meta Cloud API ones: the button text goes in `action.message`,
+and the rows go in `attachments[].list`. A body with `button` and `sections` is refused for missing
+`action.message`.
+
+## Meta Cloud API limits
+
+On the Meta Cloud API channel, the API checks the Meta limits before accepting the send:
+
+| Field | Limit |
+|---|---|
+| `body.message` | 1024 characters |
+| `header.message` | 60 characters |
+| `footer.message` | 60 characters |
+| `action.message` | 20 characters |
+| Rows | **10 in total, across all sections** |
+| `attachments[].title` | 24 characters |
+| `attachments[].list[].id` | 200 characters, not repeated within a section |
+| `attachments[].list[].title` | 24 characters |
+| `attachments[].list[].description` | 72 characters |
 
 <Warning>
-  The row limit is a **total**, not per section. Ten sections with ten rows each is rejected — the maximum is
-  ten rows spread across whatever sections you want.
+  The row limit is **in total**, not per section. Two sections with six rows each are refused: the maximum is
+  ten rows, spread across as many sections as you want.
 </Warning>
 
-## The customer's answer
+The same `id` may appear in different sections. Within one section, it may not.
 
-When the customer picks a row, your webhook receives the choice with the same `id` you sent:
+## When the API refuses the list
+
+If a required field is missing or a limit is exceeded, the API responds `400` with `code`
+`VALIDATION_ERROR`, and the message is not sent. The `message` names the first field with a problem:
 
 ```json
 {
-  "id": "pizza_marg",
-  "title": "Margherita",
-  "description": "Sauce, mozzarella and basil"
+  "timestamp": "2026-10-22T14:00:00.123Z",
+  "code": "VALIDATION_ERROR",
+  "message": "Field 'content.action.message': is required for message type INTERACTIVE_LIST"
 }
 ```
 
-The `id` is how your application identifies the option, without depending on the displayed text — which can
-change without breaking the integration.
+The response carries only the first problem. Once that one is fixed, the next call may point to another.
+
+| Case | `message` |
+|---|---|
+| No button text | `Field 'content.action.message': is required for message type INTERACTIVE_LIST` |
+| Section with an empty `list` | `Field 'content.attachments[0].list': must have at least one row` |
+| More than 10 rows | `Field 'content.attachments': must have at most 10 rows across all sections` |
+| Body above the limit | `Field 'content.body.message': must be at most 1024 characters` |
+| `id` repeated within the section | `Field 'content.attachments[0].list[1].id': must be unique within the section` |
+
+## On WhatsApp Web
+
+The required fields are the same, and the limits in the table above are not checked. The rows of all
+sections show up in a single list, without the section title, and the footer is not sent.
+
+## The customer's reply
+
+On the Meta Cloud API channel, the customer's choice reaches your [webhook](/en/webhooks/payloads) as a
+received message. The content is in `contents[0]`:
+
+| Field | What it carries |
+|---|---|
+| `type` | `BUTTON` |
+| `title` | The `title` of the chosen row |
+| `description` | The `description` of the chosen row |
+| `external_information.list_reply_id` | The `id` you sent in the row |
+
+Identify the option by the `id`, without relying on the displayed text, which can change without breaking
+the integration.
 
 <Note>
-  Details of the Official WhatsApp rule in [conversation window](/en/conversation-window). See the
-  [what each channel accepts](/en/channels/message-support) for all channels.
+  Details of the Meta Cloud API rule in [conversation window](/en/conversation-window). See [what each channel accepts](/en/channels/message-support) for every channel.
+</Note>
+
+<Note>
+  If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
 </Note>

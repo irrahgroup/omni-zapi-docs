@@ -1,0 +1,403 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Send Option List",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Send option list",
+        "description": "Sends a list of options grouped into sections, which the customer opens through a button.",
+        "operationId": "sendInteractiveListMessage",
+        "tags": [
+          "Messages"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "YOUR_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendInteractiveListRequest"
+              },
+              "examples": {
+                "sections": {
+                  "summary": "List with two sections",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_LIST",
+                      "header": {
+                        "message": "Menu"
+                      },
+                      "body": {
+                        "message": "Pick an option"
+                      },
+                      "footer": {
+                        "message": "Delivery in 40 min"
+                      },
+                      "action": {
+                        "message": "See options"
+                      },
+                      "attachments": [
+                        {
+                          "title": "Pizzas",
+                          "list": [
+                            {
+                              "id": "pizza_marg",
+                              "title": "Margherita",
+                              "description": "Sauce, mozzarella and basil"
+                            },
+                            {
+                              "id": "pizza_pep",
+                              "title": "Pepperoni",
+                              "description": "Sauce, mozzarella and pepperoni"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "Drinks",
+                          "list": [
+                            {
+                              "id": "refri_lata",
+                              "title": "Soda can",
+                              "description": "350 ml"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "single": {
+                  "summary": "List with one section, without a title",
+                  "value": {
+                    "recipient": {
+                      "identifier": "5511999999999"
+                    },
+                    "content": {
+                      "type": "INTERACTIVE_LIST",
+                      "body": {
+                        "message": "Which time works best?"
+                      },
+                      "action": {
+                        "message": "See times"
+                      },
+                      "attachments": [
+                        {
+                          "list": [
+                            {
+                              "id": "h09",
+                              "title": "9 am"
+                            },
+                            {
+                              "id": "h14",
+                              "title": "2 pm"
+                            },
+                            {
+                              "id": "h18",
+                              "title": "6 pm"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/ListValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Message sent successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "ListValidationError": {
+        "description": "The list failed the check. The message was not sent: the `message` names the first field with a problem.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "VALIDATION_ERROR",
+              "message": "Field 'content.action.message': is required for message type INTERACTIVE_LIST"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Invalid or missing token.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Channel disconnected. The message was not sent: reconnect the channel and send it again.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendInteractiveListRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Recipient phone number (country code + area code + number)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body",
+              "action",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Message type",
+                "enum": [
+                  "INTERACTIVE_LIST"
+                ]
+              },
+              "header": {
+                "type": "object",
+                "description": "Header, text only. Optional",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Header text. Up to 60 characters on the Meta Cloud API"
+                  }
+                }
+              },
+              "body": {
+                "type": "object",
+                "description": "Message body",
+                "required": [
+                  "message"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Message text. Up to 1024 characters on the Meta Cloud API"
+                  }
+                }
+              },
+              "footer": {
+                "type": "object",
+                "description": "Footer. Optional",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Footer text. Up to 60 characters on the Meta Cloud API"
+                  }
+                }
+              },
+              "action": {
+                "type": "object",
+                "description": "Button that opens the list",
+                "required": [
+                  "message"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Button text. Up to 20 characters on the Meta Cloud API"
+                  }
+                }
+              },
+              "attachments": {
+                "type": "array",
+                "description": "List sections, one per item. On the Meta Cloud API, up to 10 rows in total, across all sections",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/components/schemas/ListSection"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ListSection": {
+        "type": "object",
+        "required": [
+          "list"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Section title. Required when there is more than one section. Up to 24 characters on the Meta Cloud API"
+          },
+          "list": {
+            "type": "array",
+            "description": "Section rows, at least one",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/ListRow"
+            }
+          }
+        }
+      },
+      "ListRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Row identifier, chosen by you. It cannot repeat within the same section. Up to 200 characters on the Meta Cloud API"
+          },
+          "title": {
+            "type": "string",
+            "description": "Row text. Up to 24 characters on the Meta Cloud API"
+          },
+          "description": {
+            "type": "string",
+            "description": "Supporting text below the row. Optional. Up to 72 characters on the Meta Cloud API"
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "Sent message ID — 32-character uppercase hexadecimal string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the refusal, in UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error category",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Case code. Present only when the case has its own code",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error description. The text may change: handle the error by `code` and `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in the Omni Z-API Security panel"
+      }
+    }
+  }
+}

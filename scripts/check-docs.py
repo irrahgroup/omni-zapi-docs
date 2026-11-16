@@ -309,7 +309,7 @@ METHOD_STATUS = {
     'REACTION': 'live',
     'INTERACTIVE_BUTTON': 'live',
     'INTERACTIVE_ACTION': 'live',
-    'INTERACTIVE_LIST': 'soon',
+    'INTERACTIVE_LIST': 'live',
     'FLOW': 'live',
     'CATALOG': 'soon',
     'PRODUCT': 'soon',
