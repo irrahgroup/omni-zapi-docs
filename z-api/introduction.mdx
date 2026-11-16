@@ -18,7 +18,7 @@ Sabemos que trocar de provedor de API pode ser um processo trabalhoso — especi
 </Note>
 
 <Warning>
-  A versão Z-API Compatibilidade funciona **somente com canais WhatsApp Oficial** (API oficial da Meta). Um envio para canal de outro tipo, como Instagram, Messenger ou Telegram, é recusado com `422`:
+  A versão Z-API Compatibilidade envia por canais **WhatsApp Oficial** (API oficial da Meta) e **WhatsApp Web**. Um envio para canal de outro tipo, como Instagram, Messenger ou Telegram, é recusado com `422`:
 
   ```json
   { "error": "instance middleware is not META_WHATSAPP" }
@@ -65,6 +65,22 @@ curl -X POST https://zapi.omni.z-api.io/channels/SEU_CANAL/token/SEU_TOKEN/send-
 Note que **apenas a base URL e o header de autenticação mudaram** — o path e body são idênticos.
 
 O secret para o header `Authorization` é gerado no painel do Omni Z-API ao criar sua instância. Os payloads de envio e os bodys dos webhooks mantêm exatamente a mesma estrutura, garantindo que suas integrações continuem funcionando sem quebras.
+
+## Envio em canal WhatsApp Web
+
+Num canal WhatsApp Web, com o WhatsApp Web habilitado no workspace, estas rotas enviam com a mesma estrutura e a mesma resposta do WhatsApp Oficial:
+
+- `send-text`, `send-image`, `send-video`, `send-audio`, `send-document/{extension}`, `send-sticker`, `send-contact`, `send-contacts`, `send-location`, `send-link`, `send-button-list`, `send-button-actions`, `send-button-otp`, `send-reaction`, `send-remove-reaction`
+
+As demais rotas de envio, o envio com `editMessageId` ou `editDocumentMessageId` e o corpo com `template`, `gif`, `gifUrl`, `ptv`, `carousel` ou `carouselCards` respondem `422` `instance middleware is not META_WHATSAPP`. Workspace sem o WhatsApp Web habilitado responde `422` `Z-API (WhatsApp Web) instances are not enabled for this workspace`.
+
+Diferenças em relação à Z-API direta:
+
+- o `messageId` da resposta é o id da mensagem no {projectName}, não o id do WhatsApp;
+- o `zaapId` não existe na fila da instância: `DELETE /queue/{zaapId}` não encontra esse envio;
+- o `200` confirma que o {projectName} aceitou o envio, não a entrega;
+- resposta citada (`messageId`), menções (`mentioned`), `delayMessage`, `viewOnce` e `stickerAuthor` não chegam, como no WhatsApp Oficial;
+- canal desconectado responde `502` `failed to send message`.
 
 ## Por que migrar?
 

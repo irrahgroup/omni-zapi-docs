@@ -18,7 +18,7 @@ Sabemos que cambiar de proveedor de API puede ser un proceso laborioso, sobre to
 </Note>
 
 <Warning>
-  La versión Compatibilidad con Z-API funciona **solo con canales WhatsApp Oficial** (API oficial de Meta). Un envío a un canal de otro tipo, como Instagram, Messenger o Telegram, se rechaza con `422`:
+  La versión Compatibilidad con Z-API envía por canales **WhatsApp Oficial** (API oficial de Meta) y **WhatsApp Web**. Un envío a un canal de otro tipo, como Instagram, Messenger o Telegram, se rechaza con `422`:
 
   ```json
   { "error": "instance middleware is not META_WHATSAPP" }
@@ -65,6 +65,22 @@ curl -X POST https://zapi.omni.z-api.io/channels/SU_CANAL/token/SU_TOKEN/send-te
 Fíjate en que **solo han cambiado la base URL y el header de autenticación**: el path y el body son idénticos.
 
 El secret del header `Authorization` se genera en el panel de Omni Z-API al crear tu instancia. Los payloads de envío y los bodies de los webhooks mantienen exactamente la misma estructura, lo que garantiza que tus integraciones sigan funcionando sin roturas.
+
+## Envío en canal WhatsApp Web
+
+En un canal WhatsApp Web, con WhatsApp Web habilitado en el workspace, estas rutas envían con la misma estructura y la misma respuesta de WhatsApp Oficial:
+
+- `send-text`, `send-image`, `send-video`, `send-audio`, `send-document/{extension}`, `send-sticker`, `send-contact`, `send-contacts`, `send-location`, `send-link`, `send-button-list`, `send-button-actions`, `send-button-otp`, `send-reaction`, `send-remove-reaction`
+
+Las demás rutas de envío, el envío con `editMessageId` o `editDocumentMessageId` y el cuerpo con `template`, `gif`, `gifUrl`, `ptv`, `carousel` o `carouselCards` responden `422` `instance middleware is not META_WHATSAPP`. Un workspace sin WhatsApp Web habilitado responde `422` `Z-API (WhatsApp Web) instances are not enabled for this workspace`.
+
+Diferencias con la Z-API directa:
+
+- el `messageId` de la respuesta es el id del mensaje en {projectName}, no el id de WhatsApp;
+- el `zaapId` no existe en la cola de la instancia: `DELETE /queue/{zaapId}` no encuentra este envío;
+- el `200` confirma que {projectName} aceptó el envío, no la entrega;
+- la respuesta citada (`messageId`), las menciones (`mentioned`), `delayMessage`, `viewOnce` y `stickerAuthor` no llegan, como en WhatsApp Oficial;
+- un canal desconectado responde `502` `failed to send message`.
 
 ## ¿Por qué migrar?
 
