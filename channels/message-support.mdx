@@ -21,8 +21,7 @@ página é o mapa deles, para você descobrir agora e não no meio do teste.
   </Card>
   <Card title="WhatsApp Web" icon="qrcode">
     A conexão por leitura de QR code, com o celular pareado. Não tem janela nem template: você
-    escreve a qualquer hora. Alguns recursos de loja exigem que o número seja uma conta WhatsApp
-    Business com produtos cadastrados.
+    escreve a qualquer hora. Catálogo e produto não saem por ele.
   </Card>
   <Card title="Instagram e Messenger" icon="instagram">
     Conversa de direct. Aceitam texto, mídia e botões, e param aí: não têm localização, contato nem
@@ -40,8 +39,9 @@ página é o mapa deles, para você descobrir agora e não no meio do teste.
 |:---:|---|---|
 | ✅ | Funciona. O corpo publicado na página do endpoint vale como está. | Enviar. |
 | ⚠️ | Funciona **com uma condição**, ou funciona parecido em vez de igual. | Ler a ressalva antes de prometer para o cliente. |
-| ❌ | A plataforma não tem esse recurso. Não é falta nossa. | Ver o que mandar no lugar, mais abaixo. |
+| ❌ | Não funciona neste canal. Quase sempre é a plataforma que não tem o recurso; quando o limite é nosso, a ressalva diz. | Ver o que mandar no lugar, mais abaixo. |
 | 🔍 | Não achamos a confirmação na documentação da plataforma. | Tratar como "talvez" e testar antes de depender. |
+| 🚧 | Ainda não existe na API, em nenhum canal. | Ver a página do endpoint, que mostra o formato planejado. |
 
 <Note>
   ⚠️ nunca significa "vai que funciona". Significa que **funciona e nós sabemos em qual condição** — e
@@ -62,7 +62,6 @@ página é o mapa deles, para você descobrir agora e não no meio do teste.
 | Localização | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Contato | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Reação (emoji) | ✅ | ✅ | ✅ | 🔍 | ❌ |
-| Enquete | ❌ | ✅ | ❌ | ❌ | ✅ |
 
 Texto e mídia são o chão comum: funcionam nos cinco, com o mesmo corpo. A exceção é o documento, que no
 Instagram e no Telegram tem condição. É daí para cima que os canais começam a discordar.
@@ -74,7 +73,7 @@ Instagram e no Telegram tem condição. É daí para cima que os canais começam
 | Botões rápidos | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Botões de ação | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
 | Lista de opções | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Pedir localização | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Pedir localização | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 | Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 Botão rápido é o que volta como resposta do cliente, e existe em todo canal. Botão de ação é o que o
@@ -86,6 +85,8 @@ Lista de opções enviada a um canal Telegram é recusada na hora: a API respond
 mensagem nem dispara webhook. O teclado do Telegram não tem seção, descrição por opção nem o botão que
 abre a lista. Mande as opções como botões rápidos (`INTERACTIVE_BUTTON`).
 
+Flow enviado a um canal que não é a Meta Cloud API é aceito com `200`, mas não chega ao cliente.
+
 ## Loja e pedido
 
 | Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
@@ -93,12 +94,14 @@ abre a lista. Mande as opções como botões rápidos (`INTERACTIVE_BUTTON`).
 | Catálogo | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Produto | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Multi-produto | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Detalhes do pedido | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ |
-| Status do pedido | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Detalhes do pedido | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
+| Status do pedido | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 
 Mensagem de loja depende de existir uma loja. No WhatsApp o catálogo mora na conta de empresa; no
 Instagram e no Messenger a API de mensagens não alcança o catálogo; no Telegram não há catálogo, e o
 que existe é a cobrança avulsa.
+
+Detalhes e status do pedido ainda não existem na API, em nenhum canal.
 
 ## Template pré-aprovado
 
@@ -153,41 +156,17 @@ nome que você quer mostrar.
 Fonte: [envio de mensagens no Instagram](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/)
 e [`sendDocument` do Telegram](https://core.telegram.org/bots/api#senddocument).
 
-### Catálogo, produto e pedido no WhatsApp Web
+### Catálogo e produto no WhatsApp Web
 
 No WhatsApp Web a API não envia catálogo nem produto. A chamada é aceita com `200`, mas a mensagem
 não chega ao cliente.
 
-O pedido só sai se o número conectado for uma conta **WhatsApp Business com produtos cadastrados**.
-Número pessoal não tem catálogo, então não há o que enviar.
-
 **O que fazer**: se a loja é a parte importante da sua integração, use a Meta Cloud API.
-
-Fonte: [pedido](https://developer.z-api.io/message/send-message-order) na Z-API.
 
 ### Multi-produto só na plataforma oficial
 
 Mandar vários produtos numa mensagem só existe na Meta Cloud API. Nos outros canais não há
 equivalente.
-
-### Detalhes do pedido no Messenger e no Telegram
-
-Os dois têm algo parecido, e a diferença importa:
-
-- **Messenger**: o [comprovante de pedido](https://developers.facebook.com/docs/messenger-platform/send-messages/template/receipt/)
-  mostra itens, total e forma de pagamento, mas é o registro de uma compra **já feita**. Não tem botão
-  de pagar.
-- **Telegram**: a [fatura](https://core.telegram.org/bots/api#sendinvoice) cobra dentro do app, e para
-  isso exige um provedor de pagamento configurado no bot.
-
-**O que fazer**: na Meta Cloud API, o pedido chega com o botão de pagar. Nos outros dois, decida se
-você quer avisar (Messenger) ou cobrar com provedor próprio (Telegram).
-
-### Pedir localização no Telegram
-
-Funciona, só não é um tipo de mensagem: é um **botão de teclado** que pede a localização
-([`request_location`](https://core.telegram.org/bots/api#replykeyboardmarkup)). Para o cliente dá no
-mesmo, ele toca e a localização chega. Marcamos ✅ porque o resultado é o mesmo.
 
 ### Reação no Telegram
 

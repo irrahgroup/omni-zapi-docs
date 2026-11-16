@@ -21,7 +21,7 @@ the map of them, so you find out now instead of in the middle of a test.
   </Card>
   <Card title="WhatsApp Web" icon="qrcode">
     The QR code connection, with the phone paired. No window and no template: you write at any time.
-    Some store features require the number to be a WhatsApp Business account with registered products.
+    Catalogs and products do not go out through it.
   </Card>
   <Card title="Instagram and Messenger" icon="instagram">
     Direct message conversations. They accept text, media and buttons, and stop there: no location, no
@@ -39,8 +39,9 @@ the map of them, so you find out now instead of in the middle of a test.
 |:---:|---|---|
 | ✅ | It works. The body published on the endpoint page is valid as is. | Send it. |
 | ⚠️ | It works **with a condition**, or it works in a similar way instead of the same way. | Read the caveat before promising it to your customer. |
-| ❌ | The platform does not have this feature. It is not something missing on our side. | See what to send instead, further down. |
+| ❌ | It does not work on this channel. Almost always the platform lacks the feature; when the limit is ours, the caveat says so. | See what to send instead, further down. |
 | 🔍 | We could not find confirmation in the platform's documentation. | Treat it as "maybe" and test before relying on it. |
+| 🚧 | It does not exist in the API yet, on any channel. | See the endpoint page, which shows the planned format. |
 
 <Note>
   ⚠️ never means "it might work". It means that **it works and we know under which condition** — and
@@ -60,7 +61,6 @@ the map of them, so you find out now instead of in the middle of a test.
 | Location | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Contact | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Reaction (emoji) | ✅ | ✅ | ✅ | 🔍 | ❌ |
-| Poll | ❌ | ✅ | ❌ | ❌ | ✅ |
 
 Text and media are the common ground: they work on all five, with the same body. The exception is the
 document, which has a condition on Instagram and Telegram. It is from there up that the channels start to disagree.
@@ -72,7 +72,7 @@ document, which has a condition on Instagram and Telegram. It is from there up t
 | Quick reply buttons | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Action buttons | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
 | Option list | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Request location | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Request location | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 | Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 A quick reply button is the one that comes back as the customer's answer, and it exists on every
@@ -84,6 +84,8 @@ An option list sent to a Telegram channel is refused right away: the API answers
 message or webhook is created. The Telegram keyboard has no sections, no per-option description and no
 button that opens the list. Send the options as quick reply buttons (`INTERACTIVE_BUTTON`).
 
+A Flow sent to a channel other than Meta Cloud API is accepted with `200`, but it does not reach the customer.
+
 ## Store and orders
 
 | Feature | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
@@ -91,12 +93,14 @@ button that opens the list. Send the options as quick reply buttons (`INTERACTIV
 | Catalog | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Product | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Multi-product | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Order details | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ |
-| Order status | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Order details | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
+| Order status | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 
 A store message depends on a store existing. On WhatsApp the catalog lives in the business account; on
 Instagram and Messenger the messaging API does not reach the catalog; on Telegram there is no catalog,
 and what exists is a one-off charge.
+
+Order details and order status do not exist in the API yet, on any channel.
 
 ## Pre-approved template
 
@@ -151,41 +155,17 @@ name you want to show.
 Source: [sending messages on Instagram](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/)
 and [Telegram `sendDocument`](https://core.telegram.org/bots/api#senddocument).
 
-### Catalog, product and order on WhatsApp Web
+### Catalog and product on WhatsApp Web
 
 On WhatsApp Web the API does not send catalogs or products. The call is accepted with `200`, but the
 message does not reach the customer.
 
-The order only goes out if the connected number is a **WhatsApp Business account with registered
-products**. A personal number has no catalog, so there is nothing to send.
-
 **What to do**: if the store is the important part of your integration, use Meta Cloud API.
-
-Source: [order](https://developer.z-api.io/en/message/send-message-order) on Z-API.
 
 ### Multi-product only on the official platform
 
 Sending several products in one message only exists on Meta Cloud API. The other channels have no
 equivalent.
-
-### Order details on Messenger and Telegram
-
-Both have something similar, and the difference matters:
-
-- **Messenger**: the [order receipt](https://developers.facebook.com/docs/messenger-platform/send-messages/template/receipt/)
-  shows items, total and payment method, but it is the record of a purchase **already made**. There is
-  no pay button.
-- **Telegram**: the [invoice](https://core.telegram.org/bots/api#sendinvoice) collects payment inside
-  the app, and for that it requires a payment provider configured on the bot.
-
-**What to do**: on Meta Cloud API the order arrives with a pay button. On the other two, decide
-whether you want to notify (Messenger) or charge with your own provider (Telegram).
-
-### Request location on Telegram
-
-It works, it just is not a message type: it is a **keyboard button** that asks for the location
-([`request_location`](https://core.telegram.org/bots/api#replykeyboardmarkup)). For the customer it is
-the same, they tap and the location arrives. We mark it ✅ because the result is the same.
 
 ### Reaction on Telegram
 
