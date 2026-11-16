@@ -202,7 +202,7 @@ OVERVIEW_ROW = {
     'Status do pedido': 'ORDER_STATUS',
 }
 
-MARK = {'yes': '✅', 'no': '❌', 'partial': '⚠️', 'unknown': '🔍'}
+MARK = {'yes': '✅', 'no': '❌', 'partial': '⚠️', 'unknown': '🔍', 'dev': '🚧'}
 
 
 def snippet_matrix():
@@ -271,6 +271,15 @@ def check_channel_matrix():
         if kind not in seen:
             fail('canais', f'a pagina de canais perdeu a linha de {kind}')
 
+    # 🚧 diz que o tipo nao existe na API: vale para a linha inteira, e so
+    # para tipo que o METHOD_STATUS marca como `soon`.
+    for kind, vals in matrix.items():
+        dev = [v == 'dev' for v in vals]
+        if any(dev) and not all(dev):
+            fail('canais', f'{kind}: 🚧 em parte dos canais; ou o tipo existe, ou nao existe')
+        elif all(dev) and METHOD_STATUS.get(kind) != 'soon':
+            fail('canais', f'{kind}: 🚧 na matriz, mas o METHOD_STATUS diz {METHOD_STATUS.get(kind)}')
+
 
 PANEL_METHODS = '../pennsylvania-lancaster/src/config/playground-methods.ts'
 
@@ -292,16 +301,16 @@ METHOD_STATUS = {
     'IMAGE': 'live',
     'AUDIO': 'live',
     'VIDEO': 'live',
-    'DOCUMENT': 'soon',
+    'DOCUMENT': 'live',
     'STICKER': 'live',
     'LOCATION': 'broken',
     'LOCATION_REQUEST': 'soon',
     'CONTACT': 'broken',
-    'REACTION': 'soon',
+    'REACTION': 'live',
     'INTERACTIVE_BUTTON': 'live',
     'INTERACTIVE_ACTION': 'live',
     'INTERACTIVE_LIST': 'soon',
-    'FLOW': 'soon',
+    'FLOW': 'live',
     'CATALOG': 'soon',
     'PRODUCT': 'soon',
     'PRODUCT_LIST': 'soon',
@@ -432,6 +441,10 @@ def check_matrix_vs_panel():
 
     matrix = snippet_matrix()
     for kind, vals in matrix.items():
+        # O painel lista os canais planejados de um tipo que ainda nao existe;
+        # a doc mostra 🚧 em todos. A conferencia do estado fica com o METHOD_STATUS.
+        if all(v == 'dev' for v in vals):
+            continue
         if kind not in panel:
             fail('canais', f'{kind}: esta na doc e falta no catalogo do painel')
             continue

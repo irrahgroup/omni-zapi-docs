@@ -1,6 +1,7 @@
 ---
 title: "Send document"
 description: "Send a PDF, a spreadsheet or another file by URL or Base64"
+openapi: "/en/messages/openapi-document.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
@@ -17,45 +18,9 @@ arrives as `invoice.pdf`, with the PDF icon.
 
 <ChannelSupport type="DOCUMENT" lang="en" />
 
-## Request body
-
-By URL:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "https://yourstore.com/invoice.pdf",
-        "name": "invoice",
-        "extension": "pdf",
-        "caption": "Here is your invoice"
-      }
-    ]
-  }
-}
-```
-
-By Base64, with the file type prefix in the `url` itself:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "data:application/pdf;base64,JVBERi0xLjQK...",
-        "name": "invoice",
-        "extension": "pdf",
-        "caption": "Here is your invoice"
-      }
-    ]
-  }
-}
-```
+<Note>
+  If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
+</Note>
 
 ## Attachment fields
 

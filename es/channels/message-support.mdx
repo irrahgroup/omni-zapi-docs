@@ -8,8 +8,8 @@ mismo para WhatsApp, Instagram, Messenger y Telegram. Cambias el canal en la URL
 
 Lo que no se puede prometer es que toda plataforma acepte todo. Instagram no tiene mensaje de
 ubicación. Telegram no tiene botón de llamar. El catálogo de productos solo existe donde hay catálogo.
-**Esos límites son de las plataformas, no de nuestra API** — y esta página es el mapa de ellos, para que
-lo descubras ahora y no en medio de una prueba.
+**Casi todos esos límites son de las plataformas; donde el límite es nuestro, la salvedad lo dice** — y
+esta página es el mapa de ellos, para que lo descubras ahora y no en medio de una prueba.
 
 ## Los cinco canales, en dos líneas cada uno
 
@@ -21,8 +21,7 @@ lo descubras ahora y no en medio de una prueba.
   </Card>
   <Card title="WhatsApp Web" icon="qrcode">
     La conexión por código QR, con el teléfono emparejado. Sin ventana y sin plantilla: escribes a
-    cualquier hora. Algunas funciones de tienda exigen que el número sea una cuenta WhatsApp Business
-    con productos registrados.
+    cualquier hora. Catálogo y producto no salen por ella.
   </Card>
   <Card title="Instagram y Messenger" icon="instagram">
     Conversación de mensajes directos. Aceptan texto, multimedia y botones, y ahí paran: sin ubicación,
@@ -40,8 +39,9 @@ lo descubras ahora y no en medio de una prueba.
 |:---:|---|---|
 | ✅ | Funciona. El cuerpo publicado en la página del endpoint vale tal cual. | Enviar. |
 | ⚠️ | Funciona **con una condición**, o funciona parecido en vez de igual. | Leer la reserva antes de prometerlo al cliente. |
-| ❌ | La plataforma no tiene esa función. No es algo que falte de nuestro lado. | Ver qué enviar en su lugar, más abajo. |
+| ❌ | No funciona en este canal. Casi siempre es la plataforma la que no tiene la función; cuando el límite es nuestro, la reserva lo dice. | Ver qué enviar en su lugar, más abajo. |
 | 🔍 | No encontramos la confirmación en la documentación de la plataforma. | Tratarlo como "quizá" y probar antes de depender de ello. |
+| 🚧 | Todavía no existe en la API, en ningún canal. | Ver la página del endpoint, que muestra el formato planeado. |
 
 <Note>
   ⚠️ nunca significa "quizá funcione". Significa que **funciona y sabemos bajo qué condición** — y la
@@ -60,8 +60,7 @@ lo descubras ahora y no en medio de una prueba.
 | Sticker | ✅ | ✅ | ⚠️ | ⚠️ | ✅ |
 | Ubicación | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Contacto | ✅ | ✅ | ❌ | ❌ | ✅ |
-| Reacción (emoji) | ✅ | ✅ | ✅ | 🔍 | ✅ |
-| Encuesta | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Reacción (emoji) | ✅ | ✅ | ✅ | 🔍 | ❌ |
 
 Texto y multimedia son el terreno común: funcionan en los cinco, con el mismo cuerpo. La excepción es el
 documento, que en Instagram y Telegram tiene condición. Es de ahí para arriba que los canales empiezan a discrepar.
@@ -73,7 +72,7 @@ documento, que en Instagram y Telegram tiene condición. Es de ahí para arriba 
 | Botones rápidos | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Botones de acción | ✅ | ✅ | ⚠️ | ✅ | ⚠️ |
 | Lista de opciones | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Pedir ubicación | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Pedir ubicación | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 | Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 El botón rápido es el que vuelve como respuesta del cliente, y existe en todos los canales. El botón de
@@ -85,19 +84,23 @@ mensaje `[UNSUPPORTED_CHANNEL_TYPE] O canal TELEGRAM nao suporta mensagens do ti
 se crea mensaje ni webhook. El teclado de Telegram no tiene secciones, descripción por opción ni el botón
 que abre la lista. Envía las opciones como botones rápidos (`INTERACTIVE_BUTTON`).
 
+Un Flow enviado a un canal que no es Meta Cloud API se acepta con `200`, pero no llega al cliente.
+
 ## Tienda y pedidos
 
 | Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
 |---|:---:|:---:|:---:|:---:|:---:|
-| Catálogo | ✅ | ⚠️ | ❌ | ❌ | ❌ |
-| Producto | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Catálogo | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Producto | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Multiproducto | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Detalles del pedido | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ |
-| Estado del pedido | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Detalles del pedido | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
+| Estado del pedido | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 
 El mensaje de tienda depende de que exista una tienda. En WhatsApp el catálogo vive en la cuenta de
 empresa; en Instagram y Messenger la API de mensajes no alcanza el catálogo; en Telegram no hay
 catálogo, y lo que existe es el cobro puntual.
+
+Los detalles y el estado del pedido todavía no existen en la API, en ningún canal.
 
 ## Plantilla preaprobada
 
@@ -152,42 +155,24 @@ el nombre que quieres mostrar.
 Fuente: [envío de mensajes en Instagram](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/)
 y [`sendDocument` de Telegram](https://core.telegram.org/bots/api#senddocument).
 
-### Catálogo, producto y pedido en WhatsApp Web
+### Catálogo y producto en WhatsApp Web
 
-Funcionan, pero solo salen si el número
-conectado es una cuenta **WhatsApp Business con productos registrados**. Un número personal no tiene
-catálogo, así que no hay nada que enviar.
+En WhatsApp Web la API no envía catálogos ni productos. La llamada se acepta con `200`, pero el
+mensaje no llega al cliente.
 
-**Qué hacer**: si la tienda es la parte importante de tu integración, usa Meta Cloud API. En Web,
-trata el catálogo como un extra que depende de cómo el cliente configuró su número.
-
-Fuentes: [producto](https://developer.z-api.io/en/message/send-message-product),
-[catálogo](https://developer.z-api.io/en/message/send-message-catalog) y
-[pedido](https://developer.z-api.io/en/message/send-message-order) en Z-API.
+**Qué hacer**: si la tienda es la parte importante de tu integración, usa Meta Cloud API.
 
 ### Multiproducto solo en la plataforma oficial
 
-Enviar varios productos en un mensaje solo existe en Meta Cloud API. En la conexión no oficial puedes
-enviar **un producto por vez**, y en los otros canales no hay equivalente.
+Enviar varios productos en un mensaje solo existe en Meta Cloud API. Los otros canales no tienen
+equivalente.
 
-### Detalles del pedido en Messenger y Telegram
+### Reacción en Telegram
 
-Los dos tienen algo parecido, y la diferencia importa:
+En Telegram la API no envía reacciones. La llamada se acepta con `200`, pero la reacción no llega al
+cliente.
 
-- **Messenger**: el [comprobante de pedido](https://developers.facebook.com/docs/messenger-platform/send-messages/template/receipt/)
-  muestra artículos, total y forma de pago, pero es el registro de una compra **ya hecha**. No tiene
-  botón de pagar.
-- **Telegram**: la [factura](https://core.telegram.org/bots/api#sendinvoice) cobra dentro de la app, y
-  para eso exige un proveedor de pago configurado en el bot.
-
-**Qué hacer**: en Meta Cloud API el pedido llega con botón de pagar. En los otros dos, decide si
-quieres avisar (Messenger) o cobrar con tu propio proveedor (Telegram).
-
-### Pedir ubicación en Telegram
-
-Funciona, solo que no es un tipo de mensaje: es un **botón de teclado** que pide la ubicación
-([`request_location`](https://core.telegram.org/bots/api#replykeyboardmarkup)). Para el cliente da
-igual, toca y la ubicación llega. Lo marcamos ✅ porque el resultado es el mismo.
+**Qué hacer**: en Telegram, cuando necesites confirmar algo al cliente, responde con texto.
 
 ### Reacción en Messenger
 
@@ -260,7 +245,7 @@ están en [Responder citando un mensaje](/es/messages/introduction#responder-cit
 | Botones rápidos | `INTERACTIVE_BUTTON` | [Enviar texto con botones](/es/messages/send-interactive-button) |
 | Botones de acción | `INTERACTIVE_ACTION` | [Enviar botones de acción](/es/messages/send-interactive-action) |
 | Lista de opciones | `INTERACTIVE_LIST` | [Enviar lista de opciones](/es/messages/send-interactive-list) |
-| Flow | `FLOW` | [Enviar formulario](/es/messages/send-flow) |
+| Flow | `INTERACTIVE_FLOW` | [Enviar formulario](/es/messages/send-flow) |
 | Catálogo | `CATALOG` | [Enviar catálogo](/es/messages/send-catalog) |
 | Producto | `PRODUCT` | [Enviar producto](/es/messages/send-product) |
 | Multiproducto | `PRODUCT_LIST` | [Enviar multiproducto](/es/messages/send-product-list) |
@@ -284,5 +269,8 @@ están en [Responder citando un mensaje](/es/messages/introduction#responder-cit
   </Card>
   <Card title="Ciclo de vida del canal" icon="arrows-spin" href="/es/channels/introduction">
     Crear, conectar, suscribir, desconectar y eliminar.
+  </Card>
+  <Card title="Limitaciones de la API Oficial" icon="triangle-exclamation" href="/es/z-api/limitations">
+    Lo que tiene la Z-API clásica y la oficial no.
   </Card>
 </CardGroup>

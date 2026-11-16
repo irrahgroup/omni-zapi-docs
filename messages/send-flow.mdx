@@ -1,57 +1,41 @@
 ---
 title: "Enviar formulário (Flow)"
 description: "Abra um formulário publicado sem precisar de template"
+openapi: "/pt/messages/openapi-flow.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
-  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
-</Warning>
-
 ## Conceituação
 
-Envia um formulário do WhatsApp — um [Flow](/flows/introduction) já publicado — direto na conversa, **sem
-template e sem aprovação**.
-
-O campo `content.type` será `FLOW`.
+Envia um formulário do WhatsApp, um [Flow](/flows/introduction) já publicado, direto na conversa, **sem
+template e sem aprovação**. O cliente toca no botão e o formulário abre no próprio WhatsApp. O campo
+`content.type` deve ser `INTERACTIVE_FLOW`.
 
 <WindowRule lang="pt" template="com botão de formulário" href="/templates/anatomy" />
 
 <ChannelSupport type="FLOW" lang="pt" />
 
-## Corpo da requisição
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "FLOW",
-    "header": "Agendamento",
-    "message": "Escolha o melhor horário para você.",
-    "footer": "Leva menos de um minuto",
-    "flow": {
-      "id": "1234567890",
-      "token": "sessao-do-cliente-42",
-      "cta": "Agendar",
-      "action": "navigate",
-      "screen": "AGENDAMENTO"
-    }
-  }
-}
-```
-
-## Regras
+## Campos
 
 | Campo | Regra |
 |---|---|
-| `id` ou nome do formulário | um dos dois, nunca os dois |
-| `token` | identificador que **você** gera, para casar a resposta com a sessão do cliente |
-| `cta` | texto do botão, até 30 caracteres |
-| `action` | `navigate` abre a tela em `screen`; `data_exchange` troca dados com o seu servidor |
+| `body.message` | Obrigatório. Texto da mensagem, acima do botão |
+| `header.message` | Opcional. Título em texto |
+| `footer.message` | Opcional. Rodapé |
+| `action.name` | Obrigatório. Sempre `flow` |
+| `action.version` | Obrigatório. Versão da mensagem de Flow na Meta: `3` |
+| `action.id` | Obrigatório. O `id` de um formulário publicado na mesma conta do canal, como vem em [Listar flows](/flows/list-flows) |
+| `action.cta` | Obrigatório. Texto do botão, até 30 caracteres |
+| `action.mode` | Opcional. Sem ele, vale `published` |
+
+Não há como escolher a tela de abertura, mandar dados para ela nem enviar um token de sessão.
+
+<Warning>
+  A resposta que o cliente preenche ainda não chega ao seu webhook com os campos do formulário.
+</Warning>
 
 <Note>
-  Só formulário **publicado** funciona. Rascunho a Meta não aceita, nem aqui nem em template.
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
 </Note>
