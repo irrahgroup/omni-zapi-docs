@@ -1,6 +1,7 @@
 ---
 title: "Enviar documento"
 description: "Envía un PDF, una planilla u otro archivo por URL o Base64"
+openapi: "/es/messages/openapi-document.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
@@ -17,45 +18,9 @@ llega como `factura.pdf`, con el ícono de PDF.
 
 <ChannelSupport type="DOCUMENT" lang="es" />
 
-## Cuerpo de la petición
-
-Por URL:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "https://tutienda.com/factura.pdf",
-        "name": "factura",
-        "extension": "pdf",
-        "caption": "Aquí está tu factura"
-      }
-    ]
-  }
-}
-```
-
-Por Base64, con el prefijo del tipo de archivo en el propio `url`:
-
-```json
-{
-  "recipient": { "identifier": "5511999999999" },
-  "content": {
-    "type": "DOCUMENT",
-    "attachments": [
-      {
-        "url": "data:application/pdf;base64,JVBERi0xLjQK...",
-        "name": "factura",
-        "extension": "pdf",
-        "caption": "Aquí está tu factura"
-      }
-    ]
-  }
-}
-```
+<Note>
+  Con el canal desconectado, la API rechaza el envío con `422` y `subCode` `CHANNEL_DISCONNECTED`, y el mensaje no se envía. Consulta [Errores al enviar](/es/messages/introduction#errores-al-enviar).
+</Note>
 
 ## Campos del adjunto
 

@@ -7,25 +7,19 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
     DOCUMENT: ['yes', 'yes', 'partial', 'yes', 'partial'],
     STICKER: ['yes', 'yes', 'partial', 'partial', 'yes'],
     LOCATION: ['yes', 'yes', 'no', 'no', 'yes'],
-    LOCATION_REQUEST: ['yes', 'no', 'no', 'no', 'yes'],
+    LOCATION_REQUEST: ['dev', 'dev', 'dev', 'dev', 'dev'],
     CONTACT: ['yes', 'yes', 'no', 'no', 'yes'],
-    REACTION: ['yes', 'yes', 'yes', 'unknown', 'yes'],
+    REACTION: ['yes', 'yes', 'yes', 'unknown', 'no'],
     INTERACTIVE_BUTTON: ['yes', 'yes', 'yes', 'yes', 'yes'],
     INTERACTIVE_ACTION: ['yes', 'yes', 'partial', 'yes', 'partial'],
     INTERACTIVE_LIST: ['yes', 'yes', 'no', 'no', 'no'],
     FLOW: ['yes', 'no', 'no', 'no', 'no'],
-    CATALOG: ['yes', 'partial', 'no', 'no', 'no'],
-    PRODUCT: ['yes', 'partial', 'no', 'no', 'no'],
+    CATALOG: ['yes', 'no', 'no', 'no', 'no'],
+    PRODUCT: ['yes', 'no', 'no', 'no', 'no'],
     PRODUCT_LIST: ['yes', 'no', 'no', 'no', 'no'],
-    ORDER_DETAILS: ['yes', 'partial', 'no', 'partial', 'partial'],
-    ORDER_STATUS: ['yes', 'partial', 'no', 'no', 'no'],
+    ORDER_DETAILS: ['dev', 'dev', 'dev', 'dev', 'dev'],
+    ORDER_STATUS: ['dev', 'dev', 'dev', 'dev', 'dev'],
     TEMPLATE: ['yes', 'no', 'no', 'yes', 'no'],
-  };
-
-  const COMMERCE_WEB = {
-    pt: 'Só funciona se o número conectado for uma conta **WhatsApp Business** com produtos cadastrados. Número pessoal não tem catálogo, então não há o que enviar.',
-    en: 'It only works if the connected number is a **WhatsApp Business** account with registered products. A personal number has no catalog, so there is nothing to send.',
-    es: 'Solo funciona si el número conectado es una cuenta **WhatsApp Business** con productos registrados. Un número personal no tiene catálogo, así que no hay nada que enviar.',
   };
 
   const NOTES = {
@@ -82,18 +76,16 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
         es: 'Instagram y Messenger no tienen tarjeta de contacto. Allí, la salida es escribir el teléfono en el texto.',
       }],
     ],
-    LOCATION_REQUEST: [
-      [4, 'info', {
-        pt: 'No Telegram isso não é um tipo de mensagem: é um botão de teclado que pede a localização. Para o cliente dá no mesmo, ele toca e a localização chega.',
-        en: 'On Telegram this is not a message type: it is a keyboard button that asks for the location. For the customer it is the same, they tap and the location arrives.',
-        es: 'En Telegram esto no es un tipo de mensaje: es un botón de teclado que pide la ubicación. Para el cliente da igual, toca y la ubicación llega.',
-      }],
-    ],
     REACTION: [
       [3, 'unknown', {
         pt: 'No Messenger nós recebemos a reação do cliente, mas não achamos na documentação da Meta a confirmação de que a empresa pode reagir. Assim que confirmarmos, esta célula muda.',
         en: 'On Messenger we do receive the customer reaction, but we could not find confirmation in Meta documentation that the business can react. As soon as we confirm it, this cell changes.',
         es: 'En Messenger recibimos la reacción del cliente, pero no encontramos en la documentación de Meta la confirmación de que la empresa pueda reaccionar. Cuando lo confirmemos, esta celda cambia.',
+      }],
+      [4, 'no', {
+        pt: 'No Telegram a API não envia reação. A chamada é aceita com `200`, mas a reação não chega ao cliente.',
+        en: 'On Telegram the API does not send reactions. The call is accepted with `200`, but the reaction does not reach the customer.',
+        es: 'En Telegram la API no envía reacciones. La llamada se acepta con `200`, pero la reacción no llega al cliente.',
       }],
     ],
     INTERACTIVE_ACTION: [
@@ -122,32 +114,26 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
     ],
     FLOW: [
       [1, 'no', {
-        pt: 'O Flow é um formulário da plataforma oficial da Meta. Nenhum outro canal tem equivalente, nem a conexão não oficial do WhatsApp.',
-        en: 'The Flow is a form from Meta official platform. No other channel has an equivalent, not even the unofficial WhatsApp connection.',
-        es: 'El Flow es un formulario de la plataforma oficial de Meta. Ningún otro canal tiene equivalente, ni la conexión no oficial de WhatsApp.',
+        pt: 'O Flow é um formulário da plataforma oficial da Meta. Nenhum outro canal tem equivalente, nem a conexão não oficial do WhatsApp. Nesses canais a chamada é aceita com `200`, mas a mensagem não chega ao cliente.',
+        en: 'The Flow is a form from Meta official platform. No other channel has an equivalent, not even the unofficial WhatsApp connection. On those channels the call is accepted with `200`, but the message does not reach the customer.',
+        es: 'El Flow es un formulario de la plataforma oficial de Meta. Ningún otro canal tiene equivalente, ni la conexión no oficial de WhatsApp. En esos canales la llamada se acepta con `200`, pero el mensaje no llega al cliente.',
       }],
     ],
-    CATALOG: [[1, 'partial', COMMERCE_WEB]],
-    PRODUCT: [[1, 'partial', COMMERCE_WEB]],
-    ORDER_STATUS: [[1, 'partial', COMMERCE_WEB]],
+    CATALOG: [[1, 'no', {
+      pt: 'No WhatsApp Web a API não envia catálogo. A chamada é aceita com `200`, mas a mensagem não chega ao cliente.',
+      en: 'On WhatsApp Web the API does not send catalogs. The call is accepted with `200`, but the message does not reach the customer.',
+      es: 'En WhatsApp Web la API no envía catálogos. La llamada se acepta con `200`, pero el mensaje no llega al cliente.',
+    }]],
+    PRODUCT: [[1, 'no', {
+      pt: 'No WhatsApp Web a API não envia produto. A chamada é aceita com `200`, mas a mensagem não chega ao cliente.',
+      en: 'On WhatsApp Web the API does not send products. The call is accepted with `200`, but the message does not reach the customer.',
+      es: 'En WhatsApp Web la API no envía productos. La llamada se acepta con `200`, pero el mensaje no llega al cliente.',
+    }]],
     PRODUCT_LIST: [
       [1, 'no', {
-        pt: 'Mandar vários produtos numa mensagem só existe na plataforma oficial. Na conexão não oficial dá para mandar um produto por vez.',
-        en: 'Sending several products in one message exists only on the official platform. On the unofficial connection you can send one product at a time.',
-        es: 'Enviar varios productos en un mensaje existe solo en la plataforma oficial. En la conexión no oficial puedes enviar un producto por vez.',
-      }],
-    ],
-    ORDER_DETAILS: [
-      [1, 'partial', COMMERCE_WEB],
-      [3, 'partial', {
-        pt: 'No Messenger o equivalente é o comprovante de pedido: mostra itens, total e forma de pagamento, mas é o registro de uma compra já feita. Não tem botão de pagar.',
-        en: 'On Messenger the equivalent is the order receipt: it shows items, total and payment method, but it is the record of a purchase already made. There is no pay button.',
-        es: 'En Messenger el equivalente es el comprobante de pedido: muestra artículos, total y forma de pago, pero es el registro de una compra ya hecha. No tiene botón de pagar.',
-      }],
-      [4, 'partial', {
-        pt: 'No Telegram o equivalente é a fatura, que cobra dentro do app. Ela exige um provedor de pagamento configurado no bot.',
-        en: 'On Telegram the equivalent is the invoice, which collects payment inside the app. It requires a payment provider configured on the bot.',
-        es: 'En Telegram el equivalente es la factura, que cobra dentro de la app. Exige un proveedor de pago configurado en el bot.',
+        pt: 'Mandar vários produtos numa mensagem só existe na plataforma oficial.',
+        en: 'Sending several products in one message exists only on the official platform.',
+        es: 'Enviar varios productos en un mensaje existe solo en la plataforma oficial.',
       }],
     ],
     TEMPLATE: [
@@ -173,6 +159,7 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
       more: 'Como ler esta tabela e o que muda em cada canal',
       href: '/channels/message-support',
       missing: 'Tipo sem linha na matriz de canais.',
+      dev: 'Ainda não existe na API, em nenhum canal.',
     },
     en: {
       title: 'Availability per channel',
@@ -182,6 +169,7 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
       more: 'How to read this table and what changes on each channel',
       href: '/en/channels/message-support',
       missing: 'Type missing from the channel matrix.',
+      dev: 'It does not exist in the API yet, on any channel.',
     },
     es: {
       title: 'Disponibilidad por canal',
@@ -191,6 +179,7 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
       more: 'Cómo leer esta tabla y qué cambia en cada canal',
       href: '/es/channels/message-support',
       missing: 'Tipo sin fila en la matriz de canales.',
+      dev: 'Todavía no existe en la API, en ningún canal.',
     },
   }[lang];
 
@@ -212,9 +201,9 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
         ),
       );
 
-  const mark = (v) => (v === 'yes' ? '✅' : v === 'partial' ? '⚠️' : v === 'unknown' ? '🔍' : '❌');
+  const mark = (v) => ({ yes: '✅', partial: '⚠️', unknown: '🔍', no: '❌', dev: '🚧' })[v];
   const icon = { partial: '⚠️', unknown: '🔍', info: 'ℹ️', no: '❌' };
-  const supported = vals.filter((v) => v !== 'no').length;
+  const supported = vals.filter((v) => v !== 'no' && v !== 'dev').length;
   const notes = NOTES[type] || [];
 
   return (
@@ -230,6 +219,7 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
       </table>
 
       {vals[0] === 'yes' && <p>{supported === 1 ? L.only : L.win}</p>}
+      {vals.every((v) => v === 'dev') && <p>{L.dev}</p>}
 
       {notes.length > 0 && (
         <ul>
