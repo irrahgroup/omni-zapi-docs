@@ -8,7 +8,43 @@ import { ZapiResponseText } from '/snippets/notes.mdx';
 
 ## Conceituação
 
-Método para envio de mensagens com carrossel de cards. Cada card pode conter imagem, texto e botões de ação (CALL, URL ou REPLY).
+Método para envio de mensagens com carrossel de cards. Cada card tem imagem, texto e botões de ação. Os botões aceitos são de dois tipos:
+
+- **URL**: abre um link
+- **REPLY**: resposta rápida
+
+## Regras do carrossel
+
+- O carrossel tem de 2 a 10 cards.
+- `message` é obrigatório e tem até 1.024 caracteres.
+- Cada card exige `image`, `text` e pelo menos um botão em `buttons`.
+- `image` é uma URL ou uma imagem JPEG ou PNG em base64 (data URI) de até 5 MB.
+- `text` tem até 160 caracteres e no máximo 2 quebras de linha.
+- `label` é obrigatório e tem até 20 caracteres.
+- `id` tem até 256 caracteres e não se repete no mesmo card. Sem `id`, o botão recebe a posição dele no card, a partir de `"1"`.
+- Um card leva **um** botão `URL`, com `url` `http` ou `https`, **ou** botões `REPLY`. Os dois tipos não vão no mesmo card.
+- Todos os cards têm a mesma quantidade e o mesmo tipo de botões.
+
+<Warning>
+  O botão `CALL` e o botão de copiar código (URL `https://www.whatsapp.com/otp/code/...`) não são aceitos no carrossel.
+</Warning>
+
+## Erros
+
+Um carrossel fora das regras é recusado com `422` e a mensagem não é enviada:
+
+| Situação | `error` |
+|---|---|
+| Botão `CALL` | `call button is not supported for this channel` |
+| Botão de copiar código | `copy button is not supported for this channel` |
+| `URL` e `REPLY` no mesmo card | `URL and REPLY buttons cannot be sent together on this channel` |
+| Mais de um botão `URL` no card | `only one URL button is supported for this channel` |
+| Cards com botões diferentes | `carousel cards must have the same number and type of buttons` |
+| Menos de 2 ou mais de 10 cards | `carousel must have at least 2 cards` / `carousel must have at most 10 cards` |
+
+Os demais limites também respondem `422`, com o campo na mensagem. Por exemplo: `carousel[0].text must be at most 160 characters`.
+
+O corpo da requisição tem até 10 MiB. Acima disso, a resposta é `413`. Com muitas imagens, envie URLs em vez de base64.
 
 <Note>
   <ZapiResponseText lang="pt" />

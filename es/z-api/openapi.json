@@ -604,7 +604,7 @@
     "/send-carousel": {
       "post": {
         "summary": "Enviar carrusel",
-        "description": "Envía un mensaje con un carrusel de tarjetas, cada una con imagen, texto y botones de acción.",
+        "description": "Envía un mensaje con un carrusel de 2 a 10 tarjetas, cada una con imagen, texto y botones de acción. Cada tarjeta lleva un botón URL o botones REPLY, y todas las tarjetas tienen la misma cantidad y el mismo tipo de botones. El botón CALL no se acepta.",
         "operationId": "sendCarousel",
         "tags": [
           "Mensajes"
@@ -621,36 +621,26 @@
                 "message": "Mira nuestros productos:",
                 "carousel": [
                   {
-                    "text": "Produto A",
+                    "text": "Producto A",
                     "image": "https://ejemplo.com/producto-a.png",
                     "buttons": [
                       {
                         "id": "1",
                         "type": "URL",
-                        "label": "Ver detalhes",
+                        "label": "Ver detalles",
                         "url": "https://www.omni.z-api.io"
-                      },
-                      {
-                        "id": "2",
-                        "type": "REPLY",
-                        "label": "Me interesa"
                       }
                     ]
                   },
                   {
-                    "text": "Produto B",
+                    "text": "Producto B",
                     "image": "https://ejemplo.com/producto-b.png",
                     "buttons": [
                       {
-                        "id": "3",
+                        "id": "2",
                         "type": "URL",
-                        "label": "Ver detalhes",
+                        "label": "Ver detalles",
                         "url": "https://www.omni.z-api.io"
-                      },
-                      {
-                        "id": "4",
-                        "type": "REPLY",
-                        "label": "Me interesa"
                       }
                     ]
                   }
@@ -1423,29 +1413,35 @@
           },
           "message": {
             "type": "string",
-            "description": "Texto del mensaje"
+            "description": "Texto del mensaje, hasta 1.024 caracteres",
+            "maxLength": 1024
           },
           "carousel": {
             "type": "array",
-            "description": "Lista de tarjetas del carrusel",
+            "description": "Lista de tarjetas del carrusel, de 2 a 10. Todas las tarjetas tienen la misma cantidad y el mismo tipo de botones.",
+            "minItems": 2,
+            "maxItems": 10,
             "items": {
               "type": "object",
               "required": [
                 "text",
-                "image"
+                "image",
+                "buttons"
               ],
               "properties": {
                 "text": {
                   "type": "string",
-                  "description": "Texto de la tarjeta"
+                  "description": "Texto de la tarjeta, hasta 160 caracteres y como máximo 2 saltos de línea",
+                  "maxLength": 160
                 },
                 "image": {
                   "type": "string",
-                  "description": "URL de la imagen de la tarjeta"
+                  "description": "URL de la imagen de la tarjeta, o imagen JPEG o PNG en base64 (data URI) de hasta 5 MB"
                 },
                 "buttons": {
                   "type": "array",
-                  "description": "Botones de acción de la tarjeta",
+                  "description": "Botones de acción de la tarjeta: un botón URL o botones REPLY, nunca los dos en la misma tarjeta",
+                  "minItems": 1,
                   "items": {
                     "type": "object",
                     "required": [
@@ -1455,28 +1451,25 @@
                     "properties": {
                       "id": {
                         "type": "string",
-                        "description": "Identificador del botón"
+                        "description": "Identificador del botón, hasta 256 caracteres y único en la tarjeta. Sin id, el botón recibe su posición en la tarjeta, a partir de \"1\"",
+                        "maxLength": 256
                       },
                       "type": {
                         "type": "string",
-                        "description": "Tipo de botón",
+                        "description": "Tipo de botón: URL abre un enlace, REPLY es respuesta rápida",
                         "enum": [
-                          "CALL",
                           "URL",
                           "REPLY"
                         ]
                       },
                       "label": {
                         "type": "string",
-                        "description": "Texto que se muestra en el botón"
-                      },
-                      "phone": {
-                        "type": "string",
-                        "description": "Teléfono para los botones de tipo CALL"
+                        "description": "Texto que se muestra en el botón, hasta 20 caracteres",
+                        "maxLength": 20
                       },
                       "url": {
                         "type": "string",
-                        "description": "URL para los botones de tipo URL"
+                        "description": "URL http o https, obligatoria en el botón URL"
                       }
                     }
                   }
