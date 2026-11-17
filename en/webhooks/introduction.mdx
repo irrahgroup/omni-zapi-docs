@@ -45,6 +45,51 @@ Event happens → Omni Z-API → POST to your URL → Your system processes it
 | `Z_API` | Z-API compatible format — keeps the structure your integrations already handle, ideal when migrating |
 | `CHATWOOT` | The format Chatwoot expects, to plug the channel straight into its inbox |
 
+<Warning>
+  **`Z_API` format change starting `<DATA DA RELEASE>`: notifications at the callback root.**
+
+  For notification events (group, call, profile, newsletter and system messages), the `Z_API` webhook will deliver
+  `notification` as a string and `notificationParameters` as an array, both at the root of the `ReceivedCallback`,
+  as Z-API does. Today both arrive inside a `notification` object.
+
+  Before:
+
+  ```json
+  {
+    "type": "ReceivedCallback",
+    "phone": "5511999999999",
+    "notification": {
+      "notification": "GROUP_PARTICIPANT_ADD",
+      "notificationParameters": ["5511988888888"],
+      "type": "notification"
+    }
+  }
+  ```
+
+  After:
+
+  ```json
+  {
+    "type": "ReceivedCallback",
+    "phone": "5511999999999",
+    "notification": "GROUP_PARTICIPANT_ADD",
+    "notificationParameters": ["5511988888888"]
+  }
+  ```
+
+  What to do: if your integration reads `notification.notification` or `notification.notificationParameters`,
+  read `notification` and `notificationParameters` at the root instead. If you already follow the Z-API
+  documentation, no change is needed.
+
+  - `notificationParameters` is only sent when the event has parameters. It can be empty (`[]`).
+  - Pinned messages stay in `pinMessage`, unchanged.
+  - The `DEFAULT` and `CHATWOOT` formats do not change.
+  - On official API (Meta) channels, the `notification` value is still what Meta sends (for example, `revoke`).
+    Only the field position changes.
+
+  Details in the [changelog](/en/changelog).
+</Warning>
+
 <Note>
   `payloadFormat` applies to **channel webhooks** only. On [template webhooks](/en/webhooks/template-webhooks) the format is always `DEFAULT` and the field is discarded.
 </Note>

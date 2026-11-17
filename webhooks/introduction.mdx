@@ -45,6 +45,51 @@ O {projectName} suporta três formatos de payload:
 | `Z_API` | Formato compatível com a Z-API — mantém a estrutura que suas integrações já tratam, ideal para quem está migrando |
 | `CHATWOOT` | Formato esperado pelo Chatwoot, para plugar o canal direto na caixa de entrada dele |
 
+<Warning>
+  **Mudança no formato `Z_API` a partir de `<DATA DA RELEASE>`: notificações na raiz do callback.**
+
+  Nos eventos de notificação (grupo, chamada, perfil, canal e mensagens de sistema), o webhook `Z_API` passa a
+  entregar `notification` como texto e `notificationParameters` como lista, os dois na raiz do `ReceivedCallback`,
+  como na Z-API. Hoje os dois chegam dentro de um objeto `notification`.
+
+  Antes:
+
+  ```json
+  {
+    "type": "ReceivedCallback",
+    "phone": "5511999999999",
+    "notification": {
+      "notification": "GROUP_PARTICIPANT_ADD",
+      "notificationParameters": ["5511988888888"],
+      "type": "notification"
+    }
+  }
+  ```
+
+  Depois:
+
+  ```json
+  {
+    "type": "ReceivedCallback",
+    "phone": "5511999999999",
+    "notification": "GROUP_PARTICIPANT_ADD",
+    "notificationParameters": ["5511988888888"]
+  }
+  ```
+
+  O que fazer: se a sua integração lê `notification.notification` ou `notification.notificationParameters`,
+  passe a ler `notification` e `notificationParameters` na raiz. Quem já segue a documentação da Z-API não
+  precisa mudar nada.
+
+  - `notificationParameters` só vem quando o evento traz parâmetros. Pode vir vazio (`[]`).
+  - Fixar mensagem continua em `pinMessage`, sem mudança.
+  - Os formatos `DEFAULT` e `CHATWOOT` não mudam.
+  - Em canais da API oficial (Meta), o valor de `notification` continua o que a Meta envia (por exemplo,
+    `revoke`). Só a posição dos campos muda.
+
+  Detalhes no [changelog](/changelog).
+</Warning>
+
 <Note>
   `payloadFormat` vale apenas para **webhooks de canal**. Nos [webhooks de template](/webhooks/template-webhooks) o formato é sempre `DEFAULT` e o campo é descartado.
 </Note>
