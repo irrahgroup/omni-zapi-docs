@@ -469,9 +469,68 @@
         },
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
+          "400": {
+            "description": "Invalid request, such as a card `image` that is neither an `http` or `https` URL nor a data URI, or that carries invalid base64. The message is not sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                },
+                "examples": {
+                  "invalidMediaFormat": {
+                    "summary": "image that is neither a URL nor a data URI",
+                    "value": { "error": "invalid media format: must be URL or base64 data URI" }
+                  },
+                  "invalidBase64": {
+                    "summary": "image with invalid base64",
+                    "value": { "error": "failed to decode base64: base64 decode failed: illegal base64 data at input byte 0" }
+                  }
+                }
+              }
+            }
+          },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
+          "413": {
+            "description": "Request body above 10 MiB. With many images, send URLs instead of base64.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                },
+                "example": { "error": "request body too large" }
+              }
+            }
+          },
           "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
-          "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
+          "422": {
+            "description": "Carousel outside the rules, or a channel that is not WhatsApp Official. The message is not sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                },
+                "examples": {
+                  "carouselRefused": {
+                    "summary": "Carousel outside the rules",
+                    "value": { "error": "URL and REPLY buttons cannot be sent together on this channel" }
+                  },
+                  "notMetaWhatsapp": {
+                    "summary": "Channel is not WhatsApp Official",
+                    "value": { "error": "instance middleware is not META_WHATSAPP" }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

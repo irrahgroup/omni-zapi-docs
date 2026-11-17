@@ -40,9 +40,17 @@ A carousel outside the rules is refused with `422` and the message is not sent:
 | `URL` and `REPLY` in the same card | `URL and REPLY buttons cannot be sent together on this channel` |
 | More than one `URL` button in the card | `only one URL button is supported for this channel` |
 | Cards with different buttons | `carousel cards must have the same number and type of buttons` |
+| `carousel` missing or empty | `carousel is required` |
 | Fewer than 2 or more than 10 cards | `carousel must have at least 2 cards` / `carousel must have at most 10 cards` |
 
 The other limits also answer `422`, with the field in the message. For example: `carousel[0].text must be at most 160 characters`.
+
+The exception is an `image` that is neither a URL nor valid base64. In that case, the response is `400` and the message is not sent:
+
+| Situation | `error` |
+|---|---|
+| `image` that is neither an `http` or `https` URL nor a data URI | `invalid media format: must be URL or base64 data URI` |
+| `image` with invalid base64 | `failed to decode base64: ...` |
 
 The request body has up to 10 MiB. Above that, the response is `413`. With many images, send URLs instead of base64.
 

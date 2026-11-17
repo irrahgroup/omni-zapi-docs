@@ -653,14 +653,90 @@
           "200": {
             "$ref": "#/components/responses/MessageSuccess"
           },
+          "400": {
+            "description": "Solicitud no válida, como la `image` de una tarjeta que no es una URL `http` o `https` ni un data URI, o que trae un base64 no válido. El mensaje no se envía.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Mensaje de error"
+                    }
+                  }
+                },
+                "examples": {
+                  "invalidMediaFormat": {
+                    "summary": "image que no es una URL ni un data URI",
+                    "value": {
+                      "error": "invalid media format: must be URL or base64 data URI"
+                    }
+                  },
+                  "invalidBase64": {
+                    "summary": "image con base64 no válido",
+                    "value": {
+                      "error": "failed to decode base64: base64 decode failed: illegal base64 data at input byte 0"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "description": "Cuerpo de la solicitud por encima de 10 MiB. Con muchas imágenes, envía URLs en lugar de base64.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Mensaje de error"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "request body too large"
+                }
+              }
+            }
           },
           "415": {
             "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "422": {
-            "$ref": "#/components/responses/NotMetaWhatsapp"
+            "description": "Carrusel fuera de las reglas o canal que no es WhatsApp Oficial. El mensaje no se envía.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Mensaje de error"
+                    }
+                  }
+                },
+                "examples": {
+                  "carouselRefused": {
+                    "summary": "Carrusel fuera de las reglas",
+                    "value": {
+                      "error": "URL and REPLY buttons cannot be sent together on this channel"
+                    }
+                  },
+                  "notMetaWhatsapp": {
+                    "summary": "El canal no es WhatsApp Oficial",
+                    "value": {
+                      "error": "instance middleware is not META_WHATSAPP"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
