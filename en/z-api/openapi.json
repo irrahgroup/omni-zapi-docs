@@ -652,20 +652,37 @@
             }
           },
           "400": {
-            "description": "`phone` or `messageId` missing or empty. Nothing is marked.",
+            "description": "`phone` or `messageId` missing or empty, `messageId` equal to `.` or `..`, or a body that could not be read, such as malformed JSON. For a body that could not be read, the text describes the reading error. Nothing is marked.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReadMessageError"
                 },
-                "example": {
-                  "error": "messageId is required"
+                "examples": {
+                  "messageIdRequired": {
+                    "summary": "Missing messageId",
+                    "value": {
+                      "error": "messageId is required"
+                    }
+                  },
+                  "messageIdInvalid": {
+                    "summary": "Invalid messageId",
+                    "value": {
+                      "error": "messageId is invalid"
+                    }
+                  },
+                  "malformedBody": {
+                    "summary": "Malformed JSON",
+                    "value": {
+                      "error": "invalid character 'n' looking for beginning of object key string"
+                    }
+                  }
                 }
               }
             }
           },
           "404": {
-            "description": "The message does not exist or belongs to another channel.",
+            "description": "The message does not exist or belongs to another channel, with the channel connected. With the channel disconnected, the answer is `422` with `channel is disconnected`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -681,7 +698,7 @@
             "$ref": "#/components/responses/MethodNotAllowed"
           },
           "422": {
-            "description": "The message cannot be marked as read: it has no WhatsApp id, the channel is disconnected, the contact is outside the 24-hour window or is not a valid WhatsApp user, Meta refused, or the channel subscription is not active. A channel that is not Official WhatsApp also gets `422`.",
+            "description": "The message cannot be marked as read: it has no WhatsApp id, the channel is disconnected, the contact is outside the 24-hour window or is not a valid WhatsApp user, Meta refused, or the channel subscription is not active. The connection is checked before the message: with the channel disconnected, any `messageId` gets `channel is disconnected`, even one that does not exist. A channel that is not Official WhatsApp also gets `422`, with the channel type in the text when the channel has one. On a channel that is neither Official WhatsApp nor WhatsApp Web, the text ends with `available only on Z-API (WhatsApp Web) instances`: that ending is the same for every refused route and does not apply to this one, which only works on Official WhatsApp.",
             "content": {
               "application/json": {
                 "schema": {
@@ -701,9 +718,15 @@
                     }
                   },
                   "channelType": {
-                    "summary": "Channel that is not Official WhatsApp",
+                    "summary": "Telegram channel",
                     "value": {
                       "error": "message action route is not available for BOT_TELEGRAM channels; available only on Z-API (WhatsApp Web) instances"
+                    }
+                  },
+                  "zapiChannel": {
+                    "summary": "WhatsApp Web channel",
+                    "value": {
+                      "error": "message action route is not available through this compatibility route for Z_API_WHATSAPP instances yet"
                     }
                   }
                 }
@@ -711,7 +734,7 @@
             }
           },
           "502": {
-            "description": "Failed to mark as read at Meta. The API does not repeat the call: you can call again.",
+            "description": "Failed to mark as read. The API does not repeat the call: you can call again.",
             "content": {
               "application/json": {
                 "schema": {

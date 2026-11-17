@@ -705,20 +705,37 @@
             }
           },
           "400": {
-            "description": "`phone` ou `messageId` ausente ou vazio. Nada é marcado.",
+            "description": "`phone` ou `messageId` ausente ou vazio, `messageId` igual a `.` ou `..`, ou corpo que não pôde ser lido, como um JSON malformado. No corpo que não pôde ser lido, o texto descreve o erro de leitura. Nada é marcado.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReadMessageError"
                 },
-                "example": {
-                  "error": "messageId is required"
+                "examples": {
+                  "messageIdRequired": {
+                    "summary": "messageId ausente",
+                    "value": {
+                      "error": "messageId is required"
+                    }
+                  },
+                  "messageIdInvalid": {
+                    "summary": "messageId inválido",
+                    "value": {
+                      "error": "messageId is invalid"
+                    }
+                  },
+                  "malformedBody": {
+                    "summary": "JSON malformado",
+                    "value": {
+                      "error": "invalid character 'n' looking for beginning of object key string"
+                    }
+                  }
                 }
               }
             }
           },
           "404": {
-            "description": "A mensagem não existe ou é de outro canal.",
+            "description": "A mensagem não existe ou é de outro canal, com o canal conectado. Com o canal desconectado, a resposta é `422` com `channel is disconnected`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -734,7 +751,7 @@
             "$ref": "#/components/responses/MethodNotAllowed"
           },
           "422": {
-            "description": "A mensagem não pode ser marcada como lida: ela não tem id no WhatsApp, o canal está desconectado, o contato está fora da janela de 24 horas ou não é um usuário válido do WhatsApp, a Meta recusou, ou a assinatura do canal não está ativa. Canal que não é WhatsApp Oficial também recebe `422`.",
+            "description": "A mensagem não pode ser marcada como lida: ela não tem id no WhatsApp, o canal está desconectado, o contato está fora da janela de 24 horas ou não é um usuário válido do WhatsApp, a Meta recusou, ou a assinatura do canal não está ativa. A conexão é conferida antes da mensagem: com o canal desconectado, qualquer `messageId` recebe `channel is disconnected`, mesmo um que não existe. Canal que não é WhatsApp Oficial também recebe `422`, com o tipo do canal no texto quando o canal tem tipo. Em canal que não é WhatsApp Oficial nem WhatsApp Web, o texto termina com `available only on Z-API (WhatsApp Web) instances`: esse final é o mesmo para toda rota recusada e não vale para esta, que só funciona em WhatsApp Oficial.",
             "content": {
               "application/json": {
                 "schema": {
@@ -754,9 +771,15 @@
                     }
                   },
                   "channelType": {
-                    "summary": "Canal que não é WhatsApp Oficial",
+                    "summary": "Canal Telegram",
                     "value": {
                       "error": "message action route is not available for BOT_TELEGRAM channels; available only on Z-API (WhatsApp Web) instances"
+                    }
+                  },
+                  "zapiChannel": {
+                    "summary": "Canal WhatsApp Web",
+                    "value": {
+                      "error": "message action route is not available through this compatibility route for Z_API_WHATSAPP instances yet"
                     }
                   }
                 }
@@ -764,7 +787,7 @@
             }
           },
           "502": {
-            "description": "Falha ao marcar como lida na Meta. A API não repete a chamada: você pode chamar de novo.",
+            "description": "Falha ao marcar como lida. A API não repete a chamada: você pode chamar de novo.",
             "content": {
               "application/json": {
                 "schema": {

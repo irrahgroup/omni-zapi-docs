@@ -26,7 +26,7 @@ A resposta de sucesso é `200`:
 ## Diferenças em relação à Z-API
 
 - O `messageId` é o id da mensagem no {projectName}, o mesmo que chega no webhook. No formato padrão de webhook, é o `message._id`. Não é o id da mensagem no WhatsApp.
-- A API oficial marca como lidas também as mensagens anteriores da conversa.
+- A API oficial da Meta (Cloud API) marca como lidas também as mensagens anteriores da conversa.
 - Uma mensagem enviada pelo próprio canal responde `200`, sem efeito.
 
 ## Erros
@@ -34,13 +34,17 @@ A resposta de sucesso é `200`:
 | Status | `error` | Quando |
 |---|---|---|
 | `400` | `phone is required` / `messageId is required` | `phone` ou `messageId` ausente ou vazio |
-| `404` | `message not found` | A mensagem não existe ou é de outro canal |
+| `400` | `messageId is invalid` | `messageId` é `.` ou `..` |
+| `400` | Varia, como `invalid character 'n' looking for beginning of object key string` | O corpo não pôde ser lido, como um JSON malformado |
+| `404` | `message not found` | A mensagem não existe ou é de outro canal, com o canal conectado |
 | `422` | `message cannot be marked as read: it has no id at the channel provider` | A mensagem não tem id no WhatsApp |
-| `422` | `channel is disconnected` | O canal está desconectado |
+| `422` | `channel is disconnected` | O canal está desconectado. Vale para qualquer `messageId`, mesmo um que não existe: a conexão é conferida antes da mensagem |
 | `422` | `the contact is outside the 24-hour window or is not a valid WhatsApp user` | O contato está fora da janela de 24 horas ou não é um usuário válido do WhatsApp |
 | `422` | `the channel provider refused the request` | A Meta recusou a leitura |
 | `422` | `instance subscription is not active` | A assinatura do canal não está ativa |
-| `422` | `message action route is not available ...` | O canal não é WhatsApp Oficial. O texto traz o tipo do canal |
-| `502` | `failed to mark message as read` | Falha ao marcar como lida na Meta |
+| `422` | `message action route is not available ...` | O canal não é WhatsApp Oficial. O texto traz o tipo do canal, quando o canal tem tipo |
+| `502` | `failed to mark message as read` | Falha ao marcar como lida |
+
+Em canal que não é WhatsApp Oficial nem WhatsApp Web, o texto da recusa termina com `available only on Z-API (WhatsApp Web) instances`. Esse final é o mesmo para toda rota recusada e não vale para esta: marcar como lida só funciona em WhatsApp Oficial.
 
 A API não repete a chamada depois de um `502`. Você pode chamar de novo.

@@ -26,7 +26,7 @@ The success response is `200`:
 ## Differences from Z-API
 
 - The `messageId` is the message id in {projectName}, the same one that comes in the webhook. In the default webhook format, it is `message._id`. It is not the message id in WhatsApp.
-- The official API also marks as read the earlier messages of the conversation.
+- Meta's official API (Cloud API) also marks as read the earlier messages of the conversation.
 - A message sent by the channel itself answers `200`, with no effect.
 
 ## Errors
@@ -34,13 +34,17 @@ The success response is `200`:
 | Status | `error` | When |
 |---|---|---|
 | `400` | `phone is required` / `messageId is required` | `phone` or `messageId` missing or empty |
-| `404` | `message not found` | The message does not exist or belongs to another channel |
+| `400` | `messageId is invalid` | `messageId` is `.` or `..` |
+| `400` | Varies, such as `invalid character 'n' looking for beginning of object key string` | The body could not be read, such as malformed JSON |
+| `404` | `message not found` | The message does not exist or belongs to another channel, with the channel connected |
 | `422` | `message cannot be marked as read: it has no id at the channel provider` | The message has no WhatsApp id |
-| `422` | `channel is disconnected` | The channel is disconnected |
+| `422` | `channel is disconnected` | The channel is disconnected. It applies to any `messageId`, even one that does not exist: the connection is checked before the message |
 | `422` | `the contact is outside the 24-hour window or is not a valid WhatsApp user` | The contact is outside the 24-hour window or is not a valid WhatsApp user |
 | `422` | `the channel provider refused the request` | Meta refused the read |
 | `422` | `instance subscription is not active` | The channel subscription is not active |
-| `422` | `message action route is not available ...` | The channel is not Official WhatsApp. The text carries the channel type |
-| `502` | `failed to mark message as read` | Failed to mark as read at Meta |
+| `422` | `message action route is not available ...` | The channel is not Official WhatsApp. The text carries the channel type, when the channel has one |
+| `502` | `failed to mark message as read` | Failed to mark as read |
+
+On a channel that is neither Official WhatsApp nor WhatsApp Web, the refusal text ends with `available only on Z-API (WhatsApp Web) instances`. That ending is the same for every refused route and does not apply here: marking as read only works on Official WhatsApp.
 
 The API does not repeat the call after a `502`. You can call again.
