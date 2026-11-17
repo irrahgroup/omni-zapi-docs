@@ -154,7 +154,7 @@
     "/send-button-actions": {
       "post": {
         "summary": "Enviar botones de acción",
-        "description": "Envía un mensaje de texto con botones de acción (llamar, abrir una URL o respuesta rápida).",
+        "description": "Envía un mensaje de texto con botones de acción: un botón URL o hasta tres botones REPLY, nunca los dos en el mismo mensaje. El botón CALL y el botón de copiar código no se aceptan.",
         "operationId": "sendButtonActions",
         "tags": [
           "Mensajes"
@@ -167,8 +167,8 @@
                 "$ref": "#/components/schemas/SendButtonActionsRequest"
               },
               "examples": {
-                "callAndUrl": {
-                  "summary": "Botones de llamada y de URL",
+                "url": {
+                  "summary": "Botón de URL",
                   "value": {
                     "phone": "5511999999999",
                     "message": "¡Hola! ¿Cómo podemos ayudarte?",
@@ -177,15 +177,9 @@
                     "buttonActions": [
                       {
                         "id": "1",
-                        "type": "CALL",
-                        "phone": "5511999999999",
-                        "label": "Fale conosco"
-                      },
-                      {
-                        "id": "2",
                         "type": "URL",
                         "url": "https://www.omni.z-api.io",
-                        "label": "Visita nuestro sitio web"
+                        "label": "Visita nuestro sitio"
                       }
                     ]
                   }
@@ -194,12 +188,12 @@
                   "summary": "Botón de respuesta rápida",
                   "value": {
                     "phone": "5511999999999",
-                    "message": "Precisa de ajuda?",
+                    "message": "¿Necesitas ayuda?",
                     "buttonActions": [
                       {
                         "id": "3",
                         "type": "REPLY",
-                        "label": "Falar com atendente"
+                        "label": "Hablar con un agente"
                       }
                     ]
                   }
@@ -216,7 +210,46 @@
             "$ref": "#/components/responses/MethodNotAllowed"
           },
           "422": {
-            "$ref": "#/components/responses/NotMetaWhatsapp"
+            "description": "Botones fuera de las reglas o canal que no es WhatsApp Oficial. El mensaje no se envía.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Mensaje de error"
+                    }
+                  }
+                },
+                "examples": {
+                  "callButton": {
+                    "summary": "Botón CALL",
+                    "value": {
+                      "error": "call button is not supported for this channel"
+                    }
+                  },
+                  "copyButton": {
+                    "summary": "Botón de copiar código",
+                    "value": {
+                      "error": "copy button is not supported for this channel"
+                    }
+                  },
+                  "urlAndReply": {
+                    "summary": "URL y REPLY en el mismo mensaje",
+                    "value": {
+                      "error": "URL and REPLY buttons cannot be sent together on this channel"
+                    }
+                  },
+                  "notMetaWhatsapp": {
+                    "summary": "El canal no es WhatsApp Oficial",
+                    "value": {
+                      "error": "instance middleware is not META_WHATSAPP"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1046,19 +1079,24 @@
           },
           "message": {
             "type": "string",
-            "description": "Texto del mensaje"
+            "description": "Texto del mensaje, hasta 1.024 caracteres",
+            "maxLength": 1024
           },
           "title": {
             "type": "string",
-            "description": "Título del mensaje"
+            "description": "Título del mensaje, hasta 60 caracteres. Solo con el botón URL",
+            "maxLength": 60
           },
           "footer": {
             "type": "string",
-            "description": "Pie del mensaje"
+            "description": "Pie del mensaje, hasta 60 caracteres. Solo con el botón URL",
+            "maxLength": 60
           },
           "buttonActions": {
             "type": "array",
-            "description": "Lista de botones de acción",
+            "description": "Botones de acción: un botón URL o hasta tres botones REPLY, nunca los dos en el mismo mensaje",
+            "minItems": 1,
+            "maxItems": 3,
             "items": {
               "type": "object",
               "required": [
@@ -1068,24 +1106,21 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "description": "Identificador del botón"
+                  "description": "Identificador del botón, hasta 256 caracteres. Sin id, el botón recibe su posición en la lista, a partir de \"1\"",
+                  "maxLength": 256
                 },
                 "type": {
                   "type": "string",
-                  "description": "Tipo de botón",
+                  "description": "Tipo de botón: URL abre un enlace, REPLY es una respuesta rápida",
                   "enum": [
-                    "CALL",
                     "URL",
                     "REPLY"
                   ]
                 },
                 "label": {
                   "type": "string",
-                  "description": "Texto que se muestra en el botón"
-                },
-                "phone": {
-                  "type": "string",
-                  "description": "Teléfono para los botones de tipo CALL"
+                  "description": "Texto que se muestra en el botón, hasta 20 caracteres",
+                  "maxLength": 20
                 },
                 "url": {
                   "type": "string",

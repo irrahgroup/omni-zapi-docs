@@ -130,7 +130,7 @@
     "/send-button-actions": {
       "post": {
         "summary": "Enviar botões de ação",
-        "description": "Envia uma mensagem de texto com botões de ação (ligar, abrir URL ou resposta rápida).",
+        "description": "Envia uma mensagem de texto com botões de ação: um botão URL ou até três botões REPLY, nunca os dois na mesma mensagem. O botão CALL e o botão de copiar código não são aceitos.",
         "operationId": "sendButtonActions",
         "tags": ["Mensagens"],
         "requestBody": {
@@ -141,8 +141,8 @@
                 "$ref": "#/components/schemas/SendButtonActionsRequest"
               },
               "examples": {
-                "callAndUrl": {
-                  "summary": "Botões de ligar e URL",
+                "url": {
+                  "summary": "Botão de URL",
                   "value": {
                     "phone": "5511999999999",
                     "message": "Olá! Como podemos ajudar?",
@@ -151,12 +151,6 @@
                     "buttonActions": [
                       {
                         "id": "1",
-                        "type": "CALL",
-                        "phone": "5511999999999",
-                        "label": "Fale conosco"
-                      },
-                      {
-                        "id": "2",
                         "type": "URL",
                         "url": "https://www.omni.z-api.io",
                         "label": "Visite nosso site"
@@ -185,7 +179,37 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
+          "422": {
+            "description": "Botões fora das regras, ou canal que não é WhatsApp Oficial. A mensagem não é enviada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Mensagem de erro" }
+                  }
+                },
+                "examples": {
+                  "callButton": {
+                    "summary": "Botão CALL",
+                    "value": { "error": "call button is not supported for this channel" }
+                  },
+                  "copyButton": {
+                    "summary": "Botão de copiar código",
+                    "value": { "error": "copy button is not supported for this channel" }
+                  },
+                  "urlAndReply": {
+                    "summary": "URL e REPLY na mesma mensagem",
+                    "value": { "error": "URL and REPLY buttons cannot be sent together on this channel" }
+                  },
+                  "notMetaWhatsapp": {
+                    "summary": "Canal que não é WhatsApp Oficial",
+                    "value": { "error": "instance middleware is not META_WHATSAPP" }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -847,39 +871,42 @@
           },
           "message": {
             "type": "string",
-            "description": "Texto da mensagem"
+            "description": "Texto da mensagem, até 1.024 caracteres",
+            "maxLength": 1024
           },
           "title": {
             "type": "string",
-            "description": "Título da mensagem"
+            "description": "Título da mensagem, até 60 caracteres. Só vai com o botão URL",
+            "maxLength": 60
           },
           "footer": {
             "type": "string",
-            "description": "Rodapé da mensagem"
+            "description": "Rodapé da mensagem, até 60 caracteres. Só vai com o botão URL",
+            "maxLength": 60
           },
           "buttonActions": {
             "type": "array",
-            "description": "Lista de botões de ação",
+            "description": "Botões de ação: um botão URL ou até três botões REPLY, nunca os dois na mesma mensagem",
+            "minItems": 1,
+            "maxItems": 3,
             "items": {
               "type": "object",
               "required": ["type", "label"],
               "properties": {
                 "id": {
                   "type": "string",
-                  "description": "Identificador do botão"
+                  "description": "Identificador do botão, até 256 caracteres. Sem id, o botão recebe a posição na lista, a partir de \"1\"",
+                  "maxLength": 256
                 },
                 "type": {
                   "type": "string",
-                  "description": "Tipo do botão",
-                  "enum": ["CALL", "URL", "REPLY"]
+                  "description": "Tipo do botão: URL abre um link, REPLY é resposta rápida",
+                  "enum": ["URL", "REPLY"]
                 },
                 "label": {
                   "type": "string",
-                  "description": "Texto exibido no botão"
-                },
-                "phone": {
-                  "type": "string",
-                  "description": "Telefone para botões do tipo CALL"
+                  "description": "Texto exibido no botão, até 20 caracteres",
+                  "maxLength": 20
                 },
                 "url": {
                   "type": "string",
