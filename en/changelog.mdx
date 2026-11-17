@@ -1,0 +1,340 @@
+---
+title: "Changelog"
+description: "Omni Z-API API and webhook changes that affect your integration"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+This page announces, ahead of time, the {projectName} changes that alter what your integration receives. Each entry gives the date the change goes to production, what changes, the before and after, and what you need to do.
+
+<Info>
+  Changes are published here **at least 7 days before** they go to production. Handle your integration by `status`, `error`, `code` and `subCode`. The `message` text is meant for humans and may change without notice.
+</Info>
+
+<Update label="<DATA DA RELEASE>" description="Authentication and plan errors, Z_API webhooks and /send-* routes">
+
+The three changes below go to production on `<DATA DA RELEASE>`, at least 7 days after this page is published.
+
+## Clearer errors for authentication, plan, QR code and disconnected channel
+
+The errors below now carry a `message` that says what happened, why and what to do. Three of them change status. Where there was already a text, it stays as the **start** of `message`.
+
+| Situation | Before | After |
+|---|---|---|
+| Secret key missing, empty, malformed, Public Key sent instead, or nonexistent | `400` `{"error": "Authorization invalid"}` | **`401`**, header `WWW-Authenticate: Bearer`, `{"error": "Authorization invalid", "message": "..."}` |
+| IP not on the workspace [IP allow list](/en/security/ip-restriction) | `400` `{"error": "<ip> not allowed"}` | **`403`** `{"error": "ip_not_allowed", "message": "<ip> not allowed: ..."}` |
+| Channel operation with the secret key, without the `ENTERPRISE` role | `422` `{"error": "Channel listing requires ENTERPRISE role"}` (and variants) | **`403`** `{"error": "plan_required", "message": "Channel listing requires ENTERPRISE role: ..."}` |
+| Blocked workspace | `422` `{"error": "You are blocked, contact support."}` | `422`, same `error`, with `message` |
+| WhatsApp Web QR code refused (`NEED_SIGN_ZAPI`) | `422` with the envelope in `error` | `422`, same `error`, with a top-level `message` |
+| Disconnected channel on send and edit (`CHANNEL_DISCONNECTED`) | `422`, `message` `"Channel is disconnected"` | `422`, same `code` and `subCode`, new `message` |
+
+### Secret key refused: 400 becomes 401
+
+Applies to every route that accepts the secret key. The `message` depends on the cause:
+
+| Cause | `message` |
+|---|---|
+| Header missing or empty | `Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+| Public Key (starts with `pk_`) | `Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+| Malformed (for example, the channel token) | `Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as "Authorization: Bearer <secret-key>". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication` |
+| Nonexistent or revoked | `Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+
+`<secret-key>` is literal: the response never echoes the value you sent.
+
+Before:
+
+```http
+HTTP/1.1 400 Bad Request
+
+{"error": "Authorization invalid"}
+```
+
+After:
+
+```http
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer
+
+{
+  "error": "Authorization invalid",
+  "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+}
+```
+
+### IP not allowed: 400 becomes 403
+
+Before:
+
+```http
+HTTP/1.1 400 Bad Request
+
+{"error": "203.0.113.10 not allowed"}
+```
+
+After:
+
+```http
+HTTP/1.1 403 Forbidden
+
+{
+  "error": "ip_not_allowed",
+  "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+}
+```
+
+When the source IP cannot be identified, `message` starts with `ip not allowed: `.
+
+### Without the ENTERPRISE role: 422 becomes 403 plan_required
+
+Applies to the six channel operations with the secret key: list, read, create, delete, subscribe and cancel the subscription. Each keeps its current text as the start of `message`: `Channel listing requires ENTERPRISE role` (list and read), `Channel creation requires ENTERPRISE role`, `Channel deletion requires ENTERPRISE role` and `Channel subscription requires ENTERPRISE role` (subscribe and cancel).
+
+Before:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{"error": "Channel listing requires ENTERPRISE role"}
+```
+
+After:
+
+```http
+HTTP/1.1 403 Forbidden
+
+{
+  "error": "plan_required",
+  "message": "Channel listing requires ENTERPRISE role: listing and reading channels with the Secret Key is limited to partner accounts with the ENTERPRISE role. Ask support to enable the role, or see your channels in the panel at https://app.omni.z-api.io. See https://developer.omni.z-api.io/en/channels/introduction"
+}
+```
+
+### Blocked workspace: same status, with message
+
+Applies to sending, message editing and group routes, with the secret key or with an OAuth token.
+
+Before:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{"error": "You are blocked, contact support."}
+```
+
+After:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": "You are blocked, contact support.",
+  "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+}
+```
+
+### QR code refused: same status and same error, with message
+
+Applies to `GET /v1/channels/{id}/zapi/qr-code` and `GET /v1/channels/{id}/zapi/qr-code/image`, when the refusal comes with `NEED_SIGN_ZAPI`. The `error` object does not change, field by field. Other QR code refusals stay as they are today.
+
+Before:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": {
+    "timestamp": "2026-11-17T10:00:00Z",
+    "status": 424,
+    "errors": [
+      {
+        "code": "307",
+        "name": "NEED_SIGN_ZAPI",
+        "message": "Z-API signature required",
+        "description": "The Z-API account must be signed before proceeding"
+      }
+    ]
+  }
+}
+```
+
+After:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": {
+    "timestamp": "2026-11-17T10:00:00Z",
+    "status": 424,
+    "errors": [
+      {
+        "code": "307",
+        "name": "NEED_SIGN_ZAPI",
+        "message": "Z-API signature required",
+        "description": "The Z-API account must be signed before proceeding"
+      }
+    ]
+  },
+  "message": "Z-API signature required: Z-API refused to generate the QR code for this WhatsApp Web channel. The usual cause is a channel without an active subscription: activate it in the panel at https://app.omni.z-api.io (ENTERPRISE accounts can also call GET /v1/channels/{channelId}/subscribe after the checkout) and request the QR code again. If the subscription is already active, try again in a few minutes and contact support if it keeps failing. See https://developer.omni.z-api.io/en/connect/whatsapp-web"
+}
+```
+
+### Disconnected channel: only the message changes
+
+Applies to `POST /v1/channels/{id}/messages`, to the `/send-*` routes and to `PUT /v1/channels/{id}/messages/{messageId}`. Status, `timestamp`, `code` and `subCode` do not change.
+
+Before:
+
+```json
+{
+  "timestamp": "2026-11-17T10:00:00Z",
+  "code": "BUSINESS_RULE_VIOLATION",
+  "subCode": "CHANNEL_DISCONNECTED",
+  "message": "Channel is disconnected"
+}
+```
+
+After, on send:
+
+```json
+{
+  "timestamp": "2026-11-17T10:00:00Z",
+  "code": "BUSINESS_RULE_VIOLATION",
+  "subCode": "CHANNEL_DISCONNECTED",
+  "message": "Channel is disconnected: the message was not sent because the channel is not connected right now. Reconnect the channel (WhatsApp Web by reading a new QR code; WhatsApp Official, Instagram and Messenger through the Meta connection; Telegram with the bot token) and send again. See https://developer.omni.z-api.io/en/connect/introduction"
+}
+```
+
+On edit (`PUT .../messages/{messageId}`), the text says `the message was not edited` and ends with `and edit again`. An edit made through `POST .../messages` with `editMessageId` gets the send text.
+
+### What to do
+
+- If your integration handles a refused credential by `status == 400`, handle `401` instead.
+- If it handles an IP not on the list by `400`, handle `403` with `error` `ip_not_allowed`.
+- If it handles the missing `ENTERPRISE` role by `422`, handle `403` with `error` `plan_required`. The old text left `error` and is now the start of `message`.
+- If it compares the IP or role `error` with the exact text, compare with `ip_not_allowed` and `plan_required`.
+- Blocked workspace, refused QR code and disconnected channel need no change: status, `error`, `code` and `subCode` stay the same.
+
+The OAuth token path does not change: `invalid_token`, `insufficient_scope` and `ip_not_allowed` stay as they are today, and reading channels with the token still does not require the `ENTERPRISE` role. The Public Key used in the connection SDK does not change either.
+
+## Webhooks in the Z_API format: notification at the callback root
+
+For notification events (group, call, profile, newsletter and system messages), webhooks with `payloadFormat` `Z_API` will deliver `notification` as a string and `notificationParameters` as an array, both at the root of the `ReceivedCallback`, as Z-API does. Today both arrive inside a `notification` object.
+
+Before:
+
+```json
+{
+  "type": "ReceivedCallback",
+  "phone": "5511999999999",
+  "notification": {
+    "notification": "GROUP_PARTICIPANT_ADD",
+    "notificationParameters": ["5511988888888"],
+    "type": "notification"
+  }
+}
+```
+
+After:
+
+```json
+{
+  "type": "ReceivedCallback",
+  "phone": "5511999999999",
+  "notification": "GROUP_PARTICIPANT_ADD",
+  "notificationParameters": ["5511988888888"]
+}
+```
+
+- `notificationParameters` is only sent when the event has parameters. It can be empty (`[]`).
+- Pinned messages stay in `pinMessage`, unchanged.
+- The `DEFAULT` and `CHATWOOT` formats do not change.
+- On official API (Meta) channels, the `notification` value is still what Meta sends (for example, `revoke`). Only the field position changes.
+
+### What to do
+
+If your integration reads `notification.notification` or `notification.notificationParameters`, read `notification` and `notificationParameters` at the root instead. If you already follow the Z-API documentation, no change is needed. See [Webhooks introduction](/en/webhooks/introduction).
+
+## /send-* routes now accept the Omni payload
+
+The `POST /v1/channels/{id}/send-*` routes now accept the **same body** as `POST /v1/channels/{id}/messages`, `{"recipient": {...}, "content": {...}}`, and respond like it: `200` with `{"messageId": "..."}`. The message type comes from the route, so `content.type` is optional.
+
+Before, these routes forwarded the body without parsing it, and nothing was sent: the response was `502`, `400` or `415`, depending on the body.
+
+Before:
+
+```http
+POST /v1/channels/{id}/send-text
+
+{"phone": "5511999999999", "message": "hi"}
+```
+
+```http
+HTTP/1.1 502 Bad Gateway
+```
+
+After:
+
+```http
+POST /v1/channels/{id}/send-text
+
+{
+  "recipient": {"identifier": "5511999999999"},
+  "content": {"body": {"message": "hi"}}
+}
+```
+
+```http
+HTTP/1.1 200 OK
+
+{"messageId": "..."}
+```
+
+### Route and type
+
+| Route | `content.type` |
+|---|---|
+| `send-text` | `TEXT` |
+| `send-image` | `IMAGE` |
+| `send-video` | `VIDEO` |
+| `send-audio` | `AUDIO` |
+| `send-ptv` | `PTV` |
+| `send-gif` | `GIF` |
+| `send-sticker` | `STICKER` |
+| `send-document` and `send-document/{extension}` | `DOCUMENT` |
+| `send-link` | `LINK` |
+| `send-location` | `LOCATION` |
+| `send-contact` | `CONTACT` |
+| `send-contacts` | `CONTACT_ARRAY` |
+| `send-reaction` | `REACTION` |
+| `send-template` | `TEMPLATE` |
+| `send-option-list` | `INTERACTIVE_LIST` |
+| `send-button-list` | `INTERACTIVE_BUTTON` |
+| `send-button-actions` | `INTERACTIVE_ACTION` |
+| `send-button-otp` | `INTERACTIVE_OTP` |
+| `send-carousel` | `INTERACTIVE_CAROUSEL` |
+
+On `send-document/{extension}`, the path segment is ignored: the extension goes in each attachment, as in `/messages`. `send-template` still accepts only official WhatsApp (Meta) channels. If the channel does not support the type, the refusal is the same as in `/messages`.
+
+### Errors
+
+| Situation | Response |
+|---|---|
+| `content` missing or not a JSON object (for example, a Z-API format body) | `400` `{"error": "invalid_request", "field": "content", "message": "content must be a JSON object; /send-text takes the same body as POST /v1/channels/{id}/messages"}` |
+| `content.type` different from the route type | `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be TEXT on /send-text; leave it out, or send other types with POST /v1/channels/{id}/messages"}` |
+| Route with no equivalent Omni type | `422` `{"error": "send_route_not_supported", "message": "/send-poll has no Omni content type; send it with POST /v1/channels/{id}/messages"}` |
+| `/send-*` outside `/v1/channels/{id}` | `404` `{"error": "Resource not found"}` |
+
+The examples use `send-text`, `TEXT` and `send-poll`. On each route, the text carries that route's name and type.
+
+Routes with no equivalent type respond `422` with any credential or none, and do not count toward the app send limit: `send-link-list`, `send-option-multi-list`, `send-button-pix`, `send-remove-reaction`, `send-poll`, `send-poll-vote`, `send-call`, `send-chat-expiration`, `send-text-status`, `send-image-status`, `send-video-status`, `send-order`, `send-request-payment`, `send-event`, `send-edit-event`, `send-event-response`, `send-comment`, `send-catalog`, `send-product` and `send-newsletter-admin-invite`.
+
+The `/send-*` routes now exist **only** under `/v1/channels/{id}`. The variants `/channels/{id}/send-*`, `/v1/instances/{id}/send-*`, `/instances/{id}/send-*`, `/v1/devices/{id}/send-*` and `/devices/{id}/send-*` now respond `404`. `POST .../messages` and `PUT .../messages/{messageId}` stay on every variant.
+
+With an OAuth token, the typed routes require the same `messages:send` scope as `/messages` and count toward the same daily app send limit.
+
+### What to do
+
+- To send through a `/send-*` route, use the `POST /v1/channels/{id}/messages` body, on the `/v1/channels/{id}/send-*` path. See [Messages](/en/messages/introduction).
+- The body is still JSON. File upload through `multipart/form-data` is not accepted: send the media by URL or Base64 inside the JSON.
+- If your integration uses the Z-API body (`phone`, `message`), use the [Z-API compatibility](/en/z-api/introduction), at `https://zapi.omni.z-api.io`, which accepts that format.
+
+</Update>
