@@ -742,16 +742,17 @@ Cuando el cliente envía un [Flow](/es/flows/introduction) completado, el webhoo
 
 | Campo | Tipo | Descripción |
 |---|---|---|
-| `message` | string | Texto legible, con una línea `Etiqueta: valor` por respuesta. Los valores de más de una opción vienen separados por `, ` |
-| `token` | string | El `flow_token` que Meta devuelve con la respuesta |
+| `message` | string | Texto legible, con una línea `Etiqueta: valor` por respuesta. Los valores de más de una opción vienen separados por `, `. Cuando no se pudieron leer las respuestas, o no hay respuesta además del `flow_token`, trae el texto que Meta envía en su lugar, como `Sent` |
+| `token` | string | El `flow_token` que Meta devuelve con la respuesta. No viene cuando no se pudieron leer las respuestas (`answers_parsed: false`) ni cuando el `flow_token` llega vacío. Para vincular la respuesta con el envío, usa `reference_id` (ver abajo) |
 | `answers` | array | Una respuesta por campo, en el orden en que Meta las envió |
 | `answers[].field_id` | string | Clave de la respuesta, como vino del formulario |
 | `answers[].label` | string | Etiqueta generada a partir de la clave: `_` se convierte en espacio y la primera letra va en mayúscula. `nombre_completo` se convierte en `Nombre completo` |
 | `answers[].values` | array | Valores respondidos, siempre en lista y en texto. Un campo de valor único viene con un elemento, y un valor `null` viene como lista vacía |
-| `answers_parsed` | boolean | `false` cuando no se pudieron leer las respuestas. En ese caso, `answers` viene vacío y `message` trae el texto que Meta envió |
-| `raw_answers` | string | Las respuestas como Meta las envió: un JSON en texto, con el `flow_token` |
+| `answers_parsed` | boolean | `false` cuando no se pudieron leer las respuestas: Meta no envió las respuestas, o no vinieron como un objeto JSON válido. En ese caso, `answers` viene vacío |
+| `raw_answers` | string | Las respuestas como Meta las envió, en texto, con el `flow_token`. Viene cuando Meta envía las respuestas |
 
 ```json
+"reference_id": "019E8A2B7C3D7E1F8A2B3C4D5E6F7A8B",
 "contents": [
   {
     "@class": ".FormResponseContent",
@@ -783,14 +784,19 @@ Cuando el cliente envía un [Flow](/es/flows/introduction) completado, el webhoo
 ]
 ```
 
+Para vincular la respuesta con el Flow que enviaste, usa `message.reference_id`: trae el `messageId` que la API devolvió en el envío, el mismo `_id` del mensaje enviado. Si no se encuentra el mensaje enviado, el campo no viene. El `token` no sirve para eso: en el envío por [Enviar formulario](/es/messages/send-flow) no hay forma de definir el `flow_token`, y la respuesta trae el valor por defecto de Meta, `unused`, el mismo en todos los envíos.
+
 En el formato `Z_API`, la respuesta llega en el callback de mensaje recibido con dos bloques:
 
 - `text.message`, con el mismo texto legible de `message`, para quien solo lee texto;
-- `formResponseMessage`, con `token`, `answers` (cada una con `fieldId`, `label` y `values`) y `answersParsed`. Cuando `answersParsed` es `false`, también viene `rawAnswers`, con las respuestas como Meta las envió.
+- `formResponseMessage`, con `token`, `answers` (cada una con `fieldId`, `label` y `values`) y `answersParsed`. El `token` no viene en los mismos casos que en el formato estándar. Cuando `answersParsed` es `false` y Meta envió las respuestas, también viene `rawAnswers`, con las respuestas como Meta las envió.
+
+`referenceMessageId` trae el mismo valor de `message.reference_id`, el `messageId` del envío del Flow. Si no se encuentra el mensaje enviado, viene `null`.
 
 ```json
 {
   "type": "ReceivedCallback",
+  "referenceMessageId": "019E8A2B7C3D7E1F8A2B3C4D5E6F7A8B",
   "text": {
     "message": "Nombre completo: Maria Silva\nServicios: Corte, Barba",
     "type": "text"

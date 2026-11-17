@@ -742,16 +742,17 @@ When the customer submits a filled-in [Flow](/en/flows/introduction), the receiv
 
 | Field | Type | Description |
 |---|---|---|
-| `message` | string | Readable text, with one `Label: value` line per answer. Values of more than one choice come separated by `, ` |
-| `token` | string | The `flow_token` Meta returns with the answer |
+| `message` | string | Readable text, with one `Label: value` line per answer. Values of more than one choice come separated by `, `. When the answers could not be read, or there is no answer besides the `flow_token`, it carries the text Meta sends in their place, such as `Sent` |
+| `token` | string | The `flow_token` Meta returns with the answer. It does not come when the answers could not be read (`answers_parsed: false`) or when the `flow_token` arrives empty. To link the answer to the send, use `reference_id` (see below) |
 | `answers` | array | One answer per field, in the order Meta sent them |
 | `answers[].field_id` | string | Answer key, as it came from the form |
 | `answers[].label` | string | Label built from the key: `_` becomes a space and the first letter is capitalized. `full_name` becomes `Full name` |
 | `answers[].values` | array | Answered values, always as a list of text. A single-value field comes with one item, and a `null` value comes as an empty list |
-| `answers_parsed` | boolean | `false` when the answers could not be read. In that case, `answers` comes empty and `message` carries the text Meta sent |
-| `raw_answers` | string | The answers as Meta sent them: JSON as text, with the `flow_token` |
+| `answers_parsed` | boolean | `false` when the answers could not be read: Meta did not send the answers, or they did not come as a valid JSON object. In that case, `answers` comes empty |
+| `raw_answers` | string | The answers as Meta sent them, as text, with the `flow_token`. It comes when Meta sends the answers |
 
 ```json
+"reference_id": "019E8A2B7C3D7E1F8A2B3C4D5E6F7A8B",
 "contents": [
   {
     "@class": ".FormResponseContent",
@@ -783,14 +784,19 @@ When the customer submits a filled-in [Flow](/en/flows/introduction), the receiv
 ]
 ```
 
+To link the answer to the Flow you sent, use `message.reference_id`: it carries the `messageId` the API returned on the send, the same `_id` as the sent message. If the sent message is not found, the field does not come. The `token` does not serve this purpose: when sending through [Send a flow](/en/messages/send-flow) there is no way to set the `flow_token`, and the answer carries Meta's default value, `unused`, the same for every send.
+
 In the `Z_API` format, the answer arrives in the received message callback with two blocks:
 
 - `text.message`, with the same readable text as `message`, for integrations that only read text;
-- `formResponseMessage`, with `token`, `answers` (each with `fieldId`, `label` and `values`) and `answersParsed`. When `answersParsed` is `false`, `rawAnswers` also comes, with the answers as Meta sent them.
+- `formResponseMessage`, with `token`, `answers` (each with `fieldId`, `label` and `values`) and `answersParsed`. The `token` does not come in the same cases as in the standard format. When `answersParsed` is `false` and Meta sent the answers, `rawAnswers` also comes, with the answers as Meta sent them.
+
+`referenceMessageId` carries the same value as `message.reference_id`, the `messageId` of the Flow send. If the sent message is not found, it comes as `null`.
 
 ```json
 {
   "type": "ReceivedCallback",
+  "referenceMessageId": "019E8A2B7C3D7E1F8A2B3C4D5E6F7A8B",
   "text": {
     "message": "Full name: Maria Silva\nServices: Haircut, Beard",
     "type": "text"
