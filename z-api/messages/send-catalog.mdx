@@ -10,9 +10,32 @@ import { ZapiResponseText } from '/snippets/notes.mdx';
 
 Método para envio do catálogo de produtos do WhatsApp Business. O destinatário recebe um card com link para visualizar o catálogo completo.
 
+O catálogo enviado é sempre o que está conectado à conta do WhatsApp do canal, na Meta. O `catalogPhone` é obrigatório, como na Z-API, mas o número informado é ignorado: ele não escolhe outro catálogo.
+
 <Warning>
-  Este recurso requer uma conta **WhatsApp Business** com catálogo e produtos configurados.
+  Este recurso requer um catálogo com produtos conectado à conta do **WhatsApp Business** do canal.
 </Warning>
+
+## Campos
+
+| Campo | Uso |
+|---|---|
+| `message` | Obrigatório. Texto da mensagem, até 1.024 caracteres. |
+| `catalogDescription` | Opcional. Rodapé da mensagem, até 60 caracteres. |
+| `catalogPhone` | Obrigatório, com 8 a 15 dígitos (só os dígitos contam: `+55 (11) 98765-4321` é aceito). O valor é ignorado. |
+| `title` e `translation` | Ignorados. A mensagem de catálogo da API oficial não tem título nem idioma. |
+
+## Erros
+
+Um corpo fora das regras é recusado com `400` e a mensagem não é enviada:
+
+| Situação | `error` |
+|---|---|
+| `catalogPhone` ausente ou vazio | `catalogPhone is required` |
+| `catalogPhone` sem 8 a 15 dígitos | `catalogPhone must be a phone number` |
+| `message` ausente ou vazio | `message is required for a catalog message` |
+| `message` acima de 1.024 caracteres | `message must be at most 1024 characters in a catalog message` |
+| `catalogDescription` acima de 60 caracteres | `catalogDescription must be at most 60 characters` |
 
 <Note>
   <ZapiResponseText lang="pt" />

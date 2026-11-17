@@ -508,7 +508,7 @@
     "/send-catalog": {
       "post": {
         "summary": "Send catalog",
-        "description": "Sends the WhatsApp Business product catalog.",
+        "description": "Sends the product catalog connected to the channel's WhatsApp account. catalogPhone is required, but the number you send is ignored.",
         "operationId": "sendCatalog",
         "tags": ["Messages"],
         "requestBody": {
@@ -519,9 +519,7 @@
               "example": {
                 "phone": "5511999999999",
                 "catalogPhone": "5511999999999",
-                "translation": "EN",
                 "message": "Follow this link to view our catalog on WhatsApp:",
-                "title": "View the product catalog on WhatsApp",
                 "catalogDescription": "Learn more about this company's products and services."
               }
             }
@@ -529,6 +527,15 @@
         },
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
+          "400": {
+            "description": "Body outside the rules: `catalogPhone` missing or without 8 to 15 digits, `message` missing or above 1,024 characters, or `catalogDescription` above 60 characters. The message is not sent.",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "error": { "type": "string", "description": "Error message" } } },
+                "example": { "error": "catalogPhone is required" }
+              }
+            }
+          },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
           "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
@@ -879,14 +886,14 @@
       },
       "SendCatalogRequest": {
         "type": "object",
-        "required": ["phone", "catalogPhone"],
+        "required": ["phone", "catalogPhone", "message"],
         "properties": {
           "phone": { "type": "string", "description": "Recipient phone number (country code + area code + number)", "example": "5511999999999" },
-          "catalogPhone": { "type": "string", "description": "Phone number of the business account that owns the catalog" },
-          "translation": { "type": "string", "description": "Catalog card language", "enum": ["EN", "PT"] },
-          "message": { "type": "string", "description": "Message accompanying the catalog card" },
-          "title": { "type": "string", "description": "Catalog card title" },
-          "catalogDescription": { "type": "string", "description": "Catalog card description" }
+          "catalogPhone": { "type": "string", "description": "Required, with 8 to 15 digits, but the value is ignored: the catalog sent is always the one connected to the channel's WhatsApp account" },
+          "translation": { "type": "string", "description": "Ignored. The official API catalog message has no language.", "enum": ["EN", "PT"] },
+          "message": { "type": "string", "description": "Message text, up to 1,024 characters", "maxLength": 1024 },
+          "title": { "type": "string", "description": "Ignored. The official API catalog message has no title." },
+          "catalogDescription": { "type": "string", "description": "Message footer, up to 60 characters", "maxLength": 60 }
         }
       },
       "SendProductRequest": {
