@@ -49,7 +49,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -93,7 +92,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -125,7 +123,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -188,7 +185,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -258,7 +254,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -287,7 +282,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -341,7 +335,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -385,7 +378,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -427,7 +419,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -469,7 +460,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -515,7 +505,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -545,7 +534,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -589,7 +577,6 @@
             }
           },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -618,7 +605,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -647,7 +633,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -675,7 +660,6 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
           "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
         }
       }
@@ -699,29 +683,23 @@
         }
       },
       "MethodNotAllowed": {
-        "description": "Método não permitido. Verifique se está usando POST.",
-        "content": {
-          "application/json": {
+        "description": "Método HTTP que a rota não aceita. O `error` e o header `Allow` listam os métodos aceitos pela rota; nas rotas de envio, só `POST`.",
+        "headers": {
+          "Allow": {
+            "description": "Métodos aceitos pela rota, separados por vírgula",
             "schema": {
-              "$ref": "#/components/schemas/Error"
+              "type": "string"
             },
-            "example": {
-              "error": 405,
-              "message": "Method not allowed"
-            }
+            "example": "POST"
           }
-        }
-      },
-      "UnsupportedMediaType": {
-        "description": "Content-Type inválido. Envie `Content-Type: application/json`.",
+        },
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": 415,
-              "message": "Unsupported media type"
+              "error": "method not allowed: use POST"
             }
           }
         }
@@ -1348,12 +1326,8 @@
         "type": "object",
         "properties": {
           "error": {
-            "type": "integer",
-            "description": "Código do erro"
-          },
-          "message": {
             "type": "string",
-            "description": "Descrição do erro"
+            "description": "Mensagem de erro"
           }
         }
       }

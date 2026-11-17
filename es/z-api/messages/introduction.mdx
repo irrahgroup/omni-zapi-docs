@@ -33,6 +33,14 @@ Para enviar un mensaje necesitas el **número de teléfono** del contacto destin
 |---|---|
 | Código de país + prefijo + número | `5511999999999` |
 
+## Cuerpo de la solicitud
+
+Envía el cuerpo en JSON, con el header `Content-Type: application/json`.
+
+Con otro `Content-Type`, como `text/plain`, o sin el header, el cuerpo JSON no se lee y el envío se rechaza con `400`. En general, el error indica un campo obligatorio como ausente, aunque esté en el cuerpo: por ejemplo, `{"error": "phone is required"}` o, en `send-text`, `{"error": "message is required"}`.
+
+Con `Content-Type: application/json` y un cuerpo que no es JSON válido, la respuesta también es `400`, con el error de lectura del JSON. Por ejemplo: `{"error": "invalid character 'h' looking for beginning of value"}`.
+
 ## Respuesta de la API
 
 Al enviar un mensaje, la API devuelve la misma estructura de respuesta que ya conoces de Z-API. Es decir, **no hace falta ninguna adaptación** en el código que procesa las respuestas: los campos, los tipos y los formatos son idénticos.
