@@ -8,7 +8,7 @@ import { projectName } from '/snippets/variables.mdx';
 
 ## Conceptos
 
-Método para marcar como leído un mensaje que el canal recibió del contacto. Funciona en canales de **WhatsApp Oficial** (API oficial de Meta).
+Método para marcar como leído un mensaje que el canal recibió del contacto. Funciona en canales de **WhatsApp Oficial** (API oficial de Meta) y en canales de **WhatsApp Web**, con WhatsApp Web habilitado en el workspace.
 
 ## Atributos
 
@@ -16,6 +16,8 @@ Método para marcar como leído un mensaje que el canal recibió del contacto. F
 |---|---|
 | `messageId` | Obligatorio. El `messageId` que llegó en el webhook del mensaje recibido. |
 | `phone` | Obligatorio, como en Z-API, pero no se usa: el mensaje se encuentra por el `messageId`. |
+
+El cuerpo va en JSON o como formulario (`application/x-www-form-urlencoded`).
 
 La respuesta de éxito es `200`:
 
@@ -26,8 +28,12 @@ La respuesta de éxito es `200`:
 ## Diferencias con Z-API
 
 - El `messageId` es el id del mensaje en {projectName}, el mismo que llega en el webhook. En el formato por defecto del webhook, es `message._id`. No es el id del mensaje en WhatsApp.
-- La API oficial de Meta (Cloud API) también marca como leídos los mensajes anteriores de la conversación.
+- En WhatsApp Oficial, la API de Meta (Cloud API) también marca como leídos los mensajes anteriores de la conversación.
 - Un mensaje enviado por el propio canal responde `200`, sin efecto.
+
+<Note>
+  En WhatsApp Oficial, [`send-text`](/es/z-api/messages/send-text) con `delayTyping` también marca como leído el último mensaje recibido del contacto, porque Meta solo muestra el "escribiendo" junto con la lectura. Si usas esa opción, el mensaje aparece leído sin llamar a esta ruta.
+</Note>
 
 ## Errores
 
@@ -39,11 +45,14 @@ La respuesta de éxito es `200`:
 | `404` | `message not found` | El mensaje no existe o es de otro canal, con el canal conectado |
 | `422` | `message cannot be marked as read: it has no id at the channel provider` | El mensaje no tiene id en WhatsApp |
 | `422` | `channel is disconnected` | El canal está desconectado. Vale para cualquier `messageId`, incluso uno que no existe: la conexión se verifica antes que el mensaje |
-| `422` | `the channel provider refused the request` | Meta rechazó la lectura |
+| `422` | `the channel provider refused the request` | El proveedor del canal rechazó la lectura |
 | `422` | `instance subscription is not active` | La suscripción del canal no está activa |
-| `422` | `message action route is not available ...` | El canal no es WhatsApp Oficial. El texto trae el tipo del canal, cuando el canal tiene tipo |
+| `422` | `Z-API (WhatsApp Web) instances are not enabled for this workspace` | Canal de WhatsApp Web, con WhatsApp Web no habilitado en el workspace |
+| `422` | `the Z-API instance of this channel is not provisioned` | Canal de WhatsApp Web cuya instancia aún no fue aprovisionada. Se verifica antes que el mensaje |
+| `422` | `message cannot be marked as read: its chat is not supported` | Canal de WhatsApp Web, con un mensaje de un chat que la ruta no atiende |
+| `422` | `message action route is not available for <tipo> channels; ...` | El canal no es WhatsApp Oficial ni WhatsApp Web, como un canal de Telegram |
 | `502` | `failed to mark message as read` | Falla al marcar como leído |
 
-En un canal que no es WhatsApp Oficial ni WhatsApp Web, el texto del rechazo termina con `available only on Z-API (WhatsApp Web) instances`. Ese final es el mismo para toda ruta rechazada y no vale para esta: marcar como leído solo funciona en WhatsApp Oficial.
+El rechazo por tipo de canal termina con `available only on Z-API (WhatsApp Web) instances`. Ese final es el mismo para toda ruta rechazada. Esta ruta también funciona en WhatsApp Oficial.
 
 La API no repite la llamada después de un `502`. Puedes llamar de nuevo.

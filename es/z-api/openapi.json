@@ -876,7 +876,7 @@
     "/read-message": {
       "post": {
         "summary": "Marcar mensaje como leído",
-        "description": "Marca como leído un mensaje que el canal recibió del contacto. Solo en canales de WhatsApp Oficial. El `messageId` es el que llegó en el webhook del mensaje recibido; `phone` es obligatorio, pero no se usa.",
+        "description": "Marca como leído un mensaje que el canal recibió del contacto. Funciona en canales de WhatsApp Oficial y en canales de WhatsApp Web, con WhatsApp Web habilitado en el workspace. El cuerpo va en JSON o como formulario (`application/x-www-form-urlencoded`). El `messageId` es el que llegó en el webhook del mensaje recibido; `phone` es obligatorio, pero no se usa.",
         "operationId": "readMessage",
         "tags": [
           "Mensajes"
@@ -956,7 +956,7 @@
             "$ref": "#/components/responses/MethodNotAllowed"
           },
           "422": {
-            "description": "El mensaje no se puede marcar como leído: no tiene id en WhatsApp, el canal está desconectado, Meta lo rechazó, o la suscripción del canal no está activa. La conexión se verifica antes que el mensaje: con el canal desconectado, cualquier `messageId` recibe `channel is disconnected`, incluso uno que no existe. Un canal que no es WhatsApp Oficial también recibe `422`, con el tipo del canal en el texto cuando el canal tiene tipo. En un canal que no es WhatsApp Oficial ni WhatsApp Web, el texto termina con `available only on Z-API (WhatsApp Web) instances`: ese final es el mismo para toda ruta rechazada y no vale para esta, que solo funciona en WhatsApp Oficial.",
+            "description": "El mensaje no se puede marcar como leído: no tiene id en WhatsApp, el canal está desconectado, el proveedor del canal lo rechazó, o la suscripción del canal no está activa. La conexión se verifica antes que el mensaje: con el canal desconectado, cualquier `messageId` recibe `channel is disconnected`, incluso uno que no existe. En un canal de WhatsApp Web, también reciben `422` el workspace sin WhatsApp Web habilitado, la instancia aún no aprovisionada (verificada antes que el mensaje) y el mensaje de un chat que la ruta no atiende. Un canal que no es WhatsApp Oficial ni WhatsApp Web, como Telegram, recibe `422` con el tipo del canal en el texto. Ese texto termina con `available only on Z-API (WhatsApp Web) instances`, el mismo final de toda ruta rechazada; esta ruta también funciona en WhatsApp Oficial.",
             "content": {
               "application/json": {
                 "schema": {
@@ -975,10 +975,22 @@
                       "error": "message action route is not available for BOT_TELEGRAM channels; available only on Z-API (WhatsApp Web) instances"
                     }
                   },
-                  "zapiChannel": {
-                    "summary": "Canal de WhatsApp Web",
+                  "zapiDisabled": {
+                    "summary": "WhatsApp Web no habilitado en el workspace",
                     "value": {
-                      "error": "message action route is not available through this compatibility route for Z_API_WHATSAPP instances yet"
+                      "error": "Z-API (WhatsApp Web) instances are not enabled for this workspace"
+                    }
+                  },
+                  "notProvisioned": {
+                    "summary": "Instancia de WhatsApp Web no aprovisionada",
+                    "value": {
+                      "error": "the Z-API instance of this channel is not provisioned"
+                    }
+                  },
+                  "chatNotSupported": {
+                    "summary": "Chat no atendido en WhatsApp Web",
+                    "value": {
+                      "error": "message cannot be marked as read: its chat is not supported"
                     }
                   }
                 }
