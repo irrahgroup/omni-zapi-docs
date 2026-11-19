@@ -482,7 +482,7 @@
     "/send-carousel": {
       "post": {
         "summary": "Send carousel",
-        "description": "Sends a message with a carousel of cards, each with an image, text and action buttons.",
+        "description": "Sends a message with a carousel of 2 to 10 cards, each with an image, text and action buttons. Each card carries one URL button or REPLY buttons, and all cards have the same number and type of buttons. The CALL button is not accepted.",
         "operationId": "sendCarousel",
         "tags": ["Messages"],
         "requestBody": {
@@ -498,16 +498,14 @@
                     "text": "Product A",
                     "image": "https://example.com/product-a.png",
                     "buttons": [
-                      { "id": "1", "type": "URL", "label": "View details", "url": "https://www.omni.z-api.io" },
-                      { "id": "2", "type": "REPLY", "label": "I'm interested" }
+                      { "id": "1", "type": "URL", "label": "View details", "url": "https://www.omni.z-api.io" }
                     ]
                   },
                   {
                     "text": "Product B",
                     "image": "https://example.com/product-b.png",
                     "buttons": [
-                      { "id": "3", "type": "URL", "label": "View details", "url": "https://www.omni.z-api.io" },
-                      { "id": "4", "type": "REPLY", "label": "I'm interested" }
+                      { "id": "2", "type": "URL", "label": "View details", "url": "https://www.omni.z-api.io" }
                     ]
                   }
                 ]
@@ -517,8 +515,67 @@
         },
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
+          "400": {
+            "description": "Invalid request, such as a card `image` that is neither an `http` or `https` URL nor a data URI, or that carries invalid base64. The message is not sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                },
+                "examples": {
+                  "invalidMediaFormat": {
+                    "summary": "image that is neither a URL nor a data URI",
+                    "value": { "error": "invalid media format: must be URL or base64 data URI" }
+                  },
+                  "invalidBase64": {
+                    "summary": "image with invalid base64",
+                    "value": { "error": "failed to decode base64: base64 decode failed: illegal base64 data at input byte 0" }
+                  }
+                }
+              }
+            }
+          },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
+          "413": {
+            "description": "Request body above 10 MiB. With many images, send URLs instead of base64.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                },
+                "example": { "error": "request body too large" }
+              }
+            }
+          },
+          "422": {
+            "description": "Carousel outside the rules, or a channel that is not WhatsApp Official. The message is not sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                },
+                "examples": {
+                  "carouselRefused": {
+                    "summary": "Carousel outside the rules",
+                    "value": { "error": "URL and REPLY buttons cannot be sent together on this channel" }
+                  },
+                  "notMetaWhatsapp": {
+                    "summary": "Channel is not WhatsApp Official",
+                    "value": { "error": "instance middleware is not META_WHATSAPP" }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -883,28 +940,30 @@
         "required": ["phone", "message", "carousel"],
         "properties": {
           "phone": { "type": "string", "description": "Recipient phone number (country code + area code + number)", "example": "5511999999999" },
-          "message": { "type": "string", "description": "Message text" },
+          "message": { "type": "string", "description": "Message text, up to 1,024 characters", "maxLength": 1024 },
           "carousel": {
             "type": "array",
-            "description": "List of carousel cards",
+            "description": "List of carousel cards, from 2 to 10. All cards have the same number and type of buttons.",
+            "minItems": 2,
+            "maxItems": 10,
             "items": {
               "type": "object",
-              "required": ["text", "image"],
+              "required": ["text", "image", "buttons"],
               "properties": {
-                "text": { "type": "string", "description": "Card text" },
-                "image": { "type": "string", "description": "Card image URL" },
+                "text": { "type": "string", "description": "Card text, up to 160 characters and at most 2 line breaks", "maxLength": 160 },
+                "image": { "type": "string", "description": "Card image URL, or a JPEG or PNG image in base64 (data URI) of up to 5 MB" },
                 "buttons": {
                   "type": "array",
-                  "description": "Card action buttons",
+                  "description": "Card action buttons: one URL button or REPLY buttons, never both in the same card",
+                  "minItems": 1,
                   "items": {
                     "type": "object",
                     "required": ["type", "label"],
                     "properties": {
-                      "id": { "type": "string", "description": "Button identifier" },
-                      "type": { "type": "string", "description": "Button type", "enum": ["CALL", "URL", "REPLY"] },
-                      "label": { "type": "string", "description": "Text displayed on the button" },
-                      "phone": { "type": "string", "description": "Phone number for CALL-type buttons" },
-                      "url": { "type": "string", "description": "URL for URL-type buttons" }
+                      "id": { "type": "string", "description": "Button identifier, up to 256 characters and unique in the card. Without id, the button gets its position in the card, starting at \"1\"", "maxLength": 256 },
+                      "type": { "type": "string", "description": "Button type: URL opens a link, REPLY is a quick reply", "enum": ["URL", "REPLY"] },
+                      "label": { "type": "string", "description": "Text displayed on the button, up to 20 characters", "maxLength": 20 },
+                      "url": { "type": "string", "description": "http or https URL, required on the URL button" }
                     }
                   }
                 }

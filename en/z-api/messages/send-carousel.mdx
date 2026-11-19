@@ -8,7 +8,51 @@ import { ZapiResponseText } from '/snippets/notes.mdx';
 
 ## Overview
 
-Method for sending messages with a card carousel. Each card can contain an image, text, and action buttons (CALL, URL, or REPLY).
+Method for sending messages with a card carousel. Each card has an image, text, and action buttons. Two button types are accepted:
+
+- **URL**: opens a link
+- **REPLY**: quick reply
+
+## Carousel rules
+
+- The carousel has 2 to 10 cards.
+- `message` is required and has up to 1,024 characters.
+- Each card requires `image`, `text`, and at least one button in `buttons`.
+- `image` is a URL or a JPEG or PNG image in base64 (data URI) of up to 5 MB.
+- `text` has up to 160 characters and at most 2 line breaks.
+- `label` is required and has up to 20 characters.
+- `id` has up to 256 characters and is not repeated in the same card. Without `id`, the button gets its position in the card, starting at `"1"`.
+- A card carries **one** `URL` button, with an `http` or `https` `url`, **or** `REPLY` buttons. The two types do not go in the same card.
+- All cards have the same number and type of buttons.
+
+<Warning>
+  The `CALL` button and the copy code button (URL `https://www.whatsapp.com/otp/code/...`) are not accepted in the carousel.
+</Warning>
+
+## Errors
+
+A carousel outside the rules is refused with `422` and the message is not sent:
+
+| Situation | `error` |
+|---|---|
+| `CALL` button | `call button is not supported for this channel` |
+| Copy code button | `copy button is not supported for this channel` |
+| `URL` and `REPLY` in the same card | `URL and REPLY buttons cannot be sent together on this channel` |
+| More than one `URL` button in the card | `only one URL button is supported for this channel` |
+| Cards with different buttons | `carousel cards must have the same number and type of buttons` |
+| `carousel` missing or empty | `carousel is required` |
+| Fewer than 2 or more than 10 cards | `carousel must have at least 2 cards` / `carousel must have at most 10 cards` |
+
+The other limits also answer `422`, with the field in the message. For example: `carousel[0].text must be at most 160 characters`.
+
+The exception is an `image` that is neither a URL nor valid base64. In that case, the response is `400` and the message is not sent:
+
+| Situation | `error` |
+|---|---|
+| `image` that is neither an `http` or `https` URL nor a data URI | `invalid media format: must be URL or base64 data URI` |
+| `image` with invalid base64 | `failed to decode base64: ...` |
+
+The request body has up to 10 MiB. Above that, the response is `413`. With many images, send URLs instead of base64.
 
 <Note>
   <ZapiResponseText lang="en" />

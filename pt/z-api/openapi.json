@@ -518,7 +518,7 @@
     "/send-carousel": {
       "post": {
         "summary": "Enviar carrossel",
-        "description": "Envia uma mensagem com carrossel de cards, cada um com imagem, texto e botões de ação.",
+        "description": "Envia uma mensagem com carrossel de 2 a 10 cards, cada um com imagem, texto e botões de ação. Cada card leva um botão URL ou botões REPLY, e todos os cards têm a mesma quantidade e o mesmo tipo de botões. O botão CALL não é aceito.",
         "operationId": "sendCarousel",
         "tags": ["Mensagens"],
         "requestBody": {
@@ -536,16 +536,14 @@
                     "text": "Produto A",
                     "image": "https://exemplo.com/produto-a.png",
                     "buttons": [
-                      { "id": "1", "type": "URL", "label": "Ver detalhes", "url": "https://www.omni.z-api.io" },
-                      { "id": "2", "type": "REPLY", "label": "Tenho interesse" }
+                      { "id": "1", "type": "URL", "label": "Ver detalhes", "url": "https://www.omni.z-api.io" }
                     ]
                   },
                   {
                     "text": "Produto B",
                     "image": "https://exemplo.com/produto-b.png",
                     "buttons": [
-                      { "id": "3", "type": "URL", "label": "Ver detalhes", "url": "https://www.omni.z-api.io" },
-                      { "id": "4", "type": "REPLY", "label": "Tenho interesse" }
+                      { "id": "2", "type": "URL", "label": "Ver detalhes", "url": "https://www.omni.z-api.io" }
                     ]
                   }
                 ]
@@ -555,8 +553,67 @@
         },
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
+          "400": {
+            "description": "Requisição inválida, como a `image` de um card que não é URL `http` ou `https` nem data URI, ou que traz um base64 inválido. A mensagem não é enviada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Mensagem de erro" }
+                  }
+                },
+                "examples": {
+                  "invalidMediaFormat": {
+                    "summary": "image que não é URL nem data URI",
+                    "value": { "error": "invalid media format: must be URL or base64 data URI" }
+                  },
+                  "invalidBase64": {
+                    "summary": "image com base64 inválido",
+                    "value": { "error": "failed to decode base64: base64 decode failed: illegal base64 data at input byte 0" }
+                  }
+                }
+              }
+            }
+          },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "422": { "$ref": "#/components/responses/NotMetaWhatsapp" }
+          "413": {
+            "description": "Corpo da requisição acima de 10 MiB. Com muitas imagens, envie URLs em vez de base64.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Mensagem de erro" }
+                  }
+                },
+                "example": { "error": "request body too large" }
+              }
+            }
+          },
+          "422": {
+            "description": "Carrossel fora das regras, ou canal que não é WhatsApp Oficial. A mensagem não é enviada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Mensagem de erro" }
+                  }
+                },
+                "examples": {
+                  "carouselRefused": {
+                    "summary": "Carrossel fora das regras",
+                    "value": { "error": "URL and REPLY buttons cannot be sent together on this channel" }
+                  },
+                  "notMetaWhatsapp": {
+                    "summary": "Canal que não é WhatsApp Oficial",
+                    "value": { "error": "instance middleware is not META_WHATSAPP" }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1206,50 +1263,53 @@
           },
           "message": {
             "type": "string",
-            "description": "Texto da mensagem"
+            "description": "Texto da mensagem, até 1.024 caracteres",
+            "maxLength": 1024
           },
           "carousel": {
             "type": "array",
-            "description": "Lista de cards do carrossel",
+            "description": "Lista de cards do carrossel, de 2 a 10. Todos os cards têm a mesma quantidade e o mesmo tipo de botões.",
+            "minItems": 2,
+            "maxItems": 10,
             "items": {
               "type": "object",
-              "required": ["text", "image"],
+              "required": ["text", "image", "buttons"],
               "properties": {
                 "text": {
                   "type": "string",
-                  "description": "Texto do card"
+                  "description": "Texto do card, até 160 caracteres e no máximo 2 quebras de linha",
+                  "maxLength": 160
                 },
                 "image": {
                   "type": "string",
-                  "description": "URL da imagem do card"
+                  "description": "URL da imagem do card, ou imagem JPEG ou PNG em base64 (data URI) de até 5 MB"
                 },
                 "buttons": {
                   "type": "array",
-                  "description": "Botões de ação do card",
+                  "description": "Botões de ação do card: um botão URL ou botões REPLY, nunca os dois no mesmo card",
+                  "minItems": 1,
                   "items": {
                     "type": "object",
                     "required": ["type", "label"],
                     "properties": {
                       "id": {
                         "type": "string",
-                        "description": "Identificador do botão"
+                        "description": "Identificador do botão, até 256 caracteres e único no card. Sem id, o botão recebe a posição no card, a partir de \"1\"",
+                        "maxLength": 256
                       },
                       "type": {
                         "type": "string",
-                        "description": "Tipo do botão",
-                        "enum": ["CALL", "URL", "REPLY"]
+                        "description": "Tipo do botão: URL abre um link, REPLY é resposta rápida",
+                        "enum": ["URL", "REPLY"]
                       },
                       "label": {
                         "type": "string",
-                        "description": "Texto exibido no botão"
-                      },
-                      "phone": {
-                        "type": "string",
-                        "description": "Telefone para botões do tipo CALL"
+                        "description": "Texto exibido no botão, até 20 caracteres",
+                        "maxLength": 20
                       },
                       "url": {
                         "type": "string",
-                        "description": "URL para botões do tipo URL"
+                        "description": "URL http ou https, obrigatória no botão URL"
                       }
                     }
                   }
