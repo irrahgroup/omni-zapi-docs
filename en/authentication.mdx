@@ -48,6 +48,19 @@ curl -X GET https://api.omni.z-api.io/whatsapp/businesses \
 
 ---
 
+## Authentication errors
+
+When the Secret Key is rejected, the API responds `401` with the `WWW-Authenticate: Bearer` header and the body `{"error": "Authorization invalid", "message": <text>}`. The `message` explains the reason and what to do:
+
+| Reason | `message` |
+|---|---|
+| Header missing or empty | `Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+| Public Key (starts with `pk_`) | `Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+| Wrong format (e.g. the channel token) | `Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as "Authorization: Bearer <secret-key>". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication` |
+| Nonexistent or revoked | `Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+
+`<secret-key>` is literal: the response never echoes the value you sent. Handle the error by `error`; the `message` is for reading and may change.
+
 ## Summary
 
 | Key | Usage | Where to use | Can expose in frontend? |
