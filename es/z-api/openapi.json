@@ -955,6 +955,146 @@
           }
         }
       }
+    },
+    "/read-message": {
+      "post": {
+        "summary": "Marcar mensaje como leído",
+        "description": "Marca como leído un mensaje que el canal recibió del contacto. Funciona en canales de WhatsApp Oficial y en canales de WhatsApp Web, con WhatsApp Web habilitado en el workspace. El cuerpo va en JSON o como formulario (`application/x-www-form-urlencoded`). El `messageId` es el que llegó en el webhook del mensaje recibido; `phone` es obligatorio, pero no se usa.",
+        "operationId": "readMessage",
+        "tags": [
+          "Mensajes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadMessageRequest"
+              },
+              "example": {
+                "phone": "5511999999999",
+                "messageId": "019E6F1A93FE78DCB54332F9FF0CCAE7"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mensaje marcado como leído. Un mensaje enviado por el propio canal también responde `200`, sin efecto.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadMessageResponse"
+                },
+                "example": {
+                  "value": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`phone` o `messageId` ausente o vacío, `messageId` igual a `.` o `..`, o un cuerpo que no se pudo leer, como un JSON mal formado. En el cuerpo que no se pudo leer, el texto describe el error de lectura. No se marca nada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadMessageError"
+                },
+                "examples": {
+                  "messageIdRequired": {
+                    "summary": "messageId ausente",
+                    "value": {
+                      "error": "messageId is required"
+                    }
+                  },
+                  "messageIdInvalid": {
+                    "summary": "messageId inválido",
+                    "value": {
+                      "error": "messageId is invalid"
+                    }
+                  },
+                  "malformedBody": {
+                    "summary": "JSON mal formado",
+                    "value": {
+                      "error": "invalid character 'n' looking for beginning of object key string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El mensaje no existe o es de otro canal, con el canal conectado. Con el canal desconectado, la respuesta es `422` con `channel is disconnected`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadMessageError"
+                },
+                "example": {
+                  "error": "message not found"
+                }
+              }
+            }
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "422": {
+            "description": "El mensaje no se puede marcar como leído: no tiene id en WhatsApp, el canal está desconectado, el proveedor del canal lo rechazó, o la suscripción del canal no está activa. La conexión se verifica antes que el mensaje: con el canal desconectado, cualquier `messageId` recibe `channel is disconnected`, incluso uno que no existe. En un canal de WhatsApp Web, también reciben `422` el workspace sin WhatsApp Web habilitado, la instancia aún no aprovisionada (verificada antes que el mensaje) y el mensaje de un chat que la ruta no atiende. Un canal que no es WhatsApp Oficial ni WhatsApp Web, como Telegram, recibe `422` con el tipo del canal en el texto. Ese texto termina con `available only on Z-API (WhatsApp Web) instances`, el mismo final de toda ruta rechazada; esta ruta también funciona en WhatsApp Oficial.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadMessageError"
+                },
+                "examples": {
+                  "channelDisconnected": {
+                    "summary": "Canal desconectado",
+                    "value": {
+                      "error": "channel is disconnected"
+                    }
+                  },
+                  "channelType": {
+                    "summary": "Canal de Telegram",
+                    "value": {
+                      "error": "message action route is not available for BOT_TELEGRAM channels; available only on Z-API (WhatsApp Web) instances"
+                    }
+                  },
+                  "zapiDisabled": {
+                    "summary": "WhatsApp Web no habilitado en el workspace",
+                    "value": {
+                      "error": "Z-API (WhatsApp Web) instances are not enabled for this workspace"
+                    }
+                  },
+                  "notProvisioned": {
+                    "summary": "Instancia de WhatsApp Web no aprovisionada",
+                    "value": {
+                      "error": "the Z-API instance of this channel is not provisioned"
+                    }
+                  },
+                  "chatNotSupported": {
+                    "summary": "Chat no atendido en WhatsApp Web",
+                    "value": {
+                      "error": "message cannot be marked as read: its chat is not supported"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Falla al marcar como leído. La API no repite la llamada: puedes llamar de nuevo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadMessageError"
+                },
+                "example": {
+                  "error": "failed to mark message as read"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1697,6 +1837,43 @@
             "description": "Retardo en segundos antes del envío (1-15)",
             "minimum": 1,
             "maximum": 15
+          }
+        }
+      },
+      "ReadMessageRequest": {
+        "type": "object",
+        "required": [
+          "phone",
+          "messageId"
+        ],
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Teléfono del contacto (código de país + prefijo + número). Obligatorio, como en Z-API, pero no se usa",
+            "example": "5511999999999"
+          },
+          "messageId": {
+            "type": "string",
+            "description": "El `messageId` del mensaje recibido, como llegó en el webhook. Es el id del mensaje en Omni Z-API, no el id de WhatsApp",
+            "example": "019E6F1A93FE78DCB54332F9FF0CCAE7"
+          }
+        }
+      },
+      "ReadMessageResponse": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "boolean",
+            "description": "`true` cuando se aceptó la lectura"
+          }
+        }
+      },
+      "ReadMessageError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Mensaje de error"
           }
         }
       },

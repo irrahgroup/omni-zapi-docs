@@ -1,0 +1,58 @@
+---
+title: "Mark message as read"
+description: "Mark as read a message received from the contact"
+openapi: "/en/z-api/openapi.json POST /read-message"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Overview
+
+Method for marking as read a message the channel received from the contact. It works on **Official WhatsApp** channels (Meta official API) and on **WhatsApp Web** channels, with WhatsApp Web enabled in the workspace.
+
+## Attributes
+
+| Attribute | Use |
+|---|---|
+| `messageId` | Required. The `messageId` that came in the received message webhook. |
+| `phone` | Required, as in Z-API, but not used: the message is found by the `messageId`. |
+
+The body goes as JSON or as a form (`application/x-www-form-urlencoded`).
+
+The success response is `200`:
+
+```json
+{ "value": true }
+```
+
+## Differences from Z-API
+
+- The `messageId` is the message id in {projectName}, the same one that comes in the webhook. In the default webhook format, it is `message._id`. It is not the message id in WhatsApp.
+- On Official WhatsApp, Meta's API (Cloud API) also marks as read the earlier messages of the conversation.
+- A message sent by the channel itself answers `200`, with no effect.
+
+<Note>
+  On Official WhatsApp, [`send-text`](/en/z-api/messages/send-text) with `delayTyping` also marks as read the last message received from the contact, because Meta only shows "typing" together with the read. If you use that option, the message shows as read without a call to this route.
+</Note>
+
+## Errors
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `phone is required` / `messageId is required` | `phone` or `messageId` missing or empty |
+| `400` | `messageId is invalid` | `messageId` is `.` or `..` |
+| `400` | Varies, such as `invalid character 'n' looking for beginning of object key string` | The body could not be read, such as malformed JSON |
+| `404` | `message not found` | The message does not exist or belongs to another channel, with the channel connected |
+| `422` | `message cannot be marked as read: it has no id at the channel provider` | The message has no WhatsApp id |
+| `422` | `channel is disconnected` | The channel is disconnected. It applies to any `messageId`, even one that does not exist: the connection is checked before the message |
+| `422` | `the channel provider refused the request` | The channel provider refused the read |
+| `422` | `instance subscription is not active` | The channel subscription is not active |
+| `422` | `Z-API (WhatsApp Web) instances are not enabled for this workspace` | WhatsApp Web channel, with WhatsApp Web not enabled in the workspace |
+| `422` | `the Z-API instance of this channel is not provisioned` | WhatsApp Web channel whose instance is not provisioned yet. It is checked before the message |
+| `422` | `message cannot be marked as read: its chat is not supported` | WhatsApp Web channel, with a message from a chat the route does not serve |
+| `422` | `message action route is not available for <type> channels; ...` | The channel is neither Official WhatsApp nor WhatsApp Web, such as a Telegram channel |
+| `502` | `failed to mark message as read` | Failed to mark as read |
+
+The refusal by channel type ends with `available only on Z-API (WhatsApp Web) instances`. That ending is the same for every refused route. This route also works on Official WhatsApp.
+
+The API does not repeat the call after a `502`. You can call again.
