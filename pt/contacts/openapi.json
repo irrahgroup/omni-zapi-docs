@@ -1,0 +1,578 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Contatos",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/contacts": {
+      "get": {
+        "summary": "Listar contatos",
+        "description": "Lista os contatos da agenda do número, paginada por cursor. Só no canal WhatsApp Web (`Z_API_WHATSAPP`).",
+        "operationId": "listContacts",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Quantidade por página.",
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco da próxima página. Devolva exatamente o `nextCursor` recebido; omita para começar do início.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de contatos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactList"
+                },
+                "example": {
+                  "content": [
+                    {
+                      "id": "554497294996",
+                      "phone": "554497294996",
+                      "name": "Contato de teste",
+                      "shortName": "Contato",
+                      "profileName": "Contato de teste",
+                      "vcardName": "Contato de teste"
+                    }
+                  ],
+                  "nextCursor": "8xkQ2"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro fora do formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "cursor",
+                  "message": "cursor is not valid: send back exactly the nextCursor returned by the previous page, or leave it out to start from the first page"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operação indisponível no canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "operation_not_supported",
+                  "message": "this operation is not available for META_WHATSAPP channels: the official WhatsApp API does not give access to the contacts of the number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/contacts/{contact}": {
+      "get": {
+        "summary": "Consultar contato",
+        "description": "Retorna os dados de um contato pelo telefone (só dígitos, com DDI e DDD), por `{phone}@c.us` ou pelo LID.",
+        "operationId": "getContact",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "contact",
+            "in": "path",
+            "required": true,
+            "description": "Telefone do contato (só dígitos, com DDI e DDD), `{phone}@c.us` ou LID.",
+            "schema": {
+              "type": "string",
+              "example": "554497294996"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do contato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contact"
+                },
+                "example": {
+                  "id": "554497294996",
+                  "phone": "554497294996",
+                  "name": "Contato de teste",
+                  "about": "Disponível",
+                  "lid": "123330724110591@lid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro fora do formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "invalid": {
+                    "summary": "Id inválido",
+                    "value": {
+                      "error": "invalid_request",
+                      "field": "contact",
+                      "message": "contact is not valid: send the phone number with country code and area code, digits only (8 to 15 digits, for example 5511999999999), or the contact LID (for example 999999999999999@lid)"
+                    }
+                  },
+                  "notFound": {
+                    "summary": "Número não existe",
+                    "value": {
+                      "error": "provider_error",
+                      "message": "Phone not exists"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operação indisponível no canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "operation_not_supported",
+                  "message": "this operation is not available for META_WHATSAPP channels: the official WhatsApp API does not give access to the contacts of the number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/contacts/{contact}/photo": {
+      "get": {
+        "summary": "Foto do contato",
+        "description": "Retorna a URL da foto de perfil do contato, ou `null` quando não há foto.",
+        "operationId": "getContactPhoto",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "contact",
+            "in": "path",
+            "required": true,
+            "description": "Telefone do contato (só dígitos, com DDI e DDD), `{phone}@c.us` ou LID.",
+            "schema": {
+              "type": "string",
+              "example": "5544936180923"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "URL da foto (ou `null`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "photoUrl": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                },
+                "examples": {
+                  "withPhoto": {
+                    "value": {
+                      "photoUrl": "https://pps.whatsapp.net/v/t61.24694-24/..."
+                    }
+                  },
+                  "noPhoto": {
+                    "value": {
+                      "photoUrl": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro fora do formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "contact",
+                  "message": "contact is not valid: send the phone number with country code and area code, digits only (8 to 15 digits, for example 5511999999999), or the contact LID (for example 999999999999999@lid)"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operação indisponível no canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "operation_not_supported",
+                  "message": "this operation is not available for META_WHATSAPP channels: the official WhatsApp API does not give access to the contacts of the number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/contacts/check": {
+      "post": {
+        "summary": "Verificar números",
+        "description": "Verifica, em lote, se cada número tem WhatsApp.",
+        "operationId": "checkContacts",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "contacts"
+                ],
+                "properties": {
+                  "contacts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "contacts": [
+                  "554497294996",
+                  "5511900000001"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado por número",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckResult"
+                },
+                "example": {
+                  "results": [
+                    {
+                      "contact": "554497294996",
+                      "exists": true,
+                      "phone": "554497294996",
+                      "lid": "123330724110591@lid"
+                    },
+                    {
+                      "contact": "5511900000001",
+                      "exists": false,
+                      "phone": null,
+                      "lid": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro fora do formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "contacts",
+                  "message": "contacts is required and must be a non-empty array of phone numbers"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "payload_too_large",
+                  "message": "request body is too large"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operação indisponível no canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "operation_not_supported",
+                  "message": "this operation is not available for META_WHATSAPP channels: the official WhatsApp API does not give access to the contacts of the number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/contacts/capabilities": {
+      "get": {
+        "summary": "Capacidades de contato",
+        "description": "Lista as operações de contato disponíveis no canal. No canal Meta, a lista vem vazia.",
+        "operationId": "contactCapabilities",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operações do canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "operations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "whatsappWeb": {
+                    "value": {
+                      "type": "Z_API_WHATSAPP",
+                      "operations": [
+                        "LIST_CONTACTS",
+                        "GET_CONTACT",
+                        "GET_CONTACT_PHOTO",
+                        "CHECK_CONTACTS"
+                      ]
+                    }
+                  },
+                  "meta": {
+                    "value": {
+                      "type": "META_WHATSAPP",
+                      "operations": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "vcardName": {
+            "type": "string"
+          },
+          "about": {
+            "type": "string"
+          },
+          "lid": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ContactList": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CheckResult": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "contact": {
+                  "type": "string"
+                },
+                "exists": {
+                  "type": "boolean"
+                },
+                "phone": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "lid": {
+                  "type": "string",
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key"
+      }
+    }
+  }
+}
