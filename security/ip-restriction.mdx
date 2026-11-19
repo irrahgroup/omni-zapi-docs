@@ -40,14 +40,15 @@ Só o **Owner** do workspace pode alterar a lista de IPs.
 
 ## Resposta para IP não liberado
 
-Quando a chamada vem de um IP fora da lista, a API responde `400` e informa o IP de origem:
+Quando a chamada vem de um IP fora da lista, a API responde `403` com `error` `ip_not_allowed` e uma mensagem com o IP de origem:
 
 ```json
 {
-  "error": "203.0.113.10 not allowed"
+  "error": "ip_not_allowed",
+  "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
 }
 ```
 
-Se o IP de origem não puder ser identificado, a mensagem é `"ip not allowed"`.
+Se o IP de origem não puder ser identificado, a mensagem começa com `ip not allowed:`.
 
 Para corrigir, cadastre o IP informado na mensagem ou faça a chamada a partir de um servidor já liberado.
