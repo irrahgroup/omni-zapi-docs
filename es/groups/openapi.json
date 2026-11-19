@@ -1,0 +1,571 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Grupos",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/groups/capabilities": {
+      "get": {
+        "summary": "Capacidades de grupo",
+        "description": "Lista las operaciones de grupo disponibles en el canal. En el canal Meta, la lista viene vacía.",
+        "operationId": "groupCapabilities",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capacidades de grupo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "operations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "whatsappWeb": {
+                    "value": {
+                      "type": "Z_API_WHATSAPP",
+                      "operations": [
+                        "LIST_GROUPS",
+                        "GET_GROUP",
+                        "GET_INVITE_LINK",
+                        "PREVIEW_INVITE"
+                      ]
+                    }
+                  },
+                  "meta": {
+                    "value": {
+                      "type": "META_WHATSAPP",
+                      "operations": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/groups": {
+      "get": {
+        "summary": "Listar grupos",
+        "description": "Lista los grupos del número, paginada por cursor. Solo en el canal WhatsApp Web (`Z_API_WHATSAPP`).",
+        "operationId": "listGroups",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Cantidad por página.",
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco de la página siguiente. Devuelve exactamente el `nextCursor` recibido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listar grupos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupList"
+                },
+                "example": {
+                  "content": [
+                    {
+                      "id": "120363430328583007-group",
+                      "name": "Teste ZAPI-8975"
+                    }
+                  ],
+                  "nextCursor": "8xkQ2"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cursor fuera de formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "cursor",
+                  "message": "cursor is not valid: send back exactly the nextCursor returned by the previous page, or leave it out to start from the first page"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operación no disponible en el canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "operation_not_supported",
+                  "message": "operation not supported for this instance"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/groups/{groupId}": {
+      "get": {
+        "summary": "Consultar grupo",
+        "description": "Devuelve los datos de un grupo: nombre, descripción, dueño, participantes y ajustes.",
+        "operationId": "getGroup",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "description": "Identificador del grupo.",
+            "schema": {
+              "type": "string",
+              "example": "120363430328583007-group"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consultar grupo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                },
+                "example": {
+                  "id": "120363430328583007-group",
+                  "name": "Teste ZAPI-8975",
+                  "description": "Grupo de teste",
+                  "createdAt": "2026-10-06T19:09:18.429Z",
+                  "owner": "5544936180923",
+                  "participants": [
+                    {
+                      "id": "5544936180923",
+                      "name": null,
+                      "role": "ADMIN"
+                    }
+                  ],
+                  "participantCount": 3,
+                  "settings": {
+                    "onlyAdminsMessage": false,
+                    "onlyAdminsEdit": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Id de grupo fuera de formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "groupId",
+                  "message": "groupId is not valid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Grupo no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_error",
+                  "message": "Error on get group"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operación no disponible en el canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "operation_not_supported",
+                  "message": "operation not supported for this instance"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/groups/{groupId}/invite-link": {
+      "get": {
+        "summary": "Enlace de invitación",
+        "description": "Devuelve el enlace de invitación del grupo. La instancia debe ser administradora.",
+        "operationId": "getGroupInviteLink",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "description": "Identificador del grupo.",
+            "schema": {
+              "type": "string",
+              "example": "120363430328583007-group"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enlace de invitación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "inviteLink": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "inviteLink": "https://chat.whatsapp.com/XXXXXXXXXXX"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Id de grupo fuera de formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "groupId",
+                  "message": "groupId is not valid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Grupo no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_error",
+                  "message": "Group not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "La instancia no es administradora del grupo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_error",
+                  "message": "The instance is not an admin of this group"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/group-invites/preview": {
+      "get": {
+        "summary": "Vista previa por enlace",
+        "description": "Devuelve la vista previa de un grupo (nombre y datos) a partir del enlace de invitación, sin entrar en él.",
+        "operationId": "previewGroupInvite",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "link",
+            "in": "query",
+            "required": true,
+            "description": "Enlace de invitación del grupo.",
+            "schema": {
+              "type": "string",
+              "example": "https://chat.whatsapp.com/XXXXXXXXXXX"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vista previa por enlace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "participantCount": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "120363430328583007-group",
+                  "name": "Teste ZAPI-8975",
+                  "description": "Grupo de teste",
+                  "participantCount": 3
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Enlace ausente o inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "link",
+                  "message": "link is required and must be a valid WhatsApp group invite link"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operación no disponible en el canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "operation_not_supported",
+                  "message": "operation not supported for this instance"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Participant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "MEMBER",
+              "ADMIN"
+            ]
+          }
+        }
+      },
+      "Group": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Participant"
+            }
+          },
+          "participantCount": {
+            "type": "integer"
+          },
+          "settings": {
+            "type": "object"
+          }
+        }
+      },
+      "GroupList": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupSummary"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key"
+      }
+    }
+  }
+}
