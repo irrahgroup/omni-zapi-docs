@@ -70,6 +70,28 @@ The API returns `qrcode`, the QR Code image, and `connected`, which is `true` wh
   Up to version 1.0.4, the SDK only delivered the QR Code to the window inside the panel itself. On any other domain, the window closed right after opening and `connect` returned `success: false` with `reason: "not_completed"`. Upgrade to 1.1.1 or later.
 </Note>
 
+## QR Code signature error
+
+When the number does not have an active subscription yet, the QR Code request is refused with `422`. The body keeps the provider `error` envelope, with `errors[0].name` equal to `NEED_SIGN_ZAPI`, and adds, after it, a `message` with the likely cause and what to do:
+
+```json
+{
+  "error": {
+    "timestamp": "2026-11-17T10:00:00Z",
+    "status": 424,
+    "errors": [
+      {
+        "code": "307",
+        "name": "NEED_SIGN_ZAPI",
+        "message": "Z-API signature required",
+        "description": "The Z-API account must be signed before proceeding"
+      }
+    ]
+  },
+  "message": "Z-API signature required: Z-API refused to generate the QR code for this WhatsApp Web channel. The usual cause is a channel without an active subscription: activate it in the panel at https://app.omni.z-api.io (ENTERPRISE accounts can also call GET /v1/channels/{channelId}/subscribe after the checkout) and request the QR code again. If the subscription is already active, try again in a few minutes and contact support if it keeps failing. See https://developer.omni.z-api.io/en/connect/whatsapp-web"
+}
+```
+
 ## What is different on WhatsApp Web
 
 | Detail | Value |
