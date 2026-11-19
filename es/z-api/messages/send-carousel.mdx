@@ -8,7 +8,51 @@ import { ZapiResponseText } from '/snippets/notes.mdx';
 
 ## Conceptos
 
-Método para enviar mensajes con un carrusel de tarjetas. Cada tarjeta puede contener imagen, texto y botones de acción (CALL, URL o REPLY).
+Método para enviar mensajes con un carrusel de tarjetas. Cada tarjeta tiene imagen, texto y botones de acción. Se aceptan dos tipos de botón:
+
+- **URL**: abre un enlace
+- **REPLY**: respuesta rápida
+
+## Reglas del carrusel
+
+- El carrusel tiene de 2 a 10 tarjetas.
+- `message` es obligatorio y tiene hasta 1.024 caracteres.
+- Cada tarjeta exige `image`, `text` y al menos un botón en `buttons`.
+- `image` es una URL o una imagen JPEG o PNG en base64 (data URI) de hasta 5 MB.
+- `text` tiene hasta 160 caracteres y como máximo 2 saltos de línea.
+- `label` es obligatorio y tiene hasta 20 caracteres.
+- `id` tiene hasta 256 caracteres y no se repite en la misma tarjeta. Sin `id`, el botón recibe su posición en la tarjeta, a partir de `"1"`.
+- Una tarjeta lleva **un** botón `URL`, con `url` `http` o `https`, **o** botones `REPLY`. Los dos tipos no van en la misma tarjeta.
+- Todas las tarjetas tienen la misma cantidad y el mismo tipo de botones.
+
+<Warning>
+  El botón `CALL` y el botón de copiar código (URL `https://www.whatsapp.com/otp/code/...`) no se aceptan en el carrusel.
+</Warning>
+
+## Errores
+
+Un carrusel fuera de las reglas se rechaza con `422` y el mensaje no se envía:
+
+| Situación | `error` |
+|---|---|
+| Botón `CALL` | `call button is not supported for this channel` |
+| Botón de copiar código | `copy button is not supported for this channel` |
+| `URL` y `REPLY` en la misma tarjeta | `URL and REPLY buttons cannot be sent together on this channel` |
+| Más de un botón `URL` en la tarjeta | `only one URL button is supported for this channel` |
+| Tarjetas con botones diferentes | `carousel cards must have the same number and type of buttons` |
+| `carousel` ausente o vacío | `carousel is required` |
+| Menos de 2 o más de 10 tarjetas | `carousel must have at least 2 cards` / `carousel must have at most 10 cards` |
+
+Los demás límites también responden `422`, con el campo en el mensaje. Por ejemplo: `carousel[0].text must be at most 160 characters`.
+
+La excepción es una `image` que no es una URL ni un base64 válido. En ese caso, la respuesta es `400` y el mensaje no se envía:
+
+| Situación | `error` |
+|---|---|
+| `image` que no es una URL `http` o `https` ni un data URI | `invalid media format: must be URL or base64 data URI` |
+| `image` con base64 no válido | `failed to decode base64: ...` |
+
+El cuerpo de la solicitud tiene hasta 10 MiB. Por encima de eso, la respuesta es `413`. Con muchas imágenes, envía URLs en lugar de base64.
 
 <Note>
   <ZapiResponseText lang="es" />
