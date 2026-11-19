@@ -115,18 +115,6 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
-                  "invalidKey": {
-                    "summary": "Secret key ausente o inválida",
-                    "value": {
-                      "error": "Authorization invalid"
-                    }
-                  },
-                  "ipNotAllowed": {
-                    "summary": "IP fuera de la lista de IP permitidas del workspace",
-                    "value": {
-                      "error": "203.0.113.10 not allowed"
-                    }
-                  },
                   "urlRequired": {
                     "summary": "`url` ausente o en blanco",
                     "value": {
@@ -215,6 +203,68 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Secret Key rechazada",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Bearer"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "publicKey": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "wrongFormat": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as \"Authorization: Bearer <secret-key>\". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "nonexistent": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "IP fuera de la lista permitida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "ipNotAllowed": {
+                    "value": {
+                      "error": "ip_not_allowed",
+                      "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -263,30 +313,6 @@
               }
             }
           },
-          "400": {
-            "description": "Secret key ausente o inválida, o IP fuera de la lista del workspace",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "invalidKey": {
-                    "summary": "Secret key ausente o inválida",
-                    "value": {
-                      "error": "Authorization invalid"
-                    }
-                  },
-                  "ipNotAllowed": {
-                    "summary": "IP fuera de la lista de IP permitidas del workspace",
-                    "value": {
-                      "error": "203.0.113.10 not allowed"
-                    }
-                  }
-                }
-              }
-            }
-          },
           "422": {
             "description": "Workspace eliminado o inexistente",
             "content": {
@@ -296,6 +322,68 @@
                 },
                 "example": {
                   "error": "Webhook management requires an active workspace"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Secret Key rechazada",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Bearer"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "publicKey": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "wrongFormat": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as \"Authorization: Bearer <secret-key>\". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "nonexistent": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "IP fuera de la lista permitida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "ipNotAllowed": {
+                    "value": {
+                      "error": "ip_not_allowed",
+                      "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+                    }
+                  }
                 }
               }
             }
@@ -356,30 +444,6 @@
               }
             }
           },
-          "400": {
-            "description": "Secret key ausente o inválida, o IP fuera de la lista del workspace",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "invalidKey": {
-                    "summary": "Secret key ausente o inválida",
-                    "value": {
-                      "error": "Authorization invalid"
-                    }
-                  },
-                  "ipNotAllowed": {
-                    "summary": "IP fuera de la lista de IP permitidas del workspace",
-                    "value": {
-                      "error": "203.0.113.10 not allowed"
-                    }
-                  }
-                }
-              }
-            }
-          },
           "404": {
             "description": "No hay un webhook predeterminado con ese id en el workspace. Un id de otro workspace, de un webhook de canal o de un webhook de plantilla recibe la misma respuesta.",
             "content": {
@@ -402,6 +466,68 @@
                 },
                 "example": {
                   "error": "Webhook management requires an active workspace"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Secret Key rechazada",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Bearer"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "publicKey": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "wrongFormat": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as \"Authorization: Bearer <secret-key>\". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "nonexistent": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "IP fuera de la lista permitida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "ipNotAllowed": {
+                    "value": {
+                      "error": "ip_not_allowed",
+                      "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+                    }
+                  }
                 }
               }
             }
@@ -491,18 +617,6 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
-                  "invalidKey": {
-                    "summary": "Secret key ausente o inválida",
-                    "value": {
-                      "error": "Authorization invalid"
-                    }
-                  },
-                  "ipNotAllowed": {
-                    "summary": "IP fuera de la lista de IP permitidas del workspace",
-                    "value": {
-                      "error": "203.0.113.10 not allowed"
-                    }
-                  },
                   "emptyEvents": {
                     "summary": "`events` enviado como lista vacía",
                     "value": {
@@ -598,6 +712,68 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Secret Key rechazada",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Bearer"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "publicKey": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "wrongFormat": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as \"Authorization: Bearer <secret-key>\". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "nonexistent": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "IP fuera de la lista permitida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "ipNotAllowed": {
+                    "value": {
+                      "error": "ip_not_allowed",
+                      "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -611,30 +787,6 @@
         "responses": {
           "204": {
             "description": "Webhook predeterminado eliminado"
-          },
-          "400": {
-            "description": "Secret key ausente o inválida, o IP fuera de la lista del workspace",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "invalidKey": {
-                    "summary": "Secret key ausente o inválida",
-                    "value": {
-                      "error": "Authorization invalid"
-                    }
-                  },
-                  "ipNotAllowed": {
-                    "summary": "IP fuera de la lista de IP permitidas del workspace",
-                    "value": {
-                      "error": "203.0.113.10 not allowed"
-                    }
-                  }
-                }
-              }
-            }
           },
           "404": {
             "description": "No hay un webhook predeterminado con ese id en el workspace. Un id de otro workspace, de un webhook de canal o de un webhook de plantilla recibe la misma respuesta.",
@@ -658,6 +810,68 @@
                 },
                 "example": {
                   "error": "Webhook management requires an active workspace"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Secret Key rechazada",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Bearer"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "publicKey": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "wrongFormat": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as \"Authorization: Bearer <secret-key>\". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "nonexistent": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "IP fuera de la lista permitida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "ipNotAllowed": {
+                    "value": {
+                      "error": "ip_not_allowed",
+                      "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+                    }
+                  }
                 }
               }
             }
