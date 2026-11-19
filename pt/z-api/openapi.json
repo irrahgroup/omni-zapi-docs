@@ -130,7 +130,7 @@
     "/send-button-actions": {
       "post": {
         "summary": "Enviar botões de ação",
-        "description": "Envia uma mensagem de texto com botões de ação: um botão URL ou até três botões REPLY, nunca os dois na mesma mensagem. O botão CALL e o botão de copiar código não são aceitos.",
+        "description": "Envia uma mensagem de texto com botões de ação: um botão URL ou até três botões REPLY, nunca os dois na mesma mensagem. O botão CALL e o botão de copiar código não são aceitos. Funciona em canal WhatsApp Oficial e em canal WhatsApp Web, com o WhatsApp Web habilitado no workspace, com as mesmas regras.",
         "operationId": "sendButtonActions",
         "tags": ["Mensagens"],
         "requestBody": {
@@ -178,9 +178,28 @@
         },
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
+          "400": {
+            "description": "`image` que não é URL http ou https nem base64. É conferido antes das regras dos botões. A mensagem não é enviada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Mensagem de erro"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "invalid image: must be a valid URL or base64 data URI"
+                }
+              }
+            }
+          },
           "405": { "$ref": "#/components/responses/MethodNotAllowed" },
           "422": {
-            "description": "Botões fora das regras, ou canal que não é WhatsApp Oficial. A mensagem não é enviada.",
+            "description": "Botões fora das regras, `image` com o botão URL, canal que não é WhatsApp Oficial nem WhatsApp Web, ou canal WhatsApp Web sem o WhatsApp Web habilitado no workspace. A mensagem não é enviada.",
             "content": {
               "application/json": {
                 "schema": {
@@ -203,8 +222,16 @@
                     "value": { "error": "URL and REPLY buttons cannot be sent together on this channel" }
                   },
                   "notMetaWhatsapp": {
-                    "summary": "Canal que não é WhatsApp Oficial",
+                    "summary": "Canal que não é WhatsApp Oficial nem WhatsApp Web",
                     "value": { "error": "instance middleware is not META_WHATSAPP" }
+                  },
+                  "urlButtonImage": {
+                    "summary": "image com o botão URL",
+                    "value": { "error": "image header with a URL button is not available for this channel yet" }
+                  },
+                  "zapiDisabled": {
+                    "summary": "WhatsApp Web não habilitado no workspace",
+                    "value": { "error": "Z-API (WhatsApp Web) instances are not enabled for this workspace" }
                   }
                 }
               }
@@ -883,6 +910,10 @@
             "type": "string",
             "description": "Rodapé da mensagem, até 60 caracteres. Só vai com o botão URL",
             "maxLength": 60
+          },
+          "image": {
+            "type": "string",
+            "description": "Imagem do cabeçalho, só com botões REPLY: URL http ou https ou base64 (data:<mime type>;base64,<conteúdo>). Com o botão URL, a mensagem é recusada com 422"
           },
           "buttonActions": {
             "type": "array",

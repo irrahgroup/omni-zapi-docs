@@ -35,9 +35,9 @@ To send a message, you need the recipient's **phone number**, including the coun
 
 ## Request body
 
-Send the body as JSON, with the `Content-Type: application/json` header.
+Send the body as JSON, with the `Content-Type: application/json` header, or as a form, with `Content-Type: application/x-www-form-urlencoded`. In the form, only the simple fields are read, such as `phone`, `message`, `image` and `caption`. Lists and objects, such as `buttonActions`, `optionList` and `contacts`, only go in JSON.
 
-With another `Content-Type`, such as `text/plain`, or without the header, the JSON body is not read and the send is refused with `400`. The error usually reports a required field as missing, even when it is in the body: for example, `{"error": "phone is required"}` or, on `send-text`, `{"error": "message is required"}`.
+With another `Content-Type`, such as `text/plain`, or without the header, the body is not read and the send is refused with `400`. The error usually reports a required field as missing, even when it is in the body: for example, `{"error": "phone is required"}` or, on `send-text`, `{"error": "message is required"}`.
 
 With `Content-Type: application/json` and a body that is not valid JSON, the response is also `400`, with the JSON read error. For example: `{"error": "invalid character 'h' looking for beginning of value"}`.
 
@@ -65,6 +65,30 @@ It's very important that you **store the `messageId`** returned, as it's needed 
 <Warning>
   Without the `messageId`, you won't be able to reference the message later to react.
 </Warning>
+
+## Sending errors
+
+After the checks of each route, the send can still fail on its way to the channel. In that case the message is not sent, and the response is one of these:
+
+| Status | `error` | When |
+|---|---|---|
+| `422` | `failed to send message: Channel is disconnected: ...` | The channel is disconnected. The text says how to reconnect each channel type |
+| `400` | `failed to send message: ...`, with the media problem | The media was refused. The texts are below |
+| `503` | Ends with `a configuration problem on our side ...` or `a temporary failure on our side ...` | A failure on our side, of configuration or temporary. It was not caused by the request, and nothing was sent. The text says when to try again |
+| `502` | `failed to send message` | Other sending failures |
+
+The texts of the media `400`:
+
+- `failed to send message: media too large for this channel: send a smaller file`
+- `failed to send message: caption too long: use at most 1024 characters`
+- `failed to send message: media URL is required: send the media URL or base64 in the media field of this route`
+- `failed to send message: invalid base64 media: send data:<mime type>;base64,<content> or a media URL`
+- `failed to send message: media type not supported by this route`
+- `failed to send message: media refused: check the media URL and its type`
+
+<Note>
+  The `200` confirms the send was accepted, not delivered. If WhatsApp refuses the message later, for example on Official WhatsApp outside the 24-hour window, the message does not arrive, and the failure comes in the message status webhook (`MESSAGE_STATUS`). See [channel webhooks](/en/webhooks/channel-webhooks).
+</Note>
 
 ## Text formatting
 

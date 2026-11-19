@@ -13,6 +13,8 @@ Método para envio de mensagens com botões de ação. Os botões aceitos são d
 - **URL**: abre um link
 - **REPLY**: resposta rápida
 
+Funciona em canal **WhatsApp Oficial** e em canal **WhatsApp Web**, com o WhatsApp Web habilitado no workspace. As regras são as mesmas nos dois.
+
 ## Regras dos botões
 
 - `message` é obrigatório e tem até 1.024 caracteres.
@@ -21,6 +23,7 @@ Método para envio de mensagens com botões de ação. Os botões aceitos são d
 - `id` tem até 256 caracteres. Sem `id`, o botão recebe a posição dele na lista, a partir de `"1"`.
 - Nos botões `REPLY`, `label` e `id` não se repetem.
 - `title` e `footer` têm até 60 caracteres e só vão com o botão `URL`.
+- `image` só vai com botões `REPLY` e vira o cabeçalho da mensagem. Aceita URL `http` ou `https` ou base64 (`data:<mime type>;base64,<conteúdo>`).
 
 <Warning>
   O botão `CALL` e o botão de copiar código (URL `https://www.whatsapp.com/otp/code/...`) não são aceitos.
@@ -39,8 +42,19 @@ Uma mensagem fora das regras é recusada com `422` e não é enviada:
 | Mais de três botões `REPLY` | `buttonActions must have at most 3 REPLY buttons` |
 | `title` ou `footer` com botões `REPLY` | `title and footer with REPLY buttons are not available for this channel yet` |
 | `buttonActions` ausente ou vazio | `buttonActions is required` |
+| `image` com o botão `URL` | `image header with a URL button is not available for this channel yet` |
 
-Os demais limites também respondem `422`, com o campo na mensagem. Por exemplo: `buttonActions[0].label must be at most 20 characters`.
+Os demais limites dos botões e do texto também respondem `422`, com o campo na mensagem. Por exemplo: `buttonActions[0].label must be at most 20 characters`.
+
+Outras respostas:
+
+| Status | `error` | Quando |
+|---|---|---|
+| `400` | `invalid image: must be a valid URL or base64 data URI` | `image` não é URL `http` ou `https` nem base64. É conferido antes das regras dos botões |
+| `422` | `instance middleware is not META_WHATSAPP` | O canal não é WhatsApp Oficial nem WhatsApp Web |
+| `422` | `Z-API (WhatsApp Web) instances are not enabled for this workspace` | Canal WhatsApp Web, com o WhatsApp Web não habilitado no workspace |
+
+Os erros depois do envio, como canal desconectado, estão em [erros do envio](/z-api/messages/introduction#erros-do-envio).
 
 <Note>
   <ZapiResponseText lang="pt" />
