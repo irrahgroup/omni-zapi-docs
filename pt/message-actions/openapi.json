@@ -1,0 +1,610 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Ações em mensagem",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages/capabilities": {
+      "get": {
+        "summary": "Capacidades de ação",
+        "description": "Lista as ações em mensagem disponíveis no canal. No canal Meta, a lista vem vazia.",
+        "operationId": "messageActionCapabilities",
+        "tags": [
+          "Ações em mensagem"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capacidades de ação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "operations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "whatsappWeb": {
+                    "value": {
+                      "type": "Z_API_WHATSAPP",
+                      "operations": [
+                        "DELETE_MESSAGE",
+                        "FORWARD_MESSAGE",
+                        "PIN_MESSAGE",
+                        "CHOOSE_OPTION"
+                      ]
+                    }
+                  },
+                  "meta": {
+                    "value": {
+                      "type": "META_WHATSAPP",
+                      "operations": []
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/messages/{messageId}": {
+      "delete": {
+        "summary": "Apagar mensagem",
+        "description": "Apaga a mensagem para todos.",
+        "operationId": "deleteMessage",
+        "tags": [
+          "Ações em mensagem"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "description": "Id da mensagem no Omni (o mesmo que volta no envio e no webhook).",
+            "schema": {
+              "type": "string",
+              "example": "01A1EA9883087E9EB1E0D7432E185E2B"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "messageId": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "messageId": "01A1EEE46ACE7CABA47824FD91E490DB"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mensagem não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "NOT_FOUND",
+                  "subCode": "MESSAGE_NOT_FOUND",
+                  "message": "message not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ação indisponível no canal Meta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "DELETE_NOT_SUPPORTED",
+                  "message": "deleting a message is not supported on META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/messages/{messageId}/forward": {
+      "post": {
+        "summary": "Encaminhar mensagem",
+        "description": "Encaminha a mensagem para outro destinatário.",
+        "operationId": "forwardMessage",
+        "tags": [
+          "Ações em mensagem"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "description": "Id da mensagem no Omni (o mesmo que volta no envio e no webhook).",
+            "schema": {
+              "type": "string",
+              "example": "01A1EA9883087E9EB1E0D7432E185E2B"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "recipient"
+                ],
+                "properties": {
+                  "recipient": {
+                    "type": "object",
+                    "required": [
+                      "identifier"
+                    ],
+                    "properties": {
+                      "identifier": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "recipient": {
+                  "identifier": "5544936181389"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "messageId": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "messageId": "01A1EEE46ACE7CABA47824FD91E490DB"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "recipient.identifier é obrigatório",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "recipient.identifier",
+                  "message": "recipient.identifier is required"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mensagem não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "NOT_FOUND",
+                  "subCode": "MESSAGE_NOT_FOUND",
+                  "message": "message not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ação indisponível no canal Meta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "ACTION_NOT_SUPPORTED",
+                  "message": "this action is not supported on META_WHATSAPP channels"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/messages/{messageId}/pin": {
+      "post": {
+        "summary": "Fixar mensagem",
+        "description": "Fixa a mensagem na conversa pela duração informada.",
+        "operationId": "pinMessage",
+        "tags": [
+          "Ações em mensagem"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "description": "Id da mensagem no Omni (o mesmo que volta no envio e no webhook).",
+            "schema": {
+              "type": "string",
+              "example": "01A1EA9883087E9EB1E0D7432E185E2B"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "duration"
+                ],
+                "properties": {
+                  "duration": {
+                    "type": "string",
+                    "enum": [
+                      "24_hours",
+                      "7_days",
+                      "30_days"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "duration": "24_hours"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK (sem corpo)"
+          },
+          "400": {
+            "description": "duration fora dos valores aceitos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "duration",
+                  "message": "duration must be one of 24_hours, 7_days, 30_days"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mensagem não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "NOT_FOUND",
+                  "subCode": "MESSAGE_NOT_FOUND",
+                  "message": "message not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ação indisponível no canal Meta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "ACTION_NOT_SUPPORTED",
+                  "message": "this action is not supported on META_WHATSAPP channels"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Desafixar mensagem",
+        "description": "Remove a fixação da mensagem.",
+        "operationId": "unpinMessage",
+        "tags": [
+          "Ações em mensagem"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "description": "Id da mensagem no Omni (o mesmo que volta no envio e no webhook).",
+            "schema": {
+              "type": "string",
+              "example": "01A1EA9883087E9EB1E0D7432E185E2B"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK (sem corpo)"
+          },
+          "404": {
+            "description": "Mensagem não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "NOT_FOUND",
+                  "subCode": "MESSAGE_NOT_FOUND",
+                  "message": "message not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ação indisponível no canal Meta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "ACTION_NOT_SUPPORTED",
+                  "message": "this action is not supported on META_WHATSAPP channels"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/messages/{messageId}/choice": {
+      "post": {
+        "summary": "Escolher opção",
+        "description": "Registra o clique numa opção de botão, lista ou template.",
+        "operationId": "chooseOption",
+        "tags": [
+          "Ações em mensagem"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "description": "Id da mensagem no Omni (o mesmo que volta no envio e no webhook).",
+            "schema": {
+              "type": "string",
+              "example": "01A1EA9883087E9EB1E0D7432E185E2B"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "optionId"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "BUTTON",
+                      "LIST",
+                      "TEMPLATE_BUTTON"
+                    ]
+                  },
+                  "optionId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "type": "BUTTON",
+                "optionId": "1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK (sem corpo)"
+          },
+          "400": {
+            "description": "optionId / type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "optionId",
+                  "message": "optionId is required"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mensagem não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "NOT_FOUND",
+                  "subCode": "MESSAGE_NOT_FOUND",
+                  "message": "message not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ação indisponível no canal Meta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "ACTION_NOT_SUPPORTED",
+                  "message": "this action is not supported on META_WHATSAPP channels"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "subCode": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key"
+      }
+    }
+  }
+}

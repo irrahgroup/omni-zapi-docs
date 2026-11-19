@@ -1,0 +1,18 @@
+---
+title: "Message actions"
+description: "Delete, forward, pin, and choose option, via the new API."
+---
+
+## Overview
+
+Actions on a message already sent or received, in the new API, under `/v1/channels/{channelId}/messages/...`. **On the WhatsApp Web channel** (`Z_API_WHATSAPP`): delete, forward, pin/unpin, and choose option.
+
+The `messageId` is the **Omni id** — the same one returned on send (`POST /messages`) and in the webhook.
+
+<Note>
+  On a Meta channel (`META_WHATSAPP`), each action responds `422` with a `subCode` (for example `DELETE_NOT_SUPPORTED`). The [capabilities](/en/message-actions/capabilities) route responds `200` with an empty `operations`.
+</Note>
+
+<Note>
+  A disconnected channel responds `422` `CHANNEL_DISCONNECTED`, with the message of what was not done. A message that does not exist responds `404` `MESSAGE_NOT_FOUND`.
+</Note>
