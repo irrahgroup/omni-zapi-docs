@@ -50,7 +50,7 @@ curl -X GET https://api.omni.z-api.io/whatsapp/businesses \
 
 ## Errores de autenticación
 
-Cuando la Secret Key es rechazada, la API responde `401` con el header `WWW-Authenticate: Bearer` y el cuerpo `{"error": "Authorization invalid", "message": <texto>}`. El `message` explica el motivo y qué hacer:
+Esta sección vale para la **API Omni** (`https://api.omni.z-api.io/v1/...`). Cuando la Secret Key es rechazada, la API Omni responde `401` con el header `WWW-Authenticate: Bearer` y el cuerpo `{"error": "Authorization invalid", "message": <texto>}`. El `message` explica el motivo y qué hacer:
 
 | Motivo | `message` |
 |---|---|
@@ -60,6 +60,14 @@ Cuando la Secret Key es rechazada, la API responde `401` con el header `WWW-Auth
 | Inexistente o revocada | `Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
 
 `<secret-key>` es literal: la respuesta nunca repite el valor enviado. Trata el error por `error`; el `message` es para lectura y puede cambiar.
+
+<Note>
+  La Secret Key solo acepta el formato `^[a-z0-9_]+$`. El token del canal es hexadecimal en **mayúsculas**, así que, si se pega en lugar de la Secret Key, cae en **fuera de formato**. Un valor con tres segmentos separados por punto sigue el camino OAuth y vuelve como `{"error": "invalid_token"}`.
+</Note>
+
+<Note>
+  Los `401` de arriba son de la **API Omni**. En la [ruta compatible Z-API](/z-api/introduction) (`/instances/{id}/token/{token}/...`) la autenticación **no cambió**: el rechazo viene como `{"error": "Authorization invalid"}`, sin `message` y sin `WWW-Authenticate` — `400` cuando el header está ausente o vacío y `422` cuando el formato es inválido o la clave no existe.
+</Note>
 
 ## Resumen
 
