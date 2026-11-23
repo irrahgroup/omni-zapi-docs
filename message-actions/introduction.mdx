@@ -14,5 +14,9 @@ O `messageId` é o **id do Omni** — o mesmo que volta no envio (`POST /message
 </Note>
 
 <Note>
-  Canal desconectado responde `422` `CHANNEL_DISCONNECTED`, com a mensagem do que não foi feito. Uma mensagem que não existe responde `404` `MESSAGE_NOT_FOUND`.
+  Canal desconectado é verificado **antes** da mensagem: responde `422` `CHANNEL_DISCONNECTED`, com a mensagem do que não foi feito. O `404` `MESSAGE_NOT_FOUND` só aparece com o canal conectado. Apagar e encaminhar podem ainda responder `422` `INSTANCE_NOT_PROVISIONED`, `MESSAGE_WITHOUT_PROVIDER_ID` ou `CHAT_NOT_SUPPORTED` (por tipo de chat).
 </Note>
+
+## Erros comuns
+
+Além dos acima, toda ação em mensagem pode responder, na **API Omni**: `401` quando a credencial é recusada; `403` `ip_not_allowed` quando o IP está fora da lista; `404` `{"error": "instance not found"}` quando o canal não existe; `422` quando a instância não está provisionada, a assinatura está inativa ou o workspace está bloqueado; e `502` quando o barling falha.

@@ -62,6 +62,7 @@
                         "DELETE_MESSAGE",
                         "FORWARD_MESSAGE",
                         "PIN_MESSAGE",
+                        "UNPIN_MESSAGE",
                         "CHOOSE_OPTION"
                       ]
                     }
@@ -75,6 +76,12 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/IpNotAllowed"
           }
         }
       }
@@ -123,7 +130,7 @@
                   }
                 },
                 "example": {
-                  "messageId": "01A1EEE46ACE7CABA47824FD91E490DB"
+                  "messageId": "01A1EA9883087E9EB1E0D7432E185E2B"
                 }
               }
             }
@@ -153,10 +160,16 @@
                 "example": {
                   "code": "BUSINESS_RULE_VIOLATION",
                   "subCode": "DELETE_NOT_SUPPORTED",
-                  "message": "deleting a message is not supported on META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
+                  "message": "Deleting messages is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/IpNotAllowed"
           }
         }
       }
@@ -250,8 +263,7 @@
                 },
                 "example": {
                   "error": "invalid_request",
-                  "field": "recipient.identifier",
-                  "message": "recipient.identifier is required"
+                  "field": "recipient.identifier"
                 }
               }
             }
@@ -280,11 +292,17 @@
                 },
                 "example": {
                   "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "ACTION_NOT_SUPPORTED",
-                  "message": "this action is not supported on META_WHATSAPP channels"
+                  "subCode": "FORWARD_NOT_SUPPORTED",
+                  "message": "Forwarding messages is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/IpNotAllowed"
           }
         }
       }
@@ -332,15 +350,15 @@
                   "duration": {
                     "type": "string",
                     "enum": [
-                      "24_hours",
-                      "7_days",
-                      "30_days"
+                      "24_HOURS",
+                      "7_DAYS",
+                      "30_DAYS"
                     ]
                   }
                 }
               },
               "example": {
-                "duration": "24_hours"
+                "duration": "24_HOURS"
               }
             }
           }
@@ -358,8 +376,7 @@
                 },
                 "example": {
                   "error": "invalid_request",
-                  "field": "duration",
-                  "message": "duration must be one of 24_hours, 7_days, 30_days"
+                  "field": "duration"
                 }
               }
             }
@@ -388,11 +405,17 @@
                 },
                 "example": {
                   "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "ACTION_NOT_SUPPORTED",
-                  "message": "this action is not supported on META_WHATSAPP channels"
+                  "subCode": "PIN_NOT_SUPPORTED",
+                  "message": "Pinning messages is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/IpNotAllowed"
           }
         }
       },
@@ -453,11 +476,17 @@
                 },
                 "example": {
                   "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "ACTION_NOT_SUPPORTED",
-                  "message": "this action is not supported on META_WHATSAPP channels"
+                  "subCode": "PIN_NOT_SUPPORTED",
+                  "message": "Pinning messages is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/IpNotAllowed"
           }
         }
       }
@@ -536,8 +565,7 @@
                 },
                 "example": {
                   "error": "invalid_request",
-                  "field": "optionId",
-                  "message": "optionId is required"
+                  "field": "optionId"
                 }
               }
             }
@@ -566,11 +594,17 @@
                 },
                 "example": {
                   "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "ACTION_NOT_SUPPORTED",
-                  "message": "this action is not supported on META_WHATSAPP channels"
+                  "subCode": "CHOICE_NOT_SUPPORTED",
+                  "message": "Choosing an option is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/IpNotAllowed"
           }
         }
       }
@@ -604,6 +638,34 @@
         "type": "http",
         "scheme": "bearer",
         "description": "Secret Key"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Credential refused (Omni API)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Authorization invalid"
+            }
+          }
+        }
+      },
+      "IpNotAllowed": {
+        "description": "IP not on the allow list (Omni API)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "ip_not_allowed"
+            }
+          }
+        }
       }
     }
   }

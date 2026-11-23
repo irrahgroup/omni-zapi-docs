@@ -14,5 +14,9 @@ The `messageId` is the **Omni id** — the same one returned on send (`POST /mes
 </Note>
 
 <Note>
-  A disconnected channel responds `422` `CHANNEL_DISCONNECTED`, with the message of what was not done. A message that does not exist responds `404` `MESSAGE_NOT_FOUND`.
+  A disconnected channel is checked **before** the message: it responds `422` `CHANNEL_DISCONNECTED`, with the message of what was not done. The `404` `MESSAGE_NOT_FOUND` only appears with the channel connected. Delete and forward may also respond `422` `INSTANCE_NOT_PROVISIONED`, `MESSAGE_WITHOUT_PROVIDER_ID` or `CHAT_NOT_SUPPORTED` (by chat type).
 </Note>
+
+## Common errors
+
+Beyond the above, every message action may respond, on the **Omni API**: `401` when the credential is refused; `403` `ip_not_allowed` when the IP is off the list; `404` `{"error": "instance not found"}` when the channel does not exist; `422` when the instance is not provisioned, the subscription is inactive or the workspace is blocked; and `502` when barling fails.
