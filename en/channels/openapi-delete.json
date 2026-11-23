@@ -4,29 +4,44 @@
     "title": "Omni Z-API - Partner: Delete Channel",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}": {
       "delete": {
         "summary": "Delete channel (Partner)",
         "description": "Deletes a channel. Deletion is only allowed when the channel has no active subscription (status `CANCELED`, `TRIAL`, or `PENDING`). Requires ENTERPRISE role.",
         "operationId": "partnerDeleteChannel",
-        "tags": ["Partners"],
+        "tags": [
+          "Partners"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
             "description": "Channel ID (obtained via Create channel)",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
           }
         ],
         "requestBody": {
           "required": false,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/DeleteRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              },
               "examples": {
                 "withReason": {
                   "summary": "With deletion reason",
@@ -46,22 +61,61 @@
           "204": {
             "description": "Channel deleted successfully. No content returned."
           },
-          "400": {
-            "description": "Invalid or missing authorization",
+          "401": {
+            "description": "Secret Key rejected",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Bearer"
+              }
+            },
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 400, "message": "Authorization invalid" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "publicKey": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "wrongFormat": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as \"Authorization: Bearer <secret-key>\". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "nonexistent": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  }
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": {
             "description": "Channel not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 404, "message": "Instance not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 404,
+                  "message": "Instance not found"
+                }
               }
             }
           },
@@ -69,19 +123,23 @@
             "description": "Business rule violation",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
                 "examples": {
-                  "enterpriseRequired": {
-                    "summary": "Account does not have ENTERPRISE role",
-                    "value": { "error": 422, "message": "Channel deletion requires ENTERPRISE role" }
-                  },
                   "channelConnected": {
                     "summary": "Channel is still connected",
-                    "value": { "error": 422, "message": "INSTANCE_STILL_CONNECTED" }
+                    "value": {
+                      "error": 422,
+                      "message": "INSTANCE_STILL_CONNECTED"
+                    }
                   },
                   "activeSubscription": {
                     "summary": "Channel has an active subscription (PAID or CANCELLATION_PROCESS)",
-                    "value": { "error": 422, "message": "INSTANCE_HAS_ACTIVE_SUBSCRIPTION" }
+                    "value": {
+                      "error": 422,
+                      "message": "INSTANCE_HAS_ACTIVE_SUBSCRIPTION"
+                    }
                   }
                 }
               }
@@ -91,8 +149,31 @@
             "description": "Internal service integration failure",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/InternalError" },
-                "example": { "error": "integration_unavailable", "message": "The operation could not be completed right now. Try again in a few moments." }
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account without the ENTERPRISE role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "planRequired": {
+                    "value": {
+                      "error": "plan_required",
+                      "message": "Channel deletion requires ENTERPRISE role: deleting channels through the API is limited to partner accounts with the ENTERPRISE role. Ask support to enable the role, or delete the channel in the panel at https://app.omni.z-api.io. See https://developer.omni.z-api.io/en/channels/introduction"
+                    }
+                  }
+                }
               }
             }
           }
@@ -106,8 +187,13 @@
         "description": "Invalid or missing token.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
           }
         }
       }
@@ -126,15 +212,23 @@
       "InternalError": {
         "type": "object",
         "properties": {
-          "error": { "type": "string" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       },
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       }
     },

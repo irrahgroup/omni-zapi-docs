@@ -46,37 +46,6 @@
               }
             }
           },
-          "400": {
-            "description": "Autorizacao invalida ou parametro fora do formato esperado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "examples": {
-                  "authorization": {
-                    "summary": "Authorization",
-                    "value": {
-                      "error": "Authorization invalid"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Conta sem role ENTERPRISE",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                },
-                "example": {
-                  "error": "Channel listing requires ENTERPRISE role"
-                }
-              }
-            }
-          },
           "404": {
             "description": "Canal nao encontrado no workspace da chave",
             "content": {
@@ -86,6 +55,68 @@
                 },
                 "example": {
                   "error": "Channel not found"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Secret Key recusada",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Bearer"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "publicKey": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "wrongFormat": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as \"Authorization: Bearer <secret-key>\". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  },
+                  "nonexistent": {
+                    "value": {
+                      "error": "Authorization invalid",
+                      "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Conta sem o papel ENTERPRISE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "planRequired": {
+                    "value": {
+                      "error": "plan_required",
+                      "message": "Channel listing requires ENTERPRISE role: listing and reading channels with the Secret Key is limited to partner accounts with the ENTERPRISE role. Ask support to enable the role, or see your channels in the panel at https://app.omni.z-api.io. See https://developer.omni.z-api.io/en/channels/introduction"
+                    }
+                  }
                 }
               }
             }
