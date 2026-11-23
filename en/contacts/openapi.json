@@ -38,9 +38,10 @@
             "name": "pageSize",
             "in": "query",
             "required": false,
-            "description": "Items per page.",
+            "description": "Items per page. Default 20, no maximum. Positive integer up to 9 digits.",
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "example": 20
             }
           },
@@ -71,6 +72,14 @@
                       "shortName": "Contato",
                       "profileName": "Contato de teste",
                       "vcardName": "Contato de teste"
+                    },
+                    {
+                      "id": "123330724110591@lid",
+                      "phone": null,
+                      "name": "Contato por LID",
+                      "shortName": "Contato",
+                      "profileName": "Contato por LID",
+                      "vcardName": "Contato por LID"
                     }
                   ],
                   "nextCursor": "8xkQ2"
@@ -94,18 +103,36 @@
             }
           },
           "422": {
-            "description": "Operation not available on the channel",
+            "description": "Operation not supported on the channel, or instance not provisioned, subscription inactive, or workspace blocked",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "operation_not_supported",
-                  "message": "this operation is not available for META_WHATSAPP channels: the official WhatsApp API does not give access to the contacts of the number"
+                "examples": {
+                  "operationNotSupported": {
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Listing contacts is not supported on WhatsApp official API (Meta) channels: the official WhatsApp API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "blockedWorkspace": {
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  }
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
           }
         }
       }
@@ -146,14 +173,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Contact"
+                  "$ref": "#/components/schemas/ContactDetail"
                 },
                 "example": {
                   "id": "554497294996",
                   "phone": "554497294996",
                   "name": "Contato de teste",
+                  "shortName": "Contato",
+                  "profileName": "Contato de teste",
+                  "vcardName": "Contato de teste",
                   "about": "Disponível",
-                  "lid": "123330724110591@lid"
+                  "photoUrl": "https://pps.whatsapp.net/v/t61.24694-24/..."
                 }
               }
             }
@@ -175,10 +205,10 @@
                     }
                   },
                   "notFound": {
-                    "summary": "Número não existe",
+                    "summary": "Number not recognized by the channel",
                     "value": {
                       "error": "provider_error",
-                      "message": "Phone not exists"
+                      "message": "The channel did not recognize this contact: check the phone number (country code and area code, digits only) or the LID."
                     }
                   }
                 }
@@ -186,18 +216,36 @@
             }
           },
           "422": {
-            "description": "Operation not available on the channel",
+            "description": "Operation not supported on the channel, or instance not provisioned, subscription inactive, or workspace blocked",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "operation_not_supported",
-                  "message": "this operation is not available for META_WHATSAPP channels: the official WhatsApp API does not give access to the contacts of the number"
+                "examples": {
+                  "operationNotSupported": {
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Getting a contact is not supported on WhatsApp official API (Meta) channels: the official WhatsApp API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "blockedWorkspace": {
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  }
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
           }
         }
       }
@@ -277,18 +325,36 @@
             }
           },
           "422": {
-            "description": "Operation not available on the channel",
+            "description": "Operation not supported on the channel, or instance not provisioned, subscription inactive, or workspace blocked",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "operation_not_supported",
-                  "message": "this operation is not available for META_WHATSAPP channels: the official WhatsApp API does not give access to the contacts of the number"
+                "examples": {
+                  "operationNotSupported": {
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Getting a contact photo is not supported on WhatsApp official API (Meta) channels: the official WhatsApp API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "blockedWorkspace": {
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  }
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
           }
         }
       }
@@ -327,7 +393,10 @@
                     "type": "array",
                     "items": {
                       "type": "string"
-                    }
+                    },
+                    "description": "Numbers to check (digits only, with country and area code). From 1 to 50,000 items; outside that it responds 400 with `field` `contacts`.",
+                    "minItems": 1,
+                    "maxItems": 50000
                   }
                 }
               },
@@ -376,39 +445,68 @@
                 },
                 "example": {
                   "error": "invalid_request",
-                  "field": "contacts",
-                  "message": "contacts is required and must be a non-empty array of phone numbers"
+                  "field": "contacts"
                 }
               }
             }
           },
           "413": {
-            "description": "Body over the limit",
+            "description": "Body above the limit (up to 10 MiB)",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": "payload_too_large",
-                  "message": "request body is too large"
+                  "error": "payload_too_large"
                 }
               }
             }
           },
           "422": {
-            "description": "Operation not available on the channel",
+            "description": "Operation not supported on the channel, or instance not provisioned, subscription inactive, or workspace blocked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "operationNotSupported": {
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Checking contacts is not supported on WhatsApp official API (Meta) channels: the official WhatsApp API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "blockedWorkspace": {
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Channel response too large",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": "operation_not_supported",
-                  "message": "this operation is not available for META_WHATSAPP channels: the official WhatsApp API does not give access to the contacts of the number"
+                  "error": "provider_response_too_large"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
           }
         }
       }
@@ -473,6 +571,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
           }
         }
       }
@@ -494,48 +601,19 @@
           }
         }
       },
-      "Contact": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "shortName": {
-            "type": "string"
-          },
-          "profileName": {
-            "type": "string"
-          },
-          "vcardName": {
-            "type": "string"
-          },
-          "about": {
-            "type": "string"
-          },
-          "lid": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
       "ContactList": {
         "type": "object",
         "properties": {
           "content": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Contact"
+              "$ref": "#/components/schemas/ContactListItem"
             }
           },
           "nextCursor": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "Cursor for the next page. It is `null` only when the page has fewer items than `pageSize`; if the last page has exactly `pageSize` items, the next page comes back empty."
           }
         }
       },
@@ -565,6 +643,62 @@
             }
           }
         }
+      },
+      "ContactListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "vcardName": {
+            "type": "string"
+          }
+        }
+      },
+      "ContactDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "vcardName": {
+            "type": "string"
+          },
+          "about": {
+            "type": "string",
+            "nullable": true
+          },
+          "photoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -572,6 +706,47 @@
         "type": "http",
         "scheme": "bearer",
         "description": "Secret Key"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Unauthenticated (Secret Key missing or invalid)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Authorization invalid"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "IP not on the workspace allow list",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "ip_not_allowed"
+            }
+          }
+        }
+      },
+      "InstanceNotFound": {
+        "description": "Instance (channel) not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "instance not found"
+            }
+          }
+        }
       }
     }
   }

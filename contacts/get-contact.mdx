@@ -9,5 +9,9 @@ openapi: "/pt/contacts/openapi.json GET /v1/channels/{channelId}/contacts/{conta
 Dados de um contato.
 
 <Note>
-  Um número que não existe responde `400` `provider_error`; um id fora do formato responde `400` `invalid_request`.
+  Um id fora do formato responde `400` `invalid_request`. Um número que o canal não reconhece responde com a mensagem `The channel did not recognize this contact: ...` — o texto `Phone not exists` só aparece quando a própria Z-API devolve 4xx.
+</Note>
+
+<Note>
+  A consulta traz `photoUrl` (válida por ~48h) e **não** traz `lid`. `phone` vem `null` quando o contato só tem LID, e aí `id` é o LID. Os campos nulos aparecem no JSON.
 </Note>
