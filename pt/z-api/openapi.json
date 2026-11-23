@@ -876,7 +876,1146 @@
           }
         }
       }
-    }
+    },
+      "/groups": {
+        "get": {
+          "summary": "Buscar grupos",
+          "description": "Retorna os grupos do canal, com paginação.",
+          "operationId": "getGroups",
+          "tags": [
+            "Grupos"
+          ],
+          "parameters": [
+            {
+              "name": "page",
+              "in": "query",
+              "required": true,
+              "description": "Página de grupos a buscar (paginação). Obrigatório na Z-API; no WhatsApp Oficial, sem o parâmetro vale 1",
+              "schema": {
+                "type": "integer"
+              }
+            },
+            {
+              "name": "pageSize",
+              "in": "query",
+              "required": true,
+              "description": "Quantidade de grupos por página. Obrigatório na Z-API; no WhatsApp Oficial, sem o parâmetro vale 10",
+              "schema": {
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/GroupListItem"
+                    }
+                  },
+                  "example": [
+                    {
+                      "isGroup": true,
+                      "name": "Grupo teste",
+                      "phone": "120263358412332916-group",
+                      "unread": "0",
+                      "lastMessageTime": "1730918668000",
+                      "isMuted": "0",
+                      "isMarkedSpam": "false",
+                      "archived": "false",
+                      "pinned": "false",
+                      "muteEndTime": null,
+                      "messagesUnread": "0"
+                    }
+                  ]
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/group-metadata/{phone}": {
+        "get": {
+          "summary": "Metadata do grupo",
+          "description": "Retorna o metadata do grupo com todas as informações e os participantes.",
+          "operationId": "getGroupMetadata",
+          "tags": [
+            "Grupos"
+          ],
+          "parameters": [
+            {
+              "name": "phone",
+              "in": "path",
+              "required": true,
+              "description": "ID/Phone do grupo",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupMetadataResponse"
+                  },
+                  "example": {
+                    "phone": "120363019502650977-group",
+                    "description": "Grupo Z-API",
+                    "owner": "5511999999999",
+                    "subject": "Meu grupo no Z-API",
+                    "creation": 1588721491000,
+                    "invitationLink": "https://chat.whatsapp.com/40Aasd6af1",
+                    "communityId": null,
+                    "adminOnlyMessage": false,
+                    "adminOnlySettings": false,
+                    "requireAdminApproval": false,
+                    "isGroupAnnouncement": false,
+                    "participants": [
+                      {
+                        "phone": "5511888888888",
+                        "isAdmin": false,
+                        "isSuperAdmin": false
+                      },
+                      {
+                        "phone": "5511777777777",
+                        "isAdmin": true,
+                        "isSuperAdmin": false,
+                        "short": "ZAPIs",
+                        "name": "ZAPIs Boys"
+                      }
+                    ],
+                    "subjectTime": 1617805323000,
+                    "subjectOwner": "554497050785",
+                    "growthLocked": false,
+                    "growthLockExpiration": 0
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/light-group-metadata/{phone}": {
+        "get": {
+          "summary": "Metadata do grupo (leve)",
+          "description": "Retorna o metadata do grupo sem o link de convite.",
+          "operationId": "getLightGroupMetadata",
+          "tags": [
+            "Grupos"
+          ],
+          "parameters": [
+            {
+              "name": "phone",
+              "in": "path",
+              "required": true,
+              "description": "ID/Phone do grupo",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupMetadataResponse"
+                  },
+                  "example": {
+                    "phone": "120363019502650977-group",
+                    "description": "Grupo Z-API",
+                    "owner": "5511999999999",
+                    "subject": "Meu grupo no Z-API",
+                    "creation": 1588721491000,
+                    "invitationLink": null,
+                    "communityId": null,
+                    "adminOnlyMessage": false,
+                    "adminOnlySettings": false,
+                    "requireAdminApproval": false,
+                    "isGroupAnnouncement": false,
+                    "participants": [
+                      {
+                        "phone": "5511888888888",
+                        "isAdmin": false,
+                        "isSuperAdmin": false
+                      },
+                      {
+                        "phone": "5511777777777",
+                        "isAdmin": true,
+                        "isSuperAdmin": false,
+                        "short": "ZAPIs",
+                        "name": "ZAPIs Boys"
+                      }
+                    ],
+                    "subjectTime": 1617805323000,
+                    "subjectOwner": "554497050785",
+                    "growthLocked": false,
+                    "growthLockExpiration": 0
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/group-invitation-metadata": {
+        "get": {
+          "summary": "Metadata do grupo por convite",
+          "description": "Retorna o metadata do grupo através do link de convite.",
+          "operationId": "getGroupInvitationMetadata",
+          "tags": [
+            "Grupos"
+          ],
+          "parameters": [
+            {
+              "name": "url",
+              "in": "query",
+              "required": true,
+              "description": "Link de convite do grupo",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupInvitationMetadataResponse"
+                  },
+                  "example": {
+                    "phone": "120363019502650977-group",
+                    "owner": "5511888888888",
+                    "subject": "Meu grupo no Z-API",
+                    "description": "descrição do grupo",
+                    "creation": 1588721491000,
+                    "invitationLink": "https://chat.whatsapp.com/KNmcL17DqVA0sqkQ5LLA5",
+                    "contactsCount": 1,
+                    "participantsCount": 1,
+                    "participants": [
+                      {
+                        "phone": "5511888888888",
+                        "isAdmin": false,
+                        "isSuperAdmin": true
+                      },
+                      {
+                        "phone": "5511777777777",
+                        "isAdmin": false,
+                        "isSuperAdmin": false
+                      }
+                    ],
+                    "subjectTime": 1617805323000,
+                    "subjectOwner": "5511888888888",
+                    "growthLocked": false,
+                    "growthLockExpiration": 0
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/group-invitation-link/{groupId}": {
+        "get": {
+          "summary": "Obter link de convite",
+          "description": "Obtém o link de convite de um grupo.",
+          "operationId": "getGroupInvitationLink",
+          "tags": [
+            "Grupos"
+          ],
+          "parameters": [
+            {
+              "name": "groupId",
+              "in": "path",
+              "required": true,
+              "description": "ID/Phone do grupo",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupInvitationLinkResponse"
+                  },
+                  "example": {
+                    "phone": "120363019502650977-group",
+                    "invitationLink": "https://chat.whatsapp.com/C1adgkdEGki7554BWDdMkd"
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/redefine-invitation-link/{groupId}": {
+        "post": {
+          "summary": "Redefinir link de convite",
+          "description": "Redefine o link de convite de um grupo.",
+          "operationId": "redefineGroupInvitationLink",
+          "tags": [
+            "Grupos"
+          ],
+          "parameters": [
+            {
+              "name": "groupId",
+              "in": "path",
+              "required": true,
+              "description": "ID/Phone do grupo",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupNewInvitationLinkResponse"
+                  },
+                  "example": {
+                    "invitationLink": "https://chat.whatsapp.com/C1adgkdEGki7554BWDdMkd"
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/accept-invite-group": {
+        "get": {
+          "summary": "Aceitar convite do grupo",
+          "description": "Aceita um convite para participar de um grupo.",
+          "operationId": "acceptGroupInvite",
+          "tags": [
+            "Grupos"
+          ],
+          "parameters": [
+            {
+              "name": "url",
+              "in": "query",
+              "required": true,
+              "description": "Link de convite do grupo",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupAcceptInviteResponse"
+                  },
+                  "example": {
+                    "success": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/create-group": {
+        "post": {
+          "summary": "Criar grupo",
+          "description": "Cria um grupo com os participantes informados.",
+          "operationId": "createGroup",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupCreateRequest"
+                },
+                "example": {
+                  "autoInvite": true,
+                  "groupName": "Grupo Z-API",
+                  "phones": [
+                    "5544999999999",
+                    "5544888888888"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupCreateResponse"
+                  },
+                  "example": {
+                    "phone": "120363019502650977-group",
+                    "phonesNotAdded": [
+                      "2111897971174599@lid",
+                      "5544777777777"
+                    ],
+                    "invitationLink": "https://chat.whatsapp.com/GONwbGGDkLe8BifUWwLgct"
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/update-group-name": {
+        "post": {
+          "summary": "Atualizar nome do grupo",
+          "description": "Altera o nome de um grupo existente.",
+          "operationId": "updateGroupName",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupNameRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group",
+                  "groupName": "Mudou o nome Meu grupo no Z-API"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/update-group-description": {
+        "post": {
+          "summary": "Alterar descrição do grupo",
+          "description": "Altera a descrição de um grupo.",
+          "operationId": "updateGroupDescription",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupDescriptionRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group",
+                  "groupDescription": "descrição do grupo"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/update-group-photo": {
+        "post": {
+          "summary": "Atualizar imagem do grupo",
+          "description": "Altera a imagem de um grupo existente.",
+          "operationId": "updateGroupPhoto",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupPhotoRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group",
+                  "groupPhoto": "https://www.z-api.io/wp-content/themes/z-api/dist/images/logo.svg"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/update-group-settings": {
+        "post": {
+          "summary": "Configurações do grupo",
+          "description": "Altera as preferências e configurações do grupo.",
+          "operationId": "updateGroupSettings",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupSettingsRequest"
+                },
+                "example": {
+                  "phone": "120363019502650977-group",
+                  "adminOnlyMessage": true,
+                  "adminOnlySettings": true,
+                  "requireAdminApproval": false,
+                  "adminOnlyAddMember": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/add-participant": {
+        "post": {
+          "summary": "Adicionar participantes",
+          "description": "Adiciona novos participantes ao grupo.",
+          "operationId": "addGroupParticipant",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupAddParticipantRequest"
+                },
+                "example": {
+                  "autoInvite": true,
+                  "groupId": "120363019502650977-group",
+                  "phones": [
+                    "5544999999999",
+                    "5544888888888"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/remove-participant": {
+        "post": {
+          "summary": "Remover participantes",
+          "description": "Remove participantes do grupo.",
+          "operationId": "removeGroupParticipant",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupRemoveParticipantRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group",
+                  "phones": [
+                    "5544999999999",
+                    "5544888888888"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/approve-participant": {
+        "post": {
+          "summary": "Aprovar participantes",
+          "description": "Aceita a entrada de participantes no grupo.",
+          "operationId": "approveGroupParticipant",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupApproveParticipantRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group",
+                  "phones": [
+                    "5544999999999",
+                    "5544888888888"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/reject-participant": {
+        "post": {
+          "summary": "Rejeitar participantes",
+          "description": "Rejeita a entrada de participantes no grupo.",
+          "operationId": "rejectGroupParticipant",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupRejectParticipantRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group",
+                  "phones": [
+                    "5544999999999",
+                    "5544888888888"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/add-admin": {
+        "post": {
+          "summary": "Promover admin do grupo",
+          "description": "Promove participantes do grupo a administradores.",
+          "operationId": "addGroupAdmin",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupAddAdminRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group",
+                  "phones": [
+                    "5544999999999",
+                    "5544888888888"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/remove-admin": {
+        "post": {
+          "summary": "Remover admin do grupo",
+          "description": "Remove administradores de um grupo.",
+          "operationId": "removeGroupAdmin",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupRemoveAdminRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group",
+                  "phones": [
+                    "5544999999999",
+                    "5544888888888"
+                  ]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      },
+      "/leave-group": {
+        "post": {
+          "summary": "Sair do grupo",
+          "description": "Sai de um grupo do qual o número participa.",
+          "operationId": "leaveGroup",
+          "tags": [
+            "Grupos"
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupLeaveRequest"
+                },
+                "example": {
+                  "groupId": "120363019502650977-group"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Sucesso.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/GroupValueResponse"
+                  },
+                  "example": {
+                    "value": true
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/GroupBadRequest"
+            },
+            "422": {
+              "$ref": "#/components/responses/GroupUnprocessable"
+            },
+            "500": {
+              "$ref": "#/components/responses/GroupInternalError"
+            },
+            "502": {
+              "$ref": "#/components/responses/GroupBadGateway"
+            },
+            "503": {
+              "$ref": "#/components/responses/GroupUnavailable"
+            }
+          }
+        }
+      }
   },
   "components": {
     "responses": {
@@ -941,7 +2080,69 @@
             }
           }
         }
-      }
+      },
+        "GroupBadRequest": {
+          "description": "Requisição inválida: parâmetro ou campo fora das regras. Veja os erros comuns na Introdução aos grupos.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupError"
+              },
+              "example": {
+                "error": "invalid path parameter"
+              }
+            }
+          }
+        },
+        "GroupUnavailable": {
+          "description": "Falha interna do Omni Z-API que a requisição não causou. Tente de novo mais tarde.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupError"
+              }
+            }
+          }
+        },
+        "GroupBadGateway": {
+          "description": "O canal não respondeu.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupError"
+              },
+              "example": {
+                "error": "failed to reach the META_WHATSAPP channel"
+              }
+            }
+          }
+        },
+        "GroupUnprocessable": {
+          "description": "Rota indisponível para o tipo do canal, assinatura inativa ou recusa da Meta. Veja os erros comuns na Introdução aos grupos.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupError"
+              },
+              "example": {
+                "error": "instance subscription is not active"
+              }
+            }
+          }
+        },
+        "GroupInternalError": {
+          "description": "Erro interno inesperado.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupError"
+              },
+              "example": {
+                "error": "internal server error"
+              }
+            }
+          }
+        }
     },
     "schemas": {
       "SendTextRequest": {
@@ -1593,7 +2794,531 @@
             "description": "Descrição do erro"
           }
         }
-      }
+      },
+        "GroupDescriptionRequest": {
+          "type": "object",
+          "required": [
+            "groupId",
+            "groupDescription"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "groupDescription": {
+              "type": "string",
+              "description": "Nova descrição do grupo"
+            }
+          }
+        },
+        "GroupInvitationLinkResponse": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "ID/Phone do grupo"
+            },
+            "invitationLink": {
+              "type": "string",
+              "description": "Link de convite do grupo"
+            }
+          }
+        },
+        "GroupApproveParticipantRequest": {
+          "type": "object",
+          "required": [
+            "groupId",
+            "phones"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "phones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Números dos participantes a serem aceitos"
+            }
+          }
+        },
+        "GroupNewInvitationLinkResponse": {
+          "type": "object",
+          "properties": {
+            "invitationLink": {
+              "type": "string",
+              "description": "Link de convite do grupo"
+            }
+          }
+        },
+        "GroupPhotoRequest": {
+          "type": "object",
+          "required": [
+            "groupId",
+            "groupPhoto"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "groupPhoto": {
+              "type": "string",
+              "description": "URL ou Base64 da imagem"
+            }
+          }
+        },
+        "GroupRemoveAdminRequest": {
+          "type": "object",
+          "required": [
+            "groupId",
+            "phones"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "phones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Números dos administradores a serem removidos"
+            }
+          }
+        },
+        "GroupInvitationMetadataResponse": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "ID/Phone do grupo"
+            },
+            "owner": {
+              "type": "string",
+              "description": "Número do criador do grupo"
+            },
+            "subject": {
+              "type": "string",
+              "description": "Nome do grupo"
+            },
+            "description": {
+              "type": "string",
+              "description": "Descrição do grupo"
+            },
+            "creation": {
+              "type": "number",
+              "description": "Data de criação do grupo (timestamp)"
+            },
+            "invitationLink": {
+              "type": "string",
+              "description": "Link de convite do grupo"
+            },
+            "contactsCount": {
+              "type": "number",
+              "description": "Quantidade de contatos"
+            },
+            "participantsCount": {
+              "type": "number",
+              "description": "Quantidade de participantes"
+            },
+            "participants": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/GroupParticipant"
+              },
+              "description": "Participantes do grupo"
+            },
+            "subjectTime": {
+              "type": "number"
+            },
+            "subjectOwner": {
+              "type": "string"
+            },
+            "growthLocked": {
+              "type": "boolean",
+              "description": "Indica se o link de convite do grupo está suspenso"
+            },
+            "growthLockExpiration": {
+              "type": "number",
+              "description": "Timestamp de expiração da suspensão do link de convite"
+            }
+          }
+        },
+        "GroupAcceptInviteResponse": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "Indica se o convite foi aceito"
+            }
+          }
+        },
+        "GroupAddAdminRequest": {
+          "type": "object",
+          "required": [
+            "groupId",
+            "phones"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "phones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Números dos participantes a serem promovidos a administrador"
+            }
+          }
+        },
+        "GroupListItem": {
+          "type": "object",
+          "properties": {
+            "isGroup": {
+              "type": "boolean",
+              "description": "Indica se é um grupo"
+            },
+            "name": {
+              "type": "string",
+              "description": "Nome atribuído ao chat"
+            },
+            "phone": {
+              "type": "string",
+              "description": "ID/Phone do grupo"
+            },
+            "unread": {
+              "type": "string",
+              "description": "Número de mensagens não lidas no chat"
+            },
+            "lastMessageTime": {
+              "type": "string",
+              "description": "Timestamp da última interação com o chat"
+            },
+            "isMuted": {
+              "type": "string",
+              "description": "`0` ou `1` indica se o chat está silenciado"
+            },
+            "isMarkedSpam": {
+              "type": "string"
+            },
+            "archived": {
+              "type": "string"
+            },
+            "pinned": {
+              "type": "string"
+            },
+            "muteEndTime": {
+              "type": "string"
+            },
+            "messagesUnread": {
+              "type": "string"
+            }
+          }
+        },
+        "GroupCreateRequest": {
+          "type": "object",
+          "required": [
+            "autoInvite",
+            "groupName",
+            "phones"
+          ],
+          "properties": {
+            "autoInvite": {
+              "type": "boolean",
+              "description": "Se não for possível adicionar o participante, envia um convite privado com o link do grupo. Ignorado no WhatsApp Oficial"
+            },
+            "groupName": {
+              "type": "string",
+              "description": "Nome do grupo",
+              "example": "Grupo Z-API"
+            },
+            "phones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Lista de números de telefone dos participantes"
+            },
+            "requireAdminApproval": {
+              "type": "boolean",
+              "description": "Exige aprovação de administrador para entrar no grupo. Existe só no WhatsApp Oficial"
+            }
+          }
+        },
+        "GroupRemoveParticipantRequest": {
+          "type": "object",
+          "required": [
+            "groupId",
+            "phones"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "phones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Números dos participantes a serem removidos"
+            }
+          }
+        },
+        "GroupRejectParticipantRequest": {
+          "type": "object",
+          "required": [
+            "groupId",
+            "phones"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "phones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Números dos participantes a serem rejeitados"
+            }
+          }
+        },
+        "GroupSettingsRequest": {
+          "type": "object",
+          "required": [
+            "phone",
+            "adminOnlyMessage",
+            "adminOnlySettings",
+            "requireAdminApproval",
+            "adminOnlyAddMember"
+          ],
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "adminOnlyMessage": {
+              "type": "boolean",
+              "description": "Apenas administradores podem enviar mensagens"
+            },
+            "adminOnlySettings": {
+              "type": "boolean",
+              "description": "Apenas administradores podem alterar as configurações do grupo"
+            },
+            "requireAdminApproval": {
+              "type": "boolean",
+              "description": "Exige aprovação de administrador para novos membros"
+            },
+            "adminOnlyAddMember": {
+              "type": "boolean",
+              "description": "Apenas administradores podem adicionar membros"
+            }
+          }
+        },
+        "GroupValueResponse": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "boolean",
+              "description": "Resultado da operação"
+            }
+          }
+        },
+        "GroupAddParticipantRequest": {
+          "type": "object",
+          "required": [
+            "autoInvite",
+            "groupId",
+            "phones"
+          ],
+          "properties": {
+            "autoInvite": {
+              "type": "boolean",
+              "description": "Se não for possível adicionar o participante, envia um convite privado com o link do grupo. Ignorado no WhatsApp Oficial"
+            },
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "phones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Lista de números de telefone dos participantes a serem adicionados"
+            }
+          }
+        },
+        "GroupCreateResponse": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "ID/Phone do grupo"
+            },
+            "phonesNotAdded": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Identificadores que não foram adicionados ao grupo"
+            },
+            "invitationLink": {
+              "type": "string",
+              "description": "Link de convite do grupo"
+            }
+          }
+        },
+        "GroupMetadataResponse": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "ID/Phone do grupo"
+            },
+            "description": {
+              "type": "string",
+              "description": "Descrição do grupo"
+            },
+            "owner": {
+              "type": "string",
+              "description": "Número do criador do grupo"
+            },
+            "subject": {
+              "type": "string",
+              "description": "Nome do grupo"
+            },
+            "creation": {
+              "type": "number",
+              "description": "Data de criação do grupo (timestamp)"
+            },
+            "invitationLink": {
+              "type": "string",
+              "description": "Link de convite do grupo"
+            },
+            "communityId": {
+              "type": "string",
+              "description": "ID da comunidade"
+            },
+            "adminOnlyMessage": {
+              "type": "boolean",
+              "description": "Apenas administradores podem enviar mensagens"
+            },
+            "adminOnlySettings": {
+              "type": "boolean",
+              "description": "Apenas administradores podem alterar as configurações do grupo"
+            },
+            "requireAdminApproval": {
+              "type": "boolean",
+              "description": "Exige aprovação de administrador para novos membros"
+            },
+            "isGroupAnnouncement": {
+              "type": "boolean"
+            },
+            "participants": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/GroupParticipant"
+              },
+              "description": "Participantes do grupo"
+            },
+            "subjectTime": {
+              "type": "number"
+            },
+            "subjectOwner": {
+              "type": "string"
+            },
+            "growthLocked": {
+              "type": "boolean",
+              "description": "Indica se o link de convite do grupo está suspenso"
+            },
+            "growthLockExpiration": {
+              "type": "number",
+              "description": "Timestamp de expiração da suspensão do link de convite"
+            }
+          }
+        },
+        "GroupLeaveRequest": {
+          "type": "object",
+          "required": [
+            "groupId"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            }
+          }
+        },
+        "GroupNameRequest": {
+          "type": "object",
+          "required": [
+            "groupId",
+            "groupName"
+          ],
+          "properties": {
+            "groupId": {
+              "type": "string",
+              "description": "ID/Phone do grupo",
+              "example": "120363019502650977-group"
+            },
+            "groupName": {
+              "type": "string",
+              "description": "Novo nome do grupo"
+            }
+          }
+        },
+        "GroupParticipant": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "ID/Phone do grupo"
+            },
+            "isAdmin": {
+              "type": "boolean",
+              "description": "Indica se o participante é administrador"
+            },
+            "isSuperAdmin": {
+              "type": "boolean",
+              "description": "Indica se o participante é o dono do grupo"
+            },
+            "short": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        "GroupError": {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "string",
+              "description": "Mensagem de erro"
+            }
+          }
+        }
     },
     "securitySchemes": {
       "bearerAuth": {
