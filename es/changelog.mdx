@@ -19,6 +19,10 @@ Los tres cambios de abajo entraron en producción el 18/11/2026.
 
 Los errores de abajo pasan a traer `message`, con qué pasó, por qué y qué hacer. Tres de ellos cambian de status. Donde ya había un texto, sigue como **inicio** de `message`.
 
+<Note>
+  Los cambios de status de abajo — `400`→`401`, `400`→`403 ip_not_allowed` y `422`→`403 plan_required` — son de la **API Omni** (`https://api.omni.z-api.io/v1/...`). En la [ruta compatible Z-API](/es/z-api/introduction) (`https://zapi.omni.z-api.io`) la autenticación y la lista de IPs **no cambiaron**: una credencial rechazada sigue en `400`/`422` `{"error": "Authorization invalid"}` y una IP fuera de la lista sigue en `400` `{"error": "<ip> not allowed"}`.
+</Note>
+
 | Situación | Antes | Después |
 |---|---|---|
 | Secret key ausente, vacía, fuera de formato, Public Key en su lugar o inexistente | `400` `{"error": "Authorization invalid"}` | **`401`**, header `WWW-Authenticate: Bearer`, `{"error": "Authorization invalid", "message": "..."}` |
@@ -30,7 +34,7 @@ Los errores de abajo pasan a traer `message`, con qué pasó, por qué y qué ha
 
 ### Secret key rechazada: 400 pasa a 401
 
-Vale para todas las rutas que aceptan la secret key. El `message` depende del motivo:
+Vale para las rutas de la **API Omni** (`/v1/...`) que aceptan la secret key. El `message` depende del motivo:
 
 | Motivo | `message` |
 |---|---|
@@ -212,6 +216,7 @@ En la edición (`PUT .../messages/{messageId}`), el texto dice `the message was 
 - Si trata la falta del rol `ENTERPRISE` por `422`, pase a tratar `403` con `error` `plan_required`. El texto antiguo salió de `error` y está al inicio de `message`.
 - Si compara el `error` del IP o del rol con el texto exacto, pase a compararlo con `ip_not_allowed` y `plan_required`.
 - Workspace bloqueado, código QR rechazado y canal desconectado no requieren cambios: status, `error`, `code` y `subCode` siguen iguales.
+- En la [ruta compatible Z-API](/es/z-api/introduction) nada cambia aquí: una credencial rechazada sigue en `400`/`422` y una IP fuera de la lista sigue en `400`.
 
 El camino del token OAuth no cambia: `invalid_token`, `insufficient_scope` e `ip_not_allowed` siguen como hoy, y la lectura de canales con el token sigue sin exigir el rol `ENTERPRISE`. La Public Key usada en el SDK de conexión tampoco cambia.
 

@@ -19,6 +19,10 @@ The three changes below went to production on November 18, 2026.
 
 The errors below now carry a `message` that says what happened, why and what to do. Three of them change status. Where there was already a text, it stays as the **start** of `message`.
 
+<Note>
+  The status changes below — `400`→`401`, `400`→`403 ip_not_allowed` and `422`→`403 plan_required` — are on the **Omni API** (`https://api.omni.z-api.io/v1/...`). On the [compatible Z-API route](/en/z-api/introduction) (`https://zapi.omni.z-api.io`) authentication and the IP allow list **have not changed**: a refused credential stays `400`/`422` `{"error": "Authorization invalid"}` and an IP off the list stays `400` `{"error": "<ip> not allowed"}`.
+</Note>
+
 | Situation | Before | After |
 |---|---|---|
 | Secret key missing, empty, malformed, Public Key sent instead, or nonexistent | `400` `{"error": "Authorization invalid"}` | **`401`**, header `WWW-Authenticate: Bearer`, `{"error": "Authorization invalid", "message": "..."}` |
@@ -30,7 +34,7 @@ The errors below now carry a `message` that says what happened, why and what to 
 
 ### Secret key refused: 400 becomes 401
 
-Applies to every route that accepts the secret key. The `message` depends on the cause:
+Applies to the **Omni API** (`/v1/...`) routes that accept the secret key. The `message` depends on the cause:
 
 | Cause | `message` |
 |---|---|
@@ -212,6 +216,7 @@ On edit (`PUT .../messages/{messageId}`), the text says `the message was not edi
 - If it handles the missing `ENTERPRISE` role by `422`, handle `403` with `error` `plan_required`. The old text left `error` and is now the start of `message`.
 - If it compares the IP or role `error` with the exact text, compare with `ip_not_allowed` and `plan_required`.
 - Blocked workspace, refused QR code and disconnected channel need no change: status, `error`, `code` and `subCode` stay the same.
+- On the [compatible Z-API route](/en/z-api/introduction) nothing changes here: a refused credential stays `400`/`422` and an IP off the list stays `400`.
 
 The OAuth token path does not change: `invalid_token`, `insufficient_scope` and `ip_not_allowed` stay as they are today, and reading channels with the token still does not require the `ENTERPRISE` role. The Public Key used in the connection SDK does not change either.
 

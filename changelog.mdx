@@ -19,6 +19,10 @@ As três mudanças abaixo entraram em produção em 18/11/2026.
 
 Os erros abaixo passam a trazer `message`, com o que aconteceu, por quê e o que fazer. Três deles mudam de status. Onde já havia um texto, ele continua como **início** de `message`.
 
+<Note>
+  As mudanças de status abaixo — `400`→`401`, `400`→`403 ip_not_allowed` e `422`→`403 plan_required` — são da **API Omni** (`https://api.omni.z-api.io/v1/...`). Na [rota compatível Z-API](/z-api/introduction) (`https://zapi.omni.z-api.io`) a autenticação e a lista de IPs **não mudaram**: credencial recusada continua `400`/`422` `{"error": "Authorization invalid"}` e IP fora da lista continua `400` `{"error": "<ip> not allowed"}`.
+</Note>
+
 | Situação | Antes | Depois |
 |---|---|---|
 | Secret key ausente, vazia, fora do formato, Public Key no lugar dela ou inexistente | `400` `{"error": "Authorization invalid"}` | **`401`**, header `WWW-Authenticate: Bearer`, `{"error": "Authorization invalid", "message": "..."}` |
@@ -30,7 +34,7 @@ Os erros abaixo passam a trazer `message`, com o que aconteceu, por quê e o que
 
 ### Secret key recusada: 400 vira 401
 
-Vale para todas as rotas que aceitam a secret key. O `message` depende do motivo:
+Vale para as rotas da **API Omni** (`/v1/...`) que aceitam a secret key. O `message` depende do motivo:
 
 | Motivo | `message` |
 |---|---|
@@ -212,6 +216,7 @@ Na edição (`PUT .../messages/{messageId}`), o texto diz `the message was not e
 - Se trata a falta do papel `ENTERPRISE` por `422`, passe a tratar `403` com `error` `plan_required`. O texto antigo saiu de `error` e está no início de `message`.
 - Se compara o `error` do IP ou do papel com o texto exato, passe a comparar com `ip_not_allowed` e `plan_required`.
 - Workspace bloqueado, QR code recusado e canal desconectado não exigem mudança: status, `error`, `code` e `subCode` continuam os mesmos.
+- Na [rota compatível Z-API](/z-api/introduction) nada muda aqui: credencial recusada segue em `400`/`422` e IP fora da lista segue em `400`.
 
 O caminho do token OAuth não muda: `invalid_token`, `insufficient_scope` e `ip_not_allowed` continuam como hoje, e a leitura de canais pelo token continua sem exigir o papel `ENTERPRISE`. A Public Key usada no SDK de conexão também não muda.
 
