@@ -75,6 +75,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/InstanceUnprocessable"
           }
         }
       }
@@ -102,7 +114,7 @@
             "name": "pageSize",
             "in": "query",
             "required": false,
-            "description": "Items per page.",
+            "description": "Items per page. Default 20, no maximum, positive integer up to 9 digits.",
             "schema": {
               "type": "integer",
               "example": 20
@@ -161,11 +173,19 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": "operation_not_supported",
-                  "message": "operation not supported for this instance"
+                  "error": "operation not supported for this instance"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
           }
         }
       }
@@ -223,8 +243,10 @@
                   ],
                   "participantCount": 3,
                   "settings": {
-                    "onlyAdminsMessage": false,
-                    "onlyAdminsEdit": true
+                    "onlyAdminsSendMessages": false,
+                    "onlyAdminsEditInfo": true,
+                    "joinApprovalRequired": false,
+                    "onlyAdminsAddParticipants": false
                   }
                 }
               }
@@ -239,8 +261,7 @@
                 },
                 "example": {
                   "error": "invalid_request",
-                  "field": "groupId",
-                  "message": "groupId is not valid"
+                  "field": "groupId"
                 }
               }
             }
@@ -267,11 +288,16 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": "operation_not_supported",
-                  "message": "operation not supported for this instance"
+                  "error": "operation not supported for this instance"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           }
         }
       }
@@ -279,7 +305,7 @@
     "/v1/channels/{channelId}/groups/{groupId}/invite-link": {
       "get": {
         "summary": "Invite link",
-        "description": "Returns the group's invite link. The instance must be an admin.",
+        "description": "Returns the group invite link. The channel must be an admin.",
         "operationId": "getGroupInviteLink",
         "tags": [
           "Grupos"
@@ -334,8 +360,7 @@
                 },
                 "example": {
                   "error": "invalid_request",
-                  "field": "groupId",
-                  "message": "groupId is not valid"
+                  "field": "groupId"
                 }
               }
             }
@@ -355,7 +380,7 @@
             }
           },
           "422": {
-            "description": "The instance is not a group admin",
+            "description": "The channel is not a group admin",
             "content": {
               "application/json": {
                 "schema": {
@@ -363,10 +388,16 @@
                 },
                 "example": {
                   "error": "provider_error",
-                  "message": "The instance is not an admin of this group"
+                  "message": "The channel is not an admin of this group, so WhatsApp does not return its invite link. Make the channel an admin of the group, or ask a group admin for the link."
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           }
         }
       }
@@ -441,8 +472,7 @@
                 },
                 "example": {
                   "error": "invalid_request",
-                  "field": "link",
-                  "message": "link is required and must be a valid WhatsApp group invite link"
+                  "field": "link"
                 }
               }
             }
@@ -455,11 +485,19 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": "operation_not_supported",
-                  "message": "operation not supported for this instance"
+                  "error": "operation not supported for this instance"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
           }
         }
       }
@@ -506,7 +544,8 @@
             "type": "string",
             "enum": [
               "MEMBER",
-              "ADMIN"
+              "ADMIN",
+              "OWNER"
             ]
           }
         }
@@ -540,7 +579,25 @@
             "type": "integer"
           },
           "settings": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+              "onlyAdminsSendMessages": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "onlyAdminsEditInfo": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "joinApprovalRequired": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "onlyAdminsAddParticipants": {
+                "type": "boolean",
+                "nullable": true
+              }
+            }
           }
         }
       },
@@ -555,7 +612,8 @@
           },
           "nextCursor": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "Next-page cursor. It is null only when the page has fewer items than pageSize; a last page with exactly pageSize items is followed by an empty page. The groups cursor (g1:) does not work for contacts."
           }
         }
       }
@@ -565,6 +623,57 @@
         "type": "http",
         "scheme": "bearer",
         "description": "Secret Key"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Secret Key missing or invalid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Authorization invalid"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "IP not on the workspace IP allow list",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "ip_not_allowed"
+            }
+          }
+        }
+      },
+      "InstanceNotFound": {
+        "description": "Channel (instance) not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "instance not found"
+            }
+          }
+        }
+      },
+      "InstanceUnprocessable": {
+        "description": "Instance not provisioned, inactive subscription or blocked workspace",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       }
     }
   }
