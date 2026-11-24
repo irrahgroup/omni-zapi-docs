@@ -26,6 +26,10 @@ arrives as `invoice.pdf`, with the PDF icon.
   If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
 </Note>
 
+<Note>
+  The `POST /v1/channels/{channelId}/send-document` and `POST /v1/channels/{channelId}/send-document/{extension}` routes take the same body as this page and give the same response. The `{extension}` segment is ignored: the extension goes in the `extension` field of each attachment. On them, `content.type` is optional and, if you send it, it must be `DOCUMENT`. With any other value, the API responds `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be DOCUMENT on /send-document; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, and the message is not sent. See [Routes by type](/en/messages/introduction#routes-by-type).
+</Note>
+
 ## Attachment fields
 
 | Field | Description |

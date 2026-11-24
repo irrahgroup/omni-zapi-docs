@@ -1,6 +1,6 @@
 ---
 title: "Send action buttons"
-description: "Send messages with action buttons (call, URL, quick reply)"
+description: "Send messages with action buttons (URL or quick reply)"
 sidebarTitle: "Send action buttons"
 keywords: ["send-button-actions"]
 openapi: "/en/z-api/openapi.json POST /send-button-actions"
@@ -13,19 +13,54 @@ import { ZapiChannels } from '/snippets/zapi-channels.mdx';
 
 ## Overview
 
-Method for sending messages with action buttons. There are three button types:
+Method for sending messages with action buttons. Two button types are accepted:
 
-- **CALL** — Button to call a phone number
-- **URL** — Button to open a link
-- **REPLY** — Quick reply button
+- **URL**: opens a link
+- **REPLY**: quick reply
+
+It works on **Official WhatsApp** channels and on **WhatsApp Web** channels, with WhatsApp Web enabled in the workspace. The rules are the same on both.
+
+## Button rules
+
+- `message` is required and has up to 1,024 characters.
+- The message carries **one** `URL` button, with an `http` or `https` `url`, **or** up to three `REPLY` buttons. The two types do not go in the same message.
+- `label` is required and has up to 20 characters.
+- `id` has up to 256 characters. Without `id`, the button gets its position in the list, starting at `"1"`.
+- In `REPLY` buttons, `label` and `id` are not repeated.
+- `title` and `footer` have up to 60 characters and only go with the `URL` button.
+- `image` only goes with `REPLY` buttons and becomes the message header. It takes an `http` or `https` URL or base64 (`data:<mime type>;base64,<content>`).
 
 <Warning>
-  Do not combine all three button types in the same message. Send **CALL + URL** buttons together, and **REPLY** buttons separately. Combining all of them causes errors on WhatsApp.
+  The `CALL` button and the copy code button (URL `https://www.whatsapp.com/otp/code/...`) are not accepted.
 </Warning>
 
-<Tip>
-  For copy-code buttons, use the URL format: `https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=YOUR_CODE`
-</Tip>
+## Errors
+
+A message outside the rules is refused with `422` and is not sent:
+
+| Situation | `error` |
+|---|---|
+| `CALL` button | `call button is not supported for this channel` |
+| Copy code button | `copy button is not supported for this channel` |
+| `URL` and `REPLY` in the same message | `URL and REPLY buttons cannot be sent together on this channel` |
+| More than one `URL` button | `only one URL button is supported for this channel` |
+| More than three `REPLY` buttons | `buttonActions must have at most 3 REPLY buttons` |
+| `title` or `footer` with `REPLY` buttons | `title and footer with REPLY buttons are not available for this channel yet` |
+| `buttonActions` missing or empty | `buttonActions is required` |
+| `image` with the `URL` button | `image header with a URL button is not available for this channel yet` |
+
+The other limits of the buttons and the text also answer `422`, with the field in the message. For example: `buttonActions[0].label must be at most 20 characters`.
+
+Other answers:
+
+| Status | `error` | When |
+|---|---|---|
+| `400` | `invalid image: must be a valid URL or base64 data URI` | `image` is neither an `http` or `https` URL nor in base64 form (with `;` and `,`). It is checked before the button rules |
+| `400` | `failed to decode base64: ...` | `image` is in base64 form, but its content does not decode. It is checked after the button rules |
+| `422` | `instance middleware is not META_WHATSAPP` | The channel is neither Official WhatsApp nor WhatsApp Web |
+| `422` | `Z-API (WhatsApp Web) instances are not enabled for this workspace` | WhatsApp Web channel, with WhatsApp Web not enabled in the workspace |
+
+The errors after sending, such as a disconnected channel, are in [sending errors](/en/z-api/messages/introduction#sending-errors).
 
 <Note>
   <ZapiResponseText lang="en" />

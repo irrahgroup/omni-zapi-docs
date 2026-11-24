@@ -1,0 +1,931 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Contatos",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/contacts": {
+      "get": {
+        "summary": "Listar contatos",
+        "description": "Lista os contatos da agenda do número, paginada por cursor. Só no canal WhatsApp Web (`Z_API_WHATSAPP`).",
+        "operationId": "listContacts",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Quantidade por página. Padrão 20, sem máximo. Inteiro positivo de até 9 dígitos.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "example": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco da próxima página. Devolva exatamente o `nextCursor` recebido; omita para começar do início.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de contatos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactList"
+                },
+                "example": {
+                  "content": [
+                    {
+                      "id": "554497294996",
+                      "phone": "554497294996",
+                      "name": "Contato de teste",
+                      "shortName": "Contato",
+                      "profileName": "Contato de teste",
+                      "vcardName": "Contato de teste"
+                    },
+                    {
+                      "id": "123330724110591@lid",
+                      "phone": null,
+                      "name": "Contato por LID",
+                      "shortName": "Contato",
+                      "profileName": "Contato por LID",
+                      "vcardName": "Contato por LID"
+                    }
+                  ],
+                  "nextCursor": "8xkQ2"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro fora do formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "cursor": {
+                    "summary": "cursor inválido",
+                    "value": {
+                      "error": "invalid_request",
+                      "field": "cursor",
+                      "message": "cursor is not valid: send back exactly the nextCursor returned by the previous page, or leave it out to start from the first page"
+                    }
+                  },
+                  "pageSize": {
+                    "summary": "pageSize inválido",
+                    "value": {
+                      "error": "invalid_request",
+                      "field": "pageSize"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Instância não provisionada, assinatura inativa, workspace bloqueado ou operação não suportada no canal, verificados nesta ordem (o `404` de canal inexistente vem antes de todos). Só o 422 de operação não suportada traz `message`, e ele é para leitura: trate pelo `error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "instanceNotProvisioned": {
+                    "summary": "Instância não provisionada",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Assinatura inativa",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "blockedWorkspace": {
+                    "summary": "Workspace bloqueado",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "operationNotSupportedMeta": {
+                    "summary": "Canal WhatsApp Oficial (Meta)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Listing contacts is not supported on WhatsApp official API (Meta) channels: the official API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedOtherChannel": {
+                    "summary": "Canal Telegram (Instagram e Messenger: mesmo texto, com o nome do canal)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Listing contacts is not supported on Telegram channels: contacts belong to a WhatsApp number, and this channel has none. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedNoType": {
+                    "summary": "Canal ainda sem tipo",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Listing contacts is not supported on this instance: it is not connected to any channel type yet. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "502": {
+            "description": "Resposta do canal grande demais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_response_too_large",
+                  "message": "The channel answer is too large. Use a smaller pageSize."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/contacts/{contact}": {
+      "get": {
+        "summary": "Consultar contato",
+        "description": "Retorna os dados de um contato pelo telefone (só dígitos, com DDI e DDD), por `{phone}@c.us` ou pelo LID.",
+        "operationId": "getContact",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "contact",
+            "in": "path",
+            "required": true,
+            "description": "Telefone do contato (só dígitos, com DDI e DDD), `{phone}@c.us` ou LID.",
+            "schema": {
+              "type": "string",
+              "example": "554497294996"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do contato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDetail"
+                },
+                "example": {
+                  "id": "554497294996",
+                  "phone": "554497294996",
+                  "name": "Contato de teste",
+                  "shortName": "Contato",
+                  "profileName": "Contato de teste",
+                  "vcardName": "Contato de teste",
+                  "about": "Disponível",
+                  "photoUrl": "https://pps.whatsapp.net/v/t61.24694-24/..."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro fora do formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "invalid": {
+                    "summary": "Id inválido",
+                    "value": {
+                      "error": "invalid_request",
+                      "field": "contact",
+                      "message": "contact is not valid: send the phone number with country code and area code, digits only (8 to 15 digits, for example 5511999999999), or the contact LID (for example 999999999999999@lid)"
+                    }
+                  },
+                  "notFound": {
+                    "summary": "Número não reconhecido pelo canal",
+                    "value": {
+                      "error": "provider_error",
+                      "message": "The channel did not recognize this contact: check the phone number (country code and area code, digits only) or the LID."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Instância não provisionada, assinatura inativa, workspace bloqueado ou operação não suportada no canal, verificados nesta ordem (o `404` de canal inexistente vem antes de todos). Só o 422 de operação não suportada traz `message`, e ele é para leitura: trate pelo `error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "instanceNotProvisioned": {
+                    "summary": "Instância não provisionada",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Assinatura inativa",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "blockedWorkspace": {
+                    "summary": "Workspace bloqueado",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "operationNotSupportedMeta": {
+                    "summary": "Canal WhatsApp Oficial (Meta)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact is not supported on WhatsApp official API (Meta) channels: the official API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedOtherChannel": {
+                    "summary": "Canal Telegram (Instagram e Messenger: mesmo texto, com o nome do canal)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact is not supported on Telegram channels: contacts belong to a WhatsApp number, and this channel has none. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedNoType": {
+                    "summary": "Canal ainda sem tipo",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact is not supported on this instance: it is not connected to any channel type yet. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "502": {
+            "description": "Resposta do canal grande demais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_response_too_large",
+                  "message": "The channel answer is too large. Use a smaller pageSize."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/contacts/{contact}/photo": {
+      "get": {
+        "summary": "Foto do contato",
+        "description": "Retorna a URL da foto de perfil do contato, ou `null` quando não há foto.",
+        "operationId": "getContactPhoto",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "contact",
+            "in": "path",
+            "required": true,
+            "description": "Telefone do contato (só dígitos, com DDI e DDD), `{phone}@c.us` ou LID.",
+            "schema": {
+              "type": "string",
+              "example": "5544936180923"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "URL da foto (ou `null`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "photoUrl": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                },
+                "examples": {
+                  "withPhoto": {
+                    "value": {
+                      "photoUrl": "https://pps.whatsapp.net/v/t61.24694-24/..."
+                    }
+                  },
+                  "noPhoto": {
+                    "value": {
+                      "photoUrl": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro fora do formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "contact",
+                  "message": "contact is not valid: send the phone number with country code and area code, digits only (8 to 15 digits, for example 5511999999999), or the contact LID (for example 999999999999999@lid)"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Instância não provisionada, assinatura inativa, workspace bloqueado ou operação não suportada no canal, verificados nesta ordem (o `404` de canal inexistente vem antes de todos). Só o 422 de operação não suportada traz `message`, e ele é para leitura: trate pelo `error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "instanceNotProvisioned": {
+                    "summary": "Instância não provisionada",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Assinatura inativa",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "blockedWorkspace": {
+                    "summary": "Workspace bloqueado",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "operationNotSupportedMeta": {
+                    "summary": "Canal WhatsApp Oficial (Meta)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact photo is not supported on WhatsApp official API (Meta) channels: the official API does not give the profile photo of a contact. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedOtherChannel": {
+                    "summary": "Canal Telegram (Instagram e Messenger: mesmo texto, com o nome do canal)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact photo is not supported on Telegram channels: contacts belong to a WhatsApp number, and this channel has none. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedNoType": {
+                    "summary": "Canal ainda sem tipo",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact photo is not supported on this instance: it is not connected to any channel type yet. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "502": {
+            "description": "Resposta do canal grande demais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_response_too_large",
+                  "message": "The channel answer is too large. Use a smaller pageSize."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/contacts/check": {
+      "post": {
+        "summary": "Verificar números",
+        "description": "Verifica, em lote, se cada número tem WhatsApp.",
+        "operationId": "checkContacts",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "contacts"
+                ],
+                "properties": {
+                  "contacts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Números a verificar (só dígitos, com DDI e DDD). De 1 a 50.000 itens; fora disso, responde 400 com `field` `contacts`.",
+                    "minItems": 1,
+                    "maxItems": 50000
+                  }
+                }
+              },
+              "example": {
+                "contacts": [
+                  "554497294996",
+                  "5511900000001"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado por número",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckResult"
+                },
+                "example": {
+                  "results": [
+                    {
+                      "contact": "554497294996",
+                      "exists": true,
+                      "phone": "554497294996",
+                      "lid": "123330724110591@lid"
+                    },
+                    {
+                      "contact": "5511900000001",
+                      "exists": false,
+                      "phone": null,
+                      "lid": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro fora do formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "contacts"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite (até 10 MiB)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "payload_too_large"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Instância não provisionada, assinatura inativa, workspace bloqueado ou operação não suportada no canal, verificados nesta ordem (o `404` de canal inexistente vem antes de todos). Só o 422 de operação não suportada traz `message`, e ele é para leitura: trate pelo `error`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "instanceNotProvisioned": {
+                    "summary": "Instância não provisionada",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Assinatura inativa",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "blockedWorkspace": {
+                    "summary": "Workspace bloqueado",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "operationNotSupportedMeta": {
+                    "summary": "Canal WhatsApp Oficial (Meta)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Checking whether numbers have WhatsApp is not supported on WhatsApp official API (Meta) channels: the official API cannot check whether a number has WhatsApp. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedOtherChannel": {
+                    "summary": "Canal Telegram (Instagram e Messenger: mesmo texto, com o nome do canal)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Checking whether numbers have WhatsApp is not supported on Telegram channels: contacts belong to a WhatsApp number, and this channel has none. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedNoType": {
+                    "summary": "Canal ainda sem tipo",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Checking whether numbers have WhatsApp is not supported on this instance: it is not connected to any channel type yet. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta do canal grande demais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_response_too_large",
+                  "message": "Send fewer contacts per request."
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/contacts/capabilities": {
+      "get": {
+        "summary": "Capacidades de contato",
+        "description": "Lista as operações de contato disponíveis no canal. No canal Meta, a lista vem vazia.",
+        "operationId": "contactCapabilities",
+        "tags": [
+          "Contatos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operações do canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "operations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "whatsappWeb": {
+                    "value": {
+                      "type": "Z_API_WHATSAPP",
+                      "operations": [
+                        "LIST_CONTACTS",
+                        "GET_CONTACT",
+                        "GET_CONTACT_PHOTO",
+                        "CHECK_CONTACTS"
+                      ]
+                    }
+                  },
+                  "meta": {
+                    "value": {
+                      "type": "META_WHATSAPP",
+                      "operations": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ContactList": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactListItem"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cursor da próxima página. Vem `null` só quando a página tem menos itens que `pageSize`; se a última página tiver exatamente `pageSize` itens, a próxima vem vazia."
+          }
+        }
+      },
+      "CheckResult": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "contact": {
+                  "type": "string"
+                },
+                "exists": {
+                  "type": "boolean"
+                },
+                "phone": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "lid": {
+                  "type": "string",
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "ContactListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "vcardName": {
+            "type": "string"
+          }
+        }
+      },
+      "ContactDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "vcardName": {
+            "type": "string"
+          },
+          "about": {
+            "type": "string",
+            "nullable": true
+          },
+          "photoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Secret Key recusada. Vem com o header `WWW-Authenticate: Bearer`; o `message` muda com o motivo (ver [Autenticação](/authentication)).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+            }
+          }
+        },
+        "headers": {
+          "WWW-Authenticate": {
+            "description": "Sempre `Bearer`",
+            "schema": {
+              "type": "string",
+              "example": "Bearer"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "IP fora da lista do workspace (ver [Restrição de IP](/security/ip-restriction))",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "ip_not_allowed",
+              "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+            }
+          }
+        }
+      },
+      "InstanceNotFound": {
+        "description": "Instância (canal) não encontrada",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "instance not found"
+            }
+          }
+        }
+      }
+    }
+  }
+}

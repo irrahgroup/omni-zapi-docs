@@ -53,6 +53,51 @@ Los eventos de cuenta, como cobro y el aviso de desconexión de canal, llegan al
 | `Z_API` | Formato compatible con Z-API: mantiene la estructura que tus integraciones ya procesan, ideal si estás migrando |
 | `CHATWOOT` | El formato que espera Chatwoot, para conectar el canal directamente a su bandeja de entrada |
 
+<Warning>
+  **Cambio en el formato `Z_API` desde el 18/11/2026: notificaciones en la raíz del callback.**
+
+  En los eventos de notificación (grupo, llamada, perfil, canal y mensajes de sistema), el webhook `Z_API` pasa a
+  entregar `notification` como texto y `notificationParameters` como lista, ambos en la raíz del `ReceivedCallback`,
+  como en Z-API. Antes, los dos llegaban dentro de un objeto `notification`.
+
+  Antes:
+
+  ```json
+  {
+    "type": "ReceivedCallback",
+    "phone": "5511999999999",
+    "notification": {
+      "notification": "GROUP_PARTICIPANT_ADD",
+      "notificationParameters": ["5511988888888"],
+      "type": "notification"
+    }
+  }
+  ```
+
+  Después:
+
+  ```json
+  {
+    "type": "ReceivedCallback",
+    "phone": "5511999999999",
+    "notification": "GROUP_PARTICIPANT_ADD",
+    "notificationParameters": ["5511988888888"]
+  }
+  ```
+
+  Qué hacer: si su integración lee `notification.notification` o `notification.notificationParameters`, pase a
+  leer `notification` y `notificationParameters` en la raíz. Si ya sigue la documentación de Z-API, no necesita
+  cambiar nada.
+
+  - `notificationParameters` solo se envía cuando el evento tiene parámetros. Puede venir vacío (`[]`).
+  - Fijar mensaje sigue en `pinMessage`, sin cambios.
+  - Los formatos `DEFAULT` y `CHATWOOT` no cambian.
+  - En canales de la API oficial (Meta), el valor de `notification` sigue siendo el que envía Meta (por ejemplo,
+    `revoke`). Solo cambia la posición de los campos.
+
+  Detalles en el [changelog](/es/changelog).
+</Warning>
+
 <Note>
   `payloadFormat` solo aplica a los **webhooks de canal**. En los [webhooks de plantilla](/es/webhooks/template-webhooks) el formato es siempre `DEFAULT` y el campo se descarta.
 </Note>

@@ -9,8 +9,8 @@ import { projectName } from '/snippets/variables.mdx';
 
 A compatibilidade com a Z-API atende canais **WhatsApp Oficial** (API oficial da Meta) e **WhatsApp Web**. O que uma rota da Z-API faz no {projectName} depende do tipo do canal:
 
-- **WhatsApp Web**: atende a maior parte das rotas, com a mesma estrutura de resposta que a Z-API daria.
-- **WhatsApp Oficial**: vale a API oficial da Meta, que atende parte das rotas e não tem equivalente para outras.
+- **WhatsApp Web** (`Z_API_WHATSAPP`): atende a maior parte das rotas, com a mesma estrutura de resposta que a Z-API daria.
+- **WhatsApp Oficial** (`META_WHATSAPP`): vale a API oficial da Meta, que atende parte das rotas e não tem equivalente para outras.
 
 Canais de outros tipos, como Instagram, Messenger e Telegram, não são atendidos pelas rotas da Z-API e respondem `422`. Para esses canais, use as [rotas de mensagens do {projectName}](/messages/introduction).
 
@@ -18,19 +18,19 @@ Uma rota da Z-API que o canal não atende responde `422` com uma mensagem inform
 
 As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 
-| Valor | Significado |
+| Termo | Significado |
 |---|---|
-| Sim | A rota funciona no canal. No WhatsApp Web, a resposta tem a estrutura da Z-API |
-| Em parte | Funciona com restrições, descritas na própria linha ou no aviso da seção |
-| Ainda não | A rota ainda não está liberada neste canal e responde `422` (chega aos poucos) |
-| Não | O canal não tem equivalente e a rota responde `422` |
+| Sim | A rota funciona no canal. No WhatsApp Web, a resposta é a mesma que a Z-API daria. |
+| Em parte | A rota funciona com restrições, descritas na própria célula. |
+| Ainda não | A rota ainda não foi liberada neste canal pela rota compatível. A liberação é gradual. |
+| Não | A rota não funciona no canal, em geral porque ele não tem equivalente. Quando há mais detalhe, ele vem na própria célula. |
 
 ---
 
 ## Mensagens
 
 <Info>
-  Nos envios, os campos `messageId` (resposta com citação), `mentioned` (menções), `delayMessage`, `viewOnce` e `stickerAuthor` não chegam à mensagem em nenhum dos canais. Veja [Responder mensagem](/z-api/messages/reply-message). As diferenças do envio pelo WhatsApp Web estão em [Z-API Compatibilidade](/z-api/introduction).
+  Nos envios, os campos `messageId` (resposta com citação), `mentioned` (menções), `delayMessage`, `viewOnce` e `stickerAuthor` não chegam à mensagem em nenhum dos canais: o envio responde `200` e o campo é ignorado. Na resposta privada (`privateAnswer`), a mensagem vai para o `phone` informado; em grupo, para o grupo inteiro. `mentioned` com um `phone` que não é de grupo responde `400` `mentions are only allowed in groups`. Veja [Responder mensagem](/z-api/messages/reply-message). As diferenças do envio pelo WhatsApp Web estão em [Z-API Compatibilidade](/z-api/introduction).
 </Info>
 
 ### Envio de mensagens
@@ -49,7 +49,7 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 | Enviar localização | [`POST /send-location`](/z-api/messages/send-location) | Sim | Sim |
 | Enviar lista de botões | [`POST /send-button-list`](/z-api/messages/send-button-list) | Sim | Sim |
 | Enviar botões de ação | [`POST /send-button-actions`](/z-api/messages/send-button-actions) | Sim | Sim |
-| Enviar OTP via botão | [`POST /send-button-otp`](/z-api/messages/send-button-otp) | Sim | Sim |
+| Enviar OTP via botão | [`POST /send-button-otp`](/z-api/messages/send-button-otp) | Sim | Não (a rota responde `200`, mas a mensagem não sai) |
 | Enviar reação | [`POST /send-reaction`](/z-api/messages/send-reaction) | Sim | Sim |
 | Remover reação | [`POST /send-remove-reaction`](/z-api/messages/send-remove-reaction) | Sim | Sim |
 | Enviar carrossel | [`POST /send-carousel`](/z-api/messages/send-carousel) | Ainda não | Sim |
@@ -61,14 +61,15 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 | Enviar enquete / votar | [`POST /send-poll`](https://developer.z-api.io/message/send-poll) | Ainda não | Não |
 | Enviar pedido | `POST /send-order` | Ainda não | Não |
 | Enviar lista de links | `POST /send-link-list` | Ainda não | Não |
-| Enviar GIF | [`POST /send-gif`](https://developer.z-api.io/message/send-message-gif) | Ainda não | Não |
+| Enviar GIF | [`POST /send-gif`](https://developer.z-api.io/message/send-message-gif) | Ainda não | Em parte (vai como imagem) |
 | Enviar PTV (vídeo circular) | [`POST /send-ptv`](https://developer.z-api.io/message/send-message-ptv) | Ainda não | Em parte (vai como vídeo comum) |
 | Enviar template | Campo `template` nos envios | Ainda não | Sim |
 | Editar mensagem | Atributo `editMessageId` nos envios | Ainda não | Não |
 | Editar descrição de documento | Atributo `editDocumentMessageId` no send-document | Ainda não | Não |
 | Enviar / editar / responder evento | [`POST /send-event`](https://developer.z-api.io/message/send-event) | Ainda não | Não |
 | Convite de admin de canal | [`POST /send-newsletter-admin-invite`](https://developer.z-api.io/message/send-newsletter-admin-invite) | Ainda não | Não |
-| Resposta privada em grupo | Atributo `privateAnswer` no reply-message | Ainda não | Não |
+| Responder mensagem (citação) | Atributo `messageId` nos envios ([reply-message](/z-api/messages/reply-message)) | Em parte (envia sem a citação) | Em parte (envia sem a citação) |
+| Resposta privada em grupo | Atributo `privateAnswer` no reply-message | Em parte (envia sem a resposta privada) | Em parte (envia sem a resposta privada) |
 
 ### Ações em mensagem
 
@@ -112,7 +113,7 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
   - exige conta oficial verificada (OBA);
   - não funciona em número em coexistência (com o app do WhatsApp Business no mesmo número);
   - o grupo tem no máximo 8 participantes;
-  - na criação do grupo ninguém é adicionado: a entrada é só pelo link de convite.
+  - na criação do grupo ninguém é adicionado: todos os telefones voltam em `phonesNotAdded` e `autoInvite` é ignorado. A entrada é pelo link de convite ou por pedido de entrada aprovado.
 
   Sem essas condições, ou nas 7 rotas sem equivalente, a rota responde `422`.
 </Info>
@@ -138,6 +139,8 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 | Rejeitar participantes | [`POST /reject-participant`](/z-api/groups/reject-participant) | Sim | Sim |
 | Promover admin | [`POST /add-admin`](/z-api/groups/add-admin) | Sim | Não |
 | Remover admin | [`POST /remove-admin`](/z-api/groups/remove-admin) | Sim | Não |
+| Mencionar membro | [`POST /send-text`](https://developer.z-api.io/group/mention-participant) | Em parte (envia sem a menção) | Em parte (envia sem a menção) |
+| Mencionar grupo | [`POST /send-text`](https://developer.z-api.io/group/mention-group) | Em parte (envia sem a menção) | Em parte (envia sem a menção) |
 
 ## Business
 
@@ -166,7 +169,7 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 
 | Funcionalidade | Rota Z-API | WhatsApp Web | WhatsApp Oficial |
 |---|---|---|---|
-| Alterar nome do perfil | [`PUT /profile-name`](/z-api/profile/profile-name) | Sim | Em parte (exige revisão da Meta) |
+| Alterar nome do perfil | [`PUT /profile-name`](/z-api/profile/profile-name) | Sim | Não (responde `422`: a troca de nome exige revisão da Meta, pelo WhatsApp Manager) |
 | Alterar recado do perfil | [`PUT /profile-description`](/z-api/profile/profile-description) | Sim | Sim |
 | Alterar foto do perfil | [`PUT /profile-picture`](/z-api/profile/profile-picture) | Sim | Em parte (só por URL http ou https; não pode ser removida) |
 | Renomear o canal | [`PUT /update-name`](/z-api/profile/update-name) | Sim | Sim |
@@ -174,16 +177,16 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 ### Catálogo e produtos
 
 <Info>
-  Veja a [introdução de catálogo](/z-api/catalog/introduction). A gestão de catálogo e produtos funciona só no WhatsApp Web. No WhatsApp Oficial, as 15 rotas de gestão respondem `422`. Só o envio de catálogo (`send-catalog`) funciona nele.
+  Veja a [introdução de catálogo](/z-api/catalog/introduction). A gestão de catálogo e produtos funciona no WhatsApp Web. No WhatsApp Oficial, a gestão de catálogo pela rota compatível ainda não está em produção: as 15 rotas de gestão respondem `422`. Só o envio de catálogo (`send-catalog`) funciona nele.
 </Info>
 
 | Funcionalidade | Rota Z-API | WhatsApp Web | WhatsApp Oficial |
 |---|---|---|---|
-| Criar/editar produto | [`POST /products`](/z-api/catalog/edit-product) | Sim | Não |
-| Listar produtos | [`GET /catalogs`](/z-api/catalog/get-products) | Sim | Não |
-| Buscar produto por ID | [`GET /products/{productId}`](/z-api/catalog/get-product-id) | Sim | Não |
-| Deletar produto | [`DELETE /products/{productId}`](/z-api/catalog/delete-product) | Sim | Não |
-| Configuração do catálogo | [`POST /catalogs/config`](/z-api/catalog/save-catalog-config) | Sim | Não |
+| Criar/editar produto | [`POST /products`](/z-api/catalog/edit-product) | Sim | Ainda não |
+| Listar produtos | [`GET /catalogs`](/z-api/catalog/get-products) | Sim | Ainda não |
+| Buscar produto por ID | [`GET /products/{productId}`](/z-api/catalog/get-product-id) | Sim | Ainda não |
+| Deletar produto | [`DELETE /products/{productId}`](/z-api/catalog/delete-product) | Sim | Ainda não |
+| Configuração do catálogo | [`POST /catalogs/config`](/z-api/catalog/save-catalog-config) | Sim | Ainda não |
 | Criar coleção | [`POST /catalogs/collection`](/z-api/catalog/create-collection) | Sim | Não |
 | Listar coleções | [`GET /catalogs/collection`](/z-api/catalog/list-collections) | Sim | Não |
 | Deletar coleção | [`DELETE /catalogs/collection/{id}`](/z-api/catalog/delete-collection) | Sim | Não |
@@ -191,9 +194,9 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 | Listar produtos da coleção | [`GET /catalogs/collection-products/{phone}`](/z-api/catalog/list-collection-products) | Sim | Não |
 | Adicionar produto à coleção | [`POST /catalogs/collection/add-product`](/z-api/catalog/add-product-to-collection) | Sim | Não |
 | Remover produto da coleção | [`POST /catalogs/collection/remove-product`](/z-api/catalog/remove-product-from-collection) | Sim | Não |
-| Listar produtos (telefone) | [`GET /catalogs/{phone}`](/z-api/catalog/get-products-phone) | Sim | Não |
-| Listar produtos V2 | [`POST /catalogs`](/z-api/catalog/get-products-v2) | Sim | Não |
-| Listar produtos V2 (telefone) | [`POST /catalogs/{phone}`](/z-api/catalog/get-products-phone-v2) | Sim | Não |
+| Listar produtos (telefone) | [`GET /catalogs/{phone}`](/z-api/catalog/get-products-phone) | Sim | Ainda não |
+| Listar produtos V2 | [`POST /catalogs`](/z-api/catalog/get-products-v2) | Sim | Ainda não |
+| Listar produtos V2 (telefone) | [`POST /catalogs/{phone}`](/z-api/catalog/get-products-phone-v2) | Sim | Ainda não |
 
 ### Etiquetas
 
@@ -216,14 +219,14 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 ## Instância
 
 <Info>
-  Veja a [introdução de instância](/z-api/instance/introduction). Status e dados da instância funcionam no WhatsApp Oficial e ainda não no WhatsApp Web, onde respondem `422`. Os dados do dispositivo funcionam só no WhatsApp Oficial.
+  Veja a [introdução de instância](/z-api/instance/introduction). Status e dados da instância funcionam no WhatsApp Oficial e ainda não no WhatsApp Web, onde respondem `422`. Os dados do dispositivo funcionam só no WhatsApp Oficial. No WhatsApp Oficial, os dados da instância e do dispositivo vêm reduzidos: `/me` traz só `id`, `token`, `name`, `due`, `connected`, `paymentStatus` e `created`, e `/device` traz só `phone` e `isBusiness`.
 </Info>
 
 | Funcionalidade | Rota Z-API | WhatsApp Web | WhatsApp Oficial |
 |---|---|---|---|
 | Status da instância | [`GET /status`](/z-api/instance/status) | Ainda não | Sim |
-| Dados da instância | [`GET /me`](/z-api/instance/me) | Ainda não | Sim |
-| Dados do dispositivo | [`GET /device`](/z-api/instance/device) | Ainda não | Sim |
+| Dados da instância | [`GET /me`](/z-api/instance/me) | Ainda não | Em parte (só `id`, `token`, `name`, `due`, `connected`, `paymentStatus` e `created`) |
+| Dados do dispositivo | [`GET /device`](/z-api/instance/device) | Ainda não | Em parte (só `phone` e `isBusiness`) |
 
 ## Fila de mensagens
 
@@ -233,11 +236,11 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 
 | Funcionalidade | Rota Z-API | WhatsApp Web | WhatsApp Oficial |
 |---|---|---|---|
-| Listar fila | [`GET /queue`](/z-api/queue/get-queue) | Sim | Em parte (a consulta volta vazia) |
-| Listar fila (paginada) | [`POST /queue`](/z-api/queue/post-queue) | Sim | Em parte (a consulta volta vazia) |
-| Contar mensagens na fila | [`GET /queue/count`](/z-api/queue/get-queue-count) | Sim | Em parte (a consulta volta vazia) |
-| Limpar fila | [`DELETE /queue`](/z-api/queue/delete-queue) | Sim | Não |
-| Remover mensagem da fila | [`DELETE /queue/{zaapId}`](/z-api/queue/delete-queue-id) | Sim | Não |
+| Listar fila | [`GET /queue`](/z-api/queue/get-queue) | Sim | Em parte (sempre vazia) |
+| Listar fila (paginada) | [`POST /queue`](/z-api/queue/post-queue) | Sim | Em parte (sempre vazia) |
+| Contar mensagens na fila | [`GET /queue/count`](/z-api/queue/get-queue-count) | Sim | Em parte (sempre `0`) |
+| Limpar fila | [`DELETE /queue`](/z-api/queue/delete-queue) | Sim | Não (responde `422`) |
+| Remover mensagem da fila | [`DELETE /queue/{zaapId}`](/z-api/queue/delete-queue-id) | Em parte (o `zaapId` devolvido no envio não está na fila) | Não (responde `422`) |
 
 ## Status
 
@@ -331,5 +334,5 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 ---
 
 <Info>
-  No WhatsApp Oficial, "Não" indica que a API oficial da Meta não tem equivalente e "Ainda não" indica uma rota que a compatibilidade ainda não libera. No WhatsApp Web, o que está como "Ainda não" é liberado aos poucos.
+  No canal WhatsApp Oficial, parte das limitações vem da API oficial da Meta e parte é do {projectName}, como a citação e a menção que não chegam, os campos reduzidos de `me` e `device` e a fila sempre vazia. No canal WhatsApp Web, o que está como "Ainda não" é liberado aos poucos pela rota compatível.
 </Info>

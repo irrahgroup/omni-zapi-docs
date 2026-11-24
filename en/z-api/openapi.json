@@ -55,9 +55,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -109,9 +106,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -151,9 +145,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -163,7 +154,7 @@
     "/send-button-actions": {
       "post": {
         "summary": "Send action buttons",
-        "description": "Sends a text message with action buttons (call, open URL or quick reply).",
+        "description": "Sends a text message with action buttons: one URL button or up to three REPLY buttons, never both in the same message. The CALL button and the copy code button are not accepted. It works on Official WhatsApp channels and on WhatsApp Web channels, with WhatsApp Web enabled in the workspace, with the same rules.",
         "operationId": "sendButtonActions",
         "tags": [
           "Messages"
@@ -176,8 +167,8 @@
                 "$ref": "#/components/schemas/SendButtonActionsRequest"
               },
               "examples": {
-                "callAndUrl": {
-                  "summary": "Call and URL buttons",
+                "url": {
+                  "summary": "URL button",
                   "value": {
                     "phone": "5511999999999",
                     "message": "Hello! How can we help?",
@@ -186,12 +177,6 @@
                     "buttonActions": [
                       {
                         "id": "1",
-                        "type": "CALL",
-                        "phone": "5511999999999",
-                        "label": "Contact us"
-                      },
-                      {
-                        "id": "2",
                         "type": "URL",
                         "url": "https://www.omni.z-api.io",
                         "label": "Visit our website"
@@ -221,14 +206,81 @@
           "200": {
             "$ref": "#/components/responses/MessageSuccess"
           },
+          "400": {
+            "description": "`image` that is neither an http or https URL nor in base64 form (with `;` and `,`). It is checked before the button rules. An `image` in that form whose content does not decode answers `failed to decode base64: ...`, after the button rules. The message is not sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    }
+                  }
+                },
+                "example": {
+                  "error": "invalid image: must be a valid URL or base64 data URI"
+                }
+              }
+            }
+          },
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
-            "$ref": "#/components/responses/NotMetaWhatsapp"
+            "description": "Buttons outside the rules, `image` with the URL button, a channel that is neither Official WhatsApp nor WhatsApp Web, or a WhatsApp Web channel without WhatsApp Web enabled in the workspace. The message is not sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    }
+                  }
+                },
+                "examples": {
+                  "callButton": {
+                    "summary": "CALL button",
+                    "value": {
+                      "error": "call button is not supported for this channel"
+                    }
+                  },
+                  "copyButton": {
+                    "summary": "Copy code button",
+                    "value": {
+                      "error": "copy button is not supported for this channel"
+                    }
+                  },
+                  "urlAndReply": {
+                    "summary": "URL and REPLY in the same message",
+                    "value": {
+                      "error": "URL and REPLY buttons cannot be sent together on this channel"
+                    }
+                  },
+                  "notMetaWhatsapp": {
+                    "summary": "Channel is neither Official WhatsApp nor WhatsApp Web",
+                    "value": {
+                      "error": "instance middleware is not META_WHATSAPP"
+                    }
+                  },
+                  "urlButtonImage": {
+                    "summary": "image with the URL button",
+                    "value": {
+                      "error": "image header with a URL button is not available for this channel yet"
+                    }
+                  },
+                  "zapiDisabled": {
+                    "summary": "WhatsApp Web not enabled in the workspace",
+                    "value": {
+                      "error": "Z-API (WhatsApp Web) instances are not enabled for this workspace"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -331,9 +383,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -369,9 +418,6 @@
           },
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
-          },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
@@ -434,9 +480,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -488,9 +531,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -540,9 +580,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -591,9 +628,6 @@
           },
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
-          },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
@@ -705,9 +739,6 @@
               }
             }
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "description": "Carousel outside the rules, or a channel that is not WhatsApp Official. The message is not sent.",
             "content": {
@@ -772,9 +803,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -831,9 +859,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -869,9 +894,6 @@
           },
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
-          },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
           },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
@@ -909,9 +931,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -947,9 +966,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -959,7 +975,7 @@
     "/read-message": {
       "post": {
         "summary": "Mark message as read",
-        "description": "Marks as read a message the channel received from the contact. It works on Official WhatsApp channels and on WhatsApp Web channels, with WhatsApp Web enabled in the workspace. The body goes as JSON or as a form (`application/x-www-form-urlencoded`). The `messageId` is the one that came in the received message webhook; `phone` is required, but not used.",
+        "description": "Marks as read a message the channel received from the contact. It works on Official WhatsApp channels and on WhatsApp Web channels, with WhatsApp Web enabled in the workspace. The body goes as JSON or as a form (`application/x-www-form-urlencoded` or `multipart/form-data`). The `messageId` is the one that came in the received message webhook; `phone` is required, but not used.",
         "operationId": "readMessage",
         "tags": [
           "Messages"
@@ -6580,9 +6596,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -6630,9 +6643,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -6671,9 +6681,6 @@
           "405": {
             "$ref": "#/components/responses/MethodNotAllowed"
           },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
           "422": {
             "$ref": "#/components/responses/NotMetaWhatsapp"
           }
@@ -6699,29 +6706,23 @@
         }
       },
       "MethodNotAllowed": {
-        "description": "Method not allowed. Make sure you are using POST.",
-        "content": {
-          "application/json": {
+        "description": "HTTP method the route does not accept. The `error` and the `Allow` header list the methods the route accepts; on the send routes, only `POST`.",
+        "headers": {
+          "Allow": {
+            "description": "Methods the route accepts, separated by commas",
             "schema": {
-              "$ref": "#/components/schemas/Error"
+              "type": "string"
             },
-            "example": {
-              "error": 405,
-              "message": "Method not allowed"
-            }
+            "example": "POST"
           }
-        }
-      },
-      "UnsupportedMediaType": {
-        "description": "Invalid Content-Type. Send `Content-Type: application/json`.",
+        },
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": 415,
-              "message": "Unsupported media type"
+              "error": "method not allowed: use POST"
             }
           }
         }
@@ -7021,19 +7022,28 @@
           },
           "message": {
             "type": "string",
-            "description": "Message text"
+            "description": "Message text, up to 1,024 characters",
+            "maxLength": 1024
           },
           "title": {
             "type": "string",
-            "description": "Message title"
+            "description": "Message title, up to 60 characters. Only with the URL button",
+            "maxLength": 60
           },
           "footer": {
             "type": "string",
-            "description": "Message footer"
+            "description": "Message footer, up to 60 characters. Only with the URL button",
+            "maxLength": 60
+          },
+          "image": {
+            "type": "string",
+            "description": "Header image, only with REPLY buttons: an http or https URL or base64 (data:<mime type>;base64,<content>). With the URL button, the message is refused with 422"
           },
           "buttonActions": {
             "type": "array",
-            "description": "List of action buttons",
+            "description": "Action buttons: one URL button or up to three REPLY buttons, never both in the same message",
+            "minItems": 1,
+            "maxItems": 3,
             "items": {
               "type": "object",
               "required": [
@@ -7043,24 +7053,21 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "description": "Button identifier"
+                  "description": "Button identifier, up to 256 characters. Without id, the button gets its position in the list, starting at \"1\"",
+                  "maxLength": 256
                 },
                 "type": {
                   "type": "string",
-                  "description": "Button type",
+                  "description": "Button type: URL opens a link, REPLY is a quick reply",
                   "enum": [
-                    "CALL",
                     "URL",
                     "REPLY"
                   ]
                 },
                 "label": {
                   "type": "string",
-                  "description": "Text displayed on the button"
-                },
-                "phone": {
-                  "type": "string",
-                  "description": "Phone number for CALL-type buttons"
+                  "description": "Text displayed on the button, up to 20 characters",
+                  "maxLength": 20
                 },
                 "url": {
                   "type": "string",
@@ -7613,12 +7620,8 @@
         "type": "object",
         "properties": {
           "error": {
-            "type": "integer",
-            "description": "Error code"
-          },
-          "message": {
             "type": "string",
-            "description": "Error description"
+            "description": "Error message"
           }
         }
       },

@@ -74,6 +74,60 @@ Cada fila es un valor de `content.type` y lleva a la página del tipo. Todas usa
 
 Las condiciones de cada canal, como el documento en Instagram, y qué enviar en su lugar están en [Qué acepta cada canal](/es/channels/message-support).
 
+## Rutas por tipo
+
+Los tipos de la tabla de abajo también tienen su propia ruta, `POST /v1/channels/{channelId}/send-<ruta>`. Acepta el mismo cuerpo de `POST /v1/channels/{channelId}/messages` y da la misma respuesta. El tipo viene de la ruta, así que `content.type` es opcional. Si lo envías, debe ser el tipo de la ruta.
+
+El cuerpo es siempre el de esta API. Si tu integración usa el cuerpo de Z-API, usa la [compatibilidad con Z-API](/es/z-api/introduction), que acepta ese formato.
+
+| Ruta | `content.type` | Página |
+|---|---|---|
+| `send-text` | `TEXT` | [Enviar texto](/es/messages/send-text) |
+| `send-image` | `IMAGE` | [Enviar imagen](/es/messages/send-image) |
+| `send-video` | `VIDEO` | [Enviar vídeo](/es/messages/send-video) |
+| `send-audio` | `AUDIO` | [Enviar audio](/es/messages/send-audio) |
+| `send-ptv` | `PTV` | — |
+| `send-gif` | `GIF` | — |
+| `send-sticker` | `STICKER` | [Enviar sticker](/es/messages/send-sticker) |
+| `send-document` y `send-document/{extension}` | `DOCUMENT` | [Enviar documento](/es/messages/send-document) |
+| `send-link` | `LINK` | — |
+| `send-location` | `LOCATION` | [Enviar ubicación](/es/messages/send-location) |
+| `send-contact` | `CONTACT` | [Enviar contacto](/es/messages/send-contact) |
+| `send-contacts` | `CONTACT_ARRAY` | — |
+| `send-reaction` | `REACTION` | [Enviar reacción](/es/messages/send-reaction) |
+| `send-template` | `TEMPLATE` | [Enviar plantilla](/es/messages/send-template) |
+| `send-option-list` | `INTERACTIVE_LIST` | [Enviar lista de opciones](/es/messages/send-interactive-list) |
+| `send-button-list` | `INTERACTIVE_BUTTON` | [Enviar texto con botones](/es/messages/send-interactive-button) |
+| `send-button-actions` | `INTERACTIVE_ACTION` | [Enviar botones de acción](/es/messages/send-interactive-action) |
+| `send-button-otp` | `INTERACTIVE_OTP` | — |
+| `send-carousel` | `INTERACTIVE_CAROUSEL` | — |
+
+- En `send-document/{extension}`, el segmento `{extension}` se ignora: la extensión va en el campo `extension` de cada adjunto, como en `/messages`.
+- `send-template` solo acepta canales Meta Cloud API (WhatsApp Oficial). En otro canal, la API responde `422` `{"error": "operation not supported for this instance"}`.
+- Si el canal no acepta el tipo de la ruta, el rechazo es el mismo de `/messages`.
+
+Cuando el cuerpo no sirve para la ruta, la API responde `400` con `"error": "invalid_request"`, el campo en `field` y el motivo en `message`, y el mensaje no se envía. En los ejemplos, la ruta es `send-text`; en cada ruta, el texto trae su nombre y su tipo.
+
+| `field` | Cuándo | `message` |
+|---|---|---|
+| `content` | `content` ausente o que no es un objeto JSON | `content must be a JSON object; /send-text takes the same body as POST /v1/channels/{id}/messages` |
+| `content.type` | `content.type` distinto del tipo de la ruta | `content.type must be TEXT on /send-text; leave it out, or send other types with POST /v1/channels/{id}/messages` |
+
+<Note>
+  Las rutas de abajo no tienen un tipo equivalente en esta API. Responden `422`, con cualquier credencial o sin ninguna, y no se envía nada:
+
+  `send-link-list`, `send-option-multi-list`, `send-button-pix`, `send-remove-reaction`, `send-poll`, `send-poll-vote`, `send-call`, `send-chat-expiration`, `send-text-status`, `send-image-status`, `send-video-status`, `send-order`, `send-request-payment`, `send-event`, `send-edit-event`, `send-event-response`, `send-comment`, `send-catalog`, `send-product` y `send-newsletter-admin-invite`.
+
+  ```json
+  {
+    "error": "send_route_not_supported",
+    "message": "/send-poll has no Omni content type; send it with POST /v1/channels/{id}/messages"
+  }
+  ```
+
+  En `message`, cada ruta trae su propio nombre. Para enviar, usa `POST /v1/channels/{channelId}/messages` con uno de los [tipos disponibles](#tipos-disponibles).
+</Note>
+
 ## Respuesta de la API
 
 Cuando se acepta el envío, la API responde `200` con el identificador del mensaje:
@@ -154,7 +208,7 @@ Cuando la API rechaza el envío, el mensaje no se envía. La respuesta trae el e
   "timestamp": "2026-10-22T14:00:00.123Z",
   "code": "BUSINESS_RULE_VIOLATION",
   "subCode": "CHANNEL_DISCONNECTED",
-  "message": "Channel is disconnected"
+  "message": "Channel is disconnected: the message was not sent because the channel is not connected right now. Reconnect the channel (WhatsApp Web by reading a new QR code; WhatsApp Official, Instagram and Messenger through the Meta connection; Telegram with the bot token) and send again. See https://developer.omni.z-api.io/en/connect/introduction"
 }
 ```
 

@@ -9,8 +9,8 @@ import { projectName } from '/snippets/variables.mdx';
 
 La compatibilidad con Z-API atiende canales **WhatsApp Oficial** (API oficial de Meta) y **WhatsApp Web**. Lo que hace una ruta de Z-API en {projectName} depende del tipo de canal:
 
-- **WhatsApp Web**: atiende la mayoría de las rutas, con la misma estructura de respuesta que daría Z-API.
-- **WhatsApp Oficial**: rige la API oficial de Meta, que atiende parte de las rutas y no tiene equivalente para otras.
+- **WhatsApp Web** (`Z_API_WHATSAPP`): atiende la mayoría de las rutas, con la misma estructura de respuesta que daría Z-API.
+- **WhatsApp Oficial** (`META_WHATSAPP`): rige la API oficial de Meta, que atiende parte de las rutas y no tiene equivalente para otras.
 
 Los canales de otros tipos, como Instagram, Messenger y Telegram, no son atendidos por las rutas de Z-API y responden `422`. Para esos canales, usa las [rutas de mensajes de {projectName}](/es/messages/introduction).
 
@@ -18,19 +18,19 @@ Una ruta de Z-API que el canal no atiende responde `422` con un mensaje que indi
 
 Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 
-| Valor | Significado |
+| Término | Significado |
 |---|---|
-| Sí | La ruta funciona en el canal. En WhatsApp Web, la respuesta tiene la estructura de Z-API |
-| Parcial | Funciona con límites, descritos en la propia fila o en el aviso de la sección |
-| Aún no | La ruta aún no está habilitada en este canal y responde `422` (llega poco a poco) |
-| No | El canal no tiene equivalente y la ruta responde `422` |
+| Sí | La ruta funciona en el canal. En WhatsApp Web, la respuesta es la misma que daría Z-API. |
+| Parcial | La ruta funciona con límites, descritos en la propia celda. |
+| Aún no | La ruta aún no está habilitada en este canal por la ruta compatible. Se habilita poco a poco. |
+| No | La ruta no funciona en el canal, en general porque el canal no tiene equivalente. Si hay más detalle, va en la propia celda. |
 
 ---
 
 ## Mensajes
 
 <Info>
-  En los envíos, los campos `messageId` (respuesta con cita), `mentioned` (menciones), `delayMessage`, `viewOnce` y `stickerAuthor` no llegan al mensaje en ningún canal. Consulta [Responder mensaje](/es/z-api/messages/reply-message). Las diferencias del envío por WhatsApp Web están en [Compatibilidad con Z-API](/es/z-api/introduction).
+  En los envíos, los campos `messageId` (respuesta con cita), `mentioned` (menciones), `delayMessage`, `viewOnce` y `stickerAuthor` no llegan al mensaje en ningún canal: el envío responde `200` y el campo se ignora. En la respuesta privada (`privateAnswer`), el mensaje va al `phone` informado; en un grupo, a todo el grupo. `mentioned` con un `phone` que no es de grupo responde `400` `mentions are only allowed in groups`. Consulta [Responder mensaje](/es/z-api/messages/reply-message). Las diferencias del envío por WhatsApp Web están en [Compatibilidad con Z-API](/es/z-api/introduction).
 </Info>
 
 ### Envío de mensajes
@@ -49,7 +49,7 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 | Enviar ubicación | [`POST /send-location`](/es/z-api/messages/send-location) | Sí | Sí |
 | Enviar lista de botones | [`POST /send-button-list`](/es/z-api/messages/send-button-list) | Sí | Sí |
 | Enviar botones de acción | [`POST /send-button-actions`](/es/z-api/messages/send-button-actions) | Sí | Sí |
-| Enviar OTP mediante botón | [`POST /send-button-otp`](/es/z-api/messages/send-button-otp) | Sí | Sí |
+| Enviar OTP mediante botón | [`POST /send-button-otp`](/es/z-api/messages/send-button-otp) | Sí | No (la ruta responde `200`, pero el mensaje no sale) |
 | Enviar reacción | [`POST /send-reaction`](/es/z-api/messages/send-reaction) | Sí | Sí |
 | Quitar reacción | [`POST /send-remove-reaction`](/es/z-api/messages/send-remove-reaction) | Sí | Sí |
 | Enviar carrusel | [`POST /send-carousel`](/es/z-api/messages/send-carousel) | Aún no | Sí |
@@ -61,14 +61,15 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 | Enviar encuesta / votar | [`POST /send-poll`](https://developer.z-api.io/en/message/send-poll) | Aún no | No |
 | Enviar pedido | `POST /send-order` | Aún no | No |
 | Enviar lista de enlaces | `POST /send-link-list` | Aún no | No |
-| Enviar GIF | [`POST /send-gif`](https://developer.z-api.io/en/message/send-message-gif) | Aún no | No |
+| Enviar GIF | [`POST /send-gif`](https://developer.z-api.io/en/message/send-message-gif) | Aún no | Parcial (va como imagen) |
 | Enviar PTV (vídeo circular) | [`POST /send-ptv`](https://developer.z-api.io/en/message/send-message-ptv) | Aún no | Parcial (se envía como vídeo normal) |
 | Enviar plantilla | Campo `template` en los envíos | Aún no | Sí |
 | Editar mensaje | Atributo `editMessageId` en los envíos | Aún no | No |
 | Editar descripción de documento | Atributo `editDocumentMessageId` en send-document | Aún no | No |
 | Enviar / editar / responder evento | [`POST /send-event`](https://developer.z-api.io/en/message/send-event) | Aún no | No |
 | Invitación de admin de canal | [`POST /send-newsletter-admin-invite`](https://developer.z-api.io/en/message/send-newsletter-admin-invite) | Aún no | No |
-| Respuesta privada en grupo | Atributo `privateAnswer` en reply-message | Aún no | No |
+| Responder a un mensaje (cita) | Atributo `messageId` en los envíos ([reply-message](/es/z-api/messages/reply-message)) | Parcial (se envía sin la cita) | Parcial (se envía sin la cita) |
+| Respuesta privada en grupo | Atributo `privateAnswer` en reply-message | Parcial (se envía sin la respuesta privada) | Parcial (se envía sin la respuesta privada) |
 
 ### Acciones sobre mensajes
 
@@ -112,7 +113,7 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
   - requiere una cuenta oficial verificada (OBA);
   - no funciona en un número en coexistencia (con la app de WhatsApp Business en el mismo número);
   - el grupo tiene como máximo 8 participantes;
-  - al crear el grupo no se añade a nadie: la entrada es solo por el enlace de invitación.
+  - al crear el grupo no se añade a nadie: todos los teléfonos vuelven en `phonesNotAdded` y `autoInvite` se ignora. La entrada es por el enlace de invitación o por una solicitud de entrada aprobada.
 
   Sin esas condiciones, o en las 7 rutas sin equivalente, la ruta responde `422`.
 </Info>
@@ -138,6 +139,8 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 | Rechazar participantes | [`POST /reject-participant`](/es/z-api/groups/reject-participant) | Sí | Sí |
 | Promover a admin | [`POST /add-admin`](/es/z-api/groups/add-admin) | Sí | No |
 | Quitar admin | [`POST /remove-admin`](/es/z-api/groups/remove-admin) | Sí | No |
+| Mencionar a un miembro | [`POST /send-text`](https://developer.z-api.io/en/group/mention-participant) | Parcial (se envía sin la mención) | Parcial (se envía sin la mención) |
+| Mencionar al grupo | [`POST /send-text`](https://developer.z-api.io/en/group/mention-group) | Parcial (se envía sin la mención) | Parcial (se envía sin la mención) |
 
 ## Business
 
@@ -166,7 +169,7 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 
 | Funcionalidad | Ruta de Z-API | WhatsApp Web | WhatsApp Oficial |
 |---|---|---|---|
-| Cambiar el nombre del perfil | [`PUT /profile-name`](/es/z-api/profile/profile-name) | Sí | Parcial (exige revisión de Meta) |
+| Cambiar el nombre del perfil | [`PUT /profile-name`](/es/z-api/profile/profile-name) | Sí | No (responde `422`: el cambio de nombre requiere revisión de Meta, por el WhatsApp Manager) |
 | Cambiar el estado del perfil | [`PUT /profile-description`](/es/z-api/profile/profile-description) | Sí | Sí |
 | Cambiar la foto del perfil | [`PUT /profile-picture`](/es/z-api/profile/profile-picture) | Sí | Parcial (solo por URL http o https; no se puede quitar) |
 | Cambiar el nombre del canal | [`PUT /update-name`](/es/z-api/profile/update-name) | Sí | Sí |
@@ -174,16 +177,16 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 ### Catálogo y productos
 
 <Info>
-  Consulta la [introducción de catálogo](/es/z-api/catalog/introduction). La gestión de catálogo y productos funciona solo en WhatsApp Web. En WhatsApp Oficial, las 15 rutas de gestión responden `422`. Solo el envío de catálogo (`send-catalog`) funciona allí.
+  Consulta la [introducción de catálogo](/es/z-api/catalog/introduction). La gestión de catálogo y productos funciona en WhatsApp Web. En WhatsApp Oficial, la gestión de catálogo por la ruta compatible aún no está en producción: las 15 rutas de gestión responden `422`. Solo el envío de catálogo (`send-catalog`) funciona allí.
 </Info>
 
 | Funcionalidad | Ruta de Z-API | WhatsApp Web | WhatsApp Oficial |
 |---|---|---|---|
-| Crear/editar producto | [`POST /products`](/es/z-api/catalog/edit-product) | Sí | No |
-| Listar productos | [`GET /catalogs`](/es/z-api/catalog/get-products) | Sí | No |
-| Buscar producto por ID | [`GET /products/{productId}`](/es/z-api/catalog/get-product-id) | Sí | No |
-| Eliminar producto | [`DELETE /products/{productId}`](/es/z-api/catalog/delete-product) | Sí | No |
-| Configuración del catálogo | [`POST /catalogs/config`](/es/z-api/catalog/save-catalog-config) | Sí | No |
+| Crear/editar producto | [`POST /products`](/es/z-api/catalog/edit-product) | Sí | Aún no |
+| Listar productos | [`GET /catalogs`](/es/z-api/catalog/get-products) | Sí | Aún no |
+| Buscar producto por ID | [`GET /products/{productId}`](/es/z-api/catalog/get-product-id) | Sí | Aún no |
+| Eliminar producto | [`DELETE /products/{productId}`](/es/z-api/catalog/delete-product) | Sí | Aún no |
+| Configuración del catálogo | [`POST /catalogs/config`](/es/z-api/catalog/save-catalog-config) | Sí | Aún no |
 | Crear colección | [`POST /catalogs/collection`](/es/z-api/catalog/create-collection) | Sí | No |
 | Listar colecciones | [`GET /catalogs/collection`](/es/z-api/catalog/list-collections) | Sí | No |
 | Eliminar colección | [`DELETE /catalogs/collection/{id}`](/es/z-api/catalog/delete-collection) | Sí | No |
@@ -191,9 +194,9 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 | Listar productos de la colección | [`GET /catalogs/collection-products/{phone}`](/es/z-api/catalog/list-collection-products) | Sí | No |
 | Añadir producto a la colección | [`POST /catalogs/collection/add-product`](/es/z-api/catalog/add-product-to-collection) | Sí | No |
 | Quitar producto de la colección | [`POST /catalogs/collection/remove-product`](/es/z-api/catalog/remove-product-from-collection) | Sí | No |
-| Listar productos (teléfono) | [`GET /catalogs/{phone}`](/es/z-api/catalog/get-products-phone) | Sí | No |
-| Listar productos V2 | [`POST /catalogs`](/es/z-api/catalog/get-products-v2) | Sí | No |
-| Listar productos V2 (teléfono) | [`POST /catalogs/{phone}`](/es/z-api/catalog/get-products-phone-v2) | Sí | No |
+| Listar productos (teléfono) | [`GET /catalogs/{phone}`](/es/z-api/catalog/get-products-phone) | Sí | Aún no |
+| Listar productos V2 | [`POST /catalogs`](/es/z-api/catalog/get-products-v2) | Sí | Aún no |
+| Listar productos V2 (teléfono) | [`POST /catalogs/{phone}`](/es/z-api/catalog/get-products-phone-v2) | Sí | Aún no |
 
 ### Etiquetas
 
@@ -216,14 +219,14 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 ## Instancia
 
 <Info>
-  Consulta la [introducción de instancia](/es/z-api/instance/introduction). El estado y los datos de la instancia funcionan en WhatsApp Oficial y aún no en WhatsApp Web, donde responden `422`. Los datos del dispositivo funcionan solo en WhatsApp Oficial.
+  Consulta la [introducción de instancia](/es/z-api/instance/introduction). El estado y los datos de la instancia funcionan en WhatsApp Oficial y aún no en WhatsApp Web, donde responden `422`. Los datos del dispositivo funcionan solo en WhatsApp Oficial. En WhatsApp Oficial, los datos de la instancia y del dispositivo vienen reducidos: `/me` devuelve solo `id`, `token`, `name`, `due`, `connected`, `paymentStatus` y `created`, y `/device` devuelve solo `phone` e `isBusiness`.
 </Info>
 
 | Funcionalidad | Ruta de Z-API | WhatsApp Web | WhatsApp Oficial |
 |---|---|---|---|
 | Estado de la instancia | [`GET /status`](/es/z-api/instance/status) | Aún no | Sí |
-| Datos de la instancia | [`GET /me`](/es/z-api/instance/me) | Aún no | Sí |
-| Datos del dispositivo | [`GET /device`](/es/z-api/instance/device) | Aún no | Sí |
+| Datos de la instancia | [`GET /me`](/es/z-api/instance/me) | Aún no | Parcial (solo `id`, `token`, `name`, `due`, `connected`, `paymentStatus` y `created`) |
+| Datos del dispositivo | [`GET /device`](/es/z-api/instance/device) | Aún no | Parcial (solo `phone` e `isBusiness`) |
 
 ## Cola de mensajes
 
@@ -233,11 +236,11 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 
 | Funcionalidad | Ruta de Z-API | WhatsApp Web | WhatsApp Oficial |
 |---|---|---|---|
-| Listar cola | [`GET /queue`](/es/z-api/queue/get-queue) | Sí | Parcial (la consulta devuelve vacío) |
-| Listar cola (paginada) | [`POST /queue`](/es/z-api/queue/post-queue) | Sí | Parcial (la consulta devuelve vacío) |
-| Contar mensajes en la cola | [`GET /queue/count`](/es/z-api/queue/get-queue-count) | Sí | Parcial (la consulta devuelve vacío) |
-| Vaciar cola | [`DELETE /queue`](/es/z-api/queue/delete-queue) | Sí | No |
-| Quitar mensaje de la cola | [`DELETE /queue/{zaapId}`](/es/z-api/queue/delete-queue-id) | Sí | No |
+| Listar cola | [`GET /queue`](/es/z-api/queue/get-queue) | Sí | Parcial (siempre vacía) |
+| Listar cola (paginada) | [`POST /queue`](/es/z-api/queue/post-queue) | Sí | Parcial (siempre vacía) |
+| Contar mensajes en la cola | [`GET /queue/count`](/es/z-api/queue/get-queue-count) | Sí | Parcial (siempre `0`) |
+| Vaciar cola | [`DELETE /queue`](/es/z-api/queue/delete-queue) | Sí | No (responde `422`) |
+| Quitar mensaje de la cola | [`DELETE /queue/{zaapId}`](/es/z-api/queue/delete-queue-id) | Parcial (el `zaapId` que devuelve el envío no está en la cola) | No (responde `422`) |
 
 ## Estados
 
@@ -331,5 +334,5 @@ Las tablas siguientes muestran, por funcionalidad, qué hace cada canal:
 ---
 
 <Info>
-  En WhatsApp Oficial, "No" indica que la API oficial de Meta no tiene equivalente y "Aún no" indica una ruta que la compatibilidad aún no habilita. En WhatsApp Web, lo que figura como "Aún no" se habilita poco a poco.
+  En el canal WhatsApp Oficial, parte de las limitaciones viene de la API oficial de Meta y parte es de {projectName}, como la cita y la mención que no llegan, los campos reducidos de `me` y `device` y la cola siempre vacía. En el canal WhatsApp Web, lo que figura como "Aún no" se habilita poco a poco por la ruta compatible.
 </Info>
