@@ -94,31 +94,71 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "invalid_request",
-                  "field": "cursor",
-                  "message": "cursor is not valid: send back exactly the nextCursor returned by the previous page, or leave it out to start from the first page"
+                "examples": {
+                  "cursor": {
+                    "summary": "cursor inválido",
+                    "value": {
+                      "error": "invalid_request",
+                      "field": "cursor",
+                      "message": "cursor is not valid: send back exactly the nextCursor returned by the previous page, or leave it out to start from the first page"
+                    }
+                  },
+                  "pageSize": {
+                    "summary": "pageSize inválido",
+                    "value": {
+                      "error": "invalid_request",
+                      "field": "pageSize"
+                    }
+                  }
                 }
               }
             }
           },
           "422": {
-            "description": "Operação não suportada no canal, ou instância não provisionada, assinatura inativa ou workspace bloqueado",
+            "description": "Instância não provisionada, assinatura inativa, workspace bloqueado ou operação não suportada no canal, verificados nesta ordem (o `404` de canal inexistente vem antes de todos). Só o 422 de operação não suportada traz `message`, e ele é para leitura: trate pelo `error`.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
-                  "operationNotSupported": {
+                  "instanceNotProvisioned": {
+                    "summary": "Instância não provisionada",
                     "value": {
-                      "error": "operation not supported for this instance",
-                      "message": "Listing contacts is not supported on WhatsApp official API (Meta) channels: the official WhatsApp API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Assinatura inativa",
+                    "value": {
+                      "error": "instance subscription is not active"
                     }
                   },
                   "blockedWorkspace": {
+                    "summary": "Workspace bloqueado",
                     "value": {
                       "error": "You are blocked, contact support."
+                    }
+                  },
+                  "operationNotSupportedMeta": {
+                    "summary": "Canal WhatsApp Oficial (Meta)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Listing contacts is not supported on WhatsApp official API (Meta) channels: the official API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedOtherChannel": {
+                    "summary": "Canal Telegram (Instagram e Messenger: mesmo texto, com o nome do canal)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Listing contacts is not supported on Telegram channels: contacts belong to a WhatsApp number, and this channel has none. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedNoType": {
+                    "summary": "Canal ainda sem tipo",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Listing contacts is not supported on this instance: it is not connected to any channel type yet. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
                     }
                   }
                 }
@@ -133,6 +173,20 @@
           },
           "404": {
             "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "502": {
+            "description": "Resposta do canal grande demais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_response_too_large",
+                  "message": "The channel answer is too large. Use a smaller pageSize."
+                }
+              }
+            }
           }
         }
       }
@@ -216,22 +270,50 @@
             }
           },
           "422": {
-            "description": "Operação não suportada no canal, ou instância não provisionada, assinatura inativa ou workspace bloqueado",
+            "description": "Instância não provisionada, assinatura inativa, workspace bloqueado ou operação não suportada no canal, verificados nesta ordem (o `404` de canal inexistente vem antes de todos). Só o 422 de operação não suportada traz `message`, e ele é para leitura: trate pelo `error`.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
-                  "operationNotSupported": {
+                  "instanceNotProvisioned": {
+                    "summary": "Instância não provisionada",
                     "value": {
-                      "error": "operation not supported for this instance",
-                      "message": "Getting a contact is not supported on WhatsApp official API (Meta) channels: the official WhatsApp API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Assinatura inativa",
+                    "value": {
+                      "error": "instance subscription is not active"
                     }
                   },
                   "blockedWorkspace": {
+                    "summary": "Workspace bloqueado",
                     "value": {
                       "error": "You are blocked, contact support."
+                    }
+                  },
+                  "operationNotSupportedMeta": {
+                    "summary": "Canal WhatsApp Oficial (Meta)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact is not supported on WhatsApp official API (Meta) channels: the official API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedOtherChannel": {
+                    "summary": "Canal Telegram (Instagram e Messenger: mesmo texto, com o nome do canal)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact is not supported on Telegram channels: contacts belong to a WhatsApp number, and this channel has none. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedNoType": {
+                    "summary": "Canal ainda sem tipo",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact is not supported on this instance: it is not connected to any channel type yet. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
                     }
                   }
                 }
@@ -246,6 +328,20 @@
           },
           "404": {
             "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "502": {
+            "description": "Resposta do canal grande demais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_response_too_large",
+                  "message": "The channel answer is too large. Use a smaller pageSize."
+                }
+              }
+            }
           }
         }
       }
@@ -325,22 +421,50 @@
             }
           },
           "422": {
-            "description": "Operação não suportada no canal, ou instância não provisionada, assinatura inativa ou workspace bloqueado",
+            "description": "Instância não provisionada, assinatura inativa, workspace bloqueado ou operação não suportada no canal, verificados nesta ordem (o `404` de canal inexistente vem antes de todos). Só o 422 de operação não suportada traz `message`, e ele é para leitura: trate pelo `error`.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
-                  "operationNotSupported": {
+                  "instanceNotProvisioned": {
+                    "summary": "Instância não provisionada",
                     "value": {
-                      "error": "operation not supported for this instance",
-                      "message": "Getting a contact photo is not supported on WhatsApp official API (Meta) channels: the official WhatsApp API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Assinatura inativa",
+                    "value": {
+                      "error": "instance subscription is not active"
                     }
                   },
                   "blockedWorkspace": {
+                    "summary": "Workspace bloqueado",
                     "value": {
                       "error": "You are blocked, contact support."
+                    }
+                  },
+                  "operationNotSupportedMeta": {
+                    "summary": "Canal WhatsApp Oficial (Meta)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact photo is not supported on WhatsApp official API (Meta) channels: the official API does not give the profile photo of a contact. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedOtherChannel": {
+                    "summary": "Canal Telegram (Instagram e Messenger: mesmo texto, com o nome do canal)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact photo is not supported on Telegram channels: contacts belong to a WhatsApp number, and this channel has none. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedNoType": {
+                    "summary": "Canal ainda sem tipo",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Reading a contact photo is not supported on this instance: it is not connected to any channel type yet. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
                     }
                   }
                 }
@@ -355,6 +479,20 @@
           },
           "404": {
             "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "502": {
+            "description": "Resposta do canal grande demais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "provider_response_too_large",
+                  "message": "The channel answer is too large. Use a smaller pageSize."
+                }
+              }
+            }
           }
         }
       }
@@ -464,22 +602,50 @@
             }
           },
           "422": {
-            "description": "Operação não suportada no canal, ou instância não provisionada, assinatura inativa ou workspace bloqueado",
+            "description": "Instância não provisionada, assinatura inativa, workspace bloqueado ou operação não suportada no canal, verificados nesta ordem (o `404` de canal inexistente vem antes de todos). Só o 422 de operação não suportada traz `message`, e ele é para leitura: trate pelo `error`.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
-                  "operationNotSupported": {
+                  "instanceNotProvisioned": {
+                    "summary": "Instância não provisionada",
                     "value": {
-                      "error": "operation not supported for this instance",
-                      "message": "Checking contacts is not supported on WhatsApp official API (Meta) channels: the official WhatsApp API does not give access to the contacts of the number. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Assinatura inativa",
+                    "value": {
+                      "error": "instance subscription is not active"
                     }
                   },
                   "blockedWorkspace": {
+                    "summary": "Workspace bloqueado",
                     "value": {
                       "error": "You are blocked, contact support."
+                    }
+                  },
+                  "operationNotSupportedMeta": {
+                    "summary": "Canal WhatsApp Oficial (Meta)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Checking whether numbers have WhatsApp is not supported on WhatsApp official API (Meta) channels: the official API cannot check whether a number has WhatsApp. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedOtherChannel": {
+                    "summary": "Canal Telegram (Instagram e Messenger: mesmo texto, com o nome do canal)",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Checking whether numbers have WhatsApp is not supported on Telegram channels: contacts belong to a WhatsApp number, and this channel has none. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
+                    }
+                  },
+                  "operationNotSupportedNoType": {
+                    "summary": "Canal ainda sem tipo",
+                    "value": {
+                      "error": "operation not supported for this instance",
+                      "message": "Checking whether numbers have WhatsApp is not supported on this instance: it is not connected to any channel type yet. Use a WhatsApp Web channel for contacts; GET /v1/channels/{id}/contacts/capabilities lists what each channel supports."
                     }
                   }
                 }
@@ -494,7 +660,8 @@
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": "provider_response_too_large"
+                  "error": "provider_response_too_large",
+                  "message": "Send fewer contacts per request."
                 }
               }
             }
@@ -710,27 +877,38 @@
     },
     "responses": {
       "Unauthorized": {
-        "description": "Não autenticado (Secret Key ausente ou inválida)",
+        "description": "Secret Key recusada. Vem com o header `WWW-Authenticate: Bearer`; o `message` muda com o motivo (ver [Autenticação](/authentication)).",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": "Authorization invalid"
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+            }
+          }
+        },
+        "headers": {
+          "WWW-Authenticate": {
+            "description": "Sempre `Bearer`",
+            "schema": {
+              "type": "string",
+              "example": "Bearer"
             }
           }
         }
       },
       "Forbidden": {
-        "description": "IP não liberado na lista do workspace",
+        "description": "IP fora da lista do workspace (ver [Restrição de IP](/security/ip-restriction))",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": "ip_not_allowed"
+              "error": "ip_not_allowed",
+              "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
             }
           }
         }
