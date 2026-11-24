@@ -1,0 +1,32 @@
+---
+title: "Introdução à instância"
+description: "As 3 rotas de instância da Z-API: status, dados do canal e dados do celular, e o que cada canal devolve"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Conceituação
+
+Esta seção documenta as 3 rotas de instância da Z-API que o {projectName} atende na Z-API Compatibilidade: status, dados da instância e dados do celular. O caminho (`/instances/` ou `/channels/`, seguido de `/{id}/token/{token}/` e da rota) e o formato da resposta são os da Z-API. Para consultar o estado do canal, a única mudança na sua aplicação continua sendo a base URL e o header de autenticação.
+
+O que cada rota devolve depende do tipo do canal. As rotas funcionam em canais **WhatsApp Oficial** (API oficial da Meta) e, quando indicado, em outros canais que não são WhatsApp Web. No **WhatsApp Web** elas ainda não estão disponíveis.
+
+## Disponibilidade por canal
+
+<ZapiChannelMatrix family="instance" lang="pt" />
+
+- **WhatsApp Web:** as 3 rotas respondem `422` com `<rota> route is not available through this compatibility route for Z_API_WHATSAPP instances yet`, em que `<rota>` é `instance status`, `instance data` ou `device`.
+- **WhatsApp Oficial:** as 3 rotas funcionam, no formato da Z-API. Os campos que o Omni Z-API não tem não vêm na resposta.
+- **Demais canais** (Telegram, Instagram, Messenger e outros): `status` e `me` funcionam. `device` responde `422` com `device route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances`, em que `<TIPO>` é o tipo do canal. Um canal que não informa o estado de conexão recebe esse mesmo `422` em `status` e `me`, com `instance status` ou `instance data` no lugar de `device`.
+
+## Erros comuns
+
+Todos os erros têm o formato `{"error": "<mensagem>"}`. Os que valem para as rotas de instância:
+
+| Status | `error` | Quando |
+|---|---|---|
+| `404` | `instance not found` | Id ou token do canal errados. A autenticação está em [Autenticação](/z-api/authentication). |
+| `422` | `<rota> route is not available through this compatibility route for Z_API_WHATSAPP instances yet` | Canal WhatsApp Web. |
+| `422` | `<rota> route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances` | `device` em canal que não é WhatsApp Oficial, ou canal que não informa o estado de conexão. |
+| `502` | `failed to read instance data` | Não foi possível ler os dados do canal. Tente de novo. |

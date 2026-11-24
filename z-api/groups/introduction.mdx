@@ -1,0 +1,81 @@
+---
+title: "Introdução aos grupos"
+description: "As 19 rotas de grupo da Z-API: o que cada canal atende, o ID do grupo e as regras do WhatsApp Oficial"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Conceituação
+
+Esta seção documenta as 19 rotas de grupo da Z-API que o {projectName} atende na Z-API Compatibilidade. O caminho (`/instances/` ou `/channels/`, seguido de `/{id}/token/{token}/` e da rota), os campos do corpo e o formato da resposta são os da Z-API. Para consultar, criar e administrar grupos, a única mudança na sua aplicação continua sendo a base URL e o header de autenticação.
+
+O que cada rota faz depende do tipo do canal. As rotas de grupo funcionam em canais **WhatsApp Web** e, com limitações, em canais **WhatsApp Oficial** (API oficial da Meta).
+
+## Disponibilidade por canal
+
+<ZapiChannelMatrix family="groups" lang="pt" />
+
+- **WhatsApp Web:** as 19 rotas estão disponíveis.
+- **WhatsApp Oficial:** 12 rotas funcionam, pela Groups API da Meta. As outras 7 respondem `422` com `<rota> is not available for META_WHATSAPP channels`, em que `<rota>` é o nome da rota sem a barra, como `add-participant`.
+- **Demais canais** (Telegram, Instagram, Messenger e outros): todas as rotas respondem `422`.
+
+```json
+{ "error": "group route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances" }
+```
+
+`<TIPO>` é o tipo do canal. Um canal sem tipo recebe `group route is not available for this channel type; available only on Z-API (WhatsApp Web) instances`.
+
+## ID do grupo
+
+O ID do grupo é o valor que as rotas recebem em `phone` ou `groupId`.
+
+| Canal | Formato do ID |
+|---|---|
+| WhatsApp Web | O da Z-API, como `120363019502650977-group` |
+| WhatsApp Oficial | Um texto opaco que a Meta devolve, **sem** o sufixo `-group` |
+
+- Obtenha o ID em [Buscar grupos](/z-api/groups/get-groups) ou na resposta de [Criar grupo](/z-api/groups/create-group). Use o valor como recebeu, sem montar nem alterar.
+- No WhatsApp Oficial, o ID tem de 1 a 128 caracteres de `[A-Za-z0-9._=-]`. Um ID com `@`, como `120363019502650977@g.us`, responde `400` com `invalid path parameter`.
+- Uma integração que reconhece grupo pelo sufixo `-group` não reconhece o ID do WhatsApp Oficial.
+- O ID de um canal não serve em outro: os formatos são diferentes.
+
+## O que muda no WhatsApp Oficial
+
+<Warning>
+  As rotas de grupo no WhatsApp Oficial exigem uma [conta comercial oficial (OBA)](https://developers.facebook.com/documentation/business-messaging/whatsapp/official-business-accounts) e não funcionam em número em [coexistência](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users), segundo a [Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups). Os erros dessas duas situações estão em [Erros comuns](#erros-comuns).
+</Warning>
+
+A Groups API da Meta tem limites que o WhatsApp Web não tem. Uma integração vinda da Z-API precisa saber:
+
+- **[Buscar grupos](/z-api/groups/get-groups) lista os [grupos ativos do número](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#get-active-groups)** na Groups API da Meta.
+- **Ninguém é adicionado na criação.** Os números de `phones` voltam em `phonesNotAdded`, e a entrada é só pelo link de convite, porque a [Meta não permite adicionar participantes manualmente](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#create-group).
+- **O grupo tem no máximo [8 participantes](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups)**, limite da Meta.
+- **A empresa é a criadora e [administradora do grupo](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference).** `owner` vem `null`, os participantes saem como membros comuns, e as rotas de promover e remover admin não existem no WhatsApp Oficial.
+- **`{"value": true}` é o [aceite da Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#update-group-settings)**, e não a confirmação de que a alteração já apareceu no grupo.
+- **`phone` pode vir `null` na criação**, quando a Meta ainda não listou o grupo.
+- **Confira [Buscar grupos](/z-api/groups/get-groups) antes de repetir uma criação** que respondeu `502`: o grupo pode ter sido criado.
+- **Aprovar e rejeitar participantes só servem a grupo com [aprovação de entrada](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#groups-with-join-requests)**, criado com `requireAdminApproval` `true`.
+
+## Erros comuns
+
+Todos os erros têm o formato `{"error": "<mensagem>"}`. Os que valem para as rotas de grupo:
+
+| Status | `error` | Quando |
+|---|---|---|
+| `404` | `instance not found` | Id ou token do canal errados. A autenticação está em [Autenticação](/z-api/authentication). |
+| `422` | `instance subscription is not active` | A assinatura do canal não está ativa. |
+| `400` | `invalid path parameter` | Parâmetro de caminho vazio, com mais de 128 caracteres ou com caractere inválido. |
+| `422` | `group route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances` | Canal de outro tipo que não WhatsApp Web nem WhatsApp Oficial. |
+| `422` | `<rota> is not available for META_WHATSAPP channels` | Rota sem equivalente no WhatsApp Oficial. |
+| `422` | `group routes on META_WHATSAPP channels require an Official Business Account (OBA)` | O número do WhatsApp Oficial não é [conta comercial oficial](https://developers.facebook.com/documentation/business-messaging/whatsapp/official-business-accounts), que a Groups API da Meta exige. |
+| `422` | `group routes are not available for META_WHATSAPP channels in coexistence` | O número do WhatsApp Oficial está em [coexistência](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users), em que a Meta não oferece grupos. |
+| `422` | `group routes are not available for this META_WHATSAPP number: the Meta reports it is not eligible for the Groups API (code 131215)` | A Meta informou que o número não é elegível à Groups API ([código 131215](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/error-codes)). |
+| `422` | `the META_WHATSAPP channel refused the group operation (code <code>): <title>` | A Meta recusou a operação. O texto traz o código e o título da Meta. |
+| `502` | `failed to reach the Z-API instance` | O canal WhatsApp Web não respondeu. |
+| `502` | `failed to reach the META_WHATSAPP channel` | O canal WhatsApp Oficial não respondeu. |
+| `502` | `the Z-API instance answer is too large: use page and pageSize` | A resposta é grande demais. Use `page` e `pageSize`. |
+| `502` | `the META_WHATSAPP channel answer is too large: use page and pageSize` | A resposta é grande demais. Use `page` e `pageSize`. |
+| `503` | `<mensagem>: a configuration problem on our side stopped this request. It was not caused by your request, and nothing was done. Try again later; if it persists, contact support` | Falha de configuração do lado do Omni Z-API, que a sua requisição não causou. Nada foi feito. Tente de novo mais tarde e, se persistir, fale com o suporte. |
+| `503` | `<mensagem>: a temporary failure on our side stopped this request. It was not caused by your request, and nothing was done. Try again in a few seconds; if it persists, contact support` | Falha temporária do lado do Omni Z-API, que a sua requisição não causou. Nada foi feito. Tente de novo em alguns segundos e, se persistir, fale com o suporte. |
+| `500` | `internal server error` | Erro interno inesperado. |

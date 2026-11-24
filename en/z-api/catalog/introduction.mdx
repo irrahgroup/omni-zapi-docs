@@ -1,0 +1,39 @@
+---
+title: "Catalog introduction"
+description: "The 15 Z-API catalog, product and collection routes, on WhatsApp Web only, and where to send a catalog or product"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Overview
+
+This section documents the 15 Z-API catalog, product and collection routes that {projectName} serves in Z-API Compatibility. The path (`/instances/` or `/channels/`, followed by `/{id}/token/{token}/` and the route), the body fields and the response format are the Z-API ones. To query the catalog and maintain products and collections, the only change in your application is still the base URL and the authentication header.
+
+The catalog routes work on **WhatsApp Web** channels. On **WhatsApp Official** channels (Meta's official API) and on the other channel types, they answer `422`.
+
+To send the catalog or a product in a conversation, see [Send catalog](/en/z-api/messages/send-catalog) and [Send product](/en/z-api/messages/send-product).
+
+## Availability by channel
+
+<ZapiChannelMatrix family="catalog" lang="en" />
+
+- **WhatsApp Web:** the 15 routes are available.
+- **WhatsApp Official and other channels** (Telegram, Instagram, Messenger and others): all routes answer `422`.
+
+```json
+{ "error": "catalog route is not available for <TYPE> channels; available only on Z-API (WhatsApp Web) instances" }
+```
+
+`<TYPE>` is the channel type, such as `META_WHATSAPP`. A channel without a type gets `catalog route is not available for this channel type; available only on Z-API (WhatsApp Web) instances`.
+
+## Common errors
+
+All errors have the format `{"error": "<message>"}`. The ones that apply to the catalog routes:
+
+| Status | `error` | When |
+|---|---|---|
+| `422` | `instance subscription is not active` | The channel subscription is not active. |
+| `400` | `invalid path parameter` | `phone`, `collectionId` or `productId` is empty, has more than 128 characters or has an invalid character. |
+| `400` | `request body is too large` | The request body is over 1 MiB. |
+| `422` | `catalog route is not available for <TYPE> channels; available only on Z-API (WhatsApp Web) instances` | Channel that is not WhatsApp Web. |

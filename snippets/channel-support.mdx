@@ -1,27 +1,206 @@
-export const ChannelSupport = ({ type, lang = 'pt' }) => {
-  const MATRIX = {
-    TEXT: ['yes', 'yes', 'yes', 'yes', 'yes'],
-    IMAGE: ['yes', 'yes', 'yes', 'yes', 'yes'],
-    AUDIO: ['yes', 'yes', 'yes', 'yes', 'yes'],
-    VIDEO: ['yes', 'yes', 'yes', 'yes', 'yes'],
-    DOCUMENT: ['yes', 'yes', 'partial', 'yes', 'partial'],
-    STICKER: ['yes', 'yes', 'partial', 'partial', 'yes'],
-    LOCATION: ['yes', 'yes', 'no', 'no', 'yes'],
-    LOCATION_REQUEST: ['dev', 'dev', 'dev', 'dev', 'dev'],
-    CONTACT: ['yes', 'yes', 'no', 'no', 'yes'],
-    REACTION: ['yes', 'yes', 'yes', 'unknown', 'no'],
-    INTERACTIVE_BUTTON: ['yes', 'yes', 'yes', 'yes', 'yes'],
-    INTERACTIVE_ACTION: ['yes', 'yes', 'partial', 'yes', 'partial'],
-    INTERACTIVE_LIST: ['yes', 'yes', 'no', 'no', 'no'],
-    FLOW: ['yes', 'no', 'no', 'no', 'no'],
-    CATALOG: ['yes', 'no', 'no', 'no', 'no'],
-    PRODUCT: ['yes', 'no', 'no', 'no', 'no'],
-    PRODUCT_LIST: ['yes', 'no', 'no', 'no', 'no'],
-    ORDER_DETAILS: ['dev', 'dev', 'dev', 'dev', 'dev'],
-    ORDER_STATUS: ['dev', 'dev', 'dev', 'dev', 'dev'],
-    TEMPLATE: ['yes', 'no', 'no', 'yes', 'no'],
-  };
+export const CHANNEL_NAMES = ['Meta Cloud API', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'];
 
+export const CHANNEL_MATRIX = {
+  TEXT: ['yes', 'yes', 'yes', 'yes', 'yes'],
+  IMAGE: ['yes', 'yes', 'yes', 'yes', 'yes'],
+  AUDIO: ['yes', 'yes', 'yes', 'yes', 'yes'],
+  VIDEO: ['yes', 'yes', 'yes', 'yes', 'yes'],
+  DOCUMENT: ['yes', 'yes', 'partial', 'yes', 'partial'],
+  STICKER: ['yes', 'yes', 'partial', 'partial', 'yes'],
+  LOCATION: ['yes', 'yes', 'no', 'no', 'yes'],
+  LOCATION_REQUEST: ['dev', 'dev', 'dev', 'dev', 'dev'],
+  CONTACT: ['yes', 'yes', 'no', 'no', 'yes'],
+  REACTION: ['yes', 'yes', 'yes', 'unknown', 'no'],
+  INTERACTIVE_BUTTON: ['yes', 'yes', 'yes', 'yes', 'yes'],
+  INTERACTIVE_ACTION: ['yes', 'yes', 'partial', 'yes', 'partial'],
+  INTERACTIVE_LIST: ['yes', 'yes', 'no', 'no', 'no'],
+  FLOW: ['yes', 'no', 'no', 'no', 'no'],
+  CATALOG: ['yes', 'no', 'no', 'no', 'no'],
+  PRODUCT: ['yes', 'no', 'no', 'no', 'no'],
+  PRODUCT_LIST: ['yes', 'no', 'no', 'no', 'no'],
+  ORDER_DETAILS: ['dev', 'dev', 'dev', 'dev', 'dev'],
+  ORDER_STATUS: ['dev', 'dev', 'dev', 'dev', 'dev'],
+  TEMPLATE: ['yes', 'no', 'no', 'yes', 'no'],
+  EDIT: ['no', 'yes', 'no', 'no', 'yes'],
+};
+
+export const CHANNEL_DEV = ['LOCATION_REQUEST', 'CATALOG', 'PRODUCT', 'PRODUCT_LIST', 'ORDER_DETAILS', 'ORDER_STATUS'];
+
+export const channelValues = (type) => (CHANNEL_DEV.includes(type) ? ['dev', 'dev', 'dev', 'dev', 'dev'] : CHANNEL_MATRIX[type]);
+
+export const CHANNEL_TEXT = {
+  pt: {
+    values: { yes: 'Sim', partial: 'Em parte', no: 'Não', soon: 'Ainda não', dev: 'Em desenvolvimento', unknown: 'Não confirmado' },
+    resource: 'Recurso',
+    notes: 'Ressalvas por canal',
+    base: '',
+    missing: 'Tipo sem linha na matriz de canais.',
+  },
+  en: {
+    values: { yes: 'Yes', partial: 'Partial', no: 'No', soon: 'Not yet', dev: 'In development', unknown: 'Not confirmed' },
+    resource: 'Resource',
+    notes: 'Caveats per channel',
+    base: '/en',
+    missing: 'Type missing from the channel matrix.',
+  },
+  es: {
+    values: { yes: 'Sí', partial: 'Parcial', no: 'No', soon: 'Aún no', dev: 'En desarrollo', unknown: 'No confirmado' },
+    resource: 'Recurso',
+    notes: 'Salvedades por canal',
+    base: '/es',
+    missing: 'Tipo sin fila en la matriz de canales.',
+  },
+};
+
+export const ChannelBadge = ({ value, lang = 'pt' }) => {
+  const T = CHANNEL_TEXT[lang] || CHANNEL_TEXT.pt;
+  const color = { yes: 'green', partial: 'yellow', no: 'gray', soon: 'gray', dev: 'gray', unknown: 'gray' }[value] || 'gray';
+  const outline = value === 'soon' || value === 'dev' || value === 'unknown';
+  return (
+    <Badge color={color} size="sm" stroke={outline}>
+      {T.values[value]}
+    </Badge>
+  );
+};
+
+export const ChannelBadges = ({ type, lang = 'pt' }) => {
+  const T = CHANNEL_TEXT[lang] || CHANNEL_TEXT.pt;
+  const vals = channelValues(type);
+  if (!vals) {
+    return <p><strong>{T.missing}</strong></p>;
+  }
+  if (vals.every((v) => v === 'dev')) {
+    return null;
+  }
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px', margin: '0 0 24px' }}>
+      {CHANNEL_NAMES.map((name, i) => (
+        <span key={name} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <span>{name}</span>
+          <ChannelBadge value={vals[i]} lang={lang} />
+        </span>
+      ))}
+    </div>
+  );
+};
+
+export const CHANNEL_FAMILIES = {
+  messages: [
+    {
+      title: ['Texto e mídia', 'Text and media', 'Texto y multimedia'],
+      rows: [
+        ['messages/send-text', ['Texto', 'Text', 'Texto'], 'TEXT'],
+        ['messages/send-image', ['Imagem', 'Image', 'Imagen'], 'IMAGE'],
+        ['messages/send-audio', ['Áudio', 'Audio', 'Audio'], 'AUDIO'],
+        ['messages/send-video', ['Vídeo', 'Video', 'Vídeo'], 'VIDEO'],
+        ['messages/send-document', ['Documento', 'Document', 'Documento'], 'DOCUMENT'],
+        ['messages/send-sticker', ['Sticker', 'Sticker', 'Sticker'], 'STICKER'],
+        ['messages/send-location', ['Localização', 'Location', 'Ubicación'], 'LOCATION'],
+        ['messages/send-contact', ['Contato', 'Contact', 'Contacto'], 'CONTACT'],
+      ],
+    },
+    {
+      title: ['Interativos', 'Interactive', 'Interactivos'],
+      rows: [
+        ['messages/send-interactive-button', ['Texto com botões', 'Text with buttons', 'Texto con botones'], 'INTERACTIVE_BUTTON'],
+        ['messages/send-interactive-action', ['Botões de ação', 'Action buttons', 'Botones de acción'], 'INTERACTIVE_ACTION'],
+        ['messages/send-interactive-list', ['Lista de opções', 'Option list', 'Lista de opciones'], 'INTERACTIVE_LIST'],
+        ['messages/send-location-request', ['Pedir localização', 'Request location', 'Pedir ubicación'], 'LOCATION_REQUEST'],
+        ['messages/send-flow', ['Formulário (Flow)', 'Form (Flow)', 'Formulario (Flow)'], 'FLOW', 'INTERACTIVE_FLOW'],
+      ],
+    },
+    {
+      title: ['Loja e pedidos', 'Store and orders', 'Tienda y pedidos'],
+      rows: [
+        ['messages/send-catalog', ['Catálogo', 'Catalog', 'Catálogo'], 'CATALOG'],
+        ['messages/send-product', ['Produto', 'Product', 'Producto'], 'PRODUCT'],
+        ['messages/send-product-list', ['Multi-produto', 'Multi-product', 'Multiproducto'], 'PRODUCT_LIST'],
+        ['messages/send-order-details', ['Detalhes do pedido', 'Order details', 'Detalles del pedido'], 'ORDER_DETAILS'],
+        ['messages/send-order-status', ['Status do pedido', 'Order status', 'Estado del pedido'], 'ORDER_STATUS'],
+      ],
+    },
+    {
+      title: ['Ações sobre mensagem', 'Message actions', 'Acciones sobre el mensaje'],
+      rows: [
+        ['messages/send-reaction', ['Reação', 'Reaction', 'Reacción'], 'REACTION'],
+        ['messages/edit-message', ['Editar mensagem', 'Edit message', 'Editar mensaje'], 'EDIT', 'PUT'],
+      ],
+    },
+  ],
+  templates: [
+    {
+      title: null,
+      rows: [
+        ['templates/create-template', ['Criar e gerenciar templates', 'Create and manage templates', 'Crear y gestionar plantillas'], ['yes', 'no', 'no', 'soon', 'no']],
+        ['messages/send-template', ['Enviar template', 'Send template', 'Enviar plantilla'], 'TEMPLATE'],
+      ],
+    },
+  ],
+  flows: [
+    {
+      title: null,
+      rows: [
+        ['flows/create-flow', ['Criar e gerenciar flows', 'Create and manage flows', 'Crear y gestionar flows'], ['yes', 'no', 'no', 'no', 'no']],
+        ['messages/send-flow', ['Enviar formulário (Flow)', 'Send a form (Flow)', 'Enviar formulario (Flow)'], 'FLOW', 'INTERACTIVE_FLOW'],
+      ],
+    },
+  ],
+  webhooks: [
+    {
+      title: null,
+      rows: [
+        ['webhooks/channel-webhooks', ['Webhook de canal', 'Channel webhook', 'Webhook de canal'], ['yes', 'yes', 'yes', 'yes', 'yes']],
+        ['webhooks/default-webhooks', ['Webhook padrão', 'Default webhook', 'Webhook predeterminado'], ['yes', 'yes', 'yes', 'yes', 'yes']],
+        ['webhooks/template-webhooks', ['Eventos de template do WhatsApp', 'WhatsApp template events', 'Eventos de plantilla de WhatsApp'], ['yes', 'no', 'no', 'soon', 'no']],
+      ],
+    },
+  ],
+};
+
+export const ChannelMatrix = ({ family, lang = 'pt' }) => {
+  const T = CHANNEL_TEXT[lang] || CHANNEL_TEXT.pt;
+  const li = { pt: 0, en: 1, es: 2 }[lang] ?? 0;
+  const blocks = CHANNEL_FAMILIES[family] || [];
+  const center = { textAlign: 'center' };
+  return (
+    <div>
+      {blocks.map((b, bi) => (
+        <div key={bi}>
+          {b.title && <p><strong>{b.title[li]}</strong></p>}
+          <table>
+            <thead>
+              <tr>
+                <th>{T.resource}</th>
+                {CHANNEL_NAMES.map((n) => <th key={n} style={center}>{n}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {b.rows.map((r) => {
+                const vals = typeof r[2] === 'string' ? channelValues(r[2]) : r[2];
+                const code = r[3] || (typeof r[2] === 'string' ? r[2] : null);
+                return (
+                  <tr key={r[0]}>
+                    <td style={{ minWidth: '230px' }}>
+                      <a href={T.base + '/' + r[0]}>{r[1][li]}</a>
+                      {code && <span style={{ whiteSpace: 'nowrap', marginLeft: '8px' }}><code>{code}</code></span>}
+                    </td>
+                    {vals.every((v) => v === 'dev')
+                      ? <td colSpan={5} style={center}><ChannelBadge value="dev" lang={lang} /></td>
+                      : vals.map((v, i) => (
+                        <td key={i} style={center}><ChannelBadge value={v} lang={lang} /></td>
+                      ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const ChannelSupport = ({ type, lang = 'pt' }) => {
   const NOTES = {
     DOCUMENT: [
       [2, 'partial', {
@@ -152,38 +331,33 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
 
   const L = {
     pt: {
-      title: 'Disponibilidade por canal',
-      names: ['Meta Cloud API', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'],
       only: 'Só na Meta Cloud API, e exige a janela de 24 horas aberta.',
       win: 'Na Meta Cloud API exige a janela de 24 horas aberta. Nos outros canais que aceitam este tipo não há janela.',
-      more: 'Como ler esta tabela e o que muda em cada canal',
+      more: 'O que cada canal aceita, tipo por tipo',
       href: '/channels/message-support',
       missing: 'Tipo sem linha na matriz de canais.',
       dev: 'Ainda não existe na API, em nenhum canal.',
     },
     en: {
-      title: 'Availability per channel',
-      names: ['Meta Cloud API', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'],
       only: 'Meta Cloud API only, and it requires the 24-hour window to be open.',
       win: 'On Meta Cloud API it requires the 24-hour window to be open. The other channels that accept this type have no window.',
-      more: 'How to read this table and what changes on each channel',
+      more: 'What each channel accepts, type by type',
       href: '/en/channels/message-support',
       missing: 'Type missing from the channel matrix.',
       dev: 'It does not exist in the API yet, on any channel.',
     },
     es: {
-      title: 'Disponibilidad por canal',
-      names: ['Meta Cloud API', 'WhatsApp Web', 'Instagram', 'Messenger', 'Telegram'],
       only: 'Solo en Meta Cloud API, y exige que la ventana de 24 horas esté abierta.',
       win: 'En Meta Cloud API exige que la ventana de 24 horas esté abierta. Los demás canales que aceptan este tipo no tienen ventana.',
-      more: 'Cómo leer esta tabla y qué cambia en cada canal',
+      more: 'Qué acepta cada canal, tipo por tipo',
       href: '/es/channels/message-support',
       missing: 'Tipo sin fila en la matriz de canales.',
       dev: 'Todavía no existe en la API, en ningún canal.',
     },
   }[lang];
 
-  const vals = MATRIX[type];
+  const T = CHANNEL_TEXT[lang] || CHANNEL_TEXT.pt;
+  const vals = channelValues(type);
   if (!vals) {
     return <p><strong>{L.missing}</strong></p>;
   }
@@ -201,34 +375,27 @@ export const ChannelSupport = ({ type, lang = 'pt' }) => {
         ),
       );
 
-  const mark = (v) => ({ yes: '✅', partial: '⚠️', unknown: '🔍', no: '❌', dev: '🚧' })[v];
-  const icon = { partial: '⚠️', unknown: '🔍', info: 'ℹ️', no: '❌' };
+  const kindValue = { partial: 'partial', unknown: 'unknown', no: 'no' };
+  const isDev = vals.every((v) => v === 'dev');
   const supported = vals.filter((v) => v !== 'no' && v !== 'dev').length;
-  const notes = NOTES[type] || [];
+  const notes = isDev ? [] : NOTES[type] || [];
 
   return (
     <div>
-      <p><strong>{L.title}</strong></p>
-      <table>
-        <thead>
-          <tr>{L.names.map((n) => <th key={n} style={{ textAlign: 'center' }}>{n}</th>)}</tr>
-        </thead>
-        <tbody>
-          <tr>{vals.map((v, i) => <td key={i} style={{ textAlign: 'center' }}>{mark(v)}</td>)}</tr>
-        </tbody>
-      </table>
-
       {vals[0] === 'yes' && <p>{supported === 1 ? L.only : L.win}</p>}
-      {vals.every((v) => v === 'dev') && <p>{L.dev}</p>}
+      {isDev && <p>{L.dev}</p>}
 
       {notes.length > 0 && (
-        <ul>
-          {notes.map((note, i) => (
-            <li key={i}>
-              {icon[note[1]]} <strong>{L.names[note[0]]}</strong>: {rich(note[2][lang])}
-            </li>
-          ))}
-        </ul>
+        <div>
+          <p><strong>{T.notes}</strong></p>
+          <ul>
+            {notes.map((note, i) => (
+              <li key={i}>
+                {kindValue[note[1]] && <ChannelBadge value={kindValue[note[1]]} lang={lang} />} <strong>{CHANNEL_NAMES[note[0]]}</strong>: {rich(note[2][lang])}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <p><a href={L.href}>{L.more}</a></p>

@@ -1,0 +1,31 @@
+---
+title: "Channels API introduction"
+description: "Create, list, connect, subscribe and delete channels through the API, and who can call each route"
+keywords: ["/v1/channels", "channelId", "channel", "canal", "META_WHATSAPP", "BOT_TELEGRAM"]
+---
+
+## Concept
+
+The endpoints in this section manage the lifecycle of your workspace channels: create, get, connect, disconnect, subscribe and delete. The `id` returned on creation is the `channelId`, used in every other API call, such as messages, templates and webhooks.
+
+To understand what a channel is and the steps to get started, see the [Introduction to channels](/en/channels/introduction). To connect each channel type, see [Connect a channel](/en/connect/introduction).
+
+## Routes
+
+| Page | Route | What it does | Who calls it |
+|---|---|---|---|
+| [Create channel](/en/channels/create-channel) | `POST /v1/channels` | Creates the channel and returns the `channelId` | Secret Key or OAuth token of an authorized app |
+| [List channels](/en/channels/list-channels) | `GET /v1/channels` | Lists the workspace channels, with a `type` filter | Secret Key, ENTERPRISE role |
+| [Get channel](/en/channels/get-channel) | `GET /v1/channels/{channelId}` | Returns the channel data and the webhooks registered on it | Secret Key, ENTERPRISE role |
+| [Connect channel](/en/channels/connect-channel) | `POST /v1/channels/{channelId}/connect` | Finishes the connection on the backend, with the data the SDK returned | Secret Key |
+| [Get SDK origins](/en/channels/sdk-info) | `GET /instances/{channelId}/sdk-info` | Shows the domains allowed for the connection SDK | Public Key |
+| [Disconnect channel](/en/channels/disconnect) | `PUT /v1/channels/{channelId}/disconnect` | Disconnects the channel and clears the connection data | Secret Key |
+| [Subscribe channel](/en/channels/subscribe-channel) | `GET /v1/channels/{channelId}/subscribe` | Adds the channel to the subscription after payment in the dashboard | Secret Key, ENTERPRISE role |
+| [Cancel subscription](/en/channels/cancel-subscription) | `DELETE /v1/channels/{channelId}/cancel` | Requests the cancellation of the channel subscription | Secret Key, ENTERPRISE role |
+| [Delete channel](/en/channels/delete-channel) | `DELETE /v1/channels/{channelId}` | Deletes the channel | Secret Key, ENTERPRISE role |
+
+The Secret Key is your workspace key, used on the backend. See [Authentication](/en/authentication).
+
+## Channel types
+
+In [Create channel](/en/channels/create-channel), the type field accepts `META_WHATSAPP`, `Z_API_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER` and `BOT_TELEGRAM`. The [Connect channel](/en/channels/connect-channel) and [Disconnect channel](/en/channels/disconnect) pages describe the `META_WHATSAPP` flow.

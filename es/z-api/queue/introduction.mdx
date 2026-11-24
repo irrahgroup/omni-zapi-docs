@@ -1,0 +1,39 @@
+---
+title: "Introducción a la cola"
+description: "Las 5 rutas de cola de Z-API: consultar y borrar la cola en WhatsApp Web y qué vuelve en los demás canales"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Conceptos
+
+Esta sección documenta las 5 rutas de cola de Z-API que {projectName} atiende en la Compatibilidad con Z-API. La ruta (`/instances/` o `/channels/`, seguida de `/{id}/token/{token}/` y de la ruta), los campos del cuerpo y el formato de la respuesta son los de Z-API. Para consultar y borrar la cola, el único cambio en tu aplicación sigue siendo la base URL y el header de autenticación.
+
+La cola existe en **WhatsApp Web**, donde los mensajes esperan hasta ser entregados a WhatsApp. En los demás canales, incluido **WhatsApp Oficial** (API oficial de Meta), los mensajes no quedan en cola: van directo a la API del canal cuando se envían. Las rutas de consulta responden en el formato de Z-API, siempre vacías, y las de borrar responden `422`.
+
+## Disponibilidad por canal
+
+<ZapiChannelMatrix family="queue" lang="es" />
+
+En los canales que no son WhatsApp Web, las rutas de borrar responden:
+
+```json
+{ "error": "messages are not queued on <TIPO> channels: they are handed to the official API when sent and cannot be removed" }
+```
+
+`<TIPO>` es el tipo del canal, como `META_WHATSAPP`. Un mensaje que el canal ya envió no se puede cancelar.
+
+## Errores comunes
+
+Todos los errores tienen el formato `{"error": "<mensaje>"}`. Los que valen para las rutas de cola:
+
+| Estado | `error` | Cuándo |
+|---|---|---|
+| `404` | `instance not found` | Id o token del canal incorrectos. La autenticación está en [Autenticación](/es/z-api/authentication). |
+| `422` | `instance subscription is not active` | La suscripción del canal WhatsApp Web no está activa. |
+| `400` | `invalid path parameter` | `zaapId` vacío, con más de 128 caracteres o con un carácter inválido. |
+| `400` | `request body is too large` | El cuerpo de `POST /queue` es demasiado grande. |
+| `422` | `messages are not queued on <TIPO> channels: they are handed to the official API when sent and cannot be removed` | Borrar la cola, o un mensaje, en un canal que no es WhatsApp Web. |
+| `502` | `failed to reach the Z-API instance` | El canal WhatsApp Web no respondió. |
+| `502` | `the Z-API instance answer is too large: use page and pageSize` | La respuesta es demasiado grande. Usa `page` y `pageSize`. |

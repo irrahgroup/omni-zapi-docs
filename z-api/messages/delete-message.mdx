@@ -1,0 +1,25 @@
+---
+title: "Deletar mensagem"
+description: "Apaga uma mensagem enviada ou recebida em um chat"
+sidebarTitle: "Deletar mensagem"
+tag: "Só Web"
+keywords: ["messages", "delete-message"]
+openapi: "/pt/z-api/openapi.json DELETE /messages"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+import { ZapiChannels } from '/snippets/zapi-channels.mdx';
+
+<ZapiChannels route="delete-message" lang="pt" />
+
+## Conceituação
+
+Método para apagar uma mensagem de um chat, seja uma mensagem que o canal enviou ou uma recebida do contato. Você só precisa do `messageId` da mensagem, que é o id dela no Omni Z-API: o mesmo que chega no webhook (no formato padrão, `message._id`).
+
+A mensagem é sempre apagada para todos. Se `deleteForMe` for `true` ("apagar para mim"), a API responde `422`: envie `deleteForMe=false` ou omita o parâmetro. O `phone` é obrigatório, como na Z-API, mas não é usado: a mensagem é encontrada pelo `messageId`. O parâmetro `owner` é aceito e também não é usado.
+
+O `200` indica que o pedido foi aceito. A exclusão no WhatsApp é feita em seguida.
+
+<Note>
+  <ZapiResponseText lang="pt" />
+</Note>

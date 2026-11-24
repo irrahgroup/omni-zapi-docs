@@ -1,0 +1,25 @@
+---
+title: "Bloquear / Desbloquear contacto"
+description: "Bloquea o desbloquea un contacto en WhatsApp"
+sidebarTitle: "Bloquear o desbloquear"
+tag: "Solo Web"
+keywords: ["contacts/modify-blocked", "block-contact"]
+openapi: "/es/z-api/openapi.json POST /contacts/modify-blocked"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+import { ZapiChannels } from '/snippets/zapi-channels.mdx';
+
+<ZapiChannels route="block-contact" lang="es" />
+
+## Conceptos
+
+Método que bloquea o desbloquea un contacto. Envía `phone` y `action`, que es `block` para bloquear o `unblock` para desbloquear.
+
+`phone` es obligatorio y tiene de 8 a 15 dígitos, solo números, con código de país y código de área. Un LID, como `999999999999999@lid`, no se acepta. Fuera de esas reglas, la respuesta es `400` con `phone is required`, `phone must contain only digits, with country and area code` o, para una `action` distinta de `block` y `unblock`, `action must be block or unblock`.
+
+La respuesta de éxito es `200` con `{ "value": true }`, incluso cuando el contacto ya estaba en el estado pedido.
+
+<Note>
+  <ZapiResponseText lang="es" />
+</Note>

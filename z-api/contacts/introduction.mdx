@@ -1,0 +1,39 @@
+---
+title: "Introdução aos contatos"
+description: "As 9 rotas de contatos da Z-API: consultar contatos, verificar número, bloquear e denunciar, só no WhatsApp Web"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Conceituação
+
+Esta seção documenta as 9 rotas de contatos da Z-API que o {projectName} atende na Z-API Compatibilidade: consultar contatos e fotos, verificar se um número tem WhatsApp, adicionar e remover contatos, denunciar e bloquear. O caminho (`/instances/` ou `/channels/`, seguido de `/{id}/token/{token}/` e da rota), os campos do corpo e o formato da resposta são os da Z-API. A única mudança na sua aplicação continua sendo a base URL e o header de autenticação.
+
+Os contatos são os do número conectado ao WhatsApp Web. O canal **WhatsApp Oficial** (API oficial da Meta) não tem essas rotas e responde `422` a todas.
+
+## Disponibilidade por canal
+
+<ZapiChannelMatrix family="contacts" lang="pt" />
+
+- **WhatsApp Web:** as 9 rotas estão disponíveis.
+- **WhatsApp Oficial:** as 9 rotas respondem `422` com o motivo.
+- **Demais canais** (Telegram, Instagram, Messenger e outros): todas as rotas respondem `422`.
+
+Os textos de `error` dessas recusas:
+
+| Canal | `error` |
+|---|---|
+| WhatsApp Oficial, nas oito primeiras rotas do quadro | `<rota> is not available for META_WHATSAPP channels: <motivo>; available only on Z-API (WhatsApp Web) instances`, em que `<rota>` é o nome da rota sem a barra inicial, como `contacts/add` |
+| WhatsApp Oficial, em `POST /contacts/modify-blocked` | `contact route is not available for META_WHATSAPP channels; available only on Z-API (WhatsApp Web) instances` |
+| Demais canais | `contact route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances`, em que `<TIPO>` é o tipo do canal. Um canal sem tipo recebe `contact route is not available for this channel type; available only on Z-API (WhatsApp Web) instances` |
+
+## Erros comuns
+
+Todos os erros têm o formato `{"error": "<mensagem>"}`. Os que valem para as rotas de contatos:
+
+| Status | `error` | Quando |
+|---|---|---|
+| `422` | `instance subscription is not active` | A assinatura do canal não está ativa. |
+| `400` | `invalid path parameter` | Telefone no caminho vazio, com mais de 128 caracteres ou com caractere inválido. |
+| `400` | `request body is too large` | O corpo passa do limite da rota: 10 MiB em `phone-exists-batch` e 1 MiB nas demais rotas com corpo. |

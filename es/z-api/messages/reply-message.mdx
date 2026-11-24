@@ -1,20 +1,23 @@
 ---
 title: "Responder a un mensaje"
 description: "Respuesta con cita de un mensaje existente"
+sidebarTitle: "Responder citando"
 ---
-
-<Warning>
-  La respuesta con cita **todavía no está disponible**. El atributo `messageId` se acepta en los
-  envíos, pero el mensaje llega al cliente como un mensaje normal, sin citar el original. Consulta
-  las [Limitaciones de la API Oficial](/es/z-api/limitations).
-</Warning>
 
 ## Conceptos
 
-En Z-API, para responder citando un mensaje, se incluye el atributo `messageId` en el body de un endpoint de envío. Esta versión todavía no envía esa cita a WhatsApp.
+En Z-API, para responder citando un mensaje, se incluye el atributo `messageId` en el body de un endpoint de envío.
+
+<Warning>
+  En la versión Z-API Compatibilidad, la respuesta con cita **no está disponible**, ni en WhatsApp Oficial ni en WhatsApp Web. El atributo `messageId` se acepta en los envíos, pero el mensaje llega al cliente como un mensaje normal, sin citar el original.
+</Warning>
 
 Si estás migrando desde Z-API, el envío con `messageId` no falla: la API responde con normalidad y el mensaje se entrega, solo que sin la cita. No uses este campo esperando que el cliente vea el mensaje original.
 
-<Warning>
-  El atributo `privateAnswer` de Z-API (respuesta privada en grupos) **no es compatible** con la API oficial y no está disponible en esta versión.
-</Warning>
+En las rutas [`send-reaction`](/es/z-api/messages/send-reaction) y [`send-remove-reaction`](/es/z-api/messages/send-remove-reaction), el `messageId` tiene otra función: identifica el mensaje que recibe la reacción, y sigue valiendo.
+
+## Cómo citar un mensaje
+
+Para enviar un mensaje citando otro, usa las rutas de mensajes de Omni Z-API con el campo `content.messageIdReply`. La cita funciona en el canal de WhatsApp Oficial (Meta Cloud API). Consulta [Responder citando un mensaje](/es/messages/introduction#responder-citando-un-mensaje).
+
+El atributo `privateAnswer` de Z-API (respuesta privada en grupos) no es compatible con la API oficial y no está disponible en esta versión.

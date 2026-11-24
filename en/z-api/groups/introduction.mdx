@@ -1,0 +1,81 @@
+---
+title: "Groups introduction"
+description: "The 19 Z-API group routes: what each channel serves, the group ID and the WhatsApp Official rules"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Overview
+
+This section documents the 19 Z-API group routes that {projectName} serves in Z-API Compatibility. The path (`/instances/` or `/channels/`, followed by `/{id}/token/{token}/` and the route), the body fields and the response format are the Z-API ones. To query, create and manage groups, the only change in your application is still the base URL and the authentication header.
+
+What each route does depends on the channel type. The group routes work on **WhatsApp Web** channels and, with limitations, on **WhatsApp Official** channels (Meta's official API).
+
+## Availability by channel
+
+<ZapiChannelMatrix family="groups" lang="en" />
+
+- **WhatsApp Web:** the 19 routes are available.
+- **WhatsApp Official:** 12 routes work, through Meta's Groups API. The other 7 answer `422` with `<route> is not available for META_WHATSAPP channels`, where `<route>` is the route name without the slash, such as `add-participant`.
+- **Other channels** (Telegram, Instagram, Messenger and others): every route answers `422`.
+
+```json
+{ "error": "group route is not available for <TYPE> channels; available only on Z-API (WhatsApp Web) instances" }
+```
+
+`<TYPE>` is the channel type. A channel without a type gets `group route is not available for this channel type; available only on Z-API (WhatsApp Web) instances`.
+
+## Group ID
+
+The group ID is the value the routes receive in `phone` or `groupId`.
+
+| Channel | ID format |
+|---|---|
+| WhatsApp Web | The Z-API one, such as `120363019502650977-group` |
+| WhatsApp Official | An opaque text that Meta returns, **without** the `-group` suffix |
+
+- Get the ID from [Get groups](/en/z-api/groups/get-groups) or from the [Create group](/en/z-api/groups/create-group) response. Use the value as you received it, without building or changing it.
+- On WhatsApp Official, the ID has 1 to 128 characters of `[A-Za-z0-9._=-]`. An ID with `@`, such as `120363019502650977@g.us`, answers `400` with `invalid path parameter`.
+- An integration that recognizes a group by the `-group` suffix does not recognize the WhatsApp Official ID.
+- The ID of one channel does not work on another: the formats are different.
+
+## What changes on WhatsApp Official
+
+<Warning>
+  The group routes on WhatsApp Official require an [Official Business Account (OBA)](https://developers.facebook.com/documentation/business-messaging/whatsapp/official-business-accounts) and do not work on a number in [coexistence](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users), according to [Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups). The errors for these two situations are in [Common errors](#common-errors).
+</Warning>
+
+Meta's Groups API has limits that WhatsApp Web does not have. An integration coming from Z-API needs to know:
+
+- **[Get groups](/en/z-api/groups/get-groups) lists the [active groups of the number](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#get-active-groups)** in Meta's Groups API.
+- **Nobody is added at creation.** The numbers in `phones` come back in `phonesNotAdded`, and entry is only through the invitation link, because [Meta does not allow adding participants manually](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#create-group).
+- **The group has at most [8 participants](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups)**, a Meta limit.
+- **The business is the creator and [administrator of the group](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference).** `owner` is `null`, participants come back as regular members, and the promote and remove admin routes do not exist on WhatsApp Official.
+- **`{"value": true}` is [Meta's acceptance](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#update-group-settings)**, not confirmation that the change already showed up in the group.
+- **`phone` can be `null` at creation**, when Meta has not listed the group yet.
+- **Check [Get groups](/en/z-api/groups/get-groups) before repeating a creation** that answered `502`: the group may have been created.
+- **Approving and rejecting participants only work for a group with [join approval](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#groups-with-join-requests)**, created with `requireAdminApproval` `true`.
+
+## Common errors
+
+Every error has the format `{"error": "<message>"}`. The ones that apply to the group routes:
+
+| Status | `error` | When |
+|---|---|---|
+| `404` | `instance not found` | Wrong channel ID or token. Authentication is described in [Authentication](/en/z-api/authentication). |
+| `422` | `instance subscription is not active` | The channel subscription is not active. |
+| `400` | `invalid path parameter` | Path parameter that is empty, over 128 characters or has an invalid character. |
+| `422` | `group route is not available for <TYPE> channels; available only on Z-API (WhatsApp Web) instances` | Channel of a type other than WhatsApp Web or WhatsApp Official. |
+| `422` | `<route> is not available for META_WHATSAPP channels` | Route without an equivalent on WhatsApp Official. |
+| `422` | `group routes on META_WHATSAPP channels require an Official Business Account (OBA)` | The WhatsApp Official number is not an [Official Business Account](https://developers.facebook.com/documentation/business-messaging/whatsapp/official-business-accounts), which Meta's Groups API requires. |
+| `422` | `group routes are not available for META_WHATSAPP channels in coexistence` | The WhatsApp Official number is in [coexistence](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users), where Meta does not offer groups. |
+| `422` | `group routes are not available for this META_WHATSAPP number: the Meta reports it is not eligible for the Groups API (code 131215)` | Meta reported that the number is not eligible for the Groups API ([code 131215](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/error-codes)). |
+| `422` | `the META_WHATSAPP channel refused the group operation (code <code>): <title>` | Meta refused the operation. The text has Meta's code and title. |
+| `502` | `failed to reach the Z-API instance` | The WhatsApp Web channel did not answer. |
+| `502` | `failed to reach the META_WHATSAPP channel` | The WhatsApp Official channel did not answer. |
+| `502` | `the Z-API instance answer is too large: use page and pageSize` | The response is too large. Use `page` and `pageSize`. |
+| `502` | `the META_WHATSAPP channel answer is too large: use page and pageSize` | The response is too large. Use `page` and `pageSize`. |
+| `503` | `<message>: a configuration problem on our side stopped this request. It was not caused by your request, and nothing was done. Try again later; if it persists, contact support` | Configuration failure on the Omni Z-API side, not caused by your request. Nothing was done. Try again later and, if it persists, contact support. |
+| `503` | `<message>: a temporary failure on our side stopped this request. It was not caused by your request, and nothing was done. Try again in a few seconds; if it persists, contact support` | Temporary failure on the Omni Z-API side, not caused by your request. Nothing was done. Try again in a few seconds and, if it persists, contact support. |
+| `500` | `internal server error` | Unexpected internal error. |

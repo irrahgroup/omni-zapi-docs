@@ -1,15 +1,37 @@
 ---
-title: "Introducción"
-description: "Entiende cómo funcionan las plantillas de mensaje en Omni Z-API"
+title: "Introducción a las plantillas"
+description: "Modelos aprobados por Meta para hablar con el cliente fuera de la ventana: categorías, estados, rutas y canales atendidos"
+keywords: ["message_templates", "WABA", "plantilla de mensaje", "wabaId"]
 ---
 
 import { projectName } from '/snippets/variables.mdx';
+import { ChannelMatrix } from '/snippets/channel-support.mdx';
 
 <Warning>
   **Los tres canales de Meta tienen plantilla preaprobada**: Meta Cloud API, Instagram y Messenger. Lo que cambia es el alcance, el endpoint y la categoría.
 
   Hoy los endpoints de esta sección cubren **solo Meta Cloud API** (alcance WABA). La compatibilidad con Instagram y Messenger está **en implementación**.
 </Warning>
+
+## Disponibilidad por canal
+
+Los endpoints de crear y gestionar cubren hoy solo Meta Cloud API. Consulta [Qué acepta cada canal](/es/channels/message-support) para el envío en cada canal.
+
+<ChannelMatrix family="templates" lang="es" />
+
+## Rutas
+
+| Página | Ruta | Qué hace |
+|---|---|---|
+| [Listar WABAs](/es/templates/list-businesses) | `GET /whatsapp/businesses` | Lista las WABAs disponibles para tu token |
+| [Crear plantilla](/es/templates/create-template) | `POST /whatsapp/businesses/{wabaId}/templates` | Crea la plantilla y la envía a aprobación |
+| [Listar plantillas](/es/templates/list-templates) | `GET /whatsapp/businesses/{wabaId}/templates` | Lista las plantillas de la WABA, con el estado |
+| [Actualizar plantilla](/es/templates/update-template) | `PUT /whatsapp/businesses/{wabaId}/templates/{templateId}` | Actualiza la plantilla y la reenvía a aprobación |
+| [Eliminar plantilla](/es/templates/delete-template) | `DELETE /whatsapp/businesses/{wabaId}/templates/{templateId}` | Elimina la plantilla |
+| [Sincronizar plantillas](/es/templates/sync-templates) | `POST /whatsapp/businesses/{wabaId}/templates/sync` | Fuerza la actualización de los estados con Meta |
+| [Subir multimedia](/es/templates/upload-media) | `POST /whatsapp/businesses/{wabaId}/templates/media` | Obtiene el `header_handle` para un encabezado de imagen, vídeo o documento |
+| [Consultar biblioteca](/es/templates/template-library) | `GET /whatsapp/businesses/{wabaId}/template-library` | Lista los modelos listos de la biblioteca de Meta |
+| [Enviar plantilla](/es/messages/send-template) | `POST /v1/channels/{channelId}/messages` | Envía la plantilla aprobada, con `content.type` `TEMPLATE` |
 
 ## Tres cosas se llaman «plantilla»
 

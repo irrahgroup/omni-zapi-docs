@@ -1,0 +1,25 @@
+---
+title: "Delete message"
+description: "Deletes a message sent or received in a chat"
+sidebarTitle: "Delete message"
+tag: "Web only"
+keywords: ["messages", "delete-message"]
+openapi: "/en/z-api/openapi.json DELETE /messages"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+import { ZapiChannels } from '/snippets/zapi-channels.mdx';
+
+<ZapiChannels route="delete-message" lang="en" />
+
+## Overview
+
+Method for deleting a message from a chat, either a message the channel sent or one received from the contact. You only need the message's `messageId`, which is its id in Omni Z-API: the same one that comes in the webhook (in the default format, `message._id`).
+
+The message is always deleted for everyone. If `deleteForMe` is `true` ("delete for me"), the API answers `422`: send `deleteForMe=false` or leave the parameter out. `phone` is required, as in Z-API, but it is not used: the message is found by the `messageId`. The `owner` parameter is accepted and is not used either.
+
+A `200` means the request was accepted. The deletion in WhatsApp happens right after.
+
+<Note>
+  <ZapiResponseText lang="en" />
+</Note>
