@@ -25,3 +25,7 @@ O campo `content.type` deve ser `TEMPLATE` e o template é enviado dentro de `at
 <Note>
   Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
 </Note>
+
+<Note>
+  A rota `POST /v1/channels/{channelId}/send-template` aceita o mesmo corpo desta página e dá a mesma resposta. Nela, `content.type` é opcional e, se vier, tem de ser `TEMPLATE`. Com outro valor, a API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be TEMPLATE on /send-template; leave it out, or send other types with POST /v1/channels/{id}/messages"}`. A rota só aceita canal Meta Cloud API (WhatsApp Oficial): em outro canal, a API responde `422` `{"error": "operation not supported for this instance"}`. Nos dois casos, a mensagem não é enviada. Veja [Rotas por tipo](/messages/introduction#rotas-por-tipo).
+</Note>

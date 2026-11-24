@@ -64,6 +64,60 @@ O que muda é o campo `content.type`:
 | `ORDER_STATUS` | Andamento do pedido — *em desenvolvimento* |
 | `TEMPLATE` | Template aprovado pela Meta (fora da janela de 24h) |
 
+## Rotas por tipo
+
+Os tipos da tabela abaixo também têm uma rota própria, `POST /v1/channels/{channelId}/send-<rota>`. Ela aceita o mesmo corpo de `POST /v1/channels/{channelId}/messages` e dá a mesma resposta. O tipo vem da rota, então `content.type` é opcional. Se vier, tem de ser o tipo da rota.
+
+O corpo é sempre o desta API. Se a sua integração usa o corpo da Z-API, use a [compatibilidade Z-API](/z-api/introduction), que aceita esse formato.
+
+| Rota | `content.type` | Página |
+|---|---|---|
+| `send-text` | `TEXT` | [Enviar texto](/messages/send-text) |
+| `send-image` | `IMAGE` | [Enviar imagem](/messages/send-image) |
+| `send-video` | `VIDEO` | [Enviar vídeo](/messages/send-video) |
+| `send-audio` | `AUDIO` | [Enviar áudio](/messages/send-audio) |
+| `send-ptv` | `PTV` | — |
+| `send-gif` | `GIF` | — |
+| `send-sticker` | `STICKER` | [Enviar sticker](/messages/send-sticker) |
+| `send-document` e `send-document/{extension}` | `DOCUMENT` | [Enviar documento](/messages/send-document) |
+| `send-link` | `LINK` | — |
+| `send-location` | `LOCATION` | [Enviar localização](/messages/send-location) |
+| `send-contact` | `CONTACT` | [Enviar contato](/messages/send-contact) |
+| `send-contacts` | `CONTACT_ARRAY` | — |
+| `send-reaction` | `REACTION` | [Enviar reação](/messages/send-reaction) |
+| `send-template` | `TEMPLATE` | [Enviar template](/messages/send-template) |
+| `send-option-list` | `INTERACTIVE_LIST` | [Enviar lista de opções](/messages/send-interactive-list) |
+| `send-button-list` | `INTERACTIVE_BUTTON` | [Enviar texto com botões](/messages/send-interactive-button) |
+| `send-button-actions` | `INTERACTIVE_ACTION` | [Enviar botões de ação](/messages/send-interactive-action) |
+| `send-button-otp` | `INTERACTIVE_OTP` | — |
+| `send-carousel` | `INTERACTIVE_CAROUSEL` | — |
+
+- Em `send-document/{extension}`, o segmento `{extension}` é ignorado: a extensão vai no campo `extension` de cada anexo, como no `/messages`.
+- `send-template` só aceita canal Meta Cloud API (WhatsApp Oficial). Em outro canal, a API responde `422` `{"error": "operation not supported for this instance"}`.
+- Se o canal não aceita o tipo da rota, a recusa é a mesma do `/messages`.
+
+Quando o corpo não serve para a rota, a API responde `400` com `"error": "invalid_request"`, o campo em `field` e o motivo em `message`, e a mensagem não é enviada. Nos exemplos, a rota é `send-text`; em cada rota, o texto traz o nome e o tipo dela.
+
+| `field` | Quando | `message` |
+|---|---|---|
+| `content` | `content` ausente ou que não é objeto JSON | `content must be a JSON object; /send-text takes the same body as POST /v1/channels/{id}/messages` |
+| `content.type` | `content.type` diferente do tipo da rota | `content.type must be TEXT on /send-text; leave it out, or send other types with POST /v1/channels/{id}/messages` |
+
+<Note>
+  As rotas abaixo não têm tipo equivalente nesta API. Elas respondem `422`, com qualquer credencial ou sem nenhuma, e nada é enviado:
+
+  `send-link-list`, `send-option-multi-list`, `send-button-pix`, `send-remove-reaction`, `send-poll`, `send-poll-vote`, `send-call`, `send-chat-expiration`, `send-text-status`, `send-image-status`, `send-video-status`, `send-order`, `send-request-payment`, `send-event`, `send-edit-event`, `send-event-response`, `send-comment`, `send-catalog`, `send-product` e `send-newsletter-admin-invite`.
+
+  ```json
+  {
+    "error": "send_route_not_supported",
+    "message": "/send-poll has no Omni content type; send it with POST /v1/channels/{id}/messages"
+  }
+  ```
+
+  No `message`, cada rota traz o próprio nome. Para enviar, use `POST /v1/channels/{channelId}/messages` com um dos [tipos disponíveis](#tipos-disponíveis).
+</Note>
+
 ## Resposta da API
 
 Quando o envio é aceito, a API responde `200` com o identificador da mensagem:

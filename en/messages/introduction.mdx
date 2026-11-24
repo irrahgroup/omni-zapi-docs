@@ -64,6 +64,60 @@ What changes is the `content.type` field:
 | `ORDER_STATUS` | Order progress — *in development* |
 | `TEMPLATE` | Meta-approved template (outside the 24h window) |
 
+## Routes by type
+
+The types in the table below also have their own route, `POST /v1/channels/{channelId}/send-<route>`. It takes the same body as `POST /v1/channels/{channelId}/messages` and gives the same response. The type comes from the route, so `content.type` is optional. If you send it, it must be the route type.
+
+The body is always the one of this API. If your integration uses the Z-API body, use the [Z-API compatibility](/en/z-api/introduction), which accepts that format.
+
+| Route | `content.type` | Page |
+|---|---|---|
+| `send-text` | `TEXT` | [Send text](/en/messages/send-text) |
+| `send-image` | `IMAGE` | [Send image](/en/messages/send-image) |
+| `send-video` | `VIDEO` | [Send video](/en/messages/send-video) |
+| `send-audio` | `AUDIO` | [Send audio](/en/messages/send-audio) |
+| `send-ptv` | `PTV` | — |
+| `send-gif` | `GIF` | — |
+| `send-sticker` | `STICKER` | [Send sticker](/en/messages/send-sticker) |
+| `send-document` and `send-document/{extension}` | `DOCUMENT` | [Send document](/en/messages/send-document) |
+| `send-link` | `LINK` | — |
+| `send-location` | `LOCATION` | [Send location](/en/messages/send-location) |
+| `send-contact` | `CONTACT` | [Send contact](/en/messages/send-contact) |
+| `send-contacts` | `CONTACT_ARRAY` | — |
+| `send-reaction` | `REACTION` | [Send reaction](/en/messages/send-reaction) |
+| `send-template` | `TEMPLATE` | [Send template](/en/messages/send-template) |
+| `send-option-list` | `INTERACTIVE_LIST` | [Send option list](/en/messages/send-interactive-list) |
+| `send-button-list` | `INTERACTIVE_BUTTON` | [Send text with buttons](/en/messages/send-interactive-button) |
+| `send-button-actions` | `INTERACTIVE_ACTION` | [Send action buttons](/en/messages/send-interactive-action) |
+| `send-button-otp` | `INTERACTIVE_OTP` | — |
+| `send-carousel` | `INTERACTIVE_CAROUSEL` | — |
+
+- On `send-document/{extension}`, the `{extension}` segment is ignored: the extension goes in the `extension` field of each attachment, as in `/messages`.
+- `send-template` accepts only Meta Cloud API (WhatsApp Official) channels. On any other channel, the API responds `422` `{"error": "operation not supported for this instance"}`.
+- If the channel does not accept the route type, the refusal is the same as in `/messages`.
+
+When the body does not fit the route, the API responds `400` with `"error": "invalid_request"`, the field in `field` and the reason in `message`, and the message is not sent. The examples use the `send-text` route; on each route, the text carries that route's name and type.
+
+| `field` | When | `message` |
+|---|---|---|
+| `content` | `content` missing or not a JSON object | `content must be a JSON object; /send-text takes the same body as POST /v1/channels/{id}/messages` |
+| `content.type` | `content.type` different from the route type | `content.type must be TEXT on /send-text; leave it out, or send other types with POST /v1/channels/{id}/messages` |
+
+<Note>
+  The routes below have no equivalent type in this API. They respond `422`, with any credential or none, and nothing is sent:
+
+  `send-link-list`, `send-option-multi-list`, `send-button-pix`, `send-remove-reaction`, `send-poll`, `send-poll-vote`, `send-call`, `send-chat-expiration`, `send-text-status`, `send-image-status`, `send-video-status`, `send-order`, `send-request-payment`, `send-event`, `send-edit-event`, `send-event-response`, `send-comment`, `send-catalog`, `send-product` and `send-newsletter-admin-invite`.
+
+  ```json
+  {
+    "error": "send_route_not_supported",
+    "message": "/send-poll has no Omni content type; send it with POST /v1/channels/{id}/messages"
+  }
+  ```
+
+  In `message`, each route carries its own name. To send, use `POST /v1/channels/{channelId}/messages` with one of the [available types](#available-types).
+</Note>
+
 ## API response
 
 When the send is accepted, the API responds with `200` and the message identifier:
