@@ -62,11 +62,11 @@ This section applies to the **Omni API** (`https://api.omni.z-api.io/v1/...`). W
 `<secret-key>` is literal: the response never echoes the value you sent. Handle the error by `error`; the `message` is for reading and may change.
 
 <Note>
-  The Secret Key only accepts the format `^[a-z0-9_]+$`. The channel token is **uppercase** hex, so if it is pasted in place of the Secret Key it falls under **wrong format**. A value with three dot-separated segments follows the OAuth path and comes back as `{"error": "invalid_token"}`.
+  The Secret Key only accepts the format `^[a-z0-9_]+$`. The channel token is **uppercase** hex, so if it is pasted in place of the Secret Key it falls under **wrong format**. An OAuth app JWT (three non-empty dot-separated segments) is validated by the OAuth path: if valid, it is accepted; if invalid or expired, the API responds `401` with `WWW-Authenticate: Bearer error="invalid_token"` and `{"error": "invalid_token"}`. On routes OAuth does not cover (the `/send-*` routes without a message type and `GET`/`DELETE` on `messages/{messageId}`), the same value follows the Secret Key path and gets the **wrong format** `401`.
 </Note>
 
 <Note>
-  The `401` above is from the **Omni API**. On the [compatible Z-API route](/z-api/introduction) (`/instances/{id}/token/{token}/...`) authentication **has not changed**: the rejection comes as `{"error": "Authorization invalid"}`, without `message` and without `WWW-Authenticate` — `400` when the header is missing or empty and `422` when the format is invalid or the key does not exist.
+  The `401` above is from the **Omni API**. On the [compatible Z-API route](/z-api/introduction) (`/instances/{id}/token/{token}/...`) authentication **has not changed**: the rejection comes as `{"error": "Authorization invalid"}`, without `message` and without `WWW-Authenticate` — `400` when the header is missing or empty and `422` when the format is invalid or the key does not exist. The accepted format is the same (`^[a-z0-9_]+$`), so the channel token pasted in place of the Secret Key is also refused there, with `422`.
 </Note>
 
 ## Summary

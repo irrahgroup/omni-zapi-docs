@@ -62,11 +62,11 @@ Esta seção vale para a **API Omni** (`https://api.omni.z-api.io/v1/...`). Quan
 O `<secret-key>` é literal: a resposta nunca repete o valor enviado. Trate o erro pelo `error`; o `message` é para leitura e pode mudar.
 
 <Note>
-  A Secret Key só aceita o formato `^[a-z0-9_]+$`. O token do canal é hexadecimal em **maiúsculas**, então, se for colado no lugar da Secret Key, cai em **fora do formato**. Um valor com três segmentos separados por ponto segue o caminho OAuth e volta como `{"error": "invalid_token"}`.
+  A Secret Key só aceita o formato `^[a-z0-9_]+$`. O token do canal é hexadecimal em **maiúsculas**, então, se for colado no lugar da Secret Key, cai em **fora do formato**. Um JWT de app OAuth (três segmentos não vazios separados por ponto) é validado pelo caminho OAuth: se for válido, é aceito; se estiver inválido ou expirado, a API responde `401` com `WWW-Authenticate: Bearer error="invalid_token"` e `{"error": "invalid_token"}`. Nas rotas que o OAuth não cobre (as `/send-*` sem tipo de mensagem e `GET`/`DELETE` em `messages/{messageId}`), o mesmo valor segue o caminho da Secret Key e recebe o `401` de **fora do formato**.
 </Note>
 
 <Note>
-  Os `401` acima são da **API Omni**. Na [rota compatível Z-API](/z-api/introduction) (`/instances/{id}/token/{token}/...`) a autenticação **não mudou**: a recusa vem como `{"error": "Authorization invalid"}`, sem `message` e sem `WWW-Authenticate` — `400` quando o header está ausente ou vazio e `422` quando o formato é inválido ou a chave não existe.
+  Os `401` acima são da **API Omni**. Na [rota compatível Z-API](/z-api/introduction) (`/instances/{id}/token/{token}/...`) a autenticação **não mudou**: a recusa vem como `{"error": "Authorization invalid"}`, sem `message` e sem `WWW-Authenticate` — `400` quando o header está ausente ou vazio e `422` quando o formato é inválido ou a chave não existe. O formato aceito é o mesmo (`^[a-z0-9_]+$`), então o token do canal colado no lugar da Secret Key também é recusado ali, com `422`.
 </Note>
 
 ## Resumo
