@@ -10,13 +10,26 @@ Acciones sobre un mensaje ya enviado o recibido, en la API nueva, en `/v1/channe
 El `messageId` es el **id de Omni** — el mismo que vuelve en el envío (`POST /messages`) y en el webhook.
 
 <Note>
-  En el canal Meta (`META_WHATSAPP`), cada acción responde `422` con el `subCode` (por ejemplo `DELETE_NOT_SUPPORTED`). La ruta de [capacidades](/es/message-actions/capabilities) responde `200` con `operations` vacía.
+  En el canal Meta (`META_WHATSAPP`), cada acción responde `422` con el `subCode` de la acción: `DELETE_NOT_SUPPORTED`, `FORWARD_NOT_SUPPORTED`, `PIN_NOT_SUPPORTED` (también al desfijar) o `CHOICE_NOT_SUPPORTED`. Trate el rechazo por el `subCode`: el `message` es para lectura y puede cambiar. La ruta de [capacidades](/es/message-actions/capabilities) responde `200` con `operations` vacía.
 </Note>
 
 <Note>
-  Un canal desconectado se verifica **antes** del mensaje: responde `422` `CHANNEL_DISCONNECTED`, con el mensaje de lo que no se hizo. El `404` `MESSAGE_NOT_FOUND` solo aparece con el canal conectado. Eliminar y reenviar pueden además responder `422` `INSTANCE_NOT_PROVISIONED`, `MESSAGE_WITHOUT_PROVIDER_ID` o `CHAT_NOT_SUPPORTED` (por tipo de chat).
+  Un canal desconectado se verifica **antes** del mensaje: responde `422` `CHANNEL_DISCONNECTED`, con el mensaje de lo que no se hizo. El `404` `MESSAGE_NOT_FOUND` solo aparece con el canal conectado. Toda acción (eliminar, reenviar, fijar, desfijar y elegir opción) puede además responder:
+
+  - `404` `MESSAGE_NOT_FOUND`: el mensaje no existe o es de otro canal (la respuesta es la misma en los dos casos).
+  - `422` `INSTANCE_NOT_PROVISIONED`: la instancia Z-API del canal no está aprovisionada.
+  - `422` `MESSAGE_WITHOUT_PROVIDER_ID`: el mensaje aún no tiene id en WhatsApp, por ejemplo porque aún no fue entregado.
+  - `422` `CHAT_NOT_SUPPORTED`: la conversación del mensaje no es un teléfono de 8 a 15 dígitos, un grupo ni un `@lid`.
 </Note>
 
 ## Errores comunes
 
-Además de los anteriores, toda acción en mensaje puede responder, en la **API Omni**: `401` cuando la credencial es rechazada; `403` `ip_not_allowed` cuando la IP está fuera de la lista; `404` `{"error": "instance not found"}` cuando el canal no existe; `422` cuando la instancia no está aprovisionada, la suscripción está inactiva o el workspace está bloqueado; y `502` cuando barling falla.
+Además de los anteriores, toda acción en mensaje puede responder, en la **API Omni**:
+
+- `401` cuando la credencial es rechazada, y `403` `ip_not_allowed` cuando la IP está fuera de la lista. Valen también para la ruta de capacidades.
+- `404` `{"error": "instance not found"}` cuando el canal no existe. Vale también para la ruta de capacidades.
+- `422` `{"error": "instance is not provisioned"}`, `{"error": "instance subscription is not active"}` o `{"error": "You are blocked, contact support."}` cuando la instancia no está aprovisionada, la suscripción está inactiva o el workspace está bloqueado.
+- `422` `{"error": "<Acción> is not available for this channel right now. ..."}` cuando el servicio que ejecuta la acción aún no atiende el canal.
+- `502` cuando el servicio de mensajes falla, con un `error` fijo por acción: `Message deletion failed`, `Message forwarding failed`, `Message pinning failed`, `Message unpinning failed` o `Option choice failed`.
+
+La ruta de capacidades no responde `422` ni `502`.

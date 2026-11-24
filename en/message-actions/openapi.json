@@ -82,6 +82,24 @@
           },
           "403": {
             "$ref": "#/components/responses/IpNotAllowed"
+          },
+          "404": {
+            "description": "Channel not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "instanceNotFound": {
+                    "summary": "Channel does not exist",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -136,31 +154,103 @@
             }
           },
           "404": {
-            "description": "Message not found",
+            "description": "Channel or message not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "NOT_FOUND",
-                  "subCode": "MESSAGE_NOT_FOUND",
-                  "message": "message not found"
+                "examples": {
+                  "messageNotFound": {
+                    "summary": "Message does not exist or belongs to another channel",
+                    "value": {
+                      "code": "NOT_FOUND",
+                      "subCode": "MESSAGE_NOT_FOUND",
+                      "message": "message not found"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Channel does not exist",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
                 }
               }
             }
           },
           "422": {
-            "description": "Action not available on the Meta channel",
+            "description": "Action refused. Handle it by `subCode` (or by `error` when there is no `subCode`); `message` is for reading and may change.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "DELETE_NOT_SUPPORTED",
-                  "message": "Deleting messages is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
+                "examples": {
+                  "notSupported": {
+                    "summary": "Action not supported by the channel type (e.g. Meta)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "DELETE_NOT_SUPPORTED",
+                      "message": "Deleting messages is not supported for META_WHATSAPP channels, because the provider of this channel type cannot delete a message. Only WhatsApp Web (Z_API_WHATSAPP) channels can; on this channel the message stays visible to the contact"
+                    }
+                  },
+                  "channelDisconnected": {
+                    "summary": "Channel disconnected",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHANNEL_DISCONNECTED",
+                      "message": "Channel is disconnected: the message was not deleted because the WhatsApp Web channel is not connected right now. Reconnect the channel by reading a new QR code and delete again. See https://developer.omni.z-api.io/en/connect/whatsapp-web"
+                    }
+                  },
+                  "channelInstanceNotProvisioned": {
+                    "summary": "Channel's Z-API instance not provisioned",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "INSTANCE_NOT_PROVISIONED",
+                      "message": "The Z-API instance of this channel is not provisioned"
+                    }
+                  },
+                  "messageWithoutProviderId": {
+                    "summary": "Message has no WhatsApp id yet (e.g. not delivered)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "MESSAGE_WITHOUT_PROVIDER_ID",
+                      "message": "Message has no provider id"
+                    }
+                  },
+                  "chatNotSupported": {
+                    "summary": "Chat is not a phone, a group or an @lid",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHAT_NOT_SUPPORTED",
+                      "message": "This action is not supported for the chat of this message. Only messages of individual chats, groups and LID chats can be deleted, forwarded, pinned or answered; this one does not belong to one of these chats. Use a message from an individual chat, a group or a LID chat."
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Subscription inactive",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace blocked",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "actionUnavailable": {
+                    "summary": "The service that runs the action does not serve the channel yet",
+                    "value": {
+                      "error": "Deleting messages is not available for this channel right now. The service that runs this action does not serve this channel yet. Check GET /v1/channels/{channelId}/messages/capabilities and try again later; if it persists, contact support."
+                    }
+                  }
                 }
               }
             }
@@ -170,6 +260,24 @@
           },
           "403": {
             "$ref": "#/components/responses/IpNotAllowed"
+          },
+          "502": {
+            "description": "Messaging service failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "failed": {
+                    "summary": "Messaging service failure",
+                    "value": {
+                      "error": "Message deletion failed"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -269,31 +377,103 @@
             }
           },
           "404": {
-            "description": "Message not found",
+            "description": "Channel or message not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "NOT_FOUND",
-                  "subCode": "MESSAGE_NOT_FOUND",
-                  "message": "message not found"
+                "examples": {
+                  "messageNotFound": {
+                    "summary": "Message does not exist or belongs to another channel",
+                    "value": {
+                      "code": "NOT_FOUND",
+                      "subCode": "MESSAGE_NOT_FOUND",
+                      "message": "message not found"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Channel does not exist",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
                 }
               }
             }
           },
           "422": {
-            "description": "Action not available on the Meta channel",
+            "description": "Action refused. Handle it by `subCode` (or by `error` when there is no `subCode`); `message` is for reading and may change.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "FORWARD_NOT_SUPPORTED",
-                  "message": "Forwarding messages is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
+                "examples": {
+                  "notSupported": {
+                    "summary": "Action not supported by the channel type (e.g. Meta)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "FORWARD_NOT_SUPPORTED",
+                      "message": "Forwarding messages is not supported for META_WHATSAPP channels, because the provider of this channel type cannot forward a message. Only WhatsApp Web (Z_API_WHATSAPP) channels can; on this channel, send the content as a new message instead"
+                    }
+                  },
+                  "channelDisconnected": {
+                    "summary": "Channel disconnected",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHANNEL_DISCONNECTED",
+                      "message": "Channel is disconnected: the message was not forwarded because the WhatsApp Web channel is not connected right now. Reconnect the channel by reading a new QR code and forward again. See https://developer.omni.z-api.io/en/connect/whatsapp-web"
+                    }
+                  },
+                  "channelInstanceNotProvisioned": {
+                    "summary": "Channel's Z-API instance not provisioned",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "INSTANCE_NOT_PROVISIONED",
+                      "message": "The Z-API instance of this channel is not provisioned"
+                    }
+                  },
+                  "messageWithoutProviderId": {
+                    "summary": "Message has no WhatsApp id yet (e.g. not delivered)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "MESSAGE_WITHOUT_PROVIDER_ID",
+                      "message": "Message has no provider id"
+                    }
+                  },
+                  "chatNotSupported": {
+                    "summary": "Chat is not a phone, a group or an @lid",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHAT_NOT_SUPPORTED",
+                      "message": "This action is not supported for the chat of this message. Only messages of individual chats, groups and LID chats can be deleted, forwarded, pinned or answered; this one does not belong to one of these chats. Use a message from an individual chat, a group or a LID chat."
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Subscription inactive",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace blocked",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "actionUnavailable": {
+                    "summary": "The service that runs the action does not serve the channel yet",
+                    "value": {
+                      "error": "Forwarding messages is not available for this channel right now. The service that runs this action does not serve this channel yet. Check GET /v1/channels/{channelId}/messages/capabilities and try again later; if it persists, contact support."
+                    }
+                  }
                 }
               }
             }
@@ -303,6 +483,24 @@
           },
           "403": {
             "$ref": "#/components/responses/IpNotAllowed"
+          },
+          "502": {
+            "description": "Messaging service failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "failed": {
+                    "summary": "Messaging service failure",
+                    "value": {
+                      "error": "Message forwarding failed"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -382,31 +580,103 @@
             }
           },
           "404": {
-            "description": "Message not found",
+            "description": "Channel or message not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "NOT_FOUND",
-                  "subCode": "MESSAGE_NOT_FOUND",
-                  "message": "message not found"
+                "examples": {
+                  "messageNotFound": {
+                    "summary": "Message does not exist or belongs to another channel",
+                    "value": {
+                      "code": "NOT_FOUND",
+                      "subCode": "MESSAGE_NOT_FOUND",
+                      "message": "message not found"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Channel does not exist",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
                 }
               }
             }
           },
           "422": {
-            "description": "Action not available on the Meta channel",
+            "description": "Action refused. Handle it by `subCode` (or by `error` when there is no `subCode`); `message` is for reading and may change.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "PIN_NOT_SUPPORTED",
-                  "message": "Pinning messages is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
+                "examples": {
+                  "notSupported": {
+                    "summary": "Action not supported by the channel type (e.g. Meta)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "PIN_NOT_SUPPORTED",
+                      "message": "Pinning messages is not supported for META_WHATSAPP channels, because the provider of this channel type cannot pin a message. Only WhatsApp Web (Z_API_WHATSAPP) channels can; on this channel, reply quoting the message to highlight it instead"
+                    }
+                  },
+                  "channelDisconnected": {
+                    "summary": "Channel disconnected",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHANNEL_DISCONNECTED",
+                      "message": "Channel is disconnected: the message was not pinned because the WhatsApp Web channel is not connected right now. Reconnect the channel by reading a new QR code and pin again. See https://developer.omni.z-api.io/en/connect/whatsapp-web"
+                    }
+                  },
+                  "channelInstanceNotProvisioned": {
+                    "summary": "Channel's Z-API instance not provisioned",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "INSTANCE_NOT_PROVISIONED",
+                      "message": "The Z-API instance of this channel is not provisioned"
+                    }
+                  },
+                  "messageWithoutProviderId": {
+                    "summary": "Message has no WhatsApp id yet (e.g. not delivered)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "MESSAGE_WITHOUT_PROVIDER_ID",
+                      "message": "Message has no provider id"
+                    }
+                  },
+                  "chatNotSupported": {
+                    "summary": "Chat is not a phone, a group or an @lid",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHAT_NOT_SUPPORTED",
+                      "message": "This action is not supported for the chat of this message. Only messages of individual chats, groups and LID chats can be deleted, forwarded, pinned or answered; this one does not belong to one of these chats. Use a message from an individual chat, a group or a LID chat."
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Subscription inactive",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace blocked",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "actionUnavailable": {
+                    "summary": "The service that runs the action does not serve the channel yet",
+                    "value": {
+                      "error": "Pinning messages is not available for this channel right now. The service that runs this action does not serve this channel yet. Check GET /v1/channels/{channelId}/messages/capabilities and try again later; if it persists, contact support."
+                    }
+                  }
                 }
               }
             }
@@ -416,6 +686,24 @@
           },
           "403": {
             "$ref": "#/components/responses/IpNotAllowed"
+          },
+          "502": {
+            "description": "Messaging service failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "failed": {
+                    "summary": "Messaging service failure",
+                    "value": {
+                      "error": "Message pinning failed"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -453,31 +741,103 @@
             "description": "OK (no content)"
           },
           "404": {
-            "description": "Message not found",
+            "description": "Channel or message not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "NOT_FOUND",
-                  "subCode": "MESSAGE_NOT_FOUND",
-                  "message": "message not found"
+                "examples": {
+                  "messageNotFound": {
+                    "summary": "Message does not exist or belongs to another channel",
+                    "value": {
+                      "code": "NOT_FOUND",
+                      "subCode": "MESSAGE_NOT_FOUND",
+                      "message": "message not found"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Channel does not exist",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
                 }
               }
             }
           },
           "422": {
-            "description": "Action not available on the Meta channel",
+            "description": "Action refused. Handle it by `subCode` (or by `error` when there is no `subCode`); `message` is for reading and may change.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "PIN_NOT_SUPPORTED",
-                  "message": "Pinning messages is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
+                "examples": {
+                  "notSupported": {
+                    "summary": "Action not supported by the channel type (e.g. Meta)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "PIN_NOT_SUPPORTED",
+                      "message": "Pinning messages is not supported for META_WHATSAPP channels, because the provider of this channel type cannot pin a message. Only WhatsApp Web (Z_API_WHATSAPP) channels can; on this channel, reply quoting the message to highlight it instead"
+                    }
+                  },
+                  "channelDisconnected": {
+                    "summary": "Channel disconnected",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHANNEL_DISCONNECTED",
+                      "message": "Channel is disconnected: the message was not unpinned because the WhatsApp Web channel is not connected right now. Reconnect the channel by reading a new QR code and unpin again. See https://developer.omni.z-api.io/en/connect/whatsapp-web"
+                    }
+                  },
+                  "channelInstanceNotProvisioned": {
+                    "summary": "Channel's Z-API instance not provisioned",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "INSTANCE_NOT_PROVISIONED",
+                      "message": "The Z-API instance of this channel is not provisioned"
+                    }
+                  },
+                  "messageWithoutProviderId": {
+                    "summary": "Message has no WhatsApp id yet (e.g. not delivered)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "MESSAGE_WITHOUT_PROVIDER_ID",
+                      "message": "Message has no provider id"
+                    }
+                  },
+                  "chatNotSupported": {
+                    "summary": "Chat is not a phone, a group or an @lid",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHAT_NOT_SUPPORTED",
+                      "message": "This action is not supported for the chat of this message. Only messages of individual chats, groups and LID chats can be deleted, forwarded, pinned or answered; this one does not belong to one of these chats. Use a message from an individual chat, a group or a LID chat."
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Subscription inactive",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace blocked",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "actionUnavailable": {
+                    "summary": "The service that runs the action does not serve the channel yet",
+                    "value": {
+                      "error": "Unpinning messages is not available for this channel right now. The service that runs this action does not serve this channel yet. Check GET /v1/channels/{channelId}/messages/capabilities and try again later; if it persists, contact support."
+                    }
+                  }
                 }
               }
             }
@@ -487,6 +847,24 @@
           },
           "403": {
             "$ref": "#/components/responses/IpNotAllowed"
+          },
+          "502": {
+            "description": "Messaging service failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "failed": {
+                    "summary": "Messaging service failure",
+                    "value": {
+                      "error": "Message unpinning failed"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -571,31 +949,103 @@
             }
           },
           "404": {
-            "description": "Message not found",
+            "description": "Channel or message not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "NOT_FOUND",
-                  "subCode": "MESSAGE_NOT_FOUND",
-                  "message": "message not found"
+                "examples": {
+                  "messageNotFound": {
+                    "summary": "Message does not exist or belongs to another channel",
+                    "value": {
+                      "code": "NOT_FOUND",
+                      "subCode": "MESSAGE_NOT_FOUND",
+                      "message": "message not found"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Channel does not exist",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
                 }
               }
             }
           },
           "422": {
-            "description": "Action not available on the Meta channel",
+            "description": "Action refused. Handle it by `subCode` (or by `error` when there is no `subCode`); `message` is for reading and may change.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "CHOICE_NOT_SUPPORTED",
-                  "message": "Choosing an option is not supported for META_WHATSAPP channels: the WhatsApp Cloud API (Meta) does not offer this action. This route works only on Z-API (WhatsApp Web) channels"
+                "examples": {
+                  "notSupported": {
+                    "summary": "Action not supported by the channel type (e.g. Meta)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHOICE_NOT_SUPPORTED",
+                      "message": "Choosing an option is not supported for META_WHATSAPP channels, because the provider of this channel type cannot answer an interactive message on behalf of the channel. Only WhatsApp Web (Z_API_WHATSAPP) channels can; on this channel, send the answer as a text message instead"
+                    }
+                  },
+                  "channelDisconnected": {
+                    "summary": "Channel disconnected",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHANNEL_DISCONNECTED",
+                      "message": "Channel is disconnected: the option was not chosen because the WhatsApp Web channel is not connected right now. Reconnect the channel by reading a new QR code and choose again. See https://developer.omni.z-api.io/en/connect/whatsapp-web"
+                    }
+                  },
+                  "channelInstanceNotProvisioned": {
+                    "summary": "Channel's Z-API instance not provisioned",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "INSTANCE_NOT_PROVISIONED",
+                      "message": "The Z-API instance of this channel is not provisioned"
+                    }
+                  },
+                  "messageWithoutProviderId": {
+                    "summary": "Message has no WhatsApp id yet (e.g. not delivered)",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "MESSAGE_WITHOUT_PROVIDER_ID",
+                      "message": "Message has no provider id"
+                    }
+                  },
+                  "chatNotSupported": {
+                    "summary": "Chat is not a phone, a group or an @lid",
+                    "value": {
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHAT_NOT_SUPPORTED",
+                      "message": "This action is not supported for the chat of this message. Only messages of individual chats, groups and LID chats can be deleted, forwarded, pinned or answered; this one does not belong to one of these chats. Use a message from an individual chat, a group or a LID chat."
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Subscription inactive",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace blocked",
+                    "value": {
+                      "error": "You are blocked, contact support."
+                    }
+                  },
+                  "actionUnavailable": {
+                    "summary": "The service that runs the action does not serve the channel yet",
+                    "value": {
+                      "error": "Choosing an option is not available for this channel right now. The service that runs this action does not serve this channel yet. Check GET /v1/channels/{channelId}/messages/capabilities and try again later; if it persists, contact support."
+                    }
+                  }
                 }
               }
             }
@@ -605,6 +1055,24 @@
           },
           "403": {
             "$ref": "#/components/responses/IpNotAllowed"
+          },
+          "502": {
+            "description": "Messaging service failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "failed": {
+                    "summary": "Messaging service failure",
+                    "value": {
+                      "error": "Option choice failed"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -649,8 +1117,18 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": "Authorization invalid"
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
             }
+          }
+        },
+        "headers": {
+          "WWW-Authenticate": {
+            "description": "Always `Bearer`.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
           }
         }
       },
@@ -662,7 +1140,8 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": "ip_not_allowed"
+              "error": "ip_not_allowed",
+              "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
             }
           }
         }
