@@ -48,6 +48,19 @@ curl -X GET https://api.omni.z-api.io/whatsapp/businesses \
 
 ---
 
+## Token OAuth de app conectada
+
+Una app conectada al workspace llama a la API con `Authorization: Bearer <access_token>`. Quien conecta la app elige las instancias que alcanza, y el token solo ve y solo actúa en esas instancias:
+
+- el envío, la lectura del canal, el estado y el dispositivo de Z-API y los webhooks del canal, en una instancia fuera de la elección, responden `404`, con el mismo cuerpo de un canal de otro workspace;
+- `GET /channels` lista solo las instancias elegidas, y el `total` cuenta solo esas;
+- con la elección vacía, toda ruta de canal responde `404` y `GET /channels` viene vacío, con `total` 0;
+- la conexión con elección no lee el webhook global ni el predeterminado de la cuenta (`GET /webhooks` y `GET /default-instance-webhooks`, y la lectura por id): la respuesta es `403` con `{"error":"forbidden"}`.
+
+Una conexión hecha antes de la elección de instancias sigue alcanzando el workspace entero hasta que se autorice de nuevo. Las cuentas de WhatsApp Business, las plantillas y los flows siguen solo los scopes del token. Un cambio en la elección vale en hasta 5 segundos.
+
+---
+
 ## Resumen
 
 | Clave | Uso | Dónde usarla | ¿Se puede exponer en el frontend? |
