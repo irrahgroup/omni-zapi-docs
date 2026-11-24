@@ -1,0 +1,853 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Grupos",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/groups/capabilities": {
+      "get": {
+        "summary": "Capacidades de grupo",
+        "description": "Lista las operaciones de grupo disponibles en el canal. En el canal Meta, la lista viene vacía.",
+        "operationId": "groupCapabilities",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Capacidades de grupo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "operations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "whatsappWeb": {
+                    "value": {
+                      "type": "Z_API_WHATSAPP",
+                      "operations": [
+                        "LIST_GROUPS",
+                        "GET_GROUP",
+                        "GET_INVITE_LINK",
+                        "PREVIEW_INVITE"
+                      ]
+                    }
+                  },
+                  "meta": {
+                    "value": {
+                      "type": "META_WHATSAPP",
+                      "operations": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/groups": {
+      "get": {
+        "summary": "Listar grupos",
+        "description": "Lista los grupos del número, paginada por cursor. Solo en el canal WhatsApp Web (`Z_API_WHATSAPP`).",
+        "operationId": "listGroups",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Cantidad por página. Por defecto 20, sin máximo, entero positivo de hasta 9 dígitos.",
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco de la página siguiente. Devuelve exactamente el `nextCursor` recibido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listar grupos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupList"
+                },
+                "example": {
+                  "content": [
+                    {
+                      "id": "120363430328583007-group",
+                      "name": "Teste ZAPI-8975"
+                    }
+                  ],
+                  "nextCursor": "8xkQ2"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cursor fuera de formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "cursor",
+                  "message": "cursor is not valid: send back exactly the nextCursor returned by the previous page, or leave it out to start from the first page"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operación no disponible en el canal, instancia no aprovisionada, suscripción inactiva o workspace bloqueado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "operationNotSupported": {
+                    "summary": "Canal sin soporte de grupos en esta API",
+                    "value": {
+                      "error": "operation not supported for this instance"
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instancia no aprovisionada",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Suscripción inactiva",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace bloqueado",
+                    "value": {
+                      "error": "You are blocked, contact support.",
+                      "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "502": {
+            "$ref": "#/components/responses/ProviderResponseTooLarge"
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/groups/{groupId}": {
+      "get": {
+        "summary": "Consultar grupo",
+        "description": "Devuelve los datos de un grupo: nombre, descripción, dueño, participantes y ajustes.",
+        "operationId": "getGroup",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "description": "Identificador del grupo.",
+            "schema": {
+              "type": "string",
+              "example": "120363430328583007-group"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consultar grupo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                },
+                "example": {
+                  "id": "120363430328583007-group",
+                  "name": "Teste ZAPI-8975",
+                  "description": "Grupo de teste",
+                  "createdAt": "2026-10-06T19:09:18.429Z",
+                  "owner": "5544936180923",
+                  "participants": [
+                    {
+                      "id": "5544936180923",
+                      "name": null,
+                      "role": "ADMIN"
+                    }
+                  ],
+                  "participantCount": 3,
+                  "settings": {
+                    "onlyAdminsSendMessages": false,
+                    "onlyAdminsEditInfo": true,
+                    "joinApprovalRequired": false,
+                    "onlyAdminsAddParticipants": false
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Id de grupo fuera de formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "groupId"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Grupo o canal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "groupNotFound": {
+                    "summary": "Grupo no encontrado",
+                    "value": {
+                      "error": "provider_error",
+                      "message": "Error on get group"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Canal (instancia) no encontrado",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operación no disponible en el canal, instancia no aprovisionada, suscripción inactiva o workspace bloqueado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "operationNotSupported": {
+                    "summary": "Canal sin soporte de grupos en esta API",
+                    "value": {
+                      "error": "operation not supported for this instance"
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instancia no aprovisionada",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Suscripción inactiva",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace bloqueado",
+                    "value": {
+                      "error": "You are blocked, contact support.",
+                      "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "502": {
+            "$ref": "#/components/responses/ProviderResponseTooLarge"
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/groups/{groupId}/invite-link": {
+      "get": {
+        "summary": "Enlace de invitación",
+        "description": "Devuelve el enlace de invitación del grupo. El canal debe ser administrador.",
+        "operationId": "getGroupInviteLink",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "description": "Identificador del grupo.",
+            "schema": {
+              "type": "string",
+              "example": "120363430328583007-group"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enlace de invitación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "inviteLink": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "inviteLink": "https://chat.whatsapp.com/XXXXXXXXXXX"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Id de grupo fuera de formato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "groupId"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Grupo o canal no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "groupNotFound": {
+                    "summary": "Grupo no encontrado",
+                    "value": {
+                      "error": "provider_error",
+                      "message": "Group not found"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Canal (instancia) no encontrado",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El canal no es administrador del grupo, operación no disponible en el canal, instancia no aprovisionada, suscripción inactiva o workspace bloqueado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "notGroupAdmin": {
+                    "summary": "El canal no es administrador del grupo",
+                    "value": {
+                      "error": "provider_error",
+                      "message": "The channel is not an admin of this group, so WhatsApp does not return its invite link. Make the channel an admin of the group, or ask a group admin for the link."
+                    }
+                  },
+                  "operationNotSupported": {
+                    "summary": "Canal sin soporte de grupos en esta API",
+                    "value": {
+                      "error": "operation not supported for this instance"
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instancia no aprovisionada",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Suscripción inactiva",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace bloqueado",
+                    "value": {
+                      "error": "You are blocked, contact support.",
+                      "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/v1/channels/{channelId}/group-invites/preview": {
+      "get": {
+        "summary": "Vista previa por enlace",
+        "description": "Devuelve la vista previa de un grupo (nombre y datos) a partir del enlace de invitación, sin entrar en él.",
+        "operationId": "previewGroupInvite",
+        "tags": [
+          "Grupos"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel id",
+            "schema": {
+              "type": "string",
+              "example": "58907809F0964E998D36C87F10EBA60C"
+            }
+          },
+          {
+            "name": "link",
+            "in": "query",
+            "required": true,
+            "description": "Enlace de invitación del grupo.",
+            "schema": {
+              "type": "string",
+              "example": "https://chat.whatsapp.com/XXXXXXXXXXX"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vista previa por enlace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "participantCount": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "120363430328583007-group",
+                  "name": "Teste ZAPI-8975",
+                  "description": "Grupo de teste",
+                  "participantCount": 3
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Enlace ausente o inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_request",
+                  "field": "link"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Operación no disponible en el canal, instancia no aprovisionada, suscripción inactiva o workspace bloqueado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "operationNotSupported": {
+                    "summary": "Canal sin soporte de grupos en esta API",
+                    "value": {
+                      "error": "operation not supported for this instance"
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instancia no aprovisionada",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Suscripción inactiva",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Workspace bloqueado",
+                    "value": {
+                      "error": "You are blocked, contact support.",
+                      "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/InstanceNotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Participant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "MEMBER",
+              "ADMIN",
+              "OWNER"
+            ]
+          }
+        }
+      },
+      "Group": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Participant"
+            }
+          },
+          "participantCount": {
+            "type": "integer"
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "onlyAdminsSendMessages": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "onlyAdminsEditInfo": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "joinApprovalRequired": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "onlyAdminsAddParticipants": {
+                "type": "boolean",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "GroupList": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupSummary"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cursor de la página siguiente. Solo viene nulo cuando la página tiene menos ítems que pageSize; una última página con exactamente pageSize ítems va seguida de una página vacía. El cursor de grupos (g1:) no sirve para contactos."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Secret Key ausente o inválida",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+            }
+          }
+        },
+        "headers": {
+          "WWW-Authenticate": {
+            "description": "Siempre `Bearer`",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "IP fuera de la lista de IPs del workspace",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "ip_not_allowed",
+              "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+            }
+          }
+        }
+      },
+      "InstanceNotFound": {
+        "description": "Canal (instancia) no encontrado",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "instance not found"
+            }
+          }
+        }
+      },
+      "InstanceUnprocessable": {
+        "description": "Instancia no aprovisionada, suscripción inactiva o workspace bloqueado",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "instanceNotProvisioned": {
+                "summary": "Instancia no aprovisionada",
+                "value": {
+                  "error": "instance is not provisioned"
+                }
+              },
+              "subscriptionInactive": {
+                "summary": "Suscripción inactiva",
+                "value": {
+                  "error": "instance subscription is not active"
+                }
+              },
+              "workspaceBlocked": {
+                "summary": "Workspace bloqueado",
+                "value": {
+                  "error": "You are blocked, contact support.",
+                  "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProviderResponseTooLarge": {
+        "description": "Respuesta del canal demasiado grande",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "provider_response_too_large",
+              "message": "The channel answer is too large. Use a smaller pageSize."
+            }
+          }
+        }
+      }
+    }
+  }
+}
