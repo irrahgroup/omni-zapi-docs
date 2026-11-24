@@ -1,0 +1,28 @@
+---
+title: "Contatos"
+description: "Rotas de contato da API nova, só no canal WhatsApp Web."
+---
+
+## Conceituação
+
+Rotas de contato da API nova, em `/v1/channels/{channelId}/contacts`. Disponíveis **só no canal WhatsApp Web** (`Z_API_WHATSAPP`): listar, consultar, foto, verificar números e capacidades.
+
+<Note>
+  No canal Meta (`META_WHATSAPP`), estas rotas respondem `422` — a API oficial não dá acesso aos contatos do número. A rota de [capacidades](/contacts/capabilities) responde `200` com a lista de operações vazia. Telegram, Instagram e Messenger também respondem `422` nestas rotas: contatos pertencem a um número de WhatsApp.
+</Note>
+
+<Note>
+  As escritas (adicionar, remover e denunciar contato) chegam numa próxima fase e hoje respondem `422`.
+</Note>
+
+A autenticação é a [Secret Key](/authentication). Só o caminho `/v1/channels/{channelId}/...` é atendido; os prefixos `/instances` e `/devices` respondem `404`.
+
+## Erros comuns
+
+Toda rota de contato pode responder, na **API Omni**: `401` quando a Secret Key é recusada ([Autenticação](/authentication)); `403` `ip_not_allowed` quando o IP está fora da lista ([Restrição de IP](/security/ip-restriction)); e `404` `{"error": "instance not found"}` quando o canal não existe.
+
+Nas rotas de dados (listar, consultar, foto e verificar), as checagens seguem esta ordem: canal inexistente (`404`), instância não provisionada (`422` `{"error": "instance is not provisioned"}`), assinatura inativa (`422` `{"error": "instance subscription is not active"}`), workspace bloqueado (`422` `{"error": "You are blocked, contact support."}`) e, por último, operação não suportada no canal (`422` `operation not supported for this instance`). A rota de capacidades não faz essas checagens de `422`.
+
+<Note>
+  A situação de bloqueado fica em cache por até 4 horas: bloquear ou desbloquear o workspace pode levar esse tempo para valer.
+</Note>

@@ -1,0 +1,58 @@
+---
+title: "Marcar mensagem como lida"
+description: "Marque como lida uma mensagem recebida do contato"
+openapi: "POST /read-message"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceituação
+
+Método para marcar como lida uma mensagem que o canal recebeu do contato. Funciona em canal **WhatsApp Oficial** (API oficial da Meta) e em canal **WhatsApp Web**, com o WhatsApp Web habilitado no workspace.
+
+## Atributos
+
+| Atributo | Uso |
+|---|---|
+| `messageId` | Obrigatório. O `messageId` que chegou no webhook da mensagem recebida. |
+| `phone` | Obrigatório, como na Z-API, mas não é usado: a mensagem é encontrada pelo `messageId`. |
+
+O corpo vai em JSON ou como formulário (`application/x-www-form-urlencoded` ou `multipart/form-data`).
+
+A resposta de sucesso é `200`:
+
+```json
+{ "value": true }
+```
+
+## Diferenças em relação à Z-API
+
+- O `messageId` é o id da mensagem no {projectName}, o mesmo que chega no webhook. No formato padrão de webhook, é o `message._id`. Não é o id da mensagem no WhatsApp.
+- No WhatsApp Oficial, a API da Meta (Cloud API) marca como lidas também as mensagens anteriores da conversa.
+- Uma mensagem enviada pelo próprio canal responde `200`, sem efeito.
+
+<Note>
+  No WhatsApp Oficial, o [`send-text`](/z-api/messages/send-text) com `delayTyping` também marca como lida a última mensagem recebida do contato, porque a Meta só mostra o "digitando" junto com a leitura. Quem usa essa opção vê a mensagem lida sem ter chamado esta rota.
+</Note>
+
+## Erros
+
+| Status | `error` | Quando |
+|---|---|---|
+| `400` | `phone is required` / `messageId is required` | `phone` ou `messageId` ausente ou vazio |
+| `400` | `messageId is invalid` | `messageId` é `.` ou `..` |
+| `400` | Varia, como `invalid character 'n' looking for beginning of object key string` | O corpo não pôde ser lido, como um JSON malformado |
+| `404` | `message not found` | A mensagem não existe ou é de outro canal, com o canal conectado |
+| `422` | `message cannot be marked as read: it has no id at the channel provider` | A mensagem não tem id no WhatsApp |
+| `422` | `channel is disconnected` | O canal está desconectado. Vale para qualquer `messageId`, mesmo um que não existe: a conexão é conferida antes da mensagem |
+| `422` | `the channel provider refused the request` | O provedor do canal recusou a leitura |
+| `422` | `instance subscription is not active` | A assinatura do canal não está ativa |
+| `422` | `Z-API (WhatsApp Web) instances are not enabled for this workspace` | Canal WhatsApp Web, com o WhatsApp Web não habilitado no workspace |
+| `422` | `the Z-API instance of this channel is not provisioned` | Canal WhatsApp Web cuja instância ainda não foi provisionada. É conferido antes da mensagem |
+| `422` | `message cannot be marked as read: its chat is not supported` | Canal WhatsApp Web, com uma mensagem de um chat que a rota não atende |
+| `422` | `message action route is not available for <tipo> channels; ...` | O canal não é WhatsApp Oficial nem WhatsApp Web, como um canal Telegram |
+| `502` | `failed to mark message as read` | Falha ao marcar como lida |
+
+A recusa por tipo de canal termina com `available only on Z-API (WhatsApp Web) instances`. Esse final é o mesmo para toda rota recusada. Esta rota também funciona no WhatsApp Oficial.
+
+A API não repete a chamada depois de um `502`. Você pode chamar de novo.

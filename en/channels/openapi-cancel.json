@@ -4,36 +4,54 @@
     "title": "Omni Z-API - Partner: Cancel Subscription",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/cancel": {
       "delete": {
         "summary": "Cancel subscription (Partner)",
         "description": "Requests cancellation of the channel subscription. The channel enters `CANCELLATION_PROCESS` and remains active until the end of the paid period. Requires ENTERPRISE role.",
         "operationId": "partnerCancelSubscription",
-        "tags": ["Partners"],
+        "tags": [
+          "Partners"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
             "description": "Channel ID (obtained via Create channel)",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
           },
           {
             "name": "cancel",
             "in": "query",
             "required": true,
             "description": "Must be `true` to confirm the cancellation",
-            "schema": { "type": "boolean", "example": true }
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
           }
         ],
         "requestBody": {
           "required": false,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CancelRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/CancelRequest"
+              },
               "examples": {
                 "withReason": {
                   "summary": "With cancellation reason",
@@ -57,27 +75,48 @@
             "description": "Invalid request — `cancel=true` query parameter missing",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 400, "message": "cancel query param is required" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 400,
+                  "message": "cancel query param is required"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "404": {
             "description": "Channel not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 404, "message": "Channel not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": 404,
+                  "message": "Channel not found"
+                }
               }
             }
           },
-          "422": {
-            "description": "Business rule violation — account does not have ENTERPRISE role",
+          "403": {
+            "description": "Account without the ENTERPRISE role",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 422, "message": "This action requires ENTERPRISE role" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "planRequired": {
+                    "value": {
+                      "error": "plan_required",
+                      "message": "Channel subscription requires ENTERPRISE role: managing channel subscriptions through the API is limited to partner accounts with the ENTERPRISE role. Ask support to enable the role, or manage the subscription in the panel at https://app.omni.z-api.io. See https://developer.omni.z-api.io/en/channels/introduction"
+                    }
+                  }
+                }
               }
             }
           }
@@ -91,8 +130,13 @@
         "description": "Invalid or missing token.",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
           }
         }
       }
@@ -111,8 +155,12 @@
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       }
     },

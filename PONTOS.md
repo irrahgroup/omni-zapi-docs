@@ -43,7 +43,7 @@
 - [ ] Enviar botões com vídeo não funciona. Ref: https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/interactive-reply-buttons-messages
 - [ ] Enviar lista de opções (`option-list`) não funciona. Ref: https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/interactive-list-messages
 - [ ] Enviar botão Pix não funciona. Ref: https://developers.facebook.com/documentation/business-messaging/whatsapp/payments/payments-br/offsite-pix
-- [ ] Enviar carrossel não funciona. Ref: https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/interactive-media-carousel-messages
+- [x] Enviar carrossel não funciona. Ref: https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/interactive-media-carousel-messages
 
 ### Catálogo e produtos
 
