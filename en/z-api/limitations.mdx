@@ -18,7 +18,7 @@ The tables below show, per feature, what each channel does:
 |---|---|
 | ✅ Z-API response | On WhatsApp Web, responds as Z-API would |
 | ✅ Supported | On Meta, the route works |
-| ◐ Partial | On Meta, works with limits |
+| ◐ Partial | The route works with limits, described in the cell |
 | ⏳ Not yet | Route not yet released on this channel via the compatibility route (rolling out) |
 | ❌ Not supported | The channel has no equivalent |
 
@@ -31,16 +31,20 @@ The tables below show, per feature, what each channel does:
 | Delete message | [`DELETE /messages`](https://developer.z-api.io/en/message/delete-message) | ✅ Z-API response | ❌ Not supported |
 | Edit message | `editMessageId` attribute in send endpoints | ⏳ Not yet | ❌ Not supported |
 | Forward message | [`POST /forward-message`](https://developer.z-api.io/en/message/forward-message) | ✅ Z-API response | ❌ Not supported |
-| Send GIF | [`POST /send-gif`](https://developer.z-api.io/en/message/send-message-gif) | ⏳ Not yet | ❌ Not supported |
+| Send GIF | [`POST /send-gif`](https://developer.z-api.io/en/message/send-message-gif) | ⏳ Not yet | ◐ Partial (sent as an image) |
 | Send PTV (circular video) | [`POST /send-ptv`](https://developer.z-api.io/en/message/send-message-ptv) | ⏳ Not yet | ◐ Partial (sent as a regular video) |
 | Edit document description | `editDocumentMessageId` attribute in send-document | ⏳ Not yet | ❌ Not supported |
-| Send OTP via button | [`POST /send-button-otp`](https://developer.z-api.io/en/message/send-button-otp) | ✅ Z-API response | ❌ Not supported |
-| Reply to message (quote) | `messageId` attribute in sends ([reply-message](/en/z-api/messages/reply-message)) | ⏳ Not yet | ❌ Not supported |
-| Private reply in group | `privateAnswer` attribute in reply-message | ⏳ Not yet | ❌ Not supported |
+| Send OTP via button | [`POST /send-button-otp`](https://developer.z-api.io/en/message/send-button-otp) | ✅ Z-API response | ❌ Not supported (the route responds `200`, but the message is not sent) |
+| Reply to message (quote) | `messageId` attribute in sends ([reply-message](/en/z-api/messages/reply-message)) | ◐ Sent without the quote | ◐ Sent without the quote |
+| Private reply in group | `privateAnswer` attribute in reply-message | ◐ Sent without the private reply | ◐ Sent without the private reply |
 | Send poll / vote | [`POST /send-poll`](https://developer.z-api.io/en/message/send-poll) | ⏳ Not yet | ❌ Not supported |
 | Pin message | [`POST /pin-message`](https://developer.z-api.io/en/message/send-pin-message) | ✅ Z-API response | ❌ Not supported |
 | Send / edit / reply event | [`POST /send-event`](https://developer.z-api.io/en/message/send-event) | ⏳ Not yet | ❌ Not supported |
 | Channel admin invite | [`POST /send-newsletter-admin-invite`](https://developer.z-api.io/en/message/send-newsletter-admin-invite) | ⏳ Not yet | ❌ Not supported |
+
+<Info>
+  Quote (`messageId`), private reply (`privateAnswer`) and mentions (`mentioned`) do not reach the message, on both channels: the send responds `200` and the field is ignored. With a private reply, the message goes to the `phone` sent; in a group, to the whole group. `mentioned` with a `phone` that is not a group responds `400` `mentions are only allowed in groups`.
+</Info>
 
 ## Contacts
 
@@ -59,12 +63,12 @@ The tables below show, per feature, what each channel does:
 ## Groups
 
 <Info>
-  On the official WhatsApp (Meta) channel, groups use the Groups API and require a verified Official Business Account (OBA). Without OBA — or on a coexistence number, with the WhatsApp Business app on the same number — group routes respond `422`. On the WhatsApp Web channel, all of them respond as Z-API.
+  On the official WhatsApp (Meta) channel, groups use the Groups API and require a verified Official Business Account (OBA). Without OBA — or on a coexistence number, with the WhatsApp Business app on the same number — group routes respond `422`. When a group is created on Meta, no one is added: every phone comes back in `phonesNotAdded` and `autoInvite` is ignored. People join through the invite link or an approved join request. On the WhatsApp Web channel, all of them respond as Z-API.
 </Info>
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Create group | [`POST /create-group`](https://developer.z-api.io/en/group/create-group) | ✅ Z-API response | ✅ Supported |
+| Create group | [`POST /create-group`](https://developer.z-api.io/en/group/create-group) | ✅ Z-API response | ◐ Partial (no one is added on creation) |
 | Group metadata | [`GET /group-metadata/{phone}`](https://developer.z-api.io/en/group/metadata-group) | ✅ Z-API response | ✅ Supported |
 | Remove participants | [`POST /remove-participant`](https://developer.z-api.io/en/group/remove-participant) | ✅ Z-API response | ✅ Supported |
 | Approve participants | [`POST /approve-participant`](https://developer.z-api.io/en/group/approve-participant) | ✅ Z-API response | ✅ Supported |
@@ -81,8 +85,8 @@ The tables below show, per feature, what each channel does:
 | Promote admin | [`POST /add-admin`](https://developer.z-api.io/en/group/add-admin) | ✅ Z-API response | ❌ Not supported |
 | Remove admin | [`POST /remove-admin`](https://developer.z-api.io/en/group/remove-admin) | ✅ Z-API response | ❌ Not supported |
 | Leave group | [`POST /leave-group`](https://developer.z-api.io/en/group/leave-group) | ✅ Z-API response | ❌ Not supported |
-| Mention member | [`POST /send-text`](https://developer.z-api.io/en/group/mention-participant) | ⏳ Not yet | ❌ Not supported |
-| Mention group | [`POST /send-text`](https://developer.z-api.io/en/group/mention-group) | ⏳ Not yet | ❌ Not supported |
+| Mention member | [`POST /send-text`](https://developer.z-api.io/en/group/mention-participant) | ◐ Sent without the mention | ◐ Sent without the mention |
+| Mention group | [`POST /send-text`](https://developer.z-api.io/en/group/mention-group) | ◐ Sent without the mention | ◐ Sent without the mention |
 | Metadata by invite | [`GET /group-invitation-metadata?url=`](https://developer.z-api.io/en/group/group-invitation-metadata) | ✅ Z-API response | ❌ Not supported |
 | Accept invite | [`GET /accept-invite-group?url=`](https://developer.z-api.io/en/group/accept-group-invite) | ✅ Z-API response | ❌ Not supported |
 

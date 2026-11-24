@@ -18,7 +18,7 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 |---|---|
 | ✅ Resposta Z-API | No WhatsApp Web, responde como a Z-API responderia |
 | ✅ Atende | No Meta, a rota funciona |
-| ◐ Atende em parte | No Meta, funciona com restrições |
+| ◐ Atende em parte | A rota funciona com restrições, descritas na célula |
 | ⏳ Ainda não | Rota ainda não liberada neste canal pela rota compatível (chega aos poucos) |
 | ❌ Não suportado | O canal não tem equivalente |
 
@@ -31,16 +31,20 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 | Deletar mensagem | [`DELETE /messages`](https://developer.z-api.io/message/delete-message) | ✅ Resposta Z-API | ❌ Não suportado |
 | Editar mensagem | Atributo `editMessageId` nos envios | ⏳ Ainda não | ❌ Não suportado |
 | Encaminhar mensagem | [`POST /forward-message`](https://developer.z-api.io/message/forward-message) | ✅ Resposta Z-API | ❌ Não suportado |
-| Enviar GIF | [`POST /send-gif`](https://developer.z-api.io/message/send-message-gif) | ⏳ Ainda não | ❌ Não suportado |
+| Enviar GIF | [`POST /send-gif`](https://developer.z-api.io/message/send-message-gif) | ⏳ Ainda não | ◐ Atende em parte (vai como imagem) |
 | Enviar PTV (vídeo circular) | [`POST /send-ptv`](https://developer.z-api.io/message/send-message-ptv) | ⏳ Ainda não | ◐ Atende em parte (vai como vídeo comum) |
 | Editar descrição de documento | Atributo `editDocumentMessageId` no send-document | ⏳ Ainda não | ❌ Não suportado |
-| Enviar OTP via botão | [`POST /send-button-otp`](https://developer.z-api.io/message/send-button-otp) | ✅ Resposta Z-API | ❌ Não suportado |
-| Responder mensagem (citação) | Atributo `messageId` nos envios ([reply-message](/z-api/messages/reply-message)) | ⏳ Ainda não | ❌ Não suportado |
-| Resposta privada em grupo | Atributo `privateAnswer` no reply-message | ⏳ Ainda não | ❌ Não suportado |
+| Enviar OTP via botão | [`POST /send-button-otp`](https://developer.z-api.io/message/send-button-otp) | ✅ Resposta Z-API | ❌ Não suportado (a rota responde `200`, mas a mensagem não sai) |
+| Responder mensagem (citação) | Atributo `messageId` nos envios ([reply-message](/z-api/messages/reply-message)) | ◐ Envia sem a citação | ◐ Envia sem a citação |
+| Resposta privada em grupo | Atributo `privateAnswer` no reply-message | ◐ Envia sem a resposta privada | ◐ Envia sem a resposta privada |
 | Enviar enquete / votar | [`POST /send-poll`](https://developer.z-api.io/message/send-poll) | ⏳ Ainda não | ❌ Não suportado |
 | Fixar mensagem | [`POST /pin-message`](https://developer.z-api.io/message/send-pin-message) | ✅ Resposta Z-API | ❌ Não suportado |
 | Enviar / editar / responder evento | [`POST /send-event`](https://developer.z-api.io/message/send-event) | ⏳ Ainda não | ❌ Não suportado |
 | Convite de admin de canal | [`POST /send-newsletter-admin-invite`](https://developer.z-api.io/message/send-newsletter-admin-invite) | ⏳ Ainda não | ❌ Não suportado |
+
+<Info>
+  Citação (`messageId`), resposta privada (`privateAnswer`) e menções (`mentioned`) não chegam à mensagem, nos dois canais: o envio responde `200` e o campo é ignorado. Na resposta privada, a mensagem vai para o `phone` informado; em grupo, para o grupo inteiro. `mentioned` com um `phone` que não é de grupo responde `400` `mentions are only allowed in groups`.
+</Info>
 
 ## Contatos
 
@@ -59,12 +63,12 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 ## Grupos
 
 <Info>
-  No canal WhatsApp Oficial (Meta), grupos usam a Groups API e exigem conta oficial verificada (OBA). Sem OBA — ou em número em coexistência, com o app do WhatsApp Business no mesmo número — as rotas de grupo respondem `422`. No canal WhatsApp Web, todas respondem como a Z-API.
+  No canal WhatsApp Oficial (Meta), grupos usam a Groups API e exigem conta oficial verificada (OBA). Sem OBA — ou em número em coexistência, com o app do WhatsApp Business no mesmo número — as rotas de grupo respondem `422`. Na criação de grupo no Meta, ninguém é adicionado: todos os telefones voltam em `phonesNotAdded` e `autoInvite` é ignorado. A entrada é pelo link de convite ou por pedido de entrada aprovado. No canal WhatsApp Web, todas respondem como a Z-API.
 </Info>
 
 | Funcionalidade | Rota Z-API | WhatsApp Web | Meta oficial |
 |---|---|---|---|
-| Criar grupo | [`POST /create-group`](https://developer.z-api.io/group/create-group) | ✅ Resposta Z-API | ✅ Atende |
+| Criar grupo | [`POST /create-group`](https://developer.z-api.io/group/create-group) | ✅ Resposta Z-API | ◐ Atende em parte (ninguém é adicionado na criação) |
 | Metadados do grupo | [`GET /group-metadata/{phone}`](https://developer.z-api.io/group/metadata-group) | ✅ Resposta Z-API | ✅ Atende |
 | Remover participantes | [`POST /remove-participant`](https://developer.z-api.io/group/remove-participant) | ✅ Resposta Z-API | ✅ Atende |
 | Aprovar participantes | [`POST /approve-participant`](https://developer.z-api.io/group/approve-participant) | ✅ Resposta Z-API | ✅ Atende |
@@ -81,8 +85,8 @@ As tabelas abaixo mostram, por funcionalidade, o que cada canal faz:
 | Promover admin | [`POST /add-admin`](https://developer.z-api.io/group/add-admin) | ✅ Resposta Z-API | ❌ Não suportado |
 | Remover admin | [`POST /remove-admin`](https://developer.z-api.io/group/remove-admin) | ✅ Resposta Z-API | ❌ Não suportado |
 | Sair do grupo | [`POST /leave-group`](https://developer.z-api.io/group/leave-group) | ✅ Resposta Z-API | ❌ Não suportado |
-| Mencionar membro | [`POST /send-text`](https://developer.z-api.io/group/mention-participant) | ⏳ Ainda não | ❌ Não suportado |
-| Mencionar grupo | [`POST /send-text`](https://developer.z-api.io/group/mention-group) | ⏳ Ainda não | ❌ Não suportado |
+| Mencionar membro | [`POST /send-text`](https://developer.z-api.io/group/mention-participant) | ◐ Envia sem a menção | ◐ Envia sem a menção |
+| Mencionar grupo | [`POST /send-text`](https://developer.z-api.io/group/mention-group) | ◐ Envia sem a menção | ◐ Envia sem a menção |
 | Metadados por convite | [`GET /group-invitation-metadata?url=`](https://developer.z-api.io/group/group-invitation-metadata) | ✅ Resposta Z-API | ❌ Não suportado |
 | Aceitar convite | [`GET /accept-invite-group?url=`](https://developer.z-api.io/group/accept-group-invite) | ✅ Resposta Z-API | ❌ Não suportado |
 
