@@ -1,0 +1,345 @@
+---
+title: "Changelog"
+description: "Mudanças na API e nos webhooks do Omni Z-API que afetam a sua integração"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+Esta página registra as mudanças do {projectName} que alteram o que a sua integração recebe. Cada entrada traz a data em que a mudança entrou em produção, o que muda, o antes e o depois, e o que você precisa fazer.
+
+<Info>
+  Trate a sua integração por `status`, `error`, `code` e `subCode`. O texto de `message` é para leitura humana e pode mudar sem aviso.
+</Info>
+
+<Update label="18/11/2026" description="Erros de autenticação e plano, webhooks Z_API e rotas /send-*">
+
+As três mudanças abaixo entraram em produção em 18/11/2026.
+
+## Erros mais claros na autenticação, no plano, no QR code e no canal desconectado
+
+Os erros abaixo passam a trazer `message`, com o que aconteceu, por quê e o que fazer. Três deles mudam de status. Onde já havia um texto, ele continua como **início** de `message`.
+
+<Note>
+  As mudanças de status abaixo — `400`→`401`, `400`→`403 ip_not_allowed` e `422`→`403 plan_required` — são da **API Omni** (`https://api.omni.z-api.io/v1/...`). Na [rota compatível Z-API](/z-api/introduction) (`https://zapi.omni.z-api.io`) a autenticação e a lista de IPs **não mudaram**: credencial recusada continua `400`/`422` `{"error": "Authorization invalid"}` e IP fora da lista continua `400` `{"error": "<ip> not allowed"}`.
+</Note>
+
+| Situação | Antes | Depois |
+|---|---|---|
+| Secret key ausente, vazia, fora do formato, Public Key no lugar dela ou inexistente | `400` `{"error": "Authorization invalid"}` | **`401`**, header `WWW-Authenticate: Bearer`, `{"error": "Authorization invalid", "message": "..."}` |
+| IP fora da [lista de IPs](/security/ip-restriction) do workspace | `400` `{"error": "<ip> not allowed"}` | **`403`** `{"error": "ip_not_allowed", "message": "<ip> not allowed: ..."}` |
+| Operação de canal com a secret key, sem o papel `ENTERPRISE` | `422` `{"error": "Channel listing requires ENTERPRISE role"}` (e variantes) | **`403`** `{"error": "plan_required", "message": "Channel listing requires ENTERPRISE role: ..."}` |
+| Workspace bloqueado | `422` `{"error": "You are blocked, contact support."}` | `422`, mesmo `error`, com `message` |
+| QR code do WhatsApp Web recusado (`NEED_SIGN_ZAPI`) | `422` com o envelope em `error` | `422`, mesmo `error`, com `message` na raiz |
+| Canal desconectado no envio e na edição (`CHANNEL_DISCONNECTED`) | `422`, `message` `"Channel is disconnected"` | `422`, mesmos `code` e `subCode`, `message` novo |
+
+### Secret key recusada: 400 vira 401
+
+Vale para as rotas da **API Omni** (`/v1/...`) que aceitam a secret key. O `message` depende do motivo:
+
+| Motivo | `message` |
+|---|---|
+| Header ausente ou vazio | `Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+| Public Key (começa com `pk_`) | `Authorization invalid: this is the Public Key, which only works in the channel connection SDK. Send the workspace Secret Key as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+| Fora do formato (por exemplo, o token do canal) | `Authorization invalid: the value sent is not a Secret Key. Send the workspace Secret Key, generated under Security in the panel, as "Authorization: Bearer <secret-key>". The channel token is not accepted here. See https://developer.omni.z-api.io/en/authentication` |
+| Inexistente ou revogada | `Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as "Authorization: Bearer <secret-key>". See https://developer.omni.z-api.io/en/authentication` |
+
+O `<secret-key>` é literal: a resposta nunca repete o valor que você enviou.
+
+Antes:
+
+```http
+HTTP/1.1 400 Bad Request
+
+{"error": "Authorization invalid"}
+```
+
+Depois:
+
+```http
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer
+
+{
+  "error": "Authorization invalid",
+  "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+}
+```
+
+### IP fora da lista: 400 vira 403
+
+Antes:
+
+```http
+HTTP/1.1 400 Bad Request
+
+{"error": "203.0.113.10 not allowed"}
+```
+
+Depois:
+
+```http
+HTTP/1.1 403 Forbidden
+
+{
+  "error": "ip_not_allowed",
+  "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+}
+```
+
+Quando o IP de origem não pode ser identificado, o `message` começa com `ip not allowed: `.
+
+### Sem o papel ENTERPRISE: 422 vira 403 plan_required
+
+Vale para as seis operações de canal com a secret key: listar, ler, criar, excluir, assinar e cancelar a assinatura. Cada uma mantém o seu texto atual como início de `message`: `Channel listing requires ENTERPRISE role` (listar e ler), `Channel creation requires ENTERPRISE role`, `Channel deletion requires ENTERPRISE role` e `Channel subscription requires ENTERPRISE role` (assinar e cancelar).
+
+Antes:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{"error": "Channel listing requires ENTERPRISE role"}
+```
+
+Depois:
+
+```http
+HTTP/1.1 403 Forbidden
+
+{
+  "error": "plan_required",
+  "message": "Channel listing requires ENTERPRISE role: listing and reading channels with the Secret Key is limited to partner accounts with the ENTERPRISE role. Ask support to enable the role, or see your channels in the panel at https://app.omni.z-api.io. See https://developer.omni.z-api.io/en/channels/introduction"
+}
+```
+
+### Workspace bloqueado: mesmo status, com message
+
+Vale para o envio, a edição de mensagem e as rotas de grupo, com a secret key ou com token OAuth.
+
+Antes:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{"error": "You are blocked, contact support."}
+```
+
+Depois:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": "You are blocked, contact support.",
+  "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+}
+```
+
+### QR code recusado: mesmo status e mesmo error, com message
+
+Vale para `GET /v1/channels/{id}/zapi/qr-code` e `GET /v1/channels/{id}/zapi/qr-code/image`, quando a recusa vem com `NEED_SIGN_ZAPI`. O objeto `error` não muda, campo a campo. As outras recusas do QR code continuam como hoje.
+
+Antes:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": {
+    "timestamp": "2026-11-17T10:00:00Z",
+    "status": 424,
+    "errors": [
+      {
+        "code": "307",
+        "name": "NEED_SIGN_ZAPI",
+        "message": "Z-API signature required",
+        "description": "The Z-API account must be signed before proceeding"
+      }
+    ]
+  }
+}
+```
+
+Depois:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": {
+    "timestamp": "2026-11-17T10:00:00Z",
+    "status": 424,
+    "errors": [
+      {
+        "code": "307",
+        "name": "NEED_SIGN_ZAPI",
+        "message": "Z-API signature required",
+        "description": "The Z-API account must be signed before proceeding"
+      }
+    ]
+  },
+  "message": "Z-API signature required: Z-API refused to generate the QR code for this WhatsApp Web channel. The usual cause is a channel without an active subscription: activate it in the panel at https://app.omni.z-api.io (ENTERPRISE accounts can also call GET /v1/channels/{channelId}/subscribe after the checkout) and request the QR code again. If the subscription is already active, try again in a few minutes and contact support if it keeps failing. See https://developer.omni.z-api.io/en/connect/whatsapp-web"
+}
+```
+
+### Canal desconectado: só o message muda
+
+Vale para `POST /v1/channels/{id}/messages`, para as rotas `/send-*` e para `PUT /v1/channels/{id}/messages/{messageId}`. Status, `timestamp`, `code` e `subCode` não mudam.
+
+Antes:
+
+```json
+{
+  "timestamp": "2026-11-17T10:00:00Z",
+  "code": "BUSINESS_RULE_VIOLATION",
+  "subCode": "CHANNEL_DISCONNECTED",
+  "message": "Channel is disconnected"
+}
+```
+
+Depois, no envio:
+
+```json
+{
+  "timestamp": "2026-11-17T10:00:00Z",
+  "code": "BUSINESS_RULE_VIOLATION",
+  "subCode": "CHANNEL_DISCONNECTED",
+  "message": "Channel is disconnected: the message was not sent because the channel is not connected right now. Reconnect the channel (WhatsApp Web by reading a new QR code; WhatsApp Official, Instagram and Messenger through the Meta connection; Telegram with the bot token) and send again. See https://developer.omni.z-api.io/en/connect/introduction"
+}
+```
+
+Na edição (`PUT .../messages/{messageId}`), o texto diz `the message was not edited` e termina com `and edit again`. Uma edição feita por `POST .../messages` com `editMessageId` recebe o texto do envio.
+
+### O que fazer
+
+- Se a sua integração trata credencial recusada por `status == 400`, passe a tratar `401`.
+- Se trata IP fora da lista por `400`, passe a tratar `403` com `error` `ip_not_allowed`.
+- Se trata a falta do papel `ENTERPRISE` por `422`, passe a tratar `403` com `error` `plan_required`. O texto antigo saiu de `error` e está no início de `message`.
+- Se compara o `error` do IP ou do papel com o texto exato, passe a comparar com `ip_not_allowed` e `plan_required`.
+- Workspace bloqueado, QR code recusado e canal desconectado não exigem mudança: status, `error`, `code` e `subCode` continuam os mesmos.
+- Na [rota compatível Z-API](/z-api/introduction) nada muda aqui: credencial recusada segue em `400`/`422` e IP fora da lista segue em `400`.
+
+O caminho do token OAuth não muda: `invalid_token`, `insufficient_scope` e `ip_not_allowed` continuam como hoje, e a leitura de canais pelo token continua sem exigir o papel `ENTERPRISE`. A Public Key usada no SDK de conexão também não muda.
+
+## Webhooks no formato Z_API: notificação na raiz do callback
+
+Nos eventos de notificação (grupo, chamada, perfil, canal e mensagens de sistema), o webhook com `payloadFormat` `Z_API` passa a entregar `notification` como texto e `notificationParameters` como lista, os dois na raiz do `ReceivedCallback`, como na Z-API. Hoje os dois chegam dentro de um objeto `notification`.
+
+Antes:
+
+```json
+{
+  "type": "ReceivedCallback",
+  "phone": "5511999999999",
+  "notification": {
+    "notification": "GROUP_PARTICIPANT_ADD",
+    "notificationParameters": ["5511988888888"],
+    "type": "notification"
+  }
+}
+```
+
+Depois:
+
+```json
+{
+  "type": "ReceivedCallback",
+  "phone": "5511999999999",
+  "notification": "GROUP_PARTICIPANT_ADD",
+  "notificationParameters": ["5511988888888"]
+}
+```
+
+- `notificationParameters` só vem quando o evento traz parâmetros. Pode vir vazio (`[]`).
+- Fixar mensagem continua em `pinMessage`, sem mudança.
+- Os formatos `DEFAULT` e `CHATWOOT` não mudam.
+- Em canais da API oficial (Meta), o valor de `notification` continua o que a Meta envia (por exemplo, `revoke`). Só a posição dos campos muda.
+
+### O que fazer
+
+Se a sua integração lê `notification.notification` ou `notification.notificationParameters`, passe a ler `notification` e `notificationParameters` na raiz. Quem já segue a documentação da Z-API não precisa mudar nada. Veja [Introdução aos webhooks](/webhooks/introduction).
+
+## Rotas /send-* passam a aceitar o payload do Omni
+
+As rotas `POST /v1/channels/{id}/send-*` passam a aceitar o **mesmo corpo** de `POST /v1/channels/{id}/messages`, `{"recipient": {...}, "content": {...}}`, e a responder como ele: `200` com `{"messageId": "..."}`. O tipo da mensagem vem da rota, então `content.type` é opcional.
+
+Antes, essas rotas repassavam o corpo sem interpretar, e o envio não acontecia: a resposta era `502`, `400` ou `415`, conforme o corpo.
+
+Antes:
+
+```http
+POST /v1/channels/{id}/send-text
+
+{"phone": "5511999999999", "message": "oi"}
+```
+
+```http
+HTTP/1.1 502 Bad Gateway
+```
+
+Depois:
+
+```http
+POST /v1/channels/{id}/send-text
+
+{
+  "recipient": {"identifier": "5511999999999"},
+  "content": {"body": {"message": "oi"}}
+}
+```
+
+```http
+HTTP/1.1 200 OK
+
+{"messageId": "..."}
+```
+
+### Rota e tipo
+
+| Rota | `content.type` |
+|---|---|
+| `send-text` | `TEXT` |
+| `send-image` | `IMAGE` |
+| `send-video` | `VIDEO` |
+| `send-audio` | `AUDIO` |
+| `send-ptv` | `PTV` |
+| `send-gif` | `GIF` |
+| `send-sticker` | `STICKER` |
+| `send-document` e `send-document/{extension}` | `DOCUMENT` |
+| `send-link` | `LINK` |
+| `send-location` | `LOCATION` |
+| `send-contact` | `CONTACT` |
+| `send-contacts` | `CONTACT_ARRAY` |
+| `send-reaction` | `REACTION` |
+| `send-template` | `TEMPLATE` |
+| `send-option-list` | `INTERACTIVE_LIST` |
+| `send-button-list` | `INTERACTIVE_BUTTON` |
+| `send-button-actions` | `INTERACTIVE_ACTION` |
+| `send-button-otp` | `INTERACTIVE_OTP` |
+| `send-carousel` | `INTERACTIVE_CAROUSEL` |
+
+No `send-document/{extension}`, o segmento do caminho é ignorado: a extensão vai em cada anexo, como no `/messages`. O `send-template` continua aceitando só canal do WhatsApp oficial (Meta). Se o canal não suporta o tipo, a recusa é a mesma do `/messages`.
+
+### Erros
+
+| Situação | Resposta |
+|---|---|
+| `content` ausente ou que não é objeto JSON (por exemplo, o corpo no formato da Z-API) | `400` `{"error": "invalid_request", "field": "content", "message": "content must be a JSON object; /send-text takes the same body as POST /v1/channels/{id}/messages"}` |
+| `content.type` diferente do tipo da rota | `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be TEXT on /send-text; leave it out, or send other types with POST /v1/channels/{id}/messages"}` |
+| Rota sem tipo equivalente no Omni | `422` `{"error": "send_route_not_supported", "message": "/send-poll has no Omni content type; send it with POST /v1/channels/{id}/messages"}` |
+| `/send-*` fora de `/v1/channels/{id}` | `404` `{"error": "Resource not found"}` |
+
+Os exemplos usam `send-text`, `TEXT` e `send-poll`. Em cada rota, o texto traz o nome e o tipo dela.
+
+As rotas sem tipo equivalente respondem `422` com qualquer credencial ou sem nenhuma, e não contam no limite de envio do app: `send-link-list`, `send-option-multi-list`, `send-button-pix`, `send-remove-reaction`, `send-poll`, `send-poll-vote`, `send-call`, `send-chat-expiration`, `send-text-status`, `send-image-status`, `send-video-status`, `send-order`, `send-request-payment`, `send-event`, `send-edit-event`, `send-event-response`, `send-comment`, `send-catalog`, `send-product` e `send-newsletter-admin-invite`.
+
+As rotas `/send-*` passam a existir **só** em `/v1/channels/{id}`. As variantes `/channels/{id}/send-*`, `/v1/instances/{id}/send-*`, `/instances/{id}/send-*`, `/v1/devices/{id}/send-*` e `/devices/{id}/send-*` passam a responder `404`. `POST .../messages` e `PUT .../messages/{messageId}` continuam em todas as variantes.
+
+Com token OAuth, as rotas tipadas exigem o mesmo escopo `messages:send` do `/messages` e contam no mesmo limite diário de envio do app.
+
+### O que fazer
+
+- Para enviar por uma rota `/send-*`, use o corpo de `POST /v1/channels/{id}/messages`, no caminho `/v1/channels/{id}/send-*`. Veja [Mensagens](/messages/introduction).
+- O corpo continua sendo JSON. Envio de arquivo por `multipart/form-data` não é aceito: mande a mídia por URL ou Base64 dentro do JSON.
+- Se a sua integração usa o corpo da Z-API (`phone`, `message`), use a [compatibilidade Z-API](/z-api/introduction), em `https://zapi.omni.z-api.io`, que aceita esse formato.
+
+</Update>
