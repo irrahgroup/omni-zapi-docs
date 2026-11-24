@@ -84,9 +84,6 @@
           },
           "404": {
             "$ref": "#/components/responses/InstanceNotFound"
-          },
-          "422": {
-            "$ref": "#/components/responses/InstanceUnprocessable"
           }
         }
       }
@@ -166,14 +163,38 @@
             }
           },
           "422": {
-            "description": "Operation not available on the channel",
+            "description": "Operation not available on the channel, instance not provisioned, inactive subscription or blocked workspace",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "operation not supported for this instance"
+                "examples": {
+                  "operationNotSupported": {
+                    "summary": "Channel without group support in this API",
+                    "value": {
+                      "error": "operation not supported for this instance"
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Inactive subscription",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Blocked workspace",
+                    "value": {
+                      "error": "You are blocked, contact support.",
+                      "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                    }
+                  }
                 }
               }
             }
@@ -186,6 +207,9 @@
           },
           "404": {
             "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "502": {
+            "$ref": "#/components/responses/ProviderResponseTooLarge"
           }
         }
       }
@@ -267,28 +291,63 @@
             }
           },
           "404": {
-            "description": "Group not found",
+            "description": "Group or channel not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "provider_error",
-                  "message": "Error on get group"
+                "examples": {
+                  "groupNotFound": {
+                    "summary": "Group not found",
+                    "value": {
+                      "error": "provider_error",
+                      "message": "Error on get group"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Channel (instance) not found",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
                 }
               }
             }
           },
           "422": {
-            "description": "Operation not available on the channel",
+            "description": "Operation not available on the channel, instance not provisioned, inactive subscription or blocked workspace",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "operation not supported for this instance"
+                "examples": {
+                  "operationNotSupported": {
+                    "summary": "Channel without group support in this API",
+                    "value": {
+                      "error": "operation not supported for this instance"
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Inactive subscription",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Blocked workspace",
+                    "value": {
+                      "error": "You are blocked, contact support.",
+                      "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                    }
+                  }
                 }
               }
             }
@@ -298,6 +357,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "502": {
+            "$ref": "#/components/responses/ProviderResponseTooLarge"
           }
         }
       }
@@ -366,29 +428,70 @@
             }
           },
           "404": {
-            "description": "Group not found",
+            "description": "Group or channel not found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "provider_error",
-                  "message": "Group not found"
+                "examples": {
+                  "groupNotFound": {
+                    "summary": "Group not found",
+                    "value": {
+                      "error": "provider_error",
+                      "message": "Group not found"
+                    }
+                  },
+                  "instanceNotFound": {
+                    "summary": "Channel (instance) not found",
+                    "value": {
+                      "error": "instance not found"
+                    }
+                  }
                 }
               }
             }
           },
           "422": {
-            "description": "The channel is not a group admin",
+            "description": "Channel is not a group admin, operation not available on the channel, instance not provisioned, inactive subscription or blocked workspace",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "provider_error",
-                  "message": "The channel is not an admin of this group, so WhatsApp does not return its invite link. Make the channel an admin of the group, or ask a group admin for the link."
+                "examples": {
+                  "notGroupAdmin": {
+                    "summary": "The channel is not a group admin",
+                    "value": {
+                      "error": "provider_error",
+                      "message": "The channel is not an admin of this group, so WhatsApp does not return its invite link. Make the channel an admin of the group, or ask a group admin for the link."
+                    }
+                  },
+                  "operationNotSupported": {
+                    "summary": "Channel without group support in this API",
+                    "value": {
+                      "error": "operation not supported for this instance"
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Inactive subscription",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Blocked workspace",
+                    "value": {
+                      "error": "You are blocked, contact support.",
+                      "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                    }
+                  }
                 }
               }
             }
@@ -478,14 +581,38 @@
             }
           },
           "422": {
-            "description": "Operation not available on the channel",
+            "description": "Operation not available on the channel, instance not provisioned, inactive subscription or blocked workspace",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": "operation not supported for this instance"
+                "examples": {
+                  "operationNotSupported": {
+                    "summary": "Channel without group support in this API",
+                    "value": {
+                      "error": "operation not supported for this instance"
+                    }
+                  },
+                  "instanceNotProvisioned": {
+                    "summary": "Instance not provisioned",
+                    "value": {
+                      "error": "instance is not provisioned"
+                    }
+                  },
+                  "subscriptionInactive": {
+                    "summary": "Inactive subscription",
+                    "value": {
+                      "error": "instance subscription is not active"
+                    }
+                  },
+                  "workspaceBlocked": {
+                    "summary": "Blocked workspace",
+                    "value": {
+                      "error": "You are blocked, contact support.",
+                      "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                    }
+                  }
                 }
               }
             }
@@ -634,8 +761,18 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": "Authorization invalid"
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: the Authorization header is missing or empty. Send the workspace Secret Key as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
             }
+          }
+        },
+        "headers": {
+          "WWW-Authenticate": {
+            "description": "Always `Bearer`",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
           }
         }
       },
@@ -647,7 +784,8 @@
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": "ip_not_allowed"
+              "error": "ip_not_allowed",
+              "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
             }
           }
         }
@@ -671,6 +809,41 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "instanceNotProvisioned": {
+                "summary": "Instance not provisioned",
+                "value": {
+                  "error": "instance is not provisioned"
+                }
+              },
+              "subscriptionInactive": {
+                "summary": "Inactive subscription",
+                "value": {
+                  "error": "instance subscription is not active"
+                }
+              },
+              "workspaceBlocked": {
+                "summary": "Blocked workspace",
+                "value": {
+                  "error": "You are blocked, contact support.",
+                  "message": "You are blocked, contact support. This workspace is blocked on the platform, so sending, editing and group calls are refused until it is unblocked. Talk to support through the panel at https://app.omni.z-api.io."
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProviderResponseTooLarge": {
+        "description": "Channel answer too large",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "provider_response_too_large",
+              "message": "The channel answer is too large. Use a smaller pageSize."
             }
           }
         }
