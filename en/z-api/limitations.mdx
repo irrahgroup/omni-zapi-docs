@@ -14,13 +14,12 @@ What a Z-API route does in {projectName} depends on the **channel type**:
 
 The tables below show, per feature, what each channel does:
 
-| Symbol | Meaning |
+| Term | Meaning |
 |---|---|
-| ✅ Z-API response | On WhatsApp Web, responds as Z-API would |
-| ✅ Supported | On Meta, the route works |
-| ◐ Partial | The route works with limits, described in the cell |
-| ⏳ Not yet | Route not yet released on this channel via the compatibility route (rolling out) |
-| ❌ Not supported | The channel has no equivalent |
+| Yes | The route works on the channel. On WhatsApp Web, the response is the same Z-API would give. |
+| Partly | The route works with limits, described in the cell itself. |
+| Not yet | The route is not yet released on this channel through the compatibility route. It is rolling out gradually. |
+| No | The route does not work on the channel, usually because the channel has no equivalent. Any further detail is in the cell itself. |
 
 ---
 
@@ -28,19 +27,25 @@ The tables below show, per feature, what each channel does:
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Delete message | [`DELETE /messages`](https://developer.z-api.io/en/message/delete-message) | ✅ Z-API response | ❌ Not supported |
-| Edit message | `editMessageId` attribute in send endpoints | ⏳ Not yet | ❌ Not supported |
-| Forward message | [`POST /forward-message`](https://developer.z-api.io/en/message/forward-message) | ✅ Z-API response | ❌ Not supported |
-| Send GIF | [`POST /send-gif`](https://developer.z-api.io/en/message/send-message-gif) | ⏳ Not yet | ◐ Partial (sent as an image) |
-| Send PTV (circular video) | [`POST /send-ptv`](https://developer.z-api.io/en/message/send-message-ptv) | ⏳ Not yet | ◐ Partial (sent as a regular video) |
-| Edit document description | `editDocumentMessageId` attribute in send-document | ⏳ Not yet | ❌ Not supported |
-| Send OTP via button | [`POST /send-button-otp`](https://developer.z-api.io/en/message/send-button-otp) | ✅ Z-API response | ❌ Not supported (the route responds `200`, but the message is not sent) |
-| Reply to message (quote) | `messageId` attribute in sends ([reply-message](/en/z-api/messages/reply-message)) | ◐ Sent without the quote | ◐ Sent without the quote |
-| Private reply in group | `privateAnswer` attribute in reply-message | ◐ Sent without the private reply | ◐ Sent without the private reply |
-| Send poll / vote | [`POST /send-poll`](https://developer.z-api.io/en/message/send-poll) | ⏳ Not yet | ❌ Not supported |
-| Pin message | [`POST /pin-message`](https://developer.z-api.io/en/message/send-pin-message) | ✅ Z-API response | ❌ Not supported |
-| Send / edit / reply event | [`POST /send-event`](https://developer.z-api.io/en/message/send-event) | ⏳ Not yet | ❌ Not supported |
-| Channel admin invite | [`POST /send-newsletter-admin-invite`](https://developer.z-api.io/en/message/send-newsletter-admin-invite) | ⏳ Not yet | ❌ Not supported |
+| Delete message | [`DELETE /messages`](https://developer.z-api.io/en/message/delete-message) | Yes | No |
+| Edit message | `editMessageId` attribute in send endpoints | Not yet | No |
+| Forward message | [`POST /forward-message`](https://developer.z-api.io/en/message/forward-message) | Yes | No |
+| Send GIF | [`POST /send-gif`](https://developer.z-api.io/en/message/send-message-gif) | Not yet | Partly (sent as an image) |
+| Send PTV (circular video) | [`POST /send-ptv`](https://developer.z-api.io/en/message/send-message-ptv) | Not yet | Partly (sent as a regular video) |
+| Edit document description | `editDocumentMessageId` attribute in send-document | Not yet | No |
+| Send OTP via button | [`POST /send-button-otp`](https://developer.z-api.io/en/message/send-button-otp) | Yes | No (the route responds `200`, but the message is not sent) |
+| Reply to message (quote) | `messageId` attribute in sends ([reply-message](/en/z-api/messages/reply-message)) | Partly (sent without the quote) | Partly (sent without the quote) |
+| Private reply in group | `privateAnswer` attribute in reply-message | Partly (sent without the private reply) | Partly (sent without the private reply) |
+| Send poll / vote | [`POST /send-poll`](https://developer.z-api.io/en/message/send-poll) | Not yet | No |
+| Pin message | [`POST /pin-message`](https://developer.z-api.io/en/message/send-pin-message) | Yes | No |
+| Send / edit / reply event | [`POST /send-event`](https://developer.z-api.io/en/message/send-event) | Not yet | No |
+| Channel admin invite | [`POST /send-newsletter-admin-invite`](https://developer.z-api.io/en/message/send-newsletter-admin-invite) | Not yet | No |
+| Send location | [`POST /send-location`](https://developer.z-api.io/en/message/send-message-location) | Yes | Yes |
+| Send multiple contacts | [`POST /send-contacts`](https://developer.z-api.io/en/message/send-message-multiple-contacts) | Yes | Yes |
+| Click a received button | [`POST /reply-button`](https://developer.z-api.io/en/message/reply-button) | Yes | No |
+| Pick an option from a received list | [`POST /reply-option-list`](https://developer.z-api.io/en/message/reply-option-list) | Yes | No |
+| Click a received action button | [`POST /reply-template-button`](https://developer.z-api.io/en/message/reply-template-button) | Yes | No |
+| Mark message as read | [`POST /read-message`](/en/z-api/messages/read-message) | Yes | Yes |
 
 <Info>
   Quote (`messageId`), private reply (`privateAnswer`) and mentions (`mentioned`) do not reach the message, on both channels: the send responds `200` and the field is ignored. With a private reply, the message goes to the `phone` sent; in a group, to the whole group. `mentioned` with a `phone` that is not a group responds `400` `mentions are only allowed in groups`.
@@ -50,45 +55,45 @@ The tables below show, per feature, what each channel does:
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| List contacts | [`GET /contacts?page=&pageSize=`](https://developer.z-api.io/en/contacts/get-contacts) | ✅ Z-API response | ❌ Not supported |
-| Add contacts | [`POST /contacts/add`](https://developer.z-api.io/en/contacts/add-contacts) | ✅ Z-API response | ❌ Not supported |
-| Remove contacts | [`DELETE /contacts/remove`](https://developer.z-api.io/en/contacts/remove-contacts) | ✅ Z-API response | ❌ Not supported |
-| Contact metadata | [`GET /contacts/{phone}`](https://developer.z-api.io/en/contacts/get-metadata-contact) | ✅ Z-API response | ❌ Not supported |
-| Profile picture | [`GET /profile-picture?phone={phone}`](https://developer.z-api.io/en/contacts/get-profile-picture) | ✅ Z-API response | ❌ Not supported |
-| Check WhatsApp number | [`GET /phone-exists/{phone}`](https://developer.z-api.io/en/contacts/get-iswhatsapp) | ✅ Z-API response | ❌ Not supported |
-| Check numbers in batch | [`POST /phone-exists-batch`](https://developer.z-api.io/en/contacts/get-iswhatsapp-batch) | ✅ Z-API response | ❌ Not supported |
-| Block / unblock contact | [`POST /contacts/modify-blocked`](https://developer.z-api.io/en/contacts/block-contact) | ✅ Z-API response | ❌ Not supported |
-| Report contact | [`POST /contacts/{phone}/report`](https://developer.z-api.io/en/contacts/report-contact) | ✅ Z-API response | ❌ Not supported |
+| List contacts | [`GET /contacts?page=&pageSize=`](https://developer.z-api.io/en/contacts/get-contacts) | Yes | No |
+| Add contacts | [`POST /contacts/add`](https://developer.z-api.io/en/contacts/add-contacts) | Yes | No |
+| Remove contacts | [`DELETE /contacts/remove`](https://developer.z-api.io/en/contacts/remove-contacts) | Yes | No |
+| Contact metadata | [`GET /contacts/{phone}`](https://developer.z-api.io/en/contacts/get-metadata-contact) | Yes | No |
+| Profile picture | [`GET /profile-picture?phone={phone}`](https://developer.z-api.io/en/contacts/get-profile-picture) | Yes | No |
+| Check WhatsApp number | [`GET /phone-exists/{phone}`](https://developer.z-api.io/en/contacts/get-iswhatsapp) | Yes | No |
+| Check numbers in batch | [`POST /phone-exists-batch`](https://developer.z-api.io/en/contacts/get-iswhatsapp-batch) | Yes | No |
+| Block / unblock contact | [`POST /contacts/modify-blocked`](https://developer.z-api.io/en/contacts/block-contact) | Yes | No |
+| Report contact | [`POST /contacts/{phone}/report`](https://developer.z-api.io/en/contacts/report-contact) | Yes | No |
 
 ## Groups
 
 <Info>
-  On the official WhatsApp (Meta) channel, groups use the Groups API and require a verified Official Business Account (OBA). Without OBA — or on a coexistence number, with the WhatsApp Business app on the same number — group routes respond `422`. When a group is created on Meta, no one is added: every phone comes back in `phonesNotAdded` and `autoInvite` is ignored. People join through the invite link or an approved join request. On the WhatsApp Web channel, all of them respond as Z-API.
+  On the official WhatsApp (Meta) channel, groups use the Groups API and require a verified Official Business Account (OBA). Group routes respond `422` on a number without OBA and on a coexistence number, which uses the WhatsApp Business app on the same number. When a group is created on Meta, no one is added: every phone comes back in `phonesNotAdded` and `autoInvite` is ignored. People join through the invite link or an approved join request. On the WhatsApp Web channel, all of them respond as Z-API.
 </Info>
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Create group | [`POST /create-group`](https://developer.z-api.io/en/group/create-group) | ✅ Z-API response | ◐ Partial (no one is added on creation) |
-| Group metadata | [`GET /group-metadata/{phone}`](https://developer.z-api.io/en/group/metadata-group) | ✅ Z-API response | ✅ Supported |
-| Remove participants | [`POST /remove-participant`](https://developer.z-api.io/en/group/remove-participant) | ✅ Z-API response | ✅ Supported |
-| Approve participants | [`POST /approve-participant`](https://developer.z-api.io/en/group/approve-participant) | ✅ Z-API response | ✅ Supported |
-| Reject participants | [`POST /reject-participant`](https://developer.z-api.io/en/group/reject-participant) | ✅ Z-API response | ✅ Supported |
-| Get invite link | [`GET /group-invitation-link/{id}`](https://developer.z-api.io/en/group/get-invitation-link) | ✅ Z-API response | ✅ Supported |
-| Redefine invite link | [`POST /redefine-invitation-link/{id}`](https://developer.z-api.io/en/group/redefine-invitation-link) | ✅ Z-API response | ✅ Supported |
-| Update description | [`POST /update-group-description`](https://developer.z-api.io/en/group/update-group-description) | ✅ Z-API response | ✅ Supported |
-| Update group name | [`POST /update-group-name`](https://developer.z-api.io/en/group/update-group-name) | ✅ Z-API response | ✅ Supported |
-| Update group photo | [`POST /update-group-photo`](https://developer.z-api.io/en/group/update-group-photo) | ✅ Z-API response | ✅ Supported |
-| List groups | [`GET /groups`](https://developer.z-api.io/en/group/get-groups) | ✅ Z-API response | ✅ Supported |
-| Group metadata (light) | [`GET /light-group-metadata/{phone}`](https://developer.z-api.io/en/group/light-group-metadata) | ✅ Z-API response | ✅ Supported |
-| Group settings | [`POST /update-group-settings`](https://developer.z-api.io/en/group/update-group-settings) | ✅ Z-API response | ❌ Not supported |
-| Add participants | [`POST /add-participant`](https://developer.z-api.io/en/group/add-participant) | ✅ Z-API response | ❌ Not supported |
-| Promote admin | [`POST /add-admin`](https://developer.z-api.io/en/group/add-admin) | ✅ Z-API response | ❌ Not supported |
-| Remove admin | [`POST /remove-admin`](https://developer.z-api.io/en/group/remove-admin) | ✅ Z-API response | ❌ Not supported |
-| Leave group | [`POST /leave-group`](https://developer.z-api.io/en/group/leave-group) | ✅ Z-API response | ❌ Not supported |
-| Mention member | [`POST /send-text`](https://developer.z-api.io/en/group/mention-participant) | ◐ Sent without the mention | ◐ Sent without the mention |
-| Mention group | [`POST /send-text`](https://developer.z-api.io/en/group/mention-group) | ◐ Sent without the mention | ◐ Sent without the mention |
-| Metadata by invite | [`GET /group-invitation-metadata?url=`](https://developer.z-api.io/en/group/group-invitation-metadata) | ✅ Z-API response | ❌ Not supported |
-| Accept invite | [`GET /accept-invite-group?url=`](https://developer.z-api.io/en/group/accept-group-invite) | ✅ Z-API response | ❌ Not supported |
+| Create group | [`POST /create-group`](/en/z-api/groups/create-group) | Yes | Partly (no one is added on creation) |
+| Group metadata | [`GET /group-metadata/{phone}`](/en/z-api/groups/group-metadata) | Yes | Yes |
+| Remove participants | [`POST /remove-participant`](/en/z-api/groups/remove-participant) | Yes | Yes |
+| Approve participants | [`POST /approve-participant`](/en/z-api/groups/approve-participant) | Yes | Yes |
+| Reject participants | [`POST /reject-participant`](/en/z-api/groups/reject-participant) | Yes | Yes |
+| Get invite link | [`GET /group-invitation-link/{id}`](/en/z-api/groups/group-invitation-link) | Yes | Yes |
+| Redefine invite link | [`POST /redefine-invitation-link/{id}`](/en/z-api/groups/redefine-invitation-link) | Yes | Yes |
+| Update description | [`POST /update-group-description`](/en/z-api/groups/update-group-description) | Yes | Yes |
+| Update group name | [`POST /update-group-name`](/en/z-api/groups/update-group-name) | Yes | Yes |
+| Update group photo | [`POST /update-group-photo`](/en/z-api/groups/update-group-photo) | Yes | Yes |
+| List groups | [`GET /groups`](/en/z-api/groups/get-groups) | Yes | Yes |
+| Group metadata (light) | [`GET /light-group-metadata/{phone}`](/en/z-api/groups/light-group-metadata) | Yes | Yes |
+| Group settings | [`POST /update-group-settings`](/en/z-api/groups/update-group-settings) | Yes | No |
+| Add participants | [`POST /add-participant`](/en/z-api/groups/add-participant) | Yes | No |
+| Promote admin | [`POST /add-admin`](/en/z-api/groups/add-admin) | Yes | No |
+| Remove admin | [`POST /remove-admin`](/en/z-api/groups/remove-admin) | Yes | No |
+| Leave group | [`POST /leave-group`](/en/z-api/groups/leave-group) | Yes | No |
+| Mention member | [`POST /send-text`](https://developer.z-api.io/en/group/mention-participant) | Partly (sent without the mention) | Partly (sent without the mention) |
+| Mention group | [`POST /send-text`](https://developer.z-api.io/en/group/mention-group) | Partly (sent without the mention) | Partly (sent without the mention) |
+| Metadata by invite | [`GET /group-invitation-metadata?url=`](/en/z-api/groups/group-invitation-metadata) | Yes | No |
+| Accept invite | [`GET /accept-invite-group?url=`](/en/z-api/groups/accept-invite-group) | Yes | No |
 
 ## Business
 
@@ -96,12 +101,12 @@ The tables below show, per feature, what each channel does:
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Business profile data | [`GET /business/profile`](https://developer.z-api.io/en/business/profile) | ✅ Z-API response | ✅ Supported |
-| Update company description | [`POST /business/company-description`](https://developer.z-api.io/en/business/company-description) | ✅ Z-API response | ✅ Supported |
-| Update company email | [`POST /business/company-email`](https://developer.z-api.io/en/business/company-email) | ✅ Z-API response | ✅ Supported |
-| Update business address | [`POST /business/company-address`](https://developer.z-api.io/en/business/company-address) | ✅ Z-API response | ✅ Supported |
-| Update company websites | [`POST /business/company-websites`](https://developer.z-api.io/en/business/company-websites) | ✅ Z-API response | ✅ Supported |
-| Assign categories | [`POST /business/categories`](https://developer.z-api.io/en/business/company-categories) | ✅ Z-API response | ❌ Not supported |
+| Business profile data | [`GET /business/profile`](https://developer.z-api.io/en/business/profile) | Yes | Yes |
+| Update company description | [`POST /business/company-description`](https://developer.z-api.io/en/business/company-description) | Yes | Yes |
+| Update company email | [`POST /business/company-email`](https://developer.z-api.io/en/business/company-email) | Yes | Yes |
+| Update business address | [`POST /business/company-address`](https://developer.z-api.io/en/business/company-address) | Yes | Yes |
+| Update company websites | [`POST /business/company-websites`](https://developer.z-api.io/en/business/company-websites) | Yes | Yes |
+| Assign categories | [`POST /business/categories`](https://developer.z-api.io/en/business/company-categories) | Yes | No |
 
 ### Catalog and products
 
@@ -111,129 +116,160 @@ The tables below show, per feature, what each channel does:
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Create/edit product | [`POST /products`](https://developer.z-api.io/en/business/edit-product) | ✅ Z-API response | ⏳ Not yet |
-| List products | [`GET /catalogs`](https://developer.z-api.io/en/business/get-products) | ✅ Z-API response | ⏳ Not yet |
-| Get product by ID | [`GET /products/{productId}`](https://developer.z-api.io/en/business/get-product-id) | ✅ Z-API response | ⏳ Not yet |
-| Delete product | [`DELETE /products/{productId}`](https://developer.z-api.io/en/business/delete-product) | ✅ Z-API response | ⏳ Not yet |
-| Catalog config | [`POST /catalogs/config`](https://developer.z-api.io/en/business/save-catalog-config) | ✅ Z-API response | ⏳ Not yet |
-| Create collection | [`POST /catalogs/collection`](https://developer.z-api.io/en/business/create-collection) | ✅ Z-API response | ❌ Not supported |
-| List collections | [`GET /catalogs/collection`](https://developer.z-api.io/en/business/list-collections) | ✅ Z-API response | ❌ Not supported |
-| Delete collection | [`DELETE /catalogs/collection/{id}`](https://developer.z-api.io/en/business/delete-collection) | ✅ Z-API response | ❌ Not supported |
-| Edit collection | [`POST /catalogs/collection-edit/{id}`](https://developer.z-api.io/en/business/edit-collection) | ✅ Z-API response | ❌ Not supported |
-| List collection products | [`GET /catalogs/collection-products/{phone}`](https://developer.z-api.io/en/business/list-collection-products) | ✅ Z-API response | ❌ Not supported |
-| Add product to collection | [`POST /catalogs/collection/add-product`](https://developer.z-api.io/en/business/add-product-to-collection) | ✅ Z-API response | ❌ Not supported |
-| Remove product from collection | [`POST /catalogs/collection/remove-product`](https://developer.z-api.io/en/business/remove-product-from-collection) | ✅ Z-API response | ❌ Not supported |
-| List products (phone) | [`GET /catalogs/{phone}`](https://developer.z-api.io/en/business/get-products-phone) | ✅ Z-API response | ⏳ Not yet |
-| List products V2 | [`POST /catalogs`](https://developer.z-api.io/en/business/get-products-v2) | ✅ Z-API response | ⏳ Not yet |
-| List products V2 (phone) | [`POST /catalogs/{phone}`](https://developer.z-api.io/en/business/get-products-phone-v2) | ✅ Z-API response | ⏳ Not yet |
+| Create/edit product | [`POST /products`](https://developer.z-api.io/en/business/edit-product) | Yes | Not yet |
+| List products | [`GET /catalogs`](https://developer.z-api.io/en/business/get-products) | Yes | Not yet |
+| Get product by ID | [`GET /products/{productId}`](https://developer.z-api.io/en/business/get-product-id) | Yes | Not yet |
+| Delete product | [`DELETE /products/{productId}`](https://developer.z-api.io/en/business/delete-product) | Yes | Not yet |
+| Catalog config | [`POST /catalogs/config`](https://developer.z-api.io/en/business/save-catalog-config) | Yes | Not yet |
+| Create collection | [`POST /catalogs/collection`](https://developer.z-api.io/en/business/create-collection) | Yes | No |
+| List collections | [`GET /catalogs/collection`](https://developer.z-api.io/en/business/list-collections) | Yes | No |
+| Delete collection | [`DELETE /catalogs/collection/{id}`](https://developer.z-api.io/en/business/delete-collection) | Yes | No |
+| Edit collection | [`POST /catalogs/collection-edit/{id}`](https://developer.z-api.io/en/business/edit-collection) | Yes | No |
+| List collection products | [`GET /catalogs/collection-products/{phone}`](https://developer.z-api.io/en/business/list-collection-products) | Yes | No |
+| Add product to collection | [`POST /catalogs/collection/add-product`](https://developer.z-api.io/en/business/add-product-to-collection) | Yes | No |
+| Remove product from collection | [`POST /catalogs/collection/remove-product`](https://developer.z-api.io/en/business/remove-product-from-collection) | Yes | No |
+| List products (phone) | [`GET /catalogs/{phone}`](https://developer.z-api.io/en/business/get-products-phone) | Yes | Not yet |
+| List products V2 | [`POST /catalogs`](https://developer.z-api.io/en/business/get-products-v2) | Yes | Not yet |
+| List products V2 (phone) | [`POST /catalogs/{phone}`](https://developer.z-api.io/en/business/get-products-phone-v2) | Yes | Not yet |
 
 ### Labels
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| List tags | [`GET /tags`](https://developer.z-api.io/en/business/tags) | ⏳ Not yet | ❌ Not supported |
-| Create tag | [`POST /business/create-tag`](https://developer.z-api.io/en/business/create-tag) | ⏳ Not yet | ❌ Not supported |
-| Edit tag | [`POST /business/edit-tag/{tagId}`](https://developer.z-api.io/en/business/edit-tag) | ⏳ Not yet | ❌ Not supported |
-| Delete tag | [`DELETE /business/tag/{tagId}`](https://developer.z-api.io/en/business/delete-tag) | ⏳ Not yet | ❌ Not supported |
-| Assign tag to chat | [`PUT /chats/{phone}/tags/{tag}/add`](https://developer.z-api.io/en/business/tags-add) | ⏳ Not yet | ❌ Not supported |
-| Remove tag from chat | [`PUT /chats/{phone}/tags/{tag}/remove`](https://developer.z-api.io/en/business/tags-remove) | ⏳ Not yet | ❌ Not supported |
-| Tag colors | [`GET /business/tags/colors`](https://developer.z-api.io/en/business/tags-colors) | ⏳ Not yet | ❌ Not supported |
+| List tags | [`GET /tags`](https://developer.z-api.io/en/business/tags) | Not yet | No |
+| Create tag | [`POST /business/create-tag`](https://developer.z-api.io/en/business/create-tag) | Not yet | No |
+| Edit tag | [`POST /business/edit-tag/{tagId}`](https://developer.z-api.io/en/business/edit-tag) | Not yet | No |
+| Delete tag | [`DELETE /business/tag/{tagId}`](https://developer.z-api.io/en/business/delete-tag) | Not yet | No |
+| Assign tag to chat | [`PUT /chats/{phone}/tags/{tag}/add`](https://developer.z-api.io/en/business/tags-add) | Not yet | No |
+| Remove tag from chat | [`PUT /chats/{phone}/tags/{tag}/remove`](https://developer.z-api.io/en/business/tags-remove) | Not yet | No |
+| Tag colors | [`GET /business/tags/colors`](https://developer.z-api.io/en/business/tags-colors) | Not yet | No |
 
 ### Other
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Chat notes | [`POST /chats/{phone}/notes`](https://developer.z-api.io/en/business/chats-notes) | ⏳ Not yet | ❌ Not supported |
-| Update business hours | [`POST /business/hours`](https://developer.z-api.io/en/business/business-hours) | ✅ Z-API response | ❌ Not supported |
-| List categories | [`GET /business/available-categories`](https://developer.z-api.io/en/business/available-categories) | ✅ Z-API response | ❌ Not supported |
+| Chat notes | [`POST /chats/{phone}/notes`](https://developer.z-api.io/en/business/chats-notes) | Not yet | No |
+| Update business hours | [`POST /business/hours`](https://developer.z-api.io/en/business/business-hours) | Yes | No |
+| List categories | [`GET /business/available-categories`](https://developer.z-api.io/en/business/available-categories) | Yes | No |
 
 ## Status
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Send text status | [`POST /send-text-status`](https://developer.z-api.io/en/status/send-text-status) | ⏳ Not yet | ❌ Not supported |
-| Send image status | [`POST /send-image-status`](https://developer.z-api.io/en/status/send-image-status) | ⏳ Not yet | ❌ Not supported |
-| Send video status | [`POST /send-video-status`](https://developer.z-api.io/en/status/send-video-status) | ⏳ Not yet | ❌ Not supported |
-| Reply status with text | [`POST /reply-status-text`](https://developer.z-api.io/en/status/reply-status-text) | ⏳ Not yet | ❌ Not supported |
-| Reply status with GIF | [`POST /reply-status-gif`](https://developer.z-api.io/en/status/reply-status-gif) | ⏳ Not yet | ❌ Not supported |
-| Reply status with sticker | [`POST /reply-status-sticker`](https://developer.z-api.io/en/status/reply-status-sticker) | ⏳ Not yet | ❌ Not supported |
+| Send text status | [`POST /send-text-status`](https://developer.z-api.io/en/status/send-text-status) | Not yet | No |
+| Send image status | [`POST /send-image-status`](https://developer.z-api.io/en/status/send-image-status) | Not yet | No |
+| Send video status | [`POST /send-video-status`](https://developer.z-api.io/en/status/send-video-status) | Not yet | No |
+| Reply status with text | [`POST /reply-status-text`](https://developer.z-api.io/en/status/reply-status-text) | Not yet | No |
+| Reply status with GIF | [`POST /reply-status-gif`](https://developer.z-api.io/en/status/reply-status-gif) | Not yet | No |
+| Reply status with sticker | [`POST /reply-status-sticker`](https://developer.z-api.io/en/status/reply-status-sticker) | Not yet | No |
 
 ## Channels (Newsletter)
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Create channel | [`POST /create-newsletter`](https://developer.z-api.io/en/newsletter/create-newsletter) | ⏳ Not yet | ❌ Not supported |
-| Update channel picture | [`POST /update-newsletter-picture`](https://developer.z-api.io/en/newsletter/update-newsletter-picture) | ⏳ Not yet | ❌ Not supported |
-| Update channel name | [`POST /update-newsletter-name`](https://developer.z-api.io/en/newsletter/update-newsletter-name) | ⏳ Not yet | ❌ Not supported |
-| Update channel description | [`POST /update-newsletter-description`](https://developer.z-api.io/en/newsletter/update-newsletter-description) | ⏳ Not yet | ❌ Not supported |
-| Follow channel | [`PUT /follow-newsletter`](https://developer.z-api.io/en/newsletter/follow-newsletter) | ⏳ Not yet | ❌ Not supported |
-| Unfollow channel | [`PUT /unfollow-newsletter`](https://developer.z-api.io/en/newsletter/unfollow-newsletter) | ⏳ Not yet | ❌ Not supported |
-| Mute channel | [`PUT /mute-newsletter`](https://developer.z-api.io/en/newsletter/mute-newsletter) | ⏳ Not yet | ❌ Not supported |
-| Unmute channel | [`PUT /unmute-newsletter`](https://developer.z-api.io/en/newsletter/unmute-newsletter) | ⏳ Not yet | ❌ Not supported |
-| Delete channel | [`DELETE /delete-newsletter`](https://developer.z-api.io/en/newsletter/delete-newsletter) | ⏳ Not yet | ❌ Not supported |
-| Channel metadata | [`GET /newsletter/metadata/{id}`](https://developer.z-api.io/en/newsletter/newsletter-metadata) | ⏳ Not yet | ❌ Not supported |
-| List channels | [`GET /newsletter`](https://developer.z-api.io/en/newsletter/newsletter-list) | ⏳ Not yet | ❌ Not supported |
-| Search channels | [`POST /search-newsletter`](https://developer.z-api.io/en/newsletter/search-newsletter) | ⏳ Not yet | ❌ Not supported |
-| Channel settings | [`POST /newsletter/settings/{id}`](https://developer.z-api.io/en/newsletter/update-newsletter-config) | ⏳ Not yet | ❌ Not supported |
-| Accept admin invite | [`POST /newsletter/accept-admin-invite/{id}`](https://developer.z-api.io/en/newsletter/accept-newsletter-admin-invite) | ⏳ Not yet | ❌ Not supported |
-| Remove channel admin | [`POST /newsletter/remove-admin/{id}`](https://developer.z-api.io/en/newsletter/newsletter-remove-admin) | ⏳ Not yet | ❌ Not supported |
-| Revoke admin invite | [`POST /newsletter/revoke-admin-invite/{id}`](https://developer.z-api.io/en/newsletter/newsletter-revoke-admin-invite) | ⏳ Not yet | ❌ Not supported |
-| Transfer ownership | [`POST /newsletter/transfer-ownership/{id}`](https://developer.z-api.io/en/newsletter/transfer-newsletter-ownership) | ⏳ Not yet | ❌ Not supported |
+| Create channel | [`POST /create-newsletter`](https://developer.z-api.io/en/newsletter/create-newsletter) | Not yet | No |
+| Update channel picture | [`POST /update-newsletter-picture`](https://developer.z-api.io/en/newsletter/update-newsletter-picture) | Not yet | No |
+| Update channel name | [`POST /update-newsletter-name`](https://developer.z-api.io/en/newsletter/update-newsletter-name) | Not yet | No |
+| Update channel description | [`POST /update-newsletter-description`](https://developer.z-api.io/en/newsletter/update-newsletter-description) | Not yet | No |
+| Follow channel | [`PUT /follow-newsletter`](https://developer.z-api.io/en/newsletter/follow-newsletter) | Not yet | No |
+| Unfollow channel | [`PUT /unfollow-newsletter`](https://developer.z-api.io/en/newsletter/unfollow-newsletter) | Not yet | No |
+| Mute channel | [`PUT /mute-newsletter`](https://developer.z-api.io/en/newsletter/mute-newsletter) | Not yet | No |
+| Unmute channel | [`PUT /unmute-newsletter`](https://developer.z-api.io/en/newsletter/unmute-newsletter) | Not yet | No |
+| Delete channel | [`DELETE /delete-newsletter`](https://developer.z-api.io/en/newsletter/delete-newsletter) | Not yet | No |
+| Channel metadata | [`GET /newsletter/metadata/{id}`](https://developer.z-api.io/en/newsletter/newsletter-metadata) | Not yet | No |
+| List channels | [`GET /newsletter`](https://developer.z-api.io/en/newsletter/newsletter-list) | Not yet | No |
+| Search channels | [`POST /search-newsletter`](https://developer.z-api.io/en/newsletter/search-newsletter) | Not yet | No |
+| Channel settings | [`POST /newsletter/settings/{id}`](https://developer.z-api.io/en/newsletter/update-newsletter-config) | Not yet | No |
+| Accept admin invite | [`POST /newsletter/accept-admin-invite/{id}`](https://developer.z-api.io/en/newsletter/accept-newsletter-admin-invite) | Not yet | No |
+| Remove channel admin | [`POST /newsletter/remove-admin/{id}`](https://developer.z-api.io/en/newsletter/newsletter-remove-admin) | Not yet | No |
+| Revoke admin invite | [`POST /newsletter/revoke-admin-invite/{id}`](https://developer.z-api.io/en/newsletter/newsletter-revoke-admin-invite) | Not yet | No |
+| Transfer ownership | [`POST /newsletter/transfer-ownership/{id}`](https://developer.z-api.io/en/newsletter/transfer-newsletter-ownership) | Not yet | No |
 
 ## Chats
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| List chats | [`GET /chats`](https://developer.z-api.io/en/chats/get-chats) | ✅ Z-API response | ❌ Not supported |
-| Chat metadata | [`GET /chats/{phone}`](https://developer.z-api.io/en/chats/get-metadata-chat) | ✅ Z-API response | ❌ Not supported |
-| Read chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/read-chat) | ⏳ Not yet | ❌ Not supported |
-| Archive chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/archive-chat) | ⏳ Not yet | ❌ Not supported |
-| Pin chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/pin-chat) | ⏳ Not yet | ❌ Not supported |
-| Mute chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/mute-chat) | ⏳ Not yet | ❌ Not supported |
-| Clear chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/clear-chat) | ⏳ Not yet | ❌ Not supported |
-| Delete chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/delete-chat) | ⏳ Not yet | ❌ Not supported |
-| Chat expiration | [`POST /send-chat-expiration`](https://developer.z-api.io/en/chats/send-chat-expiration) | ⏳ Not yet | ❌ Not supported |
+| List chats | [`GET /chats`](https://developer.z-api.io/en/chats/get-chats) | Yes | No |
+| Chat metadata | [`GET /chats/{phone}`](https://developer.z-api.io/en/chats/get-metadata-chat) | Yes | No |
+| Read chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/read-chat) | Not yet | No |
+| Archive chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/archive-chat) | Not yet | No |
+| Pin chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/pin-chat) | Not yet | No |
+| Mute chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/mute-chat) | Not yet | No |
+| Clear chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/clear-chat) | Not yet | No |
+| Delete chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/delete-chat) | Not yet | No |
+| Chat expiration | [`POST /send-chat-expiration`](https://developer.z-api.io/en/chats/send-chat-expiration) | Not yet | No |
 
 ## Communities
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Create community | [`POST /communities`](https://developer.z-api.io/en/communities/create-community) | ⏳ Not yet | ❌ Not supported |
-| List communities | [`GET /communities`](https://developer.z-api.io/en/communities/list-communities) | ⏳ Not yet | ❌ Not supported |
-| Link groups | [`POST /communities/link`](https://developer.z-api.io/en/communities/link-groups) | ⏳ Not yet | ❌ Not supported |
-| Unlink groups | [`POST /communities/unlink`](https://developer.z-api.io/en/communities/unlink-groups) | ⏳ Not yet | ❌ Not supported |
-| Community metadata | [`GET /communities-metadata/{id}`](https://developer.z-api.io/en/communities/community-metadata) | ⏳ Not yet | ❌ Not supported |
-| Redefine invitation link | [`POST /redefine-invitation-link/{id}`](https://developer.z-api.io/en/communities/redefine-invitation-link) | ✅ Z-API response | ✅ Supported |
-| Add participants | [`POST /add-participant`](https://developer.z-api.io/en/communities/add-community-participant) | ✅ Z-API response | ❌ Not supported |
-| Remove participants | [`POST /remove-participant`](https://developer.z-api.io/en/communities/remove-community-participant) | ✅ Z-API response | ✅ Supported |
-| Promote admin | [`POST /add-admin`](https://developer.z-api.io/en/communities/add-community-admin) | ✅ Z-API response | ❌ Not supported |
-| Remove admin | [`POST /remove-admin`](https://developer.z-api.io/en/communities/remove-community-admin) | ✅ Z-API response | ❌ Not supported |
-| Community settings | [`POST /communities/settings`](https://developer.z-api.io/en/communities/community-settings) | ⏳ Not yet | ❌ Not supported |
-| Deactivate community | [`DELETE /communities/{id}`](https://developer.z-api.io/en/communities/deactivate-community) | ⏳ Not yet | ❌ Not supported |
-| Update description | [`POST /update-community-description`](https://developer.z-api.io/en/communities/update-community-description) | ⏳ Not yet | ❌ Not supported |
+| Create community | [`POST /communities`](https://developer.z-api.io/en/communities/create-community) | Not yet | No |
+| List communities | [`GET /communities`](https://developer.z-api.io/en/communities/list-communities) | Not yet | No |
+| Link groups | [`POST /communities/link`](https://developer.z-api.io/en/communities/link-groups) | Not yet | No |
+| Unlink groups | [`POST /communities/unlink`](https://developer.z-api.io/en/communities/unlink-groups) | Not yet | No |
+| Community metadata | [`GET /communities-metadata/{id}`](https://developer.z-api.io/en/communities/community-metadata) | Not yet | No |
+| Redefine invitation link | [`POST /redefine-invitation-link/{id}`](https://developer.z-api.io/en/communities/redefine-invitation-link) | Yes | Yes |
+| Add participants | [`POST /add-participant`](https://developer.z-api.io/en/communities/add-community-participant) | Yes | No |
+| Remove participants | [`POST /remove-participant`](https://developer.z-api.io/en/communities/remove-community-participant) | Yes | Yes |
+| Promote admin | [`POST /add-admin`](https://developer.z-api.io/en/communities/add-community-admin) | Yes | No |
+| Remove admin | [`POST /remove-admin`](https://developer.z-api.io/en/communities/remove-community-admin) | Yes | No |
+| Community settings | [`POST /communities/settings`](https://developer.z-api.io/en/communities/community-settings) | Not yet | No |
+| Deactivate community | [`DELETE /communities/{id}`](https://developer.z-api.io/en/communities/deactivate-community) | Not yet | No |
+| Update description | [`POST /update-community-description`](https://developer.z-api.io/en/communities/update-community-description) | Not yet | No |
 
 ## Calls
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Make call | [`POST /send-call`](https://developer.z-api.io/en/calls/send-call) | ⏳ Not yet | ❌ Not supported |
-| Generate call token | [`GET /call-token`](https://developer.z-api.io/en/calls/call-token) | ⏳ Not yet | ❌ Not supported |
+| Make call | [`POST /send-call`](https://developer.z-api.io/en/calls/send-call) | Not yet | No |
+| Generate call token | [`GET /call-token`](https://developer.z-api.io/en/calls/call-token) | Not yet | No |
 
 ## Privacy
 
 | Feature | Z-API Route | WhatsApp Web | Official Meta |
 |---|---|---|---|
-| Disallowed contacts | [`GET /privacy/disallowed-contacts`](https://developer.z-api.io/en/privacy/get-disallowed-contacts) | ⏳ Not yet | ❌ Not supported |
-| Last seen | [`POST /privacy/last-seen`](https://developer.z-api.io/en/privacy/set-last-seen) | ⏳ Not yet | ❌ Not supported |
-| Profile picture visibility | [`POST /privacy/photo-visualization`](https://developer.z-api.io/en/privacy/set-photo-visualization) | ⏳ Not yet | ❌ Not supported |
-| About visibility | [`POST /privacy/description`](https://developer.z-api.io/en/privacy/set-privacy-description) | ⏳ Not yet | ❌ Not supported |
-| Group add permission | [`POST /privacy/group-add`](https://developer.z-api.io/en/privacy/set-group-add-permission) | ⏳ Not yet | ❌ Not supported |
-| Online visibility | [`POST /privacy/online`](https://developer.z-api.io/en/privacy/set-privacy-online) | ⏳ Not yet | ❌ Not supported |
-| Read receipts | [`POST /privacy/read-receipts`](https://developer.z-api.io/en/privacy/set-read-receipts) | ⏳ Not yet | ❌ Not supported |
-| Messages duration | [`POST /privacy/messages-duration`](https://developer.z-api.io/en/privacy/set-messages-duration) | ⏳ Not yet | ❌ Not supported |
+| Disallowed contacts | [`GET /privacy/disallowed-contacts`](https://developer.z-api.io/en/privacy/get-disallowed-contacts) | Not yet | No |
+| Last seen | [`POST /privacy/last-seen`](https://developer.z-api.io/en/privacy/set-last-seen) | Not yet | No |
+| Profile picture visibility | [`POST /privacy/photo-visualization`](https://developer.z-api.io/en/privacy/set-photo-visualization) | Not yet | No |
+| About visibility | [`POST /privacy/description`](https://developer.z-api.io/en/privacy/set-privacy-description) | Not yet | No |
+| Group add permission | [`POST /privacy/group-add`](https://developer.z-api.io/en/privacy/set-group-add-permission) | Not yet | No |
+| Online visibility | [`POST /privacy/online`](https://developer.z-api.io/en/privacy/set-privacy-online) | Not yet | No |
+| Read receipts | [`POST /privacy/read-receipts`](https://developer.z-api.io/en/privacy/set-read-receipts) | Not yet | No |
+| Messages duration | [`POST /privacy/messages-duration`](https://developer.z-api.io/en/privacy/set-messages-duration) | Not yet | No |
+
+## Channel profile
+
+| Feature | Z-API Route | WhatsApp Web | Official Meta |
+|---|---|---|---|
+| Update profile name | [`PUT /profile-name`](https://developer.z-api.io/en/instance/profile-name) | Yes | No (responds `422`: a name change requires Meta review, through WhatsApp Manager) |
+| Update profile description | [`PUT /profile-description`](https://developer.z-api.io/en/instance/profile-description) | Yes | Yes |
+| Update profile picture | [`PUT /profile-picture`](https://developer.z-api.io/en/instance/profile-picture) | Yes | Partly (only an http or https URL is accepted, and the picture cannot be removed) |
+| Rename instance | [`PUT /update-name`](https://developer.z-api.io/en/instance/rename-instance) | Yes | Yes |
+
+## Instance
+
+| Feature | Z-API Route | WhatsApp Web | Official Meta |
+|---|---|---|---|
+| Instance status | [`GET /status`](https://developer.z-api.io/en/instance/status) | Not yet | Yes |
+| Instance data | [`GET /me`](https://developer.z-api.io/en/instance/me) | Not yet | Partly (only `id`, `token`, `name`, `due`, `connected`, `paymentStatus` and `created`) |
+| Device data | [`GET /device`](https://developer.z-api.io/en/instance/device) | Not yet | Partly (only `phone` and `isBusiness`) |
+
+## Queue
+
+<Info>
+  On the official WhatsApp (Meta) channel, messages are not queued: they go to Meta's official API when sent. So the queue is always empty, and deleting the queue or a message in it responds `422`: the message has already left and cannot be removed.
+</Info>
+
+| Feature | Z-API Route | WhatsApp Web | Official Meta |
+|---|---|---|---|
+| Count queued messages | [`GET /queue/count`](https://developer.z-api.io/en/queue/get-queue) | Yes | Partly (always `0`) |
+| List queue | [`POST /queue`](https://developer.z-api.io/en/queue/post-queue) | Yes | Partly (always empty) |
+| List queue (deprecated) | [`GET /queue`](https://developer.z-api.io/en/queue/get-queue) | Yes | Partly (always empty) |
+| Delete queue | [`DELETE /queue`](https://developer.z-api.io/en/queue/delete-queue) | Yes | No (responds `422`) |
+| Delete queued message | [`DELETE /queue/{zaapId}`](https://developer.z-api.io/en/queue/delete-queue-id) | Partly (the `zaapId` returned by the send is not in the queue) | No (responds `422`) |
 
 ---
 
 <Info>
-  On the official WhatsApp channel, the limitations come from Meta's official API itself, not from {projectName}. On the WhatsApp Web channel, what shows as "Not yet" is released gradually through the compatibility route.
+  On the official WhatsApp channel, some limitations come from Meta's official API and others are {projectName}'s, such as the quote and the mention that do not arrive, the reduced fields of `me` and `device`, and the queue that is always empty. On the WhatsApp Web channel, what shows as "Not yet" is released gradually through the compatibility route.
 </Info>
