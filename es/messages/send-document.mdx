@@ -22,6 +22,10 @@ llega como `factura.pdf`, con el ícono de PDF.
   Con el canal desconectado, la API rechaza el envío con `422` y `subCode` `CHANNEL_DISCONNECTED`, y el mensaje no se envía. Consulta [Errores al enviar](/es/messages/introduction#errores-al-enviar).
 </Note>
 
+<Note>
+  Las rutas `POST /v1/channels/{channelId}/send-document` y `POST /v1/channels/{channelId}/send-document/{extension}` aceptan el mismo cuerpo de esta página y dan la misma respuesta. El segmento `{extension}` se ignora: la extensión va en el campo `extension` de cada adjunto. En ellas, `content.type` es opcional y, si lo envías, debe ser `DOCUMENT`. Con otro valor, la API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be DOCUMENT on /send-document; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, y el mensaje no se envía. Consulta [Rutas por tipo](/es/messages/introduction#rutas-por-tipo).
+</Note>
+
 ## Campos del adjunto
 
 | Campo | Descripción |
