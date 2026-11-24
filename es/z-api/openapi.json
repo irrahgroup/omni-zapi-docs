@@ -207,7 +207,7 @@
             "$ref": "#/components/responses/MessageSuccess"
           },
           "400": {
-            "description": "`image` que no es una URL http o https ni base64. Se verifica antes que las reglas de los botones. El mensaje no se envía.",
+            "description": "`image` que no es una URL http o https ni tiene la forma de base64 (con `;` y `,`). Se verifica antes que las reglas de los botones. Un `image` con esa forma y contenido que no se decodifica responde `failed to decode base64: ...`, después de las reglas de los botones. El mensaje no se envía.",
             "content": {
               "application/json": {
                 "schema": {
@@ -975,7 +975,7 @@
     "/read-message": {
       "post": {
         "summary": "Marcar mensaje como leído",
-        "description": "Marca como leído un mensaje que el canal recibió del contacto. Funciona en canales de WhatsApp Oficial y en canales de WhatsApp Web, con WhatsApp Web habilitado en el workspace. El cuerpo va en JSON o como formulario (`application/x-www-form-urlencoded`). El `messageId` es el que llegó en el webhook del mensaje recibido; `phone` es obligatorio, pero no se usa.",
+        "description": "Marca como leído un mensaje que el canal recibió del contacto. Funciona en canales de WhatsApp Oficial y en canales de WhatsApp Web, con WhatsApp Web habilitado en el workspace. El cuerpo va en JSON o como formulario (`application/x-www-form-urlencoded` o `multipart/form-data`). El `messageId` es el que llegó en el webhook del mensaje recibido; `phone` es obligatorio, pero no se usa.",
         "operationId": "readMessage",
         "tags": [
           "Mensajes"

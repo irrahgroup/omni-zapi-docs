@@ -35,7 +35,7 @@ Para enviar uma mensagem, você precisa do **número do telefone** do contato de
 
 ## Corpo da requisição
 
-Envie o corpo em JSON, com o header `Content-Type: application/json`, ou como formulário, com `Content-Type: application/x-www-form-urlencoded`. No formulário, só os campos simples são lidos, como `phone`, `message`, `image` e `caption`. Listas e objetos, como `buttonActions`, `optionList` e `contacts`, só vão em JSON.
+Envie o corpo em JSON, com o header `Content-Type: application/json`, ou como formulário, com `Content-Type: application/x-www-form-urlencoded` ou `multipart/form-data`. No formulário, só os campos simples são lidos, como `phone`, `message`, `image` e `caption`. Listas e objetos, como `buttonActions`, `optionList` e `contacts`, só vão em JSON.
 
 Com outro `Content-Type`, como `text/plain`, ou sem o header, o corpo não é lido e o envio é recusado com `400`. Em geral, o erro aponta um campo obrigatório como ausente, mesmo que ele esteja no corpo: por exemplo, `{"error": "phone is required"}` ou, no `send-text`, `{"error": "message is required"}`.
 
@@ -68,13 +68,16 @@ Exemplo de resposta ao enviar uma mensagem:
 
 ## Erros do envio
 
-Depois das validações de cada rota, o envio ainda pode falhar na saída para o canal. Nesse caso a mensagem não é enviada, e a resposta é uma destas:
+Depois das validações de cada rota, o envio ainda pode falhar no preparo da mídia ou na saída para o canal. Nesse caso a mensagem não é enviada, e a resposta é uma destas:
 
 | Status | `error` | Quando |
 |---|---|---|
 | `422` | `failed to send message: Channel is disconnected: ...` | O canal está desconectado. O texto diz como reconectar cada tipo de canal |
+| `422` | `this channel does not support sending messages yet` | O canal ainda não envia por esta rota |
 | `400` | `failed to send message: ...`, com o problema da mídia | A mídia foi recusada. Os textos estão abaixo |
-| `503` | Termina com `a configuration problem on our side ...` ou `a temporary failure on our side ...` | Falha do nosso lado, de configuração ou temporária. Não foi causada pela requisição, e nada foi enviado. O texto diz quando tentar de novo |
+| `400` | `failed to decode base64: ...` | A mídia em base64 não decodifica, como um `data:image/png;base64,` seguido de um conteúdo que não é base64 |
+| `503` | `<falha>: a configuration problem on our side ...` ou `<falha>: a temporary failure on our side ...` | Falha do nosso lado, de configuração ou temporária. Não foi causada pela requisição, e nada foi enviado. Os textos estão abaixo e dizem quando tentar de novo |
+| `502` | `failed to upload media` | Falha ao guardar a mídia enviada em base64 |
 | `502` | `failed to send message` | Outras falhas no envio |
 
 Os textos do `400` de mídia:
@@ -85,6 +88,11 @@ Os textos do `400` de mídia:
 - `failed to send message: invalid base64 media: send data:<mime type>;base64,<content> or a media URL`
 - `failed to send message: media type not supported by this route`
 - `failed to send message: media refused: check the media URL and its type`
+
+Os textos do `503`, em que `<falha>` diz o que falhou, como `failed to send message`:
+
+- `<falha>: a configuration problem on our side stopped this request. It was not caused by your request, and nothing was done. Try again later; if it persists, contact support`
+- `<falha>: a temporary failure on our side stopped this request. It was not caused by your request, and nothing was done. Try again in a few seconds; if it persists, contact support`
 
 <Note>
   O `200` confirma que o envio foi aceito, não a entrega. Se o WhatsApp recusar a mensagem depois, por exemplo no WhatsApp Oficial fora da janela de 24 horas, a mensagem não chega, e a falha vem no webhook de status da mensagem (`MESSAGE_STATUS`). Veja [webhooks de canal](/webhooks/channel-webhooks).

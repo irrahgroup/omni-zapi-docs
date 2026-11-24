@@ -179,7 +179,7 @@
         "responses": {
           "200": { "$ref": "#/components/responses/MessageSuccess" },
           "400": {
-            "description": "`image` que não é URL http ou https nem base64. É conferido antes das regras dos botões. A mensagem não é enviada.",
+            "description": "`image` que não é URL http ou https nem tem a forma de base64 (com `;` e `,`). É conferido antes das regras dos botões. Um `image` com essa forma e conteúdo que não decodifica responde `failed to decode base64: ...`, depois das regras dos botões. A mensagem não é enviada.",
             "content": {
               "application/json": {
                 "schema": {
@@ -775,7 +775,7 @@
     "/read-message": {
       "post": {
         "summary": "Marcar mensagem como lida",
-        "description": "Marca como lida uma mensagem que o canal recebeu do contato. Funciona em canal WhatsApp Oficial e em canal WhatsApp Web, com o WhatsApp Web habilitado no workspace. O corpo vai em JSON ou como formulário (`application/x-www-form-urlencoded`). O `messageId` é o que chegou no webhook da mensagem recebida; o `phone` é obrigatório, mas não é usado.",
+        "description": "Marca como lida uma mensagem que o canal recebeu do contato. Funciona em canal WhatsApp Oficial e em canal WhatsApp Web, com o WhatsApp Web habilitado no workspace. O corpo vai em JSON ou como formulário (`application/x-www-form-urlencoded` ou `multipart/form-data`). O `messageId` é o que chegou no webhook da mensagem recebida; o `phone` é obrigatório, mas não é usado.",
         "operationId": "readMessage",
         "tags": [
           "Mensagens"
