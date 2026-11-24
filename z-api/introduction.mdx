@@ -80,7 +80,13 @@ Diferenças em relação à Z-API direta:
 - o `zaapId` não existe na fila da instância: `DELETE /queue/{zaapId}` não encontra esse envio;
 - o `200` confirma que o {projectName} aceitou o envio, não a entrega;
 - resposta citada (`messageId`), menções (`mentioned`), `delayMessage`, `viewOnce` e `stickerAuthor` não chegam, como no WhatsApp Oficial;
-- canal desconectado responde `502` `failed to send message`.
+- canal desconectado responde `422`, com a mensagem começando em `failed to send message: Channel is disconnected`;
+- um canal que ainda não envia por esta rota responde `422` `this channel does not support sending messages yet`;
+- mídia recusada pelo canal (tamanho ou formato) responde `400`; uma falha de configuração do {projectName} **ou uma falha temporária do nosso lado** responde `503`; as demais recusas seguem em `502` `failed to send message`. Veja [erros do envio](/z-api/messages/introduction#erros-do-envio).
+
+## Grupos
+
+Além do envio de mensagens, a Z-API Compatibilidade atende as 19 rotas de grupo da Z-API. Veja a [Introdução aos grupos](/z-api/groups/introduction) para saber o que cada rota faz em cada tipo de canal.
 
 ## Por que migrar?
 

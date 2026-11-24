@@ -1,0 +1,23 @@
+---
+title: "Create group"
+description: "Creates a group with the given participants"
+openapi: "/en/z-api/openapi.json POST /create-group"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+
+## Overview
+
+Method that creates a group with its participants. You cannot send the image when creating the group: add it afterwards with [Update group photo](/en/z-api/groups/update-group-photo).
+
+Do not include the connected number in the participants list. As on WhatsApp Web, at least one contact is required to create the group.
+
+Use phone numbers only. The `@lid` identifier is not supported for group creation: if sent, the group is created, but the participant with `@lid` is not added and the identifier comes back in `phonesNotAdded`.
+
+<Warning>
+  On WhatsApp Official, **nobody is added at creation**: the numbers in `phones` come back in `phonesNotAdded`, because [Meta does not allow adding participants manually](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#create-group), and entry is only through the `invitationLink`. The group has at most [8 participants](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups). To require [join approval](https://developers.facebook.com/documentation/business-messaging/whatsapp/groups/reference#groups-with-join-requests), send `requireAdminApproval` `true`.
+</Warning>
+
+<Note>
+  <ZapiResponseText lang="en" />
+</Note>
