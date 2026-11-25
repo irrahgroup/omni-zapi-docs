@@ -6,7 +6,17 @@ openapi: "/pt/templates/openapi.json GET /whatsapp/businesses/{wabaId}/templates
 
 ## Conceituação
 
-Retorna todos os templates cadastrados em um WABA. A estrutura dos `components` retornados varia conforme a categoria e configuração de cada template.
+Retorna todos os templates do WABA em `{"data": [...]}`. A estrutura dos `components` retornados varia conforme a categoria e configuração de cada template.
+
+A lista vem do snapshot da plataforma, a cópia dos templates que a sincronização com a Meta mantém. Para buscar o estado atual na Meta, use [Sincronizar templates](/templates/sync-templates).
+
+<Warning>
+  Esta rota não tem filtro nem paginação. Parâmetros na query string, como `limit` ou `status`, são ignorados, e a resposta traz todos os templates de uma vez. Para filtrar, filtre a lista do seu lado.
+</Warning>
+
+### Snapshot vazio
+
+Se o snapshot do WABA estiver vazio, a listagem sincroniza com a Meta antes de responder. Nesse caso, a resposta traz também `synced`, `syncedComplete` e `syncedCount`, com o mesmo significado de [Sincronizar templates](/templates/sync-templates).
 
 <Note>
   O `wabaId` é obtido através do endpoint de [Listar WABAs](/templates/list-businesses).

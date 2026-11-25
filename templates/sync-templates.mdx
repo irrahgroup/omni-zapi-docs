@@ -10,6 +10,14 @@ Força a sincronização dos templates com a Meta, atualizando os status (`PENDI
 
 Útil quando você criou ou editou um template e quer verificar se o status de aprovação já foi atualizado pela Meta.
 
+### Resposta
+
+A resposta traz a lista atualizada em `data`, `synced: true`, `syncedCount` com a quantidade de templates em `data` e `syncedComplete`, que diz se a leitura na Meta foi até o fim.
+
+### Sincronização incompleta
+
+A sincronização lê os templates da Meta em páginas de 200. A leitura para em 25 páginas ou depois de 20 segundos, e o que foi lido até ali é gravado. Nesse caso, a resposta traz `syncedComplete: false`, e os templates removidos na Meta continuam no snapshot até a próxima sincronização completa.
+
 ### Erro `504`
 
 A sincronização busca os templates na Meta e pode demorar mais de um minuto em WABAs com muitos templates. Se ela não terminar a tempo, a API responde `504` com o corpo abaixo. A sincronização continua em segundo plano: liste os templates de novo em instantes, sem chamar a sincronização outra vez.

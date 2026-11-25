@@ -63,7 +63,7 @@
     "/whatsapp/businesses/{wabaId}/templates": {
       "get": {
         "summary": "Listar plantillas",
-        "description": "Devuelve la lista de plantillas de una WABA. La estructura de los `components` varía según la categoría y la configuración de cada plantilla.",
+        "description": "Devuelve todas las plantillas de la WABA, leídas del snapshot de la plataforma, en `{\"data\": [...]}`. No hay filtro ni paginación: la query string se ignora. Si el snapshot está vacío, el listado dispara una sincronización completa con Meta y también responde `synced`, `syncedComplete` y `syncedCount`.",
         "operationId": "listTemplates",
         "tags": [
           "Plantillas"
@@ -77,51 +77,6 @@
             "schema": {
               "type": "string",
               "example": "428083093730937"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "description": "Cantidad de plantillas por página (paginación por cursor de Meta)",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "example": 25
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "description": "Filtra por estado de aprobación",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "PENDING",
-                "APPROVED",
-                "REJECTED"
-              ],
-              "example": "APPROVED"
-            }
-          },
-          {
-            "name": "before",
-            "in": "query",
-            "required": false,
-            "description": "Cursor de la página anterior, devuelto en `paging.cursors.before`",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "after",
-            "in": "query",
-            "required": false,
-            "description": "Cursor de la página siguiente, devuelto en `paging.cursors.after`",
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -138,6 +93,18 @@
                       "items": {
                         "$ref": "#/components/schemas/Template"
                       }
+                    },
+                    "synced": {
+                      "type": "boolean",
+                      "description": "Solo viene cuando el snapshot estaba vacío y el listado disparó la sincronización. Siempre `true`."
+                    },
+                    "syncedComplete": {
+                      "type": "boolean",
+                      "description": "Solo viene cuando el listado disparó la sincronización. Ver `syncedComplete` en Sincronizar plantillas."
+                    },
+                    "syncedCount": {
+                      "type": "integer",
+                      "description": "Solo viene cuando el listado disparó la sincronización. Cantidad de plantillas en la respuesta."
                     }
                   }
                 },
@@ -186,6 +153,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -241,7 +211,7 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/MetaError"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -259,6 +229,99 @@
       }
     },
     "/whatsapp/businesses/{wabaId}/templates/{templateId}": {
+      "get": {
+        "summary": "Detallar plantilla",
+        "description": "Devuelve una plantilla de la WABA, leída del snapshot de la plataforma. Una plantilla que no está en el snapshot responde `404`: sincroniza antes.",
+        "operationId": "getTemplate",
+        "tags": [
+          "Templates"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la WABA (obtenido con Listar WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "description": "ID de la plantilla (obtenido con Listar plantillas)",
+            "schema": {
+              "type": "string",
+              "example": "1900296177408890"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantilla encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Template"
+                },
+                "example": {
+                  "id": "1900296177408890",
+                  "name": "confirm_account",
+                  "status": "APPROVED",
+                  "category": "AUTHENTICATION",
+                  "language": "es_ES",
+                  "parameter_format": "POSITIONAL",
+                  "message_send_ttl_seconds": 600,
+                  "components": [
+                    {
+                      "type": "BODY",
+                      "text": "Tu código de verificación es *{{1}}*. Por tu seguridad, no lo compartas.",
+                      "add_security_recommendation": true,
+                      "example": {
+                        "body_text": [
+                          [
+                            "123456"
+                          ]
+                        ]
+                      }
+                    },
+                    {
+                      "type": "BUTTONS",
+                      "buttons": [
+                        {
+                          "type": "URL",
+                          "text": "Copiar código",
+                          "url": "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp{{1}}",
+                          "example": [
+                            "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp123456"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "502": {
+            "$ref": "#/components/responses/IntegrationUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
+          }
+        }
+      },
       "put": {
         "summary": "Editar plantilla",
         "description": "Edita una plantilla existente y la reenvía a la aprobación de Meta.",
@@ -333,7 +396,7 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/MetaError"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -390,20 +453,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Plantilla eliminada correctamente",
+            "description": "Plantilla eliminada. El cuerpo es `true`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "type": "boolean"
                 },
-                "example": {
-                  "success": true
-                }
+                "example": true
               }
             }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -482,13 +546,17 @@
                     }
                   ],
                   "syncedCount": 2,
-                  "synced": true
+                  "synced": true,
+                  "syncedComplete": true
                 }
               }
             }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -681,64 +749,6 @@
           }
         }
       }
-    },
-    "/whatsapp/businesses/{wabaId}/template-library": {
-      "get": {
-        "summary": "Listar biblioteca de plantillas",
-        "description": "Devuelve las plantillas ya hechas de la biblioteca de Meta, que se pueden crear sin pasar por revisión.",
-        "operationId": "listTemplateLibrary",
-        "tags": [
-          "Plantillas"
-        ],
-        "parameters": [
-          {
-            "name": "wabaId",
-            "in": "path",
-            "required": true,
-            "description": "ID de la WABA (obtenido con Listar WABAs)",
-            "schema": {
-              "type": "string",
-              "example": "428083093730937"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plantillas de la biblioteca",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TemplateLibraryResponse"
-                },
-                "example": {
-                  "data": [
-                    {
-                      "name": "order_confirmation_1",
-                      "category": "UTILITY",
-                      "languages": [
-                        "pt_BR",
-                        "en_US",
-                        "es_ES"
-                      ],
-                      "body": "Ola {{1}}, seu pedido {{2}} foi confirmado."
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Token no válido o ausente.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -753,30 +763,6 @@
             "example": {
               "error": 405,
               "message": "Method not allowed"
-            }
-          }
-        }
-      },
-      "MetaError": {
-        "description": "Error devuelto por Meta al procesar la petición.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/MetaError"
-            },
-            "example": {
-              "error": {
-                "timestamp": "2026-10-19T12:00:00Z",
-                "status": 422,
-                "errors": [
-                  {
-                    "description": "",
-                    "name": "META_WHATSAPP_ERROR",
-                    "message": "Tu mensaje no se puede enviar porque incluye contenido que otras personas en Facebook denunciaron como abusivo.",
-                    "code": "368"
-                  }
-                ]
-              }
             }
           }
         }
@@ -796,23 +782,45 @@
         }
       },
       "UnprocessableEntity": {
-        "description": "La petición no se pudo procesar debido a un error de validación.",
+        "description": "Rechazo del servicio de plantillas. Todo 4xx de ese servicio llega como `422`, con el envelope del error en `error`. En la creación y la edición, esto incluye la validación de la plataforma (códigos `388` a `396`), hecha antes de Meta, y el rechazo de la propia Meta.",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/UnprocessableEntity"
+              "$ref": "#/components/schemas/MetaError"
             },
-            "example": {
-              "error": {
-                "errors": [
-                  {
-                    "code": "100",
-                    "name": "META_WHATSAPP_ERROR",
-                    "subCode": "2388024",
-                    "message": "Invalid parameter",
-                    "description": "There is already Portuguese (BR) content for this template. You can create a new template and try again."
+            "examples": {
+              "platform": {
+                "summary": "Validación de la plataforma, antes de Meta",
+                "value": {
+                  "error": {
+                    "timestamp": "2026-10-19T12:00:00Z",
+                    "status": 400,
+                    "errors": [
+                      {
+                        "code": "390",
+                        "name": "META_WHATSAPP_TEMPLATE_VARIABLE_INVALID",
+                        "message": "Invalid template variable",
+                        "description": "components[0].text: the text cannot start or end with a variable"
+                      }
+                    ]
                   }
-                ]
+                }
+              },
+              "meta": {
+                "summary": "Rechazo de Meta",
+                "value": {
+                  "error": {
+                    "errors": [
+                      {
+                        "code": "100",
+                        "name": "META_WHATSAPP_ERROR",
+                        "subCode": "2388024",
+                        "message": "Invalid parameter",
+                        "description": "There is already Portuguese (BR) content for this template. You can create a new template and try again."
+                      }
+                    ]
+                  }
+                }
               }
             }
           }
@@ -870,6 +878,32 @@
             "example": {
               "error": "template_sync_timeout",
               "message": "Template synchronization with Meta is still in progress. List the templates again in a few moments."
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Solicitud rechazada por la validación de la propia plataforma, antes del servicio de plantillas. Por ejemplo, cuerpo ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Template payload is required"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "WABA o plantilla no encontrada. Una plantilla fuera del snapshot también responde `404`: ejecuta Sincronizar plantillas e inténtalo de nuevo.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Resource not found"
             }
           }
         }
@@ -1075,11 +1109,15 @@
           },
           "syncedCount": {
             "type": "integer",
-            "description": "Cantidad de plantillas sincronizadas"
+            "description": "Cantidad de plantillas en `data`"
           },
           "synced": {
             "type": "boolean",
             "description": "Indica si la sincronización se realizó correctamente"
+          },
+          "syncedComplete": {
+            "type": "boolean",
+            "description": "Indica si la sincronización leyó todas las páginas de Meta. La lectura se detiene en 25 páginas de 200 plantillas o a los 20 segundos. Con `false`, las plantillas eliminadas en Meta siguen en el snapshot hasta una sincronización completa."
           }
         }
       },
@@ -1096,12 +1134,7 @@
           },
           "status": {
             "type": "string",
-            "description": "Estado de aprobación",
-            "enum": [
-              "PENDING",
-              "APPROVED",
-              "REJECTED"
-            ]
+            "description": "Estado de la plantilla, tal como Meta lo devuelve, sin normalización. `PENDING`, `APPROVED` y `REJECTED` son los del ciclo de revisión, pero pueden venir otros valores de Meta."
           },
           "category": {
             "type": "string",
@@ -1123,6 +1156,28 @@
           "message_send_ttl_seconds": {
             "type": "integer",
             "description": "Tiempo de vida del mensaje en segundos"
+          },
+          "allow_category_change": {
+            "type": "boolean",
+            "description": "Permite que Meta recategorice la plantilla en la revisión. Solo viene cuando Meta devuelve el campo."
+          },
+          "library_template_name": {
+            "type": "string",
+            "description": "Nombre del modelo de la biblioteca de Meta usado en la creación. Solo viene en plantillas creadas desde la biblioteca."
+          },
+          "library_template_body_inputs": {
+            "type": "array",
+            "description": "Ajustes de cuerpo del modelo de la biblioteca. Solo viene en plantillas creadas desde la biblioteca.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "library_template_button_inputs": {
+            "type": "array",
+            "description": "Datos de los botones del modelo de la biblioteca. Solo viene en plantillas creadas desde la biblioteca.",
+            "items": {
+              "type": "object"
+            }
           },
           "components": {
             "type": "array",
@@ -1147,33 +1202,39 @@
         "properties": {
           "error": {
             "type": "object",
-            "description": "Rechazo de Meta, en el sobre `errors` reenviado por el servicio de templates.",
+            "description": "Envelope del error del servicio de plantillas.",
             "properties": {
               "timestamp": {
                 "type": "string"
               },
               "status": {
-                "type": "integer"
+                "type": "integer",
+                "description": "Estado devuelto por el servicio de plantillas. La respuesta de la API es siempre `422`."
               },
               "errors": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "description": {
-                      "type": "string"
+                    "code": {
+                      "type": "string",
+                      "description": "Código del error. De `388` a `396` es la validación de la plataforma; en los demás casos, el código de Meta."
                     },
                     "name": {
                       "type": "string",
-                      "description": "Tipo de error (p. ej.: META_WHATSAPP_ERROR)"
+                      "description": "Nombre del error, como `META_WHATSAPP_TEMPLATE_VARIABLE_INVALID` o `META_WHATSAPP_ERROR`."
+                    },
+                    "subCode": {
+                      "type": "string",
+                      "description": "Subcódigo de Meta, cuando lo hay."
                     },
                     "message": {
                       "type": "string",
-                      "description": "Mensaje de error de Meta"
+                      "description": "Resumen del error."
                     },
-                    "code": {
+                    "description": {
                       "type": "string",
-                      "description": "Código de error de Meta"
+                      "description": "Detalle del error. En la validación de la plataforma, empieza por el campo rechazado, como `components[0].text`."
                     }
                   }
                 }
@@ -1195,77 +1256,12 @@
           }
         }
       },
-      "UnprocessableEntity": {
-        "type": "object",
-        "properties": {
-          "errors": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "subCode": {
-                  "type": "string"
-                },
-                "message": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      },
       "TemplateMediaResponse": {
         "type": "object",
         "properties": {
           "h": {
             "type": "string",
             "description": "Handle que se usa como `example` del componente HEADER al crear la plantilla"
-          }
-        }
-      },
-      "TemplateLibraryResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "Nombre de la plantilla en la biblioteca"
-                },
-                "category": {
-                  "type": "string",
-                  "enum": [
-                    "UTILITY",
-                    "MARKETING",
-                    "AUTHENTICATION"
-                  ],
-                  "description": "Categoría"
-                },
-                "languages": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  },
-                  "description": "Idiomas disponibles"
-                },
-                "body": {
-                  "type": "string",
-                  "description": "Vista previa del cuerpo de la plantilla"
-                }
-              }
-            }
           }
         }
       },

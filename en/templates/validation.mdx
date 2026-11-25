@@ -3,15 +3,64 @@ title: "Validation"
 description: "What Meta requires in each field, and what it rejects"
 ---
 
-Meta reviews the template after it is created, but **rejects right away**
-anything that is out of shape. The rules below are the ones that show up most,
-with the error code each one produces.
+Meta reviews the template after it is created, but anything that is out of
+shape is rejected right away: partly by the platform itself, before it reaches
+Meta, and partly by Meta. The rules below are the ones that show up most, with
+the error code each one produces.
 
 <Note>
   Whatever the payload structure already states (character limits, accepted
   types, counts) is declared in the [API reference](/en/templates/create-template)
   schema: the playground shows it field by field. This page is for the rules the
   schema cannot express.
+</Note>
+
+## Platform validation
+
+Before sending the template to Meta, the platform checks the rules that Meta
+documents. This applies on create and on update. If something breaks a rule, the
+template does not reach Meta, and the response is `422`, with the error envelope
+in `error`:
+
+```json
+{
+  "error": {
+    "timestamp": "2026-10-19T12:00:00Z",
+    "status": 400,
+    "errors": [
+      {
+        "code": "390",
+        "name": "META_WHATSAPP_TEMPLATE_VARIABLE_INVALID",
+        "message": "Invalid template variable",
+        "description": "components[0].text: the text cannot start or end with a variable"
+      }
+    ]
+  }
+}
+```
+
+`description` starts with the refused field, such as `components[0].text`. The
+check stops at the first error. Passing it does not guarantee approval: Meta
+still reviews the template and can reject it.
+
+| Code | `message` | When it happens |
+|---|---|---|
+| `388` | Invalid template name | Name longer than 512 characters, or with anything other than lowercase letters, digits and underscore |
+| `389` | Template text too long | Text above the field limit: header 60, body 1024 (600 on limited time offers), footer 60, button text 25, URL 2000, phone 20, coupon code 20 (15 on the offer), offer text 16, card text 160 |
+| `390` | Invalid template variable | Variable at the start or end of the text; positional numbering out of sequence from `{{1}}`; more than one variable in the header or in the button URL; variable not at the end of the URL; repeated name in the named examples |
+| `391` | Template example required | Variable without an example |
+| `392` | Invalid template buttons | More than 10 buttons; outside a carousel, more than 2 URL buttons or more than 1 phone button; quick replies mixed with the other buttons; URL without `http` or `https`; phone without the country code; coupon code with anything other than letters, digits, `_` and `-`; flow button with more than one of `flow_id`, `flow_name` and `flow_json` |
+| `393` | Invalid limited time offer template | Limited time offer with a footer, with a header that is not `IMAGE` or `VIDEO`, or without exactly one `COPY_CODE` button and one `URL` button |
+| `394` | Invalid carousel template | Media carousel outside 2 to 10 cards, card without an `IMAGE` or `VIDEO` header, more than 2 buttons on a card, or cards with different components; product carousel without exactly 2 cards, card with a body, or card without exactly one button |
+| `395` | Invalid authentication template | `code_expiration_minutes` outside 1 to 90; `ONE_TAP` or `ZERO_TAP` without `package_name`, or with a `signature_hash` that is not exactly 11 characters; `ZERO_TAP` without `zero_tap_terms_accepted: true` |
+| `396` | Invalid template time-to-live | `message_send_ttl_seconds` outside the category range, in [Delivery window](#delivery-window) |
+
+Each error `name` follows the code: `388` is `META_WHATSAPP_TEMPLATE_NAME_INVALID`,
+`389` is `META_WHATSAPP_TEMPLATE_TEXT_TOO_LONG`, and so on.
+
+<Note>
+  A template created from the [Meta library](/en/templates/template-library),
+  without `components`, only goes through the name and delivery window rules.
 </Note>
 
 ## Character limits
@@ -254,7 +303,7 @@ customer's phone.
 | Utility | 30 to 43200 seconds |
 | Marketing | 43200 to 2592000 seconds |
 
-The value `-1` is a shortcut for 30 days. On authentication, the delivery window
+The value `-1` is a shortcut for 30 days, and the platform only accepts it on authentication and utility. On authentication, the delivery window
 cannot be shorter than the code validity: if the message stops being delivered
 first, the customer loses both.
 
@@ -294,6 +343,9 @@ that period.
 - Deleting an approved template **reserves its name for 30 days**.
 
 ## Meta errors, and what each one means
+
+A refusal from Meta also arrives as `422`, in the same envelope as the platform
+validation, with the Meta codes in `code` and `subCode`.
 
 | Code | Message | What to fix |
 |---|---|---|
