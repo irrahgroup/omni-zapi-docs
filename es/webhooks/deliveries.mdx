@@ -72,11 +72,13 @@ Los errores de la central llegan en el campo `error`:
 | Status | Cuándo | Cuerpo |
 |---|---|---|
 | `400` | Filtro, parámetro o cuerpo inválido | `{"error": {"message": "limit deve ser de 1 a 100"}}` |
-| `404` | Entrega o webhook que no existe, expiró o es de otro workspace | `{"error": ...}` |
+| `404` | Entrega o webhook que no existe, expiró o es de otro workspace | `{"error": "The operation could not be completed right now. Try again in a few moments."}` |
 | `422` | Regla de negocio, como una entrega que no se puede reenviar | `{"error": {"type": "...", "message": "...", "details": {...}}}` |
 | `429` | Límite de reenvío | `{"error": {"message": "..."}}` |
 | `503` | El historial tardó más de 5 segundos o está caído, o el reenvío no salió | `{"error": "..."}` |
 | `502` | Falla interna | `{"error": "integration_unavailable", "message": "..."}` |
+
+El cuerpo del `404` es siempre el mismo texto genérico. No dice si lo que faltó fue la entrega, el webhook o el workspace.
 
 Trata los errores por el status, por `error.type` y por `error.details.reason`. El texto de `message` es para lectura humana y puede cambiar. Algunos mensajes están en portugués.
 

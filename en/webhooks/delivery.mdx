@@ -48,6 +48,7 @@ That is up to 7 attempts, within **23 hours** of the event. After that, the even
 
 - On `301`, `302` and `303`, the next request is a `GET`, **without the body**. If the new address responds `2xx`, the delivery counts as delivered, but the event does not reach your system.
 - On `307` and `308`, the next request repeats the `POST`, with the same body.
+- When the redirect leads to another domain, the {projectName} HTTP client does not forward the `Authorization` header. So `BEARER` and `BASIC` authentication does not reach the new address.
 - After 10 redirects, the attempt fails as a connection error and follows the retries.
 - A `3xx` that does not lead to another address, such as a `304` or a response without the `Location` header, has no retry.
 
@@ -68,6 +69,8 @@ Each delivery also carries `content-type: application/json`, the authentication 
 Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36
 ```
 
+If the webhook uses `CUSTOM_HEADER` authentication with the name `User-Agent`, the value you configured goes instead of this one.
+
 If you use a WAF or an allowlist, allow this `user-agent`. Do not use the `user-agent` to tell whether the request came from {projectName}: use the [HMAC signature](/en/webhooks/signature).
 
 ## Deduplicate by `x-webhook-delivery-id`
@@ -83,9 +86,9 @@ A resend from the [delivery center](/en/webhooks/deliveries) arrives with the sa
 - If you did not process the delivery, it is not among the stored ones, and the resend is processed normally.
 - If you already processed the delivery and want to process it again, remove its `x-webhook-delivery-id` from the stored ones before you request the resend. Otherwise, the resend is discarded.
 
-### One event can produce more than one delivery
+### In the `Z_API` format, one event can produce more than one delivery
 
-The same event can become more than one delivery to the same webhook. Each delivery has its own `x-webhook-delivery-id`, and all of them have the same `x-webhook-event-id`.
+Usually, each event becomes one delivery per webhook. In the `Z_API` format, the same event can become more than one delivery to the same webhook. Each delivery has its own `x-webhook-delivery-id`, and all of them have the same `x-webhook-event-id`.
 
 Do not deduplicate by `x-webhook-event-id` alone: you lose deliveries.
 

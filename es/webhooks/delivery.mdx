@@ -48,6 +48,7 @@ Son hasta 7 intentos, dentro de **23 horas** desde el evento. Pasado ese plazo, 
 
 - En `301`, `302` y `303`, la petición siguiente es un `GET`, **sin el cuerpo**. Si la nueva dirección responde `2xx`, la entrega cuenta como entregada, pero el evento no llega a tu sistema.
 - En `307` y `308`, la petición siguiente repite el `POST`, con el mismo cuerpo.
+- Cuando la redirección lleva a otro dominio, el cliente HTTP de {projectName} no reenvía el header `Authorization`. Así, la autenticación `BEARER` y `BASIC` no llega a la nueva dirección.
 - Después de 10 redirecciones, el intento falla como error de conexión y sigue los reintentos.
 - Un `3xx` que no lleva a otra dirección, como un `304` o una respuesta sin el header `Location`, no tiene reintento.
 
@@ -68,6 +69,8 @@ Cada entrega también lleva `content-type: application/json`, el header de auten
 Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36
 ```
 
+Si el webhook usa autenticación `CUSTOM_HEADER` con el nombre `User-Agent`, va el valor que configuraste, en lugar de este.
+
 Si usas WAF o lista de permitidos, permite ese `user-agent`. No uses el `user-agent` para saber si la petición vino de {projectName}: usa la [firma HMAC](/es/webhooks/signature).
 
 ## Deduplica por `x-webhook-delivery-id`
@@ -83,9 +86,9 @@ Un reenvío desde la [central de entregas](/es/webhooks/deliveries) llega con el
 - Si no procesaste la entrega, no está entre las guardadas, y el reenvío se procesa normalmente.
 - Si ya procesaste la entrega y quieres procesarla de nuevo, quita su `x-webhook-delivery-id` de las guardadas antes de pedir el reenvío. Si no, el reenvío se descarta.
 
-### Un evento puede generar más de una entrega
+### En el formato `Z_API`, un evento puede generar más de una entrega
 
-Un mismo evento puede convertirse en más de una entrega al mismo webhook. Cada entrega tiene su `x-webhook-delivery-id`, y todas tienen el mismo `x-webhook-event-id`.
+Por lo general, cada evento se convierte en una entrega por webhook. En el formato `Z_API`, un mismo evento puede convertirse en más de una entrega al mismo webhook. Cada entrega tiene su `x-webhook-delivery-id`, y todas tienen el mismo `x-webhook-event-id`.
 
 No dedupliques solo por el `x-webhook-event-id`: pierdes entregas.
 

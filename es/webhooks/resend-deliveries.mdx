@@ -25,7 +25,11 @@ Los dos campos del cuerpo son obligatorios:
 - Solo las que están en el período que guarda tu plan.
 - Una entrega con reenvío en curso queda fuera.
 
-Si el webhook no tiene una secuencia de fallos, la respuesta es `202` con los contadores en cero.
+Si el webhook no tiene una secuencia de fallos, la respuesta es `202` sin nada reenviado: los contadores vienen en cero, `dailyRemaining` trae cuántos reenvíos todavía caben hoy y `oldestExpiresAt` viene `null`.
+
+```json
+{ "queued": 0, "remaining": 0, "skippedTruncated": 0, "skippedNotResendable": 0, "dailyRemaining": 50000, "oldestExpiresAt": null }
+```
 
 Cada entrega del lote se reenvía como en [Reenviar una entrega](/es/webhooks/resend-delivery): un intento, con la URL, la autenticación y el secreto actuales del webhook y el cuerpo guardado. Si falla, {projectName} no lo intenta de nuevo.
 

@@ -72,11 +72,13 @@ Delivery center errors come in the `error` field:
 | Status | When | Body |
 |---|---|---|
 | `400` | Invalid filter, parameter or body | `{"error": {"message": "limit deve ser de 1 a 100"}}` |
-| `404` | A delivery or webhook that does not exist, has expired or belongs to another workspace | `{"error": ...}` |
+| `404` | A delivery or webhook that does not exist, has expired or belongs to another workspace | `{"error": "The operation could not be completed right now. Try again in a few moments."}` |
 | `422` | Business rule, such as a delivery that cannot be resent | `{"error": {"type": "...", "message": "...", "details": {...}}}` |
 | `429` | Resend limit | `{"error": {"message": "..."}}` |
 | `503` | The history took more than 5 seconds or is down, or the resend did not go out | `{"error": "..."}` |
 | `502` | Internal failure | `{"error": "integration_unavailable", "message": "..."}` |
+
+The `404` body is always the same generic text. It does not say whether the delivery, the webhook or the workspace was missing.
 
 Handle errors by status, `error.type` and `error.details.reason`. The `message` text is for humans and can change. Some messages are in Portuguese.
 

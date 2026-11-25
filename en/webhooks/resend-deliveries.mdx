@@ -25,7 +25,11 @@ Both body fields are required:
 - Only those within the period your plan keeps.
 - A delivery with a resend in progress is left out.
 
-If the webhook has no failure sequence, the response is `202` with the counters at zero.
+If the webhook has no failure sequence, the response is `202` with nothing resent: the counters come at zero, `dailyRemaining` has how many resends still fit today and `oldestExpiresAt` comes `null`.
+
+```json
+{ "queued": 0, "remaining": 0, "skippedTruncated": 0, "skippedNotResendable": 0, "dailyRemaining": 50000, "oldestExpiresAt": null }
+```
 
 Each delivery in the batch is resent as in [Resend a delivery](/en/webhooks/resend-delivery): one attempt, with the webhook's current URL, authentication and secret and the stored body. If it fails, {projectName} does not try again.
 

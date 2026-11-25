@@ -64,12 +64,10 @@ The response is `422`, with `error.type` `WEBHOOK_DELIVERY_NOT_RESENDABLE` and t
 }
 ```
 
-Deliveries to a connected app (`source: "APP"`) cannot be resent.
-
 ### Other errors
 
 | Status | When |
 |---|---|
 | `400` | `deliveryId` is not a UUID |
-| `404` | The delivery does not exist, is older than the kept period, belongs to another workspace, or the webhook was deleted |
+| `404` | The delivery does not exist, is older than the kept period, belongs to another workspace, is to a connected app (`source: "APP"`), or the webhook was deleted. The body is the [delivery center](/en/webhooks/deliveries#errors) generic text |
 | `503` | The resend did not go out: `{"error": "O reenvio nao foi enviado; tente de novo."}`. Nothing was sent to your endpoint, and the request does not count toward the per-minute limit |
