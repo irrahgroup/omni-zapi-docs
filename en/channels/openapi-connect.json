@@ -114,11 +114,28 @@
             }
           },
           "422": {
-            "description": "Provider refusal. The `error` field carries the provider envelope, with the error name in `errors[0].name`.",
+            "description": "Provider refusal. Usually the `error` field carries the provider envelope, with the error name in `errors[0].name`. When the provider refuses without that envelope, `error` comes as a generic text.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProviderError"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ProviderError"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Generic text, when the provider refusal comes without an envelope",
+                          "example": "The operation could not be completed right now. Try again in a few moments."
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }

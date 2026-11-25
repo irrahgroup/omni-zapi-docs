@@ -114,11 +114,28 @@
             }
           },
           "422": {
-            "description": "Rechazo del proveedor. El campo `error` trae el envoltorio del proveedor, con el nombre del error en `errors[0].name`.",
+            "description": "Rechazo del proveedor. En general, el campo `error` trae el envoltorio del proveedor, con el nombre del error en `errors[0].name`. Cuando el proveedor rechaza sin ese envoltorio, `error` viene como texto genérico.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProviderError"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ProviderError"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Texto genérico, cuando el rechazo del proveedor viene sin envoltorio",
+                          "example": "The operation could not be completed right now. Try again in a few moments."
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }

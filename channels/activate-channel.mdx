@@ -111,7 +111,7 @@ Resposta `200`:
 
 | Campo | Tipo | Descrição |
 |---|---|---|
-| `code` | string | `code` devolvido pelo SDK |
+| `code` | string | `code` devolvido pelo SDK. Obrigatório |
 | `redirectUri` | string | `redirectUri` devolvido pelo SDK |
 | `pageId` | string | Página a vincular. Obrigatório quando o usuário administra mais de uma página |
 
@@ -189,19 +189,19 @@ Há uma exceção. Se o canal está ativo no provedor, mas desconectado na plata
 | `401` | `{"error": "Authorization invalid", "message": "..."}` | A Secret Key foi recusada. Veja os motivos em [Autenticação](/authentication) |
 | `403` | `{"error": "ip_not_allowed", "message": "..."}` | O IP de origem está fora da lista. Veja [Restrição de IP](/security/ip-restriction) |
 | `404` | `{"error": "Instance not found"}` | O canal não existe ou é de outro workspace |
-| `422` | `{"error": { ... }}` | O provedor recusou a ativação, ou o tipo do canal não é o da rota |
+| `422` | `{"error": { ... }}` ou `{"error": "..."}` | O provedor recusou a ativação, ou o tipo do canal não é o da rota |
 | `502` | `{"error": "integration_unavailable", "message": "..."}` | Um serviço interno está indisponível. Tente de novo em alguns instantes |
 | `504` | `{"error": "integration_timeout", "message": "..."}` | A ativação demorou demais. Pode repetir a chamada |
 | `504` | `{"error": "outcome_unknown", "message": "..."}` | A ativação não terminou no prazo e ainda pode ser concluída. Confira o resultado antes de repetir |
 
-No `422` do provedor, o campo `error` traz o envelope do provedor, no mesmo formato da [recusa do QR Code do WhatsApp Web](/connect/whatsapp-web). O nome do erro fica em `error.errors[0].name`.
+No `422` do provedor, o campo `error` traz o envelope do provedor, no mesmo formato da [recusa do QR Code do WhatsApp Web](/connect/whatsapp-web). O nome do erro fica em `error.errors[0].name`. Quando o provedor recusa sem esse envelope, o `error` vem como texto genérico: `{"error": "The operation could not be completed right now. Try again in a few moments."}`.
 
 <Note>
-  A API não valida o corpo antes de chamar o provedor. Um campo faltando volta como `422` do provedor, e não como `400`.
+  A API não valida o corpo antes de chamar o provedor. Em geral, um campo faltando volta como `422` do provedor, e não como `400`. No Telegram, `token` vazio (`""`) volta `422`, mas sem o campo `token` a resposta pode ser `502` `integration_unavailable`. Envie sempre o campo.
 </Note>
 
 <Warning>
-  A ativação tem um prazo total de **50 segundos**. Configure o timeout do seu cliente HTTP acima disso, para receber a resposta da API.
+  A API só começa um novo passo da ativação dentro de **50 segundos**, mas um passo que já começou vai até o fim, e o gateway encerra a requisição em **60 segundos**. Configure o timeout do seu cliente HTTP acima de 60 segundos, para receber a resposta da API.
 </Warning>
 
 ## Depois da ativação

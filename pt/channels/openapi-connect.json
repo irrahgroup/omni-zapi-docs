@@ -114,11 +114,28 @@
             }
           },
           "422": {
-            "description": "Recusa do provedor. O campo `error` traz o envelope do provedor, com o nome do erro em `errors[0].name`.",
+            "description": "Recusa do provedor. Em geral, o campo `error` traz o envelope do provedor, com o nome do erro em `errors[0].name`. Quando o provedor recusa sem esse envelope, o `error` vem como texto genérico.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProviderError"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ProviderError"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Texto genérico, quando a recusa do provedor vem sem envelope",
+                          "example": "The operation could not be completed right now. Try again in a few moments."
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }

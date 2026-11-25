@@ -189,19 +189,19 @@ Hay una excepción. Si el canal está activo en el proveedor, pero desconectado 
 | `401` | `{"error": "Authorization invalid", "message": "..."}` | La Secret Key fue rechazada. Consulta los motivos en [Autenticación](/es/authentication) |
 | `403` | `{"error": "ip_not_allowed", "message": "..."}` | La IP de origen está fuera de la lista. Consulta [Restricción de IP](/es/security/ip-restriction) |
 | `404` | `{"error": "Instance not found"}` | El canal no existe o pertenece a otro workspace |
-| `422` | `{"error": { ... }}` | El proveedor rechazó la activación, o el tipo de canal no es el de la ruta |
+| `422` | `{"error": { ... }}` o `{"error": "..."}` | El proveedor rechazó la activación, o el tipo de canal no es el de la ruta |
 | `502` | `{"error": "integration_unavailable", "message": "..."}` | Un servicio interno no está disponible. Inténtalo de nuevo en unos instantes |
 | `504` | `{"error": "integration_timeout", "message": "..."}` | La activación tardó demasiado. Puedes repetir la llamada |
 | `504` | `{"error": "outcome_unknown", "message": "..."}` | La activación no terminó a tiempo y todavía puede completarse. Comprueba el resultado antes de repetir |
 
-En el `422` del proveedor, el campo `error` trae el envoltorio del proveedor, en el mismo formato que el [rechazo del código QR de WhatsApp Web](/es/connect/whatsapp-web). El nombre del error está en `error.errors[0].name`.
+En el `422` del proveedor, el campo `error` trae el envoltorio del proveedor, en el mismo formato que el [rechazo del código QR de WhatsApp Web](/es/connect/whatsapp-web). El nombre del error está en `error.errors[0].name`. Cuando el proveedor rechaza sin ese envoltorio, `error` viene como texto genérico: `{"error": "The operation could not be completed right now. Try again in a few moments."}`.
 
 <Note>
-  La API no valida el cuerpo antes de llamar al proveedor. Un campo que falta vuelve como `422` del proveedor, y no como `400`.
+  La API no valida el cuerpo antes de llamar al proveedor. En general, un campo que falta vuelve como `422` del proveedor, y no como `400`. En Telegram, un `token` vacío (`""`) vuelve como `422`, pero sin el campo `token` la respuesta puede ser `502` `integration_unavailable`. Envía siempre el campo.
 </Note>
 
 <Warning>
-  La activación tiene un plazo total de **50 segundos**. Configura el timeout de tu cliente HTTP por encima de eso, para recibir la respuesta de la API.
+  La API solo inicia un nuevo paso de la activación dentro de **50 segundos**, pero un paso que ya empezó llega hasta el final, y el gateway corta la solicitud a los **60 segundos**. Configura el timeout de tu cliente HTTP por encima de 60 segundos, para recibir la respuesta de la API.
 </Warning>
 
 ## Después de la activación

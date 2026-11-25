@@ -189,19 +189,19 @@ There is one exception. If the channel is active at the provider, but disconnect
 | `401` | `{"error": "Authorization invalid", "message": "..."}` | The Secret Key was refused. See the reasons in [Authentication](/en/authentication) |
 | `403` | `{"error": "ip_not_allowed", "message": "..."}` | The source IP is off the list. See [IP restriction](/en/security/ip-restriction) |
 | `404` | `{"error": "Instance not found"}` | The channel does not exist or belongs to another workspace |
-| `422` | `{"error": { ... }}` | The provider refused the activation, or the channel type does not match the route |
+| `422` | `{"error": { ... }}` or `{"error": "..."}` | The provider refused the activation, or the channel type does not match the route |
 | `502` | `{"error": "integration_unavailable", "message": "..."}` | An internal service is unavailable. Try again in a few moments |
 | `504` | `{"error": "integration_timeout", "message": "..."}` | The activation took too long. You can repeat the call |
 | `504` | `{"error": "outcome_unknown", "message": "..."}` | The activation did not finish in time and may still be completed. Check the result before trying again |
 
-In the provider `422`, the `error` field carries the provider envelope, in the same format as the [WhatsApp Web QR code refusal](/en/connect/whatsapp-web). The error name is in `error.errors[0].name`.
+In the provider `422`, the `error` field carries the provider envelope, in the same format as the [WhatsApp Web QR code refusal](/en/connect/whatsapp-web). The error name is in `error.errors[0].name`. When the provider refuses without that envelope, `error` comes as a generic text: `{"error": "The operation could not be completed right now. Try again in a few moments."}`.
 
 <Note>
-  The API does not validate the body before calling the provider. A missing field comes back as a provider `422`, not as `400`.
+  The API does not validate the body before calling the provider. Usually, a missing field comes back as a provider `422`, not as `400`. On Telegram, an empty `token` (`""`) comes back as `422`, but without the `token` field the response can be `502` `integration_unavailable`. Always send the field.
 </Note>
 
 <Warning>
-  The activation has a total deadline of **50 seconds**. Set your HTTP client timeout above that, so you receive the API response.
+  The API only starts a new activation step within **50 seconds**, but a step that has already started runs to the end, and the gateway ends the request at **60 seconds**. Set your HTTP client timeout above 60 seconds, so you receive the API response.
 </Warning>
 
 ## After the activation
