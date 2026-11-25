@@ -1,0 +1,75 @@
+---
+title: "Reenviar uma entrega"
+description: "Faça uma nova tentativa de uma entrega, agora"
+openapi: "/pt/webhooks/openapi.json POST /v1/webhooks/deliveries/{deliveryId}/resend"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceituação
+
+Faz uma tentativa nova da entrega, agora. A rota não tem corpo.
+
+- A tentativa usa a URL, a autenticação e o segredo **atuais** do webhook, com o corpo guardado da entrega.
+- Qualquer entrega dentro do período guardado pode ser reenviada, inclusive uma que já foi entregue.
+- É uma tentativa só. Se ela falhar, o {projectName} não tenta de novo.
+
+### O que o seu endpoint recebe
+
+| Header | Valor |
+|---|---|
+| `x-webhook-delivery-id` | O mesmo da entrega original |
+| `x-webhook-event-id` | O mesmo da entrega original |
+| `x-webhook-attempt` | Um número novo, maior que o de todas as tentativas anteriores. É o `attemptNumber` da resposta |
+| `x-idempotency-key` | O mesmo da entrega original |
+| `x-webhook-signature` | Calculada de novo, com um `t` novo. Os outros campos assinados não mudam |
+
+<Warning>
+  Se o seu sistema descarta os `x-webhook-delivery-id` já processados, ele também descarta o reenvio de uma entrega que você já processou. Veja [Deduplique pelo `x-webhook-delivery-id`](/webhooks/delivery#deduplique-pelo-x-webhook-delivery-id).
+</Warning>
+
+### Resposta
+
+A resposta `202` traz o `deliveryId` e o `attemptNumber` da tentativa nova.
+
+Quando a resposta traz `message`, o {projectName} não teve confirmação a tempo de que o reenvio saiu. Ele pode ter saído: confira o resultado em [Detalhar entrega](/webhooks/get-delivery) em alguns minutos.
+
+Até o resultado chegar, a entrega aparece com `status` `RESENT`, por até 1 hora.
+
+### Limites
+
+- 1 reenvio por entrega por minuto.
+- 50.000 reenvios por webhook por dia (dia UTC).
+
+Acima disso, ou com outro reenvio da mesma entrega em andamento, a resposta é `429`.
+
+### Quando a entrega não pode ser reenviada
+
+A resposta é `422`, com `error.type` `WEBHOOK_DELIVERY_NOT_RESENDABLE` e o motivo em `error.details.reason`:
+
+| `reason` | Motivo |
+|---|---|
+| `TRUNCATED` | O corpo da entrega passou do limite guardado |
+| `WEBHOOK_SUSPENDED` | O webhook está suspenso. [Reative o webhook](/webhooks/reactivate-webhook) antes |
+| `WEBHOOK_DISABLED` | O webhook está desabilitado. Habilite o webhook antes |
+| `UNREADABLE_BODY` | O corpo guardado não pode ser lido |
+
+```json
+{
+  "error": {
+    "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+    "message": "O webhook esta desabilitado. Habilite o webhook antes de reenviar.",
+    "details": { "reason": "WEBHOOK_DISABLED" }
+  }
+}
+```
+
+As entregas para um app conectado (`source: "APP"`) não podem ser reenviadas.
+
+### Outros erros
+
+| Status | Quando |
+|---|---|
+| `400` | `deliveryId` não é um UUID |
+| `404` | A entrega não existe, saiu do período guardado, é de outro workspace, ou o webhook foi removido |
+| `503` | O reenvio não saiu: `{"error": "O reenvio nao foi enviado; tente de novo."}`. Nada foi enviado ao seu endpoint, e o pedido não conta no limite por minuto |

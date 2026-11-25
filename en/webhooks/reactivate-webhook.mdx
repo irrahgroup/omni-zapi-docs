@@ -1,0 +1,25 @@
+---
+title: "Reactivate webhook"
+description: "Resume sending events to a suspended webhook"
+openapi: "/en/webhooks/openapi.json POST /v1/webhooks/{webhookId}/reactivate"
+---
+
+## Overview
+
+Reactivates a suspended webhook: new events are sent to it again. The route has no body.
+
+The `200` response has the webhook state, with the same fields as each item in [webhook health](/en/webhooks/webhooks-health).
+
+If the webhook is not suspended, nothing changes: the response has the current state.
+
+It works for channel, default and template webhooks, by `webhookId`.
+
+<Tip>
+  Reactivation does not resend what failed before. For that, use [Resend failed deliveries](/en/webhooks/resend-deliveries) after you reactivate.
+</Tip>
+
+### Errors
+
+| Status | When |
+|---|---|
+| `404` | The webhook does not exist or belongs to another workspace |

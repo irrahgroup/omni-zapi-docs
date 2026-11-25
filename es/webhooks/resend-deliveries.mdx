@@ -1,0 +1,58 @@
+---
+title: "Reenviar las entregas que fallaron"
+description: "Reenvía en lote las entregas que fallaron en un webhook"
+openapi: "/es/webhooks/openapi.json POST /v1/webhooks/deliveries/resend"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceptos
+
+Reenvía las entregas de un webhook que fallaron desde el primer fallo de la secuencia actual. Úsalo después de corregir tu endpoint, para recuperar lo que no llegó.
+
+Los dos campos del cuerpo son obligatorios:
+
+```json
+{ "webhookId": "A1B2C3D4E5F6789012345678901234AB", "episode": "current" }
+```
+
+`episode` solo acepta `current`.
+
+### Qué entra en el lote
+
+- Las entregas del webhook con `status` `FAILED`, `NOT_SENT`, `EXPIRED` o `UNKNOWN`.
+- Solo las que tuvieron el último intento a partir del primer fallo de la secuencia de fallos actual.
+- Solo las que están en el período que guarda tu plan.
+- Una entrega con reenvío en curso queda fuera.
+
+Si el webhook no tiene una secuencia de fallos, la respuesta es `202` con los contadores en cero.
+
+Cada entrega del lote se reenvía como en [Reenviar una entrega](/es/webhooks/resend-delivery): un intento, con la URL, la autenticación y el secreto actuales del webhook y el cuerpo guardado. Si falla, {projectName} no lo intenta de nuevo.
+
+### Respuesta
+
+| Campo | Qué trae |
+|---|---|
+| `queued` | Cuántas entregas se reenviaron en este lote |
+| `remaining` | Cuántas faltan todavía. Pide otro lote después de 2 minutos |
+| `skippedTruncated` | Cuántas quedaron fuera porque el cuerpo superó el límite guardado. No se pueden reenviar |
+| `skippedNotResendable` | Cuántas quedaron fuera porque el cuerpo guardado no se puede leer, o porque otro reenvío de la misma entrega empezó al mismo tiempo |
+| `dailyRemaining` | Cuántos reenvíos caben todavía hoy en este webhook |
+| `oldestExpiresAt` | Cuándo la entrega más antigua que falta sale del historial. Después de eso, ya no se puede reenviar |
+
+### Límites
+
+- Hasta 1.000 entregas por lote.
+- 1 lote por webhook cada 2 minutos.
+- 50.000 reenvíos por webhook por día (día UTC), sumando los individuales y los de lote.
+
+Por encima de eso, la respuesta es `429`.
+
+### Errores
+
+| Status | Cuándo |
+|---|---|
+| `400` | Falta `webhookId`, o `episode` no es `current` |
+| `404` | El webhook no existe o es de otro workspace |
+| `422` | El webhook está suspendido o deshabilitado. El motivo viene en `error.details.reason`: `WEBHOOK_SUSPENDED` o `WEBHOOK_DISABLED` |
+| `429` | Límite de lotes o de reenvíos del día |

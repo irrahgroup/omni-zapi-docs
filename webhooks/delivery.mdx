@@ -21,7 +21,8 @@ Receba o evento, guarde e responda. Faça o processamento pesado depois, fora da
 |---|---|
 | `2xx` | Entregue. Não há nova tentativa. |
 | Sem resposta em 5 s, erro de conexão, `408`, `429` ou `5xx` | Nova tentativa, conforme a tabela abaixo. |
-| Qualquer outro `4xx`, ou `3xx` | Não há nova tentativa: o seu endpoint recusou o evento. |
+| Qualquer outro `4xx` | Não há nova tentativa: o seu endpoint recusou o evento. |
+| `3xx` | O {projectName} segue o redirecionamento. Veja [Redirecionamentos](#redirecionamentos). |
 
 Cada espera conta a partir da tentativa anterior:
 
@@ -41,20 +42,52 @@ São até 7 tentativas, dentro de **23 horas** a partir do evento. Depois desse 
   Se o seu endpoint falha seguidamente, o {projectName} pausa os envios para o seu endereço por um tempo e os retoma depois. Os eventos dessa pausa não se perdem: eles seguem as mesmas tentativas, dentro do prazo de 23 horas.
 </Note>
 
+## Redirecionamentos
+
+O {projectName} segue os redirecionamentos do seu endpoint, até 10, e vale a resposta do último endereço.
+
+- Em `301`, `302` e `303`, a requisição seguinte é um `GET`, **sem o corpo**. Se o novo endereço responder `2xx`, a entrega conta como entregue, mas o evento não chega ao seu sistema.
+- Em `307` e `308`, a requisição seguinte repete o `POST`, com o mesmo corpo.
+- Depois de 10 redirecionamentos, a tentativa falha como erro de conexão e segue as novas tentativas.
+- Um `3xx` que não leva a outro endereço, como um `304` ou uma resposta sem o header `Location`, não tem nova tentativa.
+
+Cadastre a URL final do seu endpoint, sem redirecionamento.
+
 ## Headers de cada entrega
 
 | Header | O que identifica |
 |---|---|
 | `x-webhook-event-id` | O evento. É o mesmo em todos os webhooks que recebem esse evento. |
-| `x-webhook-delivery-id` | A entrega desse evento a este webhook. É o mesmo em todas as tentativas. |
+| `x-webhook-delivery-id` | A entrega desse evento a este webhook. É o mesmo em todas as tentativas, inclusive nos reenvios pela [central de entregas](/webhooks/deliveries). |
 | `x-webhook-attempt` | O número da tentativa: `1`, `2`, `3`... |
 | `x-idempotency-key` | O mesmo valor em todas as tentativas. Entra na [assinatura HMAC](/webhooks/signature). |
+
+Cada entrega também leva `content-type: application/json`, o header de autenticação configurado no webhook (veja [Autenticação do webhook](/webhooks/introduction)) e este `user-agent`, de navegador:
+
+```
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36
+```
+
+Se você usa WAF ou lista de permissões, libere esse `user-agent`. Não use o `user-agent` para saber se a requisição veio do {projectName}: use a [assinatura HMAC](/webhooks/signature).
 
 ## Deduplique pelo `x-webhook-delivery-id`
 
 A mesma entrega pode chegar mais de uma vez. Isso acontece, por exemplo, quando o seu endpoint processou o evento, mas demorou mais de 5 segundos para responder.
 
-Guarde os `x-webhook-delivery-id` já processados por pelo menos 24 horas e descarte os repetidos.
+Guarde o `x-webhook-delivery-id` depois de processar o evento, por pelo menos 24 horas, e descarte os repetidos.
+
+### Reenvio pela central
+
+Um reenvio pela [central de entregas](/webhooks/deliveries) chega com o mesmo `x-webhook-delivery-id` e o mesmo `x-idempotency-key` da entrega original, e com um `x-webhook-attempt` novo.
+
+- Se você não processou a entrega, ela não está entre as guardadas, e o reenvio é processado normalmente.
+- Se você já processou a entrega e quer processá-la de novo, tire o `x-webhook-delivery-id` das guardadas antes de pedir o reenvio. Senão, o reenvio é descartado.
+
+### Um evento pode gerar mais de uma entrega
+
+Um mesmo evento pode virar mais de uma entrega para o mesmo webhook. Cada entrega tem o seu `x-webhook-delivery-id`, e todas têm o mesmo `x-webhook-event-id`.
+
+Não deduplique só pelo `x-webhook-event-id`: você perde entregas.
 
 ## A ordem de chegada não é garantida
 
@@ -66,6 +99,8 @@ Os eventos saem na ordem em que acontecem. Mas um evento que falhou é enviado d
 ## Quando o seu endpoint fica fora do ar
 
 Os eventos não se perdem: eles seguem as tentativas acima por até 23 horas. Quando o seu endpoint voltar, os eventos atrasados chegam junto com os novos. Prepare o endpoint para um volume maior por alguns minutos.
+
+Para recuperar o que não chegou dentro desse prazo, use [Reenviar as entregas que falharam](/webhooks/resend-deliveries).
 
 ## Aviso por e-mail quando o webhook falha
 

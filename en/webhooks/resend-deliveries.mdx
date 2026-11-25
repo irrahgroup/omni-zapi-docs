@@ -1,0 +1,58 @@
+---
+title: "Resend failed deliveries"
+description: "Resend in batches the deliveries that failed on a webhook"
+openapi: "/en/webhooks/openapi.json POST /v1/webhooks/deliveries/resend"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Overview
+
+Resends a webhook's deliveries that failed since the first failure of the current sequence. Use it after you fix your endpoint, to recover what did not arrive.
+
+Both body fields are required:
+
+```json
+{ "webhookId": "A1B2C3D4E5F6789012345678901234AB", "episode": "current" }
+```
+
+`episode` only accepts `current`.
+
+### What goes into the batch
+
+- The webhook's deliveries with `status` `FAILED`, `NOT_SENT`, `EXPIRED` or `UNKNOWN`.
+- Only those whose last attempt was at or after the first failure of the current failure sequence.
+- Only those within the period your plan keeps.
+- A delivery with a resend in progress is left out.
+
+If the webhook has no failure sequence, the response is `202` with the counters at zero.
+
+Each delivery in the batch is resent as in [Resend a delivery](/en/webhooks/resend-delivery): one attempt, with the webhook's current URL, authentication and secret and the stored body. If it fails, {projectName} does not try again.
+
+### Response
+
+| Field | What it has |
+|---|---|
+| `queued` | How many deliveries were resent in this batch |
+| `remaining` | How many are still left. Request another batch after 2 minutes |
+| `skippedTruncated` | How many were left out because the body went over the stored limit. They cannot be resent |
+| `skippedNotResendable` | How many were left out because the stored body cannot be read, or because another resend of the same delivery started at the same time |
+| `dailyRemaining` | How many resends still fit today on this webhook |
+| `oldestExpiresAt` | When the oldest delivery left leaves the history. After that, it can no longer be resent |
+
+### Limits
+
+- Up to 1,000 deliveries per batch.
+- 1 batch per webhook every 2 minutes.
+- 50,000 resends per webhook per day (UTC day), counting single and batch resends.
+
+Above that, the response is `429`.
+
+### Errors
+
+| Status | When |
+|---|---|
+| `400` | `webhookId` is missing, or `episode` is not `current` |
+| `404` | The webhook does not exist or belongs to another workspace |
+| `422` | The webhook is suspended or disabled. The reason comes in `error.details.reason`: `WEBHOOK_SUSPENDED` or `WEBHOOK_DISABLED` |
+| `429` | Batch limit or daily resend limit |
