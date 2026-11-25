@@ -62,6 +62,10 @@ the map of them, so you find out now instead of in the middle of a test.
 | Contact | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Reaction (emoji) | ✅ | ✅ | ✅ | 🔍 | ❌ |
 
+A location or a contact sent to an Instagram channel is refused right away: the API answers `422` with
+`[UNSUPPORTED_CHANNEL_TYPE]` in the `message`, and no message or webhook is created. The same applies to
+several contacts in one message (`CONTACT_ARRAY`).
+
 Text and media are the common ground: they work on all five, with the same body. The exception is the
 document, which has a condition on Instagram and Telegram. It is from there up that the channels start to disagree.
 
@@ -74,6 +78,7 @@ document, which has a condition on Instagram and Telegram. It is from there up t
 | Option list | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Request location | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 | Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Carousel | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 A quick reply button is the one that comes back as the customer's answer, and it exists on every
 channel. An action button is the one the device executes: open a link or place a call. The link works
@@ -85,6 +90,10 @@ message or webhook is created. The Telegram keyboard has no sections, no per-opt
 button that opens the list. Send the options as quick reply buttons (`INTERACTIVE_BUTTON`).
 
 A Flow sent to a channel other than Meta Cloud API is accepted with `200`, but it does not reach the customer.
+
+A carousel sent to a channel other than Meta Cloud API is refused right away: the API answers `422` with
+`[UNSUPPORTED_CHANNEL_TYPE]` in the `message`, and no message or webhook is created. This also applies to the
+`send-carousel` route. See [Send carousel](/en/messages/send-carousel).
 
 ## Store and orders
 
@@ -111,6 +120,9 @@ Order details and order status do not exist in the API yet, on any channel.
 A template is the message Meta approves in advance so you can write first, outside the window. It only
 exists where there is a window: Meta Cloud API and Messenger. On the other channels you write
 whenever you want, so it would not be missed.
+
+A template sent to a channel other than Meta Cloud API or Messenger is refused right away: the API answers
+`422` with `subCode` `TEMPLATE_NOT_SUPPORTED`. See [Send template](/en/messages/send-template).
 
 ## The caveats, one by one
 
@@ -234,22 +246,28 @@ refusals are in [Replying with a quote](/en/messages/introduction#replying-with-
 | Feature | `content.type` | Endpoint |
 |---|---|---|
 | Text | `TEXT` | [Send text](/en/messages/send-text) |
+| Link with preview | `LINK` | [Send link with preview](/en/messages/send-link) |
 | Image | `IMAGE` | [Send image](/en/messages/send-image) |
 | Audio | `AUDIO` | [Send audio](/en/messages/send-audio) |
 | Video | `VIDEO` | [Send video](/en/messages/send-video) |
+| Round video | `PTV` | [Send round video (PTV)](/en/messages/send-ptv) |
+| GIF | `GIF` | [Send GIF](/en/messages/send-gif) |
 | Document | `DOCUMENT` | [Send document](/en/messages/send-document) |
 | Sticker | `STICKER` | [Send sticker](/en/messages/send-sticker) |
 | Location | `LOCATION` | [Send location](/en/messages/send-location) |
 | Request location | `LOCATION_REQUEST` | [Request location](/en/messages/send-location-request) |
 | Contact | `CONTACT` | [Send contact](/en/messages/send-contact) |
+| Several contacts | `CONTACT_ARRAY` | [Send several contacts](/en/messages/send-contacts) |
 | Reaction | `REACTION` | [React to message](/en/messages/send-reaction) |
 | Quick reply buttons | `INTERACTIVE_BUTTON` | [Send text with buttons](/en/messages/send-interactive-button) |
 | Action buttons | `INTERACTIVE_ACTION` | [Send action buttons](/en/messages/send-interactive-action) |
 | Option list | `INTERACTIVE_LIST` | [Send option list](/en/messages/send-interactive-list) |
 | Flow | `INTERACTIVE_FLOW` | [Send form](/en/messages/send-flow) |
-| Catalog | `CATALOG` | [Send catalog](/en/messages/send-catalog) |
-| Product | `PRODUCT` | [Send product](/en/messages/send-product) |
-| Multi-product | `PRODUCT_LIST` | [Send multi-product](/en/messages/send-product-list) |
+| Carousel | `INTERACTIVE_CAROUSEL` | [Send carousel](/en/messages/send-carousel) |
+| Code with button | `INTERACTIVE_OTP` | [Send code with button (OTP)](/en/messages/send-button-otp) |
+| Catalog | `INTERACTIVE_CATALOG` | [Send catalog](/en/messages/send-catalog) |
+| Product | `INTERACTIVE_SINGLE_PRODUCT` | [Send product](/en/messages/send-product) |
+| Multi-product | `INTERACTIVE_MULTI_PRODUCT` | [Send multi-product](/en/messages/send-product-list) |
 | Order details | `ORDER_DETAILS` | [Order details](/en/messages/send-order-details) |
 | Order status | `ORDER_STATUS` | [Order status](/en/messages/send-order-status) |
 | Template | `TEMPLATE` | [Send template](/en/messages/send-template) |

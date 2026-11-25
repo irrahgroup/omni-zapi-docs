@@ -27,5 +27,18 @@ El campo `content.type` debe ser `TEMPLATE` y la plantilla se envía dentro de `
 </Note>
 
 <Note>
+  La plantilla solo sale por canales Meta Cloud API (`META_WHATSAPP`) o Messenger (`META_MESSENGER`). En otro canal, `POST /v1/channels/{channelId}/messages` responde `422` con `code` `BUSINESS_RULE_VIOLATION` y `subCode` `TEMPLATE_NOT_SUPPORTED`, y el mensaje no se envía:
+
+  ```json
+  {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "code": "BUSINESS_RULE_VIOLATION",
+    "subCode": "TEMPLATE_NOT_SUPPORTED",
+    "message": "TEMPLATE messages are only supported on META_WHATSAPP and META_MESSENGER channels"
+  }
+  ```
+</Note>
+
+<Note>
   La ruta `POST /v1/channels/{channelId}/send-template` acepta el mismo cuerpo de esta página y da la misma respuesta. En ella, `content.type` es opcional y, si lo envías, debe ser `TEMPLATE`. Con otro valor, la API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be TEMPLATE on /send-template; leave it out, or send other types with POST /v1/channels/{id}/messages"}`. La ruta solo acepta canales Meta Cloud API (WhatsApp Oficial): en otro canal, la API responde `422` `{"error": "operation not supported for this instance"}`. En los dos casos, el mensaje no se envía. Consulta [Rutas por tipo](/es/messages/introduction#rutas-por-tipo).
 </Note>

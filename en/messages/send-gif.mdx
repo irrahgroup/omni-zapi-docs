@@ -1,0 +1,60 @@
+---
+title: "Send GIF"
+description: "Send an animated GIF"
+openapi: "/en/messages/openapi-gif.json POST /v1/channels/{channelId}/messages"
+---
+
+## Overview
+
+Sends an animated GIF. The file goes by URL in the `content.attachments` array.
+
+The `content.type` field must be `GIF`.
+
+## Request body
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "GIF",
+    "attachments": [
+      {
+        "url": "https://exemplo.com/comemoracao.gif",
+        "caption": "Pedido confirmado!"
+      }
+    ]
+  }
+}
+```
+
+## Fields
+
+| Field | Required | Description |
+|---|:---:|---|
+| `content.attachments` | yes | List with the GIF |
+| `content.attachments[].url` | no | File URL |
+| `content.attachments[].mimeType` | no | File type |
+| `content.attachments[].caption` | no | Caption |
+| `content.attachments[].id` | no | File id |
+
+<Note>
+  Without `content.attachments`, the API responds `400` with `code` `VALIDATION_ERROR` and `message` `"Field 'content.attachments': is required for message type GIF"`, and the message is not sent.
+</Note>
+
+<Note>
+  The API does not refuse this type per channel before sending. The `200` confirms that the API accepted the message, not that the channel delivered it: follow the status through the [webhook](/en/webhooks/payloads). See [what each channel accepts](/en/channels/message-support).
+</Note>
+
+<Note>
+  If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
+</Note>
+
+<Note>
+  When the send is accepted, the API responds `200` with the `messageId`. See [API response](/en/messages/introduction#api-response).
+</Note>
+
+<Note>
+  The `POST /v1/channels/{channelId}/send-gif` route takes the same body as this page and gives the same response. On it, `content.type` is optional and, if you send it, it must be `GIF`. With any other value, the API responds `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be GIF on /send-gif; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, and the message is not sent. See [Routes by type](/en/messages/introduction#routes-by-type).
+</Note>

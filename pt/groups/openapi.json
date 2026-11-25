@@ -210,6 +210,12 @@
           },
           "502": {
             "$ref": "#/components/responses/ProviderResponseTooLarge"
+          },
+          "429": {
+            "$ref": "#/components/responses/ProviderRateLimited"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
           }
         }
       }
@@ -237,7 +243,7 @@
             "name": "groupId",
             "in": "path",
             "required": true,
-            "description": "Identificador do grupo.",
+            "description": "Identificador do grupo. De 1 a 128 caracteres em `[A-Za-z0-9._*-]`, sem ser `.` nem `..`.",
             "schema": {
               "type": "string",
               "example": "120363430328583007-group"
@@ -277,7 +283,7 @@
             }
           },
           "400": {
-            "description": "Id do grupo fora do formato",
+            "description": "Id do grupo fora do formato: vazio, com mais de 128 caracteres, com caractere fora de `[A-Za-z0-9._*-]`, ou igual a `.` ou `..`",
             "content": {
               "application/json": {
                 "schema": {
@@ -360,6 +366,12 @@
           },
           "502": {
             "$ref": "#/components/responses/ProviderResponseTooLarge"
+          },
+          "429": {
+            "$ref": "#/components/responses/ProviderRateLimited"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
           }
         }
       }
@@ -387,7 +399,7 @@
             "name": "groupId",
             "in": "path",
             "required": true,
-            "description": "Identificador do grupo.",
+            "description": "Identificador do grupo. De 1 a 128 caracteres em `[A-Za-z0-9._*-]`, sem ser `.` nem `..`.",
             "schema": {
               "type": "string",
               "example": "120363430328583007-group"
@@ -414,7 +426,7 @@
             }
           },
           "400": {
-            "description": "Id do grupo fora do formato",
+            "description": "Id do grupo fora do formato: vazio, com mais de 128 caracteres, com caractere fora de `[A-Za-z0-9._*-]`, ou igual a `.` ou `..`",
             "content": {
               "application/json": {
                 "schema": {
@@ -501,6 +513,12 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/ProviderRateLimited"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
           }
         }
       }
@@ -528,7 +546,7 @@
             "name": "link",
             "in": "query",
             "required": true,
-            "description": "Link de convite do grupo.",
+            "description": "Link de convite do grupo. Depois de codificado em URL, tem até 2.044 caracteres.",
             "schema": {
               "type": "string",
               "example": "https://chat.whatsapp.com/XXXXXXXXXXX"
@@ -567,7 +585,7 @@
             }
           },
           "400": {
-            "description": "Link ausente ou inválido",
+            "description": "Link ausente, vazio ou longo demais: depois de codificado em URL, passa de 2.044 caracteres",
             "content": {
               "application/json": {
                 "schema": {
@@ -625,6 +643,12 @@
           },
           "404": {
             "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/ProviderRateLimited"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
           }
         }
       }
@@ -844,6 +868,42 @@
             "example": {
               "error": "provider_response_too_large",
               "message": "The channel answer is too large. Use a smaller pageSize."
+            }
+          }
+        }
+      },
+      "ProviderRateLimited": {
+        "description": "O canal pediu para esperar. O header `Retry-After` traz o tempo em segundos quando o canal o manda. Outras recusas do canal (`4xx`) chegam com o mesmo status que ele deu e o mesmo corpo",
+        "headers": {
+          "Retry-After": {
+            "description": "Segundos a esperar antes de repetir. Só vem quando o canal manda o tempo em segundos",
+            "schema": {
+              "type": "string"
+            },
+            "example": "30"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "provider_error"
+            }
+          }
+        }
+      },
+      "IntegrationTimeout": {
+        "description": "O repasse ao canal falhou ou passou do prazo. A rota só lê dados: você pode repetir a chamada",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "integration_timeout",
+              "message": "The operation took too long to complete. Try again in a few moments."
             }
           }
         }

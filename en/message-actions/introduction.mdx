@@ -22,6 +22,29 @@ The `messageId` is the **Omni id** — the same one returned on send (`POST /mes
   - `422` `CHAT_NOT_SUPPORTED`: the message's chat is not a phone number of 8 to 15 digits, a group or an `@lid`.
 </Note>
 
+## Provider refusal when pinning, unpinning and choosing an option
+
+Pinning, unpinning and choosing an option call the channel provider right away. When it does not confirm the action, the API responds with the `subCode` of the reason:
+
+| Status | `subCode` | When | `message` |
+|---|---|---|---|
+| `422` | `PROVIDER_REJECTED` | The channel provider refused the action | `The channel provider refused the request` |
+| `422` | `CONTACT_OUTSIDE_WINDOW` | The contact is outside the 24-hour window or is not a valid user of the channel | `Contact is outside the 24-hour window or is not a valid user of the channel` |
+| `502` | `PROVIDER_UNAVAILABLE` | The provider did not answer, or answered something that is neither a success nor a known refusal | The fixed text of the action: `Message pinning failed`, `Message unpinning failed` or `Option choice failed` |
+
+On the `422` responses, the `code` is `BUSINESS_RULE_VIOLATION`. On the `502`, the `code` is `INTEGRATION_ERROR`:
+
+```json
+{
+  "timestamp": "2026-10-22T14:00:00.123Z",
+  "code": "INTEGRATION_ERROR",
+  "subCode": "PROVIDER_UNAVAILABLE",
+  "message": "Message pinning failed"
+}
+```
+
+Handle the refusal by `subCode`: the `message` may change.
+
 ## Common errors
 
 Beyond the above, every message action may respond, on the **Omni API**:

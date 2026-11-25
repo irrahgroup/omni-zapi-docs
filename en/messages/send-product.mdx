@@ -1,21 +1,17 @@
 ---
 title: "Send product"
-description: "Send one catalog product, with photo, name and price"
+description: "Send a catalog product, with photo, name and price"
+openapi: "/en/messages/openapi-product.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
-  shape and plan the integration — the body below is what will apply when it ships.
-</Warning>
-
 ## Overview
 
 Sends a single catalog product. The photo, the name and the price come from Commerce Manager.
 
-The `content.type` field will be `PRODUCT`.
+The `content.type` field must be `INTERACTIVE_SINGLE_PRODUCT`.
 
 <WindowRule lang="en" template="for single product" href="/en/templates/models/spm" />
 
@@ -25,21 +21,61 @@ The `content.type` field will be `PRODUCT`.
 
 ```json
 {
-  "recipient": { "identifier": "5511999999999" },
+  "recipient": {
+    "identifier": "5511999999999"
+  },
   "content": {
-    "type": "PRODUCT",
-    "message": "This is the product you asked about.",
-    "footer": "Limited stock",
-    "catalogId": "1234567890",
-    "productRetailerId": "SKU-1042"
+    "type": "INTERACTIVE_SINGLE_PRODUCT",
+    "body": {
+      "message": "Este é o produto que você perguntou."
+    },
+    "footer": {
+      "message": "Estoque limitado"
+    },
+    "action": {
+      "catalogId": "1234567890",
+      "productRetailerId": "SKU-1042"
+    }
   }
 }
 ```
+
+## Fields
+
+| Field | Required | Description |
+|---|:---:|---|
+| `content.body` | yes | Message body. It may be empty (`{}`) |
+| `content.body.message` | no | Message text |
+| `content.footer.message` | no | Footer |
+| `content.action.catalogId` | no | Catalog id in Commerce Manager. Meta requires it |
+| `content.action.productRetailerId` | no | Product SKU (`retailer_id`). Meta requires it |
 
 ## Rules
 
 | Rule | Value |
 |---|---|
-| `catalogId` and `productRetailerId` | both required |
-| Message and footer | optional |
-| Non-existent SKU | Meta rejects it and does not deliver the message |
+| `catalogId` and `productRetailerId` | the API does not check them before sending: without them, or with a SKU that does not exist, Meta refuses after the `200` and the message does not arrive |
+
+<Note>
+  Without `content.body`, the API responds `400` with `code` `VALIDATION_ERROR` and `message` `"Field 'content.body': is required for message type INTERACTIVE_SINGLE_PRODUCT"`, and the message is not sent.
+</Note>
+
+<Note>
+  On the other channels, the API does not refuse this type before sending: it responds `200`, but the message does not reach the customer.
+</Note>
+
+<Note>
+  Details of the Meta Cloud API rule in [conversation window](/en/conversation-window). See [what each channel accepts](/en/channels/message-support) for every channel.
+</Note>
+
+<Note>
+  If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
+</Note>
+
+<Note>
+  When the send is accepted, the API responds `200` with the `messageId`. See [API response](/en/messages/introduction#api-response).
+</Note>
+
+<Note>
+  This type has no `send-*` route of its own: `send-product` responds `422` `send_route_not_supported`. Send it with `POST /v1/channels/{channelId}/messages`.
+</Note>

@@ -26,3 +26,12 @@ Nas rotas de dados (listar, consultar, foto e verificar), as checagens seguem es
 <Note>
   A situação de bloqueado fica em cache por até 4 horas: bloquear ou desbloquear o workspace pode levar esse tempo para valer.
 </Note>
+
+## Erros do canal
+
+Nas rotas de listar, consultar, foto e verificar, a API repassa o pedido ao canal. Além dos erros acima, elas podem responder:
+
+- **Recusa do canal (`4xx`)**: o mesmo status que o canal deu, com `{"error": "provider_error", "message": "<texto do canal>"}`. O `message` pode faltar.
+- **`429`**: o mesmo corpo, com o header `Retry-After` quando o canal manda o tempo em segundos. Espere esse tempo antes de repetir.
+- **`504`** `{"error": "integration_timeout", "message": "The operation took too long to complete. Try again in a few moments."}`: o repasse ao canal falhou ou passou do prazo. A rota só lê dados, então você pode repetir a chamada.
+- **`502`** `{"error": "integration_unavailable", ...}`: o canal respondeu `401`, `403`, `405` ou `5xx`, ou deu uma resposta fora do formato esperado.

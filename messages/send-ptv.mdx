@@ -1,0 +1,61 @@
+---
+title: "Enviar vídeo em círculo (PTV)"
+description: "Envie um vídeo no formato PTV, o recado de vídeo do WhatsApp"
+openapi: "/pt/messages/openapi-ptv.json POST /v1/channels/{channelId}/messages"
+---
+
+## Conceituação
+
+Envia um vídeo no formato PTV, o recado de vídeo que o WhatsApp mostra em círculo. O vídeo vai por URL no array `content.attachments`.
+
+O campo `content.type` deve ser `PTV`.
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "PTV",
+    "attachments": [
+      {
+        "url": "https://exemplo.com/recado.mp4",
+        "mimeType": "video/mp4",
+        "caption": "Seu pedido saiu para entrega"
+      }
+    ]
+  }
+}
+```
+
+## Campos
+
+| Campo | Obrigatório | Descrição |
+|---|:---:|---|
+| `content.attachments` | sim | Lista com o vídeo |
+| `content.attachments[].url` | não | URL do vídeo |
+| `content.attachments[].mimeType` | não | Tipo do arquivo, como `video/mp4` |
+| `content.attachments[].caption` | não | Legenda |
+| `content.attachments[].id` | não | Identificador do arquivo |
+
+<Note>
+  Sem `content.attachments`, a API responde `400` com `code` `VALIDATION_ERROR` e `message` `"Field 'content.attachments': is required for message type PTV"`, e a mensagem não é enviada.
+</Note>
+
+<Note>
+  A API não recusa este tipo por canal antes do envio. O `200` confirma que a API aceitou a mensagem, não que o canal a entregou: acompanhe o status pelo [webhook](/webhooks/payloads). Veja [o que cada canal aceita](/channels/message-support).
+</Note>
+
+<Note>
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
+</Note>
+
+<Note>
+  Quando o envio é aceito, a API responde `200` com o `messageId`. Veja [Resposta da API](/messages/introduction#resposta-da-api).
+</Note>
+
+<Note>
+  A rota `POST /v1/channels/{channelId}/send-ptv` aceita o mesmo corpo desta página e dá a mesma resposta. Nela, `content.type` é opcional e, se vier, tem de ser `PTV`. Com outro valor, a API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be PTV on /send-ptv; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, e a mensagem não é enviada. Veja [Rotas por tipo](/messages/introduction#rotas-por-tipo).
+</Note>

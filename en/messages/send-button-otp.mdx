@@ -1,0 +1,59 @@
+---
+title: "Send code with button (OTP)"
+description: "Send a one-time code with a button"
+openapi: "/en/messages/openapi-otp.json POST /v1/channels/{channelId}/messages"
+---
+
+## Overview
+
+Sends a text with a one-time code (OTP) and a button. The data goes in the `content.body` object.
+
+The `content.type` field must be `INTERACTIVE_OTP`.
+
+## Request body
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "INTERACTIVE_OTP",
+    "body": {
+      "message": "Seu código de acesso é 482913. Ele vale por 10 minutos.",
+      "code": "482913",
+      "buttonText": "Copiar código"
+    }
+  }
+}
+```
+
+## Fields
+
+| Field | Required | Description |
+|---|:---:|---|
+| `content.body` | yes | Message data |
+| `content.body.message` | no | Message text |
+| `content.body.code` | no | The code sent in the button |
+| `content.body.buttonText` | no | Button text |
+| `content.body.url` | no | URL of an image for the message |
+
+<Note>
+  Without `content.body`, the API responds `400` with `code` `VALIDATION_ERROR` and `message` `"Field 'content.body': is required for message type INTERACTIVE_OTP"`, and the message is not sent.
+</Note>
+
+<Note>
+  The API does not refuse this type per channel before sending. The `200` confirms that the API accepted the message, not that the channel delivered it: follow the status through the [webhook](/en/webhooks/payloads). See [what each channel accepts](/en/channels/message-support).
+</Note>
+
+<Note>
+  If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
+</Note>
+
+<Note>
+  When the send is accepted, the API responds `200` with the `messageId`. See [API response](/en/messages/introduction#api-response).
+</Note>
+
+<Note>
+  The `POST /v1/channels/{channelId}/send-button-otp` route takes the same body as this page and gives the same response. On it, `content.type` is optional and, if you send it, it must be `INTERACTIVE_OTP`. With any other value, the API responds `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be INTERACTIVE_OTP on /send-button-otp; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, and the message is not sent. See [Routes by type](/en/messages/introduction#routes-by-type).
+</Note>

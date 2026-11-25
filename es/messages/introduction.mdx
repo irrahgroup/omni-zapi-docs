@@ -55,13 +55,19 @@ Lo que cambia es el campo `content.type`:
 | `INTERACTIVE_LIST` | Lista de opciones en secciones |
 | `DOCUMENT` | Archivo de hasta 100 MB, por URL o Base64 |
 | `REACTION` | Emoji en un mensaje de la conversación |
-| `LOCATION_REQUEST` | Pide la ubicación del cliente — *en desarrollo* |
+| `LOCATION_REQUEST` | Pide la ubicación del cliente — *no disponible* |
 | `INTERACTIVE_FLOW` | Abre un formulario publicado |
-| `CATALOG` | Abre el catálogo de la cuenta — *en desarrollo* |
-| `PRODUCT` | Un producto del catálogo — *en desarrollo* |
-| `PRODUCT_LIST` | Vitrina con secciones — *en desarrollo* |
-| `ORDER_DETAILS` | Factura con pago — *en desarrollo* |
-| `ORDER_STATUS` | Avance del pedido — *en desarrollo* |
+| `INTERACTIVE_CATALOG` | Abre el catálogo de la cuenta |
+| `INTERACTIVE_SINGLE_PRODUCT` | Un producto del catálogo |
+| `INTERACTIVE_MULTI_PRODUCT` | Vitrina con secciones de productos |
+| `INTERACTIVE_CAROUSEL` | Tarjetas con medios y botones, lado a lado |
+| `INTERACTIVE_OTP` | Código de un solo uso con botón |
+| `PTV` | Video circular, la nota de video de WhatsApp |
+| `GIF` | GIF animado |
+| `LINK` | Texto con vista previa de enlace |
+| `CONTACT_ARRAY` | Varios contactos en un mensaje |
+| `ORDER_DETAILS` | Factura con pago — *no disponible* |
+| `ORDER_STATUS` | Avance del pedido — *no disponible* |
 | `TEMPLATE` | Plantilla aprobada por Meta (fuera de la ventana de 24 h) |
 
 ## Rutas por tipo
@@ -76,21 +82,21 @@ El cuerpo es siempre el de esta API. Si tu integración usa el cuerpo de Z-API, 
 | `send-image` | `IMAGE` | [Enviar imagen](/es/messages/send-image) |
 | `send-video` | `VIDEO` | [Enviar vídeo](/es/messages/send-video) |
 | `send-audio` | `AUDIO` | [Enviar audio](/es/messages/send-audio) |
-| `send-ptv` | `PTV` | — |
-| `send-gif` | `GIF` | — |
+| `send-ptv` | `PTV` | [Enviar video circular (PTV)](/es/messages/send-ptv) |
+| `send-gif` | `GIF` | [Enviar GIF](/es/messages/send-gif) |
 | `send-sticker` | `STICKER` | [Enviar sticker](/es/messages/send-sticker) |
 | `send-document` y `send-document/{extension}` | `DOCUMENT` | [Enviar documento](/es/messages/send-document) |
-| `send-link` | `LINK` | — |
+| `send-link` | `LINK` | [Enviar enlace con vista previa](/es/messages/send-link) |
 | `send-location` | `LOCATION` | [Enviar ubicación](/es/messages/send-location) |
 | `send-contact` | `CONTACT` | [Enviar contacto](/es/messages/send-contact) |
-| `send-contacts` | `CONTACT_ARRAY` | — |
+| `send-contacts` | `CONTACT_ARRAY` | [Enviar varios contactos](/es/messages/send-contacts) |
 | `send-reaction` | `REACTION` | [Enviar reacción](/es/messages/send-reaction) |
 | `send-template` | `TEMPLATE` | [Enviar plantilla](/es/messages/send-template) |
 | `send-option-list` | `INTERACTIVE_LIST` | [Enviar lista de opciones](/es/messages/send-interactive-list) |
 | `send-button-list` | `INTERACTIVE_BUTTON` | [Enviar texto con botones](/es/messages/send-interactive-button) |
 | `send-button-actions` | `INTERACTIVE_ACTION` | [Enviar botones de acción](/es/messages/send-interactive-action) |
-| `send-button-otp` | `INTERACTIVE_OTP` | — |
-| `send-carousel` | `INTERACTIVE_CAROUSEL` | — |
+| `send-button-otp` | `INTERACTIVE_OTP` | [Enviar código con botón (OTP)](/es/messages/send-button-otp) |
+| `send-carousel` | `INTERACTIVE_CAROUSEL` | [Enviar carrusel](/es/messages/send-carousel) |
 
 - En `send-document/{extension}`, el segmento `{extension}` se ignora: la extensión va en el campo `extension` de cada adjunto, como en `/messages`.
 - `send-template` solo acepta canales Meta Cloud API (WhatsApp Oficial). En otro canal, la API responde `422` `{"error": "operation not supported for this instance"}`.
@@ -214,6 +220,29 @@ Cuando la API rechaza el envío, el mensaje no se envía. La respuesta trae el e
 Si el canal no está conectado en el momento de la llamada, la API responde `422` con `code` `BUSINESS_RULE_VIOLATION` y `subCode` `CHANNEL_DISCONNECTED`, el cuerpo del ejemplo anterior. El mensaje no se envía y no queda guardado para salir después.
 
 Para volver a enviar, conecta el canal de nuevo (consulta [Conectar un canal](/es/connect/introduction)) y repite la llamada.
+
+### Tipo que el canal no acepta
+
+Algunos tipos se rechazan en el acto en ciertos canales. El mensaje no se crea y no genera webhook.
+
+| Canal | Tipos | Respuesta |
+|---|---|---|
+| Instagram | `CONTACT`, `CONTACT_ARRAY` y `LOCATION` | `422`, con `[UNSUPPORTED_CHANNEL_TYPE]` en el `message` |
+| Telegram | `INTERACTIVE_LIST` | `422`, con `[UNSUPPORTED_CHANNEL_TYPE]` en el `message` |
+| Todos, menos Meta Cloud API | `INTERACTIVE_CAROUSEL` | `422`, con `[UNSUPPORTED_CHANNEL_TYPE]` en el `message` |
+| Todos, menos Meta Cloud API y Messenger | `TEMPLATE` | `422`, con `subCode` `TEMPLATE_NOT_SUPPORTED` |
+
+El `code` es siempre `BUSINESS_RULE_VIOLATION`. Con `[UNSUPPORTED_CHANNEL_TYPE]`, la respuesta no trae `subCode`: el código viene al inicio del `message`.
+
+```json
+{
+  "timestamp": "2026-10-22T14:00:00.123Z",
+  "code": "BUSINESS_RULE_VIOLATION",
+  "message": "[UNSUPPORTED_CHANNEL_TYPE] O canal META_INSTAGRAM nao suporta mensagens do tipo LOCATION"
+}
+```
+
+Consulta [qué acepta cada canal](/es/channels/message-support).
 
 ### Otros errores
 

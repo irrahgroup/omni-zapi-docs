@@ -16,3 +16,12 @@ New-API group routes, under `/v1/channels/{channelId}/groups`, in the Omni forma
 </Note>
 
 Authentication is the [Secret Key](/en/authentication). Only the `/v1/channels/{channelId}/...` path is served.
+
+## Channel errors
+
+On the list, get, invite link and preview routes, the API relays the request to the channel. Beyond the errors of each route, they may respond:
+
+- **Channel refusal (`4xx`)**: the same status the channel gave, with `{"error": "provider_error", "message": "<channel text>"}`. The `message` may be missing.
+- **`429`**: the same body, with the `Retry-After` header when the channel sends the wait in seconds. Wait that long before trying again.
+- **`504`** `{"error": "integration_timeout", "message": "The operation took too long to complete. Try again in a few moments."}`: the relay to the channel failed or ran out of time. The route only reads data, so you can repeat the call.
+- **`502`** `{"error": "integration_unavailable", ...}`: the channel answered `401`, `403`, `405` or `5xx`, or gave an answer outside the expected format.

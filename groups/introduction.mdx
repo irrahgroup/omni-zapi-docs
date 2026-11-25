@@ -16,3 +16,12 @@ Rotas de grupo da API nova, em `/v1/channels/{channelId}/groups`, no padrão do 
 </Note>
 
 A autenticação é a [Secret Key](/authentication). Só o caminho `/v1/channels/{channelId}/...` é atendido.
+
+## Erros do canal
+
+Nas rotas de listar, consultar, link de convite e prévia, a API repassa o pedido ao canal. Além dos erros de cada rota, elas podem responder:
+
+- **Recusa do canal (`4xx`)**: o mesmo status que o canal deu, com `{"error": "provider_error", "message": "<texto do canal>"}`. O `message` pode faltar.
+- **`429`**: o mesmo corpo, com o header `Retry-After` quando o canal manda o tempo em segundos. Espere esse tempo antes de repetir.
+- **`504`** `{"error": "integration_timeout", "message": "The operation took too long to complete. Try again in a few moments."}`: o repasse ao canal falhou ou passou do prazo. A rota só lê dados, então você pode repetir a chamada.
+- **`502`** `{"error": "integration_unavailable", ...}`: o canal respondeu `401`, `403`, `405` ou `5xx`, ou deu uma resposta fora do formato esperado.
