@@ -25,6 +25,28 @@ Authorization: Bearer <secret-key>
 - O token OAuth de um app conectado não tem acesso a estas rotas.
 - Se o workspace não estiver ativo, a resposta é `422` com `{"error": "Webhook management requires an active workspace"}`.
 
+### Chave de API com permissões
+
+A chave principal do workspace tem acesso total à central. Uma chave de API com permissões escolhidas só alcança as rotas que essas permissões cobrem:
+
+| Permissão | O que libera |
+|---|---|
+| `webhooks:read` | [Listar entregas](/webhooks/list-deliveries), [Detalhar entrega](/webhooks/get-delivery) e [Ver a saúde dos webhooks](/webhooks/webhooks-health) |
+| `webhooks:write` | [Reenviar uma entrega](/webhooks/resend-delivery), [Reenviar as entregas que falharam](/webhooks/resend-deliveries), [Reativar webhook](/webhooks/reactivate-webhook) e os corpos no detalhe da entrega |
+| `billing:read` | O corpo e o reenvio das entregas de evento de cobrança ou da plataforma |
+
+Sem a permissão da rota, a resposta é `403`:
+
+```json
+{
+  "error": "credential_scope_denied",
+  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. ...",
+  "scope": "webhooks:read"
+}
+```
+
+`scope` traz a permissão que faltou. O Proprietário do workspace muda as permissões da chave no painel, em **Segurança > Chaves de API**.
+
 ## Por quanto tempo as entregas ficam guardadas
 
 O histórico guarda as entregas pelo número de dias do seu plano. O valor atual vem em `retentionDays`, na rota [Ver a saúde dos webhooks](/webhooks/webhooks-health).
@@ -72,6 +94,7 @@ Os erros da central chegam no campo `error`:
 | Status | Quando | Corpo |
 |---|---|---|
 | `400` | Filtro, parâmetro ou corpo inválido | `{"error": {"message": "limit deve ser de 1 a 100"}}` |
+| `403` | Chave de API sem a permissão da rota. Veja [Chave de API com permissões](#chave-de-api-com-permissões) | `{"error": "credential_scope_denied", "message": "...", "scope": "webhooks:read"}` |
 | `404` | Entrega ou webhook que não existe, expirou ou é de outro workspace | `{"error": "The operation could not be completed right now. Try again in a few moments."}` |
 | `422` | Regra de negócio, como uma entrega que não pode ser reenviada | `{"error": {"type": "...", "message": "...", "details": {...}}}` |
 | `429` | Limite de reenvio | `{"error": {"message": "..."}}` |

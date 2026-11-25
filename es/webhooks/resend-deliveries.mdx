@@ -43,6 +43,7 @@ Cada entrega del lote se reenvía como en [Reenviar una entrega](/es/webhooks/re
 | `skippedNotResendable` | Cuántas quedaron fuera porque el cuerpo guardado no se puede leer, o porque otro reenvío de la misma entrega empezó al mismo tiempo |
 | `dailyRemaining` | Cuántos reenvíos caben todavía hoy en este webhook |
 | `oldestExpiresAt` | Cuándo la entrega más antigua que falta sale del historial. Después de eso, ya no se puede reenviar |
+| `skippedScope` | Cuántas quedaron fuera porque son de evento de cobro o de la plataforma y la clave de API no tiene `billing:read`. Solo viene cuando es mayor que cero |
 
 ### Límites
 
@@ -57,6 +58,7 @@ Por encima de eso, la respuesta es `429`.
 | Status | Cuándo |
 |---|---|
 | `400` | Falta `webhookId`, o `episode` no es `current` |
+| `403` | La clave de API no tiene `webhooks:write`. Consulta [Clave de API con permisos](/es/webhooks/deliveries#clave-de-api-con-permisos) |
 | `404` | El webhook no existe o es de otro workspace |
 | `422` | El webhook está suspendido o deshabilitado. El motivo viene en `error.details.reason`: `WEBHOOK_SUSPENDED` o `WEBHOOK_DISABLED` |
 | `429` | Límite de lotes o de reenvíos del día |
