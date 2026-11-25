@@ -33,5 +33,6 @@ On the list, get, photo and check routes, the API relays the request to the chan
 
 - **Channel refusal (`4xx`)**: the same status the channel gave, with `{"error": "provider_error", "message": "<channel text>"}`. The `message` may be missing.
 - **`429`**: the same body, with the `Retry-After` header when the channel sends the wait in seconds. Wait that long before trying again.
-- **`504`** `{"error": "integration_timeout", "message": "The operation took too long to complete. Try again in a few moments."}`: the relay to the channel failed or ran out of time. The route only reads data, so you can repeat the call.
-- **`502`** `{"error": "integration_unavailable", ...}`: the channel answered `401`, `403`, `405` or `5xx`, or gave an answer outside the expected format.
+- **`504`** `{"error": "integration_timeout", "message": "The operation took too long to complete. Try again in a few moments."}`: the channel ran out of time to answer. The route only reads data, so you can repeat the call.
+- **`502`** `{"error": "integration_unavailable", ...}`: the connection to the channel failed, the channel answered `401`, `403`, `405` or `5xx`, or it gave an answer outside the expected format.
+- **`502`** `{"error": "provider_response_too_large", "message": "..."}`: the channel answer went over the accepted size. On the list route, the `message` asks for a smaller `pageSize` (`The channel answer is too large. Use a smaller pageSize.`); on the check route, for fewer contacts per request (`Send fewer contacts per request.`).
