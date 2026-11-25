@@ -1,0 +1,77 @@
+---
+title: "WhatsApp Web status and device"
+description: "Check whether a WhatsApp Web channel is connected and which device is linked"
+---
+
+Two read routes for `Z_API_WHATSAPP` (WhatsApp Web) channels. Both use the Secret Key in the `Authorization: Bearer YOUR_SECRET_KEY` header. Always call them from the backend. See [Authentication](/en/authentication).
+
+The QR code flow is in [Connect WhatsApp Web](/en/connect/whatsapp-web).
+
+## Connection status
+
+`GET /v1/channels/{channelId}/zapi/status`
+
+Use this route to know whether the QR code was scanned and the number is connected.
+
+```bash
+curl https://api.omni.z-api.io/v1/channels/CHANNEL_ID/zapi/status \
+  -H "Authorization: Bearer YOUR_SECRET_KEY"
+```
+
+`200` response:
+
+```json
+{
+  "connected": true,
+  "session": true,
+  "created": 1764064800000,
+  "error": "",
+  "smartphoneConnected": true
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `connected` | boolean | `true` when the QR code was scanned and the number is connected |
+| `session` | boolean | Whether a WhatsApp Web session exists |
+| `created` | number or `null` | When the session was created, if there is one |
+| `error` | string | Error text, if any |
+| `smartphoneConnected` | boolean | Whether the number's phone is connected |
+
+## Connected device
+
+`GET /v1/channels/{channelId}/zapi/device`
+
+Use this route to know which number and which device are linked to the channel.
+
+```bash
+curl https://api.omni.z-api.io/v1/channels/CHANNEL_ID/zapi/device \
+  -H "Authorization: Bearer YOUR_SECRET_KEY"
+```
+
+The `200` response carries these fields:
+
+| Field | Description |
+|---|---|
+| `phone` | Connected number |
+| `imgUrl` | Profile picture URL |
+| `name` | Profile name |
+| `device.sessionName` | Session name |
+| `device.deviceModel` | Device model |
+| `originalDevice` | Original device |
+| `sessionId` | Session ID |
+| `isBusiness` | Whether the account is a WhatsApp Business account |
+
+## Errors
+
+Both routes respond with the same errors:
+
+| Status | Body | When it happens |
+|---|---|---|
+| `401` | `{"error": "Authorization invalid", "message": "..."}` | The Secret Key was refused. See the reasons in [Authentication](/en/authentication) |
+| `403` | `{"error": "ip_not_allowed", "message": "..."}` | The source IP is off the list. See [IP restriction](/en/security/ip-restriction) |
+| `404` | `{"error": "Instance not found"}` | The channel does not exist or belongs to another workspace |
+| `422` | `{"error": { ... }}` | The provider refused the request. The `error` field carries the provider envelope |
+| `502` | `{"error": "integration_unavailable", "message": "..."}` | An internal service is unavailable. Try again in a few moments |
+
+To disconnect the number, see [Disconnect channel](/en/channels/disconnect).

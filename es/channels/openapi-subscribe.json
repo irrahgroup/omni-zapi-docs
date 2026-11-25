@@ -54,21 +54,20 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
-            "description": "Canal no encontrado",
+            "description": "El canal no existe o pertenece a otro workspace",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": 404,
-                  "message": "Channel not found"
+                  "error": "Instance not found"
                 }
               }
             }
           },
           "422": {
-            "description": "Regla de negocio incumplida. Posibles causas:\n\n- `ENTERPRISE role required`: la cuenta no tiene el rol ENTERPRISE\n- `CREDIT_LIMIT_EXCEEDED`: se ha alcanzado el límite de crédito de la cuenta\n- `SUBSCRIPTION_TERMINATED`: la suscripción ha finalizado y no se pueden añadir canales",
+            "description": "Regla de negocio incumplida. Posibles causas:\n\n- `CREDIT_LIMIT_EXCEEDED`: se ha alcanzado el límite de crédito de la cuenta\n- `SUBSCRIPTION_TERMINATED`: la suscripción ha finalizado y no se pueden añadir canales",
             "content": {
               "application/json": {
                 "schema": {
@@ -118,15 +117,23 @@
   "components": {
     "responses": {
       "Unauthorized": {
-        "description": "Token no válido o ausente.",
+        "description": "Secret Key rechazada. Consulta los motivos en Autenticación.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": 401,
-              "message": "Unauthorized"
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
             }
           }
         }
@@ -153,9 +160,12 @@
       },
       "Error": {
         "type": "object",
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
-            "type": "integer"
+            "type": "string"
           },
           "message": {
             "type": "string"

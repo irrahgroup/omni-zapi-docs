@@ -46,7 +46,7 @@
           }
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -58,29 +58,36 @@
                   "value": {
                     "cancelReason": "Customer closed the company"
                   }
-                },
-                "withoutReason": {
-                  "summary": "Without reason (body omitted)",
-                  "value": {}
                 }
               }
             }
-          }
+          },
+          "description": "Required. To cancel without a reason, send `{}`."
         },
         "responses": {
           "204": {
             "description": "Cancellation requested successfully. No content returned."
           },
           "400": {
-            "description": "Invalid request — `cancel=true` query parameter missing",
+            "description": "Missing body or missing `cancel` parameter",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
-                "example": {
-                  "error": 400,
-                  "message": "cancel query param is required"
+                "examples": {
+                  "missingBody": {
+                    "summary": "No body",
+                    "value": {
+                      "error": "Required request body is missing"
+                    }
+                  },
+                  "missingCancel": {
+                    "summary": "Without the `cancel` parameter",
+                    "value": {
+                      "error": "Required parameter 'cancel' is missing"
+                    }
+                  }
                 }
               }
             }
@@ -89,15 +96,14 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
-            "description": "Channel not found",
+            "description": "Channel does not exist or belongs to another workspace",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": 404,
-                  "message": "Channel not found"
+                  "error": "Instance not found"
                 }
               }
             }
@@ -127,15 +133,23 @@
   "components": {
     "responses": {
       "Unauthorized": {
-        "description": "Invalid or missing token.",
+        "description": "Secret Key rejected. See the reasons in Authentication.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": 401,
-              "message": "Unauthorized"
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
             }
           }
         }
@@ -154,9 +168,12 @@
       },
       "Error": {
         "type": "object",
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
-            "type": "integer"
+            "type": "string"
           },
           "message": {
             "type": "string"

@@ -18,7 +18,7 @@
     "/v1/channels/{channelId}/connect": {
       "post": {
         "summary": "Conectar canal Meta WhatsApp",
-        "description": "Finaliza la conexión de un canal **META_WHATSAPP** con los datos devueltos por el SDK `@omnizapi/connect`. Exclusivo para canales de la API Oficial de WhatsApp (Meta).",
+        "description": "Finaliza la conexión de un canal **META_WHATSAPP** con los datos devueltos por el SDK `@omnizapi/connect`. Exclusivo para canales de la API Oficial de WhatsApp (Meta). Para canales Instagram, Messenger y Telegram, usa las rutas `activate-*` ([Activar canal](/es/channels/activate-channel)).",
         "operationId": "connectMetaChannel",
         "tags": [
           "Canales"
@@ -57,16 +57,47 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "$ref": "#/components/schemas/ConnectChannelResponse"
                 },
                 "example": {
-                  "success": true
+                  "phoneId": "123456789012345",
+                  "connected": true,
+                  "success": true,
+                  "isCoexistence": false,
+                  "phoneConnected": "5511999999999",
+                  "businessName": "Mi Tienda"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Falta `wabaId`. Esta ruta solo vale para canales `META_WHATSAPP`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "wabaId is required"
                 }
               }
             }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "El canal no existe o pertenece a otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
           },
           "409": {
             "description": "Canal ya conectado al mismo `phoneId`, y Meta confirma que el número funciona. Nada cambia en el canal y el `code` no se usa. Para renovar la conexión del mismo número, desconecte antes. Reconózcalo por el campo `error`, que es estable; `message` siempre está en inglés.",
@@ -81,6 +112,30 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Rechazo del proveedor. El campo `error` trae el envoltorio del proveedor, con el nombre del error en `errors[0].name`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Servicio interno no disponible. Inténtalo de nuevo en unos instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
           }
         }
       }
@@ -89,15 +144,23 @@
   "components": {
     "responses": {
       "Unauthorized": {
-        "description": "Token no válido o ausente.",
+        "description": "Secret Key rechazada. Consulta los motivos en Autenticación.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": 401,
-              "message": "Unauthorized"
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
             }
           }
         }
@@ -107,10 +170,7 @@
       "ConnectChannelRequest": {
         "type": "object",
         "required": [
-          "wabaId",
-          "phoneId",
-          "code",
-          "coexistence"
+          "wabaId"
         ],
         "properties": {
           "wabaId": {
@@ -131,20 +191,14 @@
           }
         }
       },
-      "SuccessResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "Indica si la operación se realizó correctamente"
-          }
-        }
-      },
       "Error": {
         "type": "object",
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
-            "type": "integer"
+            "type": "string"
           },
           "message": {
             "type": "string"
@@ -168,6 +222,75 @@
           "message": {
             "type": "string",
             "description": "Texto fijo, siempre en inglés"
+          }
+        }
+      },
+      "ConnectChannelResponse": {
+        "type": "object",
+        "properties": {
+          "phoneId": {
+            "type": "string",
+            "description": "ID del número de teléfono"
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Si el canal quedó conectado"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Si la operación se realizó correctamente"
+          },
+          "isCoexistence": {
+            "type": "boolean",
+            "description": "Si el número está en modo de coexistencia"
+          },
+          "phoneConnected": {
+            "type": "string",
+            "description": "Número conectado"
+          },
+          "businessName": {
+            "type": "string",
+            "description": "Nombre de la cuenta comercial"
+          }
+        }
+      },
+      "ProviderError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "description": "Envoltorio de error del proveedor",
+            "properties": {
+              "timestamp": {
+                "type": "string"
+              },
+              "status": {
+                "type": "integer"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

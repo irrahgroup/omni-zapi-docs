@@ -1,15 +1,43 @@
 ---
-title: "Disconnect Meta WhatsApp channel"
-description: "Disconnect a META_WHATSAPP channel from the Meta Cloud API API"
+title: "Disconnect channel"
+description: "Disconnect a META_WHATSAPP channel from the Meta Cloud API, or a channel of another type through its own route"
 openapi: "/en/channels/openapi-disconnect.json PUT /v1/channels/{channelId}/disconnect"
 ---
 
 ## Overview
 
-Disconnects a **`META_WHATSAPP`** channel from the Meta Cloud API API and clears all associated connection data (WABA ID, phone ID, connected number, and coexistence).
+Disconnects a **`META_WHATSAPP`** channel from the Meta Cloud API and clears all associated connection data (WABA ID, phone ID, connected number, and coexistence).
 
 Use this endpoint when the user intentionally wants to disconnect the number — for example, when switching numbers or shutting down the channel.
+
+For Instagram, Messenger, Telegram and WhatsApp Web, see [Other channel types](#other-channel-types).
 
 <Warning>
   After disconnection, the channel **will no longer receive messages**. To resume operation, the channel must be [reconnected](/en/channels/connect-channel).
 </Warning>
+
+## Other channel types
+
+The other channel types have their own route. All of them use `POST`, have no body and use the Secret Key in the `Authorization: Bearer YOUR_SECRET_KEY` header.
+
+| Channel type | Route |
+|---|---|
+| `META_INSTAGRAM` | `POST /v1/channels/{channelId}/deactivate-instagram` |
+| `META_MESSENGER` | `POST /v1/channels/{channelId}/deactivate-messenger` |
+| `BOT_TELEGRAM` | `POST /v1/channels/{channelId}/deactivate-telegram` |
+| `Z_API_WHATSAPP` (WhatsApp Web) | `POST /v1/channels/{channelId}/zapi/disconnect` |
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/CHANNEL_ID/deactivate-instagram \
+  -H "Authorization: Bearer YOUR_SECRET_KEY"
+```
+
+All four respond `200` with `true`. The `deactivate-*` routes also mark the channel as disconnected. To turn an Instagram, Messenger or Telegram channel on again, see [Activate channel](/en/channels/activate-channel). For WhatsApp Web, scan the QR code again, as in [Connect WhatsApp Web](/en/connect/whatsapp-web).
+
+| Status | Body | When it happens |
+|---|---|---|
+| `401` | `{"error": "Authorization invalid", "message": "..."}` | The Secret Key was refused. See the reasons in [Authentication](/en/authentication) |
+| `403` | `{"error": "ip_not_allowed", "message": "..."}` | The source IP is off the list. See [IP restriction](/en/security/ip-restriction) |
+| `404` | `{"error": "Instance not found"}` | The channel does not exist or belongs to another workspace |
+| `422` | `{"error": { ... }}` | The provider refused the disconnection. The `error` field carries the provider envelope |
+| `502` | `{"error": "integration_unavailable", "message": "..."}` | An internal service is unavailable. Try again in a few moments |
