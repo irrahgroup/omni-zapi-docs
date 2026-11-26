@@ -10,6 +10,14 @@ Forces template synchronization with Meta, updating statuses (`PENDING`, `APPROV
 
 Useful when you've created or edited a template and want to check if Meta has already updated the approval status.
 
+### Response
+
+The response brings the updated list in `data`, `synced: true`, `syncedCount` with the number of templates in `data`, and `syncedComplete`, which tells whether reading from Meta reached the end.
+
+### Incomplete sync
+
+The sync reads templates from Meta in pages of 200. Reading stops at 25 pages or after 20 seconds, and what was read up to that point is stored. In that case, the response brings `syncedComplete: false`, and templates deleted on Meta stay in the snapshot until the next complete sync.
+
 ### Error `504`
 
 The synchronization fetches templates from Meta and can take more than a minute on WABAs with many templates. If it does not finish in time, the API answers `504` with the body below. The synchronization keeps running in the background: list the templates again in a few moments, without calling the synchronization again.

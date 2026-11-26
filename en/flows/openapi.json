@@ -19,7 +19,7 @@
     "/whatsapp/businesses/{wabaId}/flows": {
       "get": {
         "summary": "List flows",
-        "description": "Returns the WABA flows, with name, categories and publication status.",
+        "description": "Returns the flows in the WABA, read from the platform snapshot, with name, categories and publishing status. There is no pagination: `limit` is ignored. When the snapshot is empty, the listing syncs with Meta before responding.",
         "operationId": "listFlows",
         "tags": [
           "Flows"
@@ -36,15 +36,13 @@
             }
           },
           {
-            "name": "limit",
+            "name": "sync",
             "in": "query",
             "required": false,
-            "description": "Number of flows per page",
+            "description": "When `true`, syncs every flow with Meta before responding, like Sync flows",
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "example": 25
+              "type": "boolean",
+              "example": true
             }
           }
         ],
@@ -82,6 +80,9 @@
                 }
               }
             }
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -129,35 +130,23 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Flow created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Flow"
+                  "$ref": "#/components/schemas/CreateFlowResponse"
                 },
                 "example": {
                   "id": "1122334455667788",
-                  "name": "agendamento_consulta",
-                  "categories": [
-                    "APPOINTMENT_BOOKING"
-                  ],
-                  "status": "PUBLISHED",
-                  "endpoint_uri": null,
+                  "success": true,
                   "validation_errors": []
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid request — malformed `flow_json` or unknown category",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "description": "Invalid or missing token.",
@@ -170,14 +159,7 @@
             }
           },
           "422": {
-            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -242,6 +224,9 @@
                 }
               }
             }
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -324,15 +309,8 @@
               }
             }
           },
-          "404": {
-            "description": "Flow not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -406,14 +384,7 @@
             }
           },
           "400": {
-            "description": "Invalid request — malformed `flow_json` or unknown category",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "description": "Invalid or missing token.",
@@ -425,25 +396,8 @@
               }
             }
           },
-          "404": {
-            "description": "Flow not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
           "422": {
-            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -483,8 +437,16 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Flow deleted. No content returned."
+          "200": {
+            "description": "Flow deleted. The body is `true`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                },
+                "example": true
+              }
+            }
           },
           "401": {
             "description": "Invalid or missing token.",
@@ -496,25 +458,8 @@
               }
             }
           },
-          "404": {
-            "description": "Flow not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
           "422": {
-            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -586,25 +531,8 @@
               }
             }
           },
-          "404": {
-            "description": "Flow not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
           "422": {
-            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -676,25 +604,8 @@
               }
             }
           },
-          "404": {
-            "description": "Flow not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
           "422": {
-            "description": "Business rule violated — a published flow does not accept `flow_json` changes, or deletion of a flow outside `DRAFT`",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -843,17 +754,7 @@
             "type": "array",
             "description": "Validation issues returned by Meta",
             "items": {
-              "type": "object",
-              "properties": {
-                "key": {
-                  "type": "string",
-                  "description": "Issue key"
-                },
-                "value": {
-                  "type": "string",
-                  "description": "Issue detail"
-                }
-              }
+              "$ref": "#/components/schemas/FlowValidationError"
             }
           }
         }
@@ -891,6 +792,112 @@
           "message": {
             "type": "string",
             "description": "Message for the integrator"
+          }
+        }
+      },
+      "ServiceError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "description": "Error envelope from the flow service.",
+            "properties": {
+              "timestamp": {
+                "type": "string"
+              },
+              "status": {
+                "type": "integer",
+                "description": "Status returned by the flow service. The API response is always `422`."
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "Error code, such as the platform validation codes in Create flow."
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Error name, such as `META_WHATSAPP_FLOW_JSON_SCREEN_ID_INVALID`."
+                    },
+                    "subCode": {
+                      "type": "string",
+                      "description": "Meta subcode, when there is one."
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Error summary."
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Error detail. In `flow_json` validation, it starts with the refused field, such as `screens[1].id`."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "FlowValidationError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Issue code"
+          },
+          "error_type": {
+            "type": "string",
+            "description": "Issue type"
+          },
+          "message": {
+            "type": "string",
+            "description": "Issue description"
+          },
+          "line_start": {
+            "type": "integer",
+            "description": "Start line in `flow_json`"
+          },
+          "line_end": {
+            "type": "integer",
+            "description": "End line in `flow_json`"
+          },
+          "column_start": {
+            "type": "integer",
+            "description": "Start column in `flow_json`"
+          },
+          "column_end": {
+            "type": "integer",
+            "description": "End column in `flow_json`"
+          },
+          "pointers": {
+            "type": "array",
+            "description": "`flow_json` paths involved in the issue",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "CreateFlowResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID of the created flow"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether Meta accepted the creation"
+          },
+          "validation_errors": {
+            "type": "array",
+            "description": "Validation issues returned by Meta",
+            "items": {
+              "$ref": "#/components/schemas/FlowValidationError"
+            }
           }
         }
       }
@@ -940,6 +947,48 @@
             "example": {
               "error": "outcome_unknown",
               "message": "The operation did not finish in time and may still be completed. Check the result before trying again."
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Request refused by the platform's own validation, before the flow service. For example, a missing body or one that is not valid JSON.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Required request body is missing"
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "Refusal from the flow service: platform validation, run before Meta, a WABA that is not found, or a refusal from Meta. Every 4xx from this service arrives as `422`, with the error envelope in `error`.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ServiceError"
+            },
+            "examples": {
+              "flow_json": {
+                "summary": "`flow_json` validation, before Meta",
+                "value": {
+                  "error": {
+                    "timestamp": "2026-10-19T12:00:00Z",
+                    "status": 400,
+                    "errors": [
+                      {
+                        "code": "372",
+                        "name": "META_WHATSAPP_FLOW_JSON_SCREEN_ID_INVALID",
+                        "message": "Invalid flow screen id",
+                        "description": "screens[1].id: screen id 'TELA_2' is invalid: only letters and underscore are allowed"
+                      }
+                    ]
+                  }
+                }
+              }
             }
           }
         }
