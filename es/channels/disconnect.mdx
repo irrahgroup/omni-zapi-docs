@@ -1,6 +1,6 @@
 ---
-title: "Desconectar canal Meta WhatsApp"
-description: "Desconecta un canal META_WHATSAPP de la API Oficial de WhatsApp"
+title: "Desconectar canal"
+description: "Desconecta un canal META_WHATSAPP de la API Oficial de WhatsApp o un canal de otro tipo por la ruta del canal"
 openapi: "/es/channels/openapi-disconnect.json PUT /v1/channels/{channelId}/disconnect"
 ---
 
@@ -10,6 +10,34 @@ Desconecta un canal **`META_WHATSAPP`** de la API Oficial de WhatsApp y borra to
 
 Usa este endpoint cuando el usuario quiera desconectar el número de forma intencionada, por ejemplo al cambiar de número o al dejar de usar el canal.
 
+Para Instagram, Messenger, Telegram y WhatsApp Web, consulta [Otros tipos de canal](#otros-tipos-de-canal).
+
 <Warning>
   Tras la desconexión, el canal **dejará de recibir mensajes**. Para volver a funcionar, habrá que [reconectar el canal](/es/channels/connect-channel).
 </Warning>
+
+## Otros tipos de canal
+
+Los otros tipos de canal tienen su propia ruta. Todas usan `POST`, no llevan cuerpo y usan la Secret Key en el header `Authorization: Bearer SU_SECRET_KEY`.
+
+| Tipo de canal | Ruta |
+|---|---|
+| `META_INSTAGRAM` | `POST /v1/channels/{channelId}/deactivate-instagram` |
+| `META_MESSENGER` | `POST /v1/channels/{channelId}/deactivate-messenger` |
+| `BOT_TELEGRAM` | `POST /v1/channels/{channelId}/deactivate-telegram` |
+| `Z_API_WHATSAPP` (WhatsApp Web) | `POST /v1/channels/{channelId}/zapi/disconnect` |
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/deactivate-instagram \
+  -H "Authorization: Bearer SU_SECRET_KEY"
+```
+
+Las cuatro responden `200` con `true`. Las rutas `deactivate-*` también marcan el canal como desconectado. Para volver a encender un canal Instagram, Messenger o Telegram, consulta [Activar canal](/es/channels/activate-channel). Para WhatsApp Web, escanea el código QR de nuevo, como en [Conectar WhatsApp Web](/es/connect/whatsapp-web).
+
+| Status | Cuerpo | Cuándo ocurre |
+|---|---|---|
+| `401` | `{"error": "Authorization invalid", "message": "..."}` | La Secret Key fue rechazada. Consulta los motivos en [Autenticación](/es/authentication) |
+| `403` | `{"error": "ip_not_allowed", "message": "..."}` | La IP de origen está fuera de la lista. Consulta [Restricción de IP](/es/security/ip-restriction) |
+| `404` | `{"error": "Instance not found"}` | El canal no existe o pertenece a otro workspace |
+| `422` | `{"error": { ... }}` o `{"error": "..."}` | El proveedor rechazó la desconexión. El campo `error` trae el envoltorio del proveedor o, sin envoltorio, un texto genérico |
+| `502` | `{"error": "integration_unavailable", "message": "..."}` | Un servicio interno no está disponible. Inténtalo de nuevo en unos instantes |

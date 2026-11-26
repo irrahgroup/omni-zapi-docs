@@ -4,29 +4,44 @@
     "title": "Omni Z-API - Connect Channel",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/connect": {
       "post": {
         "summary": "Connect Meta WhatsApp channel",
-        "description": "Finalizes the connection of a **META_WHATSAPP** channel with the data returned by the `@omnizapi/connect` SDK. Exclusive to WhatsApp Official API (Meta) channels.",
+        "description": "Finalizes the connection of a **META_WHATSAPP** channel with the data returned by the `@omnizapi/connect` SDK. Exclusive to WhatsApp Official API (Meta) channels. For Instagram, Messenger and Telegram channels, use the `activate-*` routes ([Activate channel](/en/channels/activate-channel)).",
         "operationId": "connectMetaChannel",
-        "tags": ["Channels"],
+        "tags": [
+          "Channels"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
             "description": "Channel ID (obtained via Create channel)",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/ConnectChannelRequest" },
+              "schema": {
+                "$ref": "#/components/schemas/ConnectChannelRequest"
+              },
               "example": {
                 "wabaId": "428083093730937",
                 "phoneId": "123456789012345",
@@ -41,18 +56,101 @@
             "description": "Channel connected successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SuccessResponse" },
-                "example": { "success": true }
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectChannelResponse"
+                },
+                "example": {
+                  "phoneId": "123456789012345",
+                  "connected": true,
+                  "success": true,
+                  "isCoexistence": false,
+                  "phoneConnected": "5511999999999",
+                  "businessName": "My Store"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "400": {
+            "description": "`wabaId` is missing. This route only applies to `META_WHATSAPP` channels.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "wabaId is required"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Channel does not exist or belongs to another workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Channel already connected to the same `phoneId`, and Meta confirms the number is working. Nothing changes in the channel and the `code` is not used. To renew the connection of the same number, disconnect first. Recognize it by the `error` field, which is stable; `message` is always in English.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ChannelAlreadyConnectedError" },
-                "example": { "error": "channel_already_connected", "message": "Channel already connected" }
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelAlreadyConnectedError"
+                },
+                "example": {
+                  "error": "channel_already_connected",
+                  "message": "Channel already connected"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Provider refusal. Usually the `error` field carries the provider envelope, with the error name in `errors[0].name`. When the provider refuses without that envelope, `error` comes as a generic text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ProviderError"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Generic text, when the provider refusal comes without an envelope",
+                          "example": "The operation could not be completed right now. Try again in a few moments."
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Internal service unavailable. Try again in a few moments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
               }
             }
           }
@@ -63,11 +161,24 @@
   "components": {
     "responses": {
       "Unauthorized": {
-        "description": "Invalid or missing token.",
+        "description": "Secret Key rejected. See the reasons in Authentication.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        },
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+            }
           }
         }
       }
@@ -75,38 +186,138 @@
     "schemas": {
       "ConnectChannelRequest": {
         "type": "object",
-        "required": ["wabaId", "phoneId", "code", "coexistence"],
+        "required": [
+          "wabaId"
+        ],
         "properties": {
-          "wabaId": { "type": "string", "description": "WhatsApp Business Account ID" },
-          "phoneId": { "type": "string", "description": "Phone number ID" },
-          "code": { "type": "string", "description": "Authorization code generated by WhatsApp" },
-          "coexistence": { "type": "boolean", "description": "Whether the number is in coexistence mode" }
-        }
-      },
-      "SuccessResponse": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean", "description": "Indicates whether the operation was successful" }
+          "wabaId": {
+            "type": "string",
+            "description": "WhatsApp Business Account ID"
+          },
+          "phoneId": {
+            "type": "string",
+            "description": "Phone number ID"
+          },
+          "code": {
+            "type": "string",
+            "description": "Authorization code generated by WhatsApp"
+          },
+          "coexistence": {
+            "type": "boolean",
+            "description": "Whether the number is in coexistence mode"
+          }
         }
       },
       "ChannelAlreadyConnectedError": {
         "type": "object",
-        "required": ["error", "message"],
+        "required": [
+          "error",
+          "message"
+        ],
         "properties": {
-          "error": { "type": "string", "enum": ["channel_already_connected"], "description": "Stable refusal code" },
-          "message": { "type": "string", "description": "Fixed text, always in English" }
+          "error": {
+            "type": "string",
+            "enum": [
+              "channel_already_connected"
+            ],
+            "description": "Stable refusal code"
+          },
+          "message": {
+            "type": "string",
+            "description": "Fixed text, always in English"
+          }
         }
       },
       "Error": {
         "type": "object",
+        "required": [
+          "error"
+        ],
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ConnectChannelResponse": {
+        "type": "object",
+        "properties": {
+          "phoneId": {
+            "type": "string",
+            "description": "Phone number ID"
+          },
+          "connected": {
+            "type": "boolean",
+            "description": "Whether the channel is now connected"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Whether the operation succeeded"
+          },
+          "isCoexistence": {
+            "type": "boolean",
+            "description": "Whether the number is in coexistence mode"
+          },
+          "phoneConnected": {
+            "type": "string",
+            "description": "Connected number"
+          },
+          "businessName": {
+            "type": "string",
+            "description": "Business account name"
+          }
+        }
+      },
+      "ProviderError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "description": "Provider error envelope",
+            "properties": {
+              "timestamp": {
+                "type": "string"
+              },
+              "status": {
+                "type": "integer"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "Secret Key generated in the Omni Z-API Security panel" }
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in the Omni Z-API Security panel"
+      }
     }
   }
 }

@@ -54,21 +54,20 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
-            "description": "Channel not found",
+            "description": "Channel does not exist or belongs to another workspace",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 },
                 "example": {
-                  "error": 404,
-                  "message": "Channel not found"
+                  "error": "Instance not found"
                 }
               }
             }
           },
           "422": {
-            "description": "Business rule violation. Possible causes:\n\n- `ENTERPRISE role required` — account does not have ENTERPRISE role\n- `CREDIT_LIMIT_EXCEEDED` — account credit limit reached\n- `SUBSCRIPTION_TERMINATED` — subscription terminated, cannot add channels",
+            "description": "Business rule violation. Possible causes:\n\n- `CREDIT_LIMIT_EXCEEDED` — account credit limit reached\n- `SUBSCRIPTION_TERMINATED` — subscription terminated, cannot add channels",
             "content": {
               "application/json": {
                 "schema": {
@@ -118,15 +117,23 @@
   "components": {
     "responses": {
       "Unauthorized": {
-        "description": "Invalid or missing token.",
+        "description": "Secret Key rejected. See the reasons in Authentication.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        },
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
             },
             "example": {
-              "error": 401,
-              "message": "Unauthorized"
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
             }
           }
         }
@@ -153,9 +160,12 @@
       },
       "Error": {
         "type": "object",
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
-            "type": "integer"
+            "type": "string"
           },
           "message": {
             "type": "string"

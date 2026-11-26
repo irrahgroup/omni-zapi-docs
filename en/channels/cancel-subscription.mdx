@@ -10,9 +10,11 @@ import { EnterpriseText } from '/snippets/notes.mdx';
 
 Requests the cancellation of a channel subscription. Cancellation is not immediate — the channel enters `CANCELLATION_PROCESS` status and remains active until the end of the already-paid period. After that period, the status changes to `CANCELED`.
 
-The `cancel=true` query parameter is required as an explicit cancellation confirmation.
+The `cancel=true` query parameter is required as an explicit cancellation confirmation. Without it, the API responds `400` `{"error": "Required parameter 'cancel' is missing"}`.
 
-The `cancelReason` field in the body is optional, but recommended for auditing purposes.
+The body is **required**, even without a reason. Without a body, the API responds `400` `{"error": "Required request body is missing"}`. To cancel without a reason, send `{}`.
+
+The `cancelReason` field is optional, but recommended for auditing purposes.
 
 <Warning>
   <EnterpriseText lang="en" />

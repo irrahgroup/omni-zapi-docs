@@ -17,7 +17,7 @@ Channel of type `META_MESSENGER`. It is the only flow with **two authorization s
 ```javascript
 const client = OmniZapi.newClient({ publicKey: 'YOUR_PUBLIC_KEY' });
 const response = await client.connect({ channelId: 'CHANNEL_ID' });
-// response: { success, channelId, code, pageId, accessToken }
+// response: { success, channelId, code, redirectUri, pageId, accessToken }
 ```
 
 The SDK opens `facebook.com/dialog/oauth` with these scopes:
@@ -40,7 +40,9 @@ const pages = await client.getListMessengerPages(channelId, response.code);
 // { data: [{ id, name, accessToken }, ...] }
 ```
 
-That method calls [`POST /v1/channels/{channelId}/list-messenger-pages`](/en/channels/sdk-info), authenticated with the **Public Key**. Show the list, let the user pick, and send the chosen `pageId` along to the [connect endpoint](/en/channels/connect-channel).
+That method calls [`POST /v1/channels/{channelId}/list-messenger-pages`](/en/channels/sdk-info), authenticated with the **Public Key**. Show the list and let the user pick.
+
+To finish the connection, send `code`, `redirectUri` and the chosen `pageId` from your backend to [`POST /v1/channels/{channelId}/activate-messenger`](/en/channels/activate-channel). With more than one page and no `pageId`, the activation is refused with `422`.
 
 <Note>
   If the user administers only one page, the SDK already returns `pageId` filled in and you can skip this step.
