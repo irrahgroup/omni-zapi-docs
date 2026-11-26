@@ -1,0 +1,110 @@
+---
+title: "Delivery center"
+description: "Look up your webhook deliveries, see each attempt and resend what failed"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## What is the delivery center?
+
+{projectName} keeps each event delivery to your webhooks, with every attempt. In the delivery center, you find out why an event did not arrive, see what your endpoint responded and resend what failed.
+
+The delivery center covers [channel](/en/webhooks/channel-webhooks), [template](/en/webhooks/template-webhooks) and [default](/en/webhooks/default-webhooks) webhooks. Webhooks in the `CHATWOOT` format have no history.
+
+A **delivery** is one event sent to one webhook. It has its own `deliveryId`, the same as the `x-webhook-delivery-id` header, and it can have several attempts. See [Delivery and retries](/en/webhooks/delivery).
+
+## Authentication
+
+Every delivery center route uses the secret key:
+
+```
+Authorization: Bearer <secret-key>
+```
+
+- The secret key is still subject to the workspace IP allowlist.
+- The OAuth token of a connected app has no access to these routes.
+- If the workspace is not active, the response is `422` with `{"error": "Webhook management requires an active workspace"}`.
+
+## How long deliveries are kept
+
+The history keeps deliveries for the number of days in your plan. The current value comes in `retentionDays`, on the [Get webhook health](/en/webhooks/webhooks-health) route.
+
+A delivery older than that does not show in the list and cannot be resent. Its detail responds `404`.
+
+## Delivery status
+
+| `status` | What it means |
+|---|---|
+| `SUCCEEDED` | Your endpoint responded `2xx`. |
+| `RETRYING` | The last attempt failed, and a new attempt is scheduled at `nextAttemptAt`. |
+| `FAILED` | The last attempt failed, and there will be no other. |
+| `NOT_SENT` | Nothing was sent on the last attempt. The reason comes in `notSentReason`. |
+| `EXPIRED` | The 23-hour window from the event ended before a new attempt. |
+| `UNKNOWN` | The new attempt was due more than 1 hour ago and has no result. |
+| `RESENT` | A resend was requested less than 1 hour ago, and its result has not arrived yet. |
+
+## Resending
+
+You can resend one delivery, or every delivery that failed on a webhook:
+
+- [Resend a delivery](/en/webhooks/resend-delivery): one attempt, now.
+- [Resend failed deliveries](/en/webhooks/resend-deliveries): in batches of up to 1,000.
+
+A resend uses the webhook's **current** URL, authentication and secret, with the stored body. Each resend is a single attempt: if it fails, there is no automatic retry.
+
+| Limit | Value |
+|---|---|
+| Resending the same delivery | 1 per minute |
+| Batch | Up to 1,000 deliveries |
+| Batches for the same webhook | 1 every 2 minutes |
+| Resends per webhook | 50,000 per day (UTC day), counting single and batch resends |
+
+Above a limit, the response is `429`.
+
+<Warning>
+  A resend arrives with the same `x-webhook-delivery-id` as the original delivery. If your system discards `x-webhook-delivery-id` values it already processed, it also discards the resend. See [Deduplicate by `x-webhook-delivery-id`](/en/webhooks/delivery#deduplicate-by-x-webhook-delivery-id).
+</Warning>
+
+## Errors
+
+Delivery center errors come in the `error` field:
+
+| Status | When | Body |
+|---|---|---|
+| `400` | Invalid filter, parameter or body | `{"error": {"message": "limit deve ser de 1 a 100"}}` |
+| `404` | A delivery or webhook that does not exist, has expired or belongs to another workspace | `{"error": "The operation could not be completed right now. Try again in a few moments."}` |
+| `422` | Business rule, such as a delivery that cannot be resent | `{"error": {"type": "...", "message": "...", "details": {...}}}` |
+| `429` | Resend limit | `{"error": {"message": "..."}}` |
+| `503` | The history took more than 5 seconds or is down, or the resend did not go out | `{"error": "..."}` |
+| `502` | Internal failure | `{"error": "integration_unavailable", "message": "..."}` |
+
+The `404` body is always the same generic text. It does not say whether the delivery, the webhook or the workspace was missing.
+
+Handle errors by status, `error.type` and `error.details.reason`. The `message` text is for humans and can change. Some messages are in Portuguese.
+
+<Tip>
+  If the list responds `503`, ask for a shorter period, with `from` and `to` closer together.
+</Tip>
+
+## Routes
+
+<CardGroup cols={2}>
+  <Card title="List deliveries" icon="list" href="/en/webhooks/list-deliveries">
+    List the workspace deliveries, with filters.
+  </Card>
+  <Card title="Get delivery" icon="magnifying-glass" href="/en/webhooks/get-delivery">
+    See every attempt of a delivery.
+  </Card>
+  <Card title="Resend a delivery" icon="rotate-right" href="/en/webhooks/resend-delivery">
+    Make a new attempt of a delivery.
+  </Card>
+  <Card title="Resend failed deliveries" icon="arrows-rotate" href="/en/webhooks/resend-deliveries">
+    Resend in batches the deliveries that failed on a webhook.
+  </Card>
+  <Card title="Get webhook health" icon="heart-pulse" href="/en/webhooks/webhooks-health">
+    See the state of each webhook in the workspace.
+  </Card>
+  <Card title="Reactivate webhook" icon="play" href="/en/webhooks/reactivate-webhook">
+    Resume sending to a suspended webhook.
+  </Card>
+</CardGroup>

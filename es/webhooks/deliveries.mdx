@@ -1,0 +1,110 @@
+---
+title: "Central de entregas"
+description: "Consulta las entregas de tus webhooks, ve cada intento y reenvía lo que falló"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## ¿Qué es la central de entregas?
+
+{projectName} guarda cada entrega de evento a tus webhooks, con todos los intentos. En la central, descubres por qué un evento no llegó, ves qué respondió tu endpoint y reenvías lo que falló.
+
+La central vale para los webhooks [de canal](/es/webhooks/channel-webhooks), [de template](/es/webhooks/template-webhooks) y [por defecto](/es/webhooks/default-webhooks). Los webhooks en el formato `CHATWOOT` no tienen historial.
+
+Una **entrega** es un evento enviado a un webhook. Tiene su propio `deliveryId`, el mismo del header `x-webhook-delivery-id`, y puede tener varios intentos. Consulta [Entrega y reintentos](/es/webhooks/delivery).
+
+## Autenticación
+
+Todas las rutas de la central usan la secret key:
+
+```
+Authorization: Bearer <secret-key>
+```
+
+- La secret key sigue sujeta a la lista de IP permitidas del workspace.
+- El token OAuth de una app conectada no tiene acceso a estas rutas.
+- Si el workspace no está activo, la respuesta es `422` con `{"error": "Webhook management requires an active workspace"}`.
+
+## Por cuánto tiempo se guardan las entregas
+
+El historial guarda las entregas durante la cantidad de días de tu plan. El valor actual viene en `retentionDays`, en la ruta [Ver la salud de los webhooks](/es/webhooks/webhooks-health).
+
+Una entrega más antigua que eso no aparece en la lista y no se puede reenviar. Su detalle responde `404`.
+
+## Status de una entrega
+
+| `status` | Qué significa |
+|---|---|
+| `SUCCEEDED` | Tu endpoint respondió `2xx`. |
+| `RETRYING` | El último intento falló, y hay un nuevo intento programado en `nextAttemptAt`. |
+| `FAILED` | El último intento falló, y no habrá otro. |
+| `NOT_SENT` | No se envió nada en el último intento. El motivo viene en `notSentReason`. |
+| `EXPIRED` | El plazo de 23 horas desde el evento terminó antes de un nuevo intento. |
+| `UNKNOWN` | El nuevo intento estaba previsto hace más de 1 hora y no tiene resultado. |
+| `RESENT` | Se pidió un reenvío hace menos de 1 hora, y su resultado todavía no llegó. |
+
+## Reenvío
+
+Puedes reenviar una entrega, o todas las que fallaron en un webhook:
+
+- [Reenviar una entrega](/es/webhooks/resend-delivery): un intento, ahora.
+- [Reenviar las entregas que fallaron](/es/webhooks/resend-deliveries): en lotes de hasta 1.000.
+
+El reenvío usa la URL, la autenticación y el secreto **actuales** del webhook, con el cuerpo guardado. Cada reenvío es un solo intento: si falla, no hay reintento automático.
+
+| Límite | Valor |
+|---|---|
+| Reenvío de la misma entrega | 1 por minuto |
+| Lote | Hasta 1.000 entregas |
+| Lotes del mismo webhook | 1 cada 2 minutos |
+| Reenvíos por webhook | 50.000 por día (día UTC), sumando los individuales y los de lote |
+
+Por encima de un límite, la respuesta es `429`.
+
+<Warning>
+  El reenvío llega con el mismo `x-webhook-delivery-id` de la entrega original. Si tu sistema descarta los `x-webhook-delivery-id` ya procesados, también descarta el reenvío. Consulta [Deduplica por `x-webhook-delivery-id`](/es/webhooks/delivery#deduplica-por-x-webhook-delivery-id).
+</Warning>
+
+## Errores
+
+Los errores de la central llegan en el campo `error`:
+
+| Status | Cuándo | Cuerpo |
+|---|---|---|
+| `400` | Filtro, parámetro o cuerpo inválido | `{"error": {"message": "limit deve ser de 1 a 100"}}` |
+| `404` | Entrega o webhook que no existe, expiró o es de otro workspace | `{"error": "The operation could not be completed right now. Try again in a few moments."}` |
+| `422` | Regla de negocio, como una entrega que no se puede reenviar | `{"error": {"type": "...", "message": "...", "details": {...}}}` |
+| `429` | Límite de reenvío | `{"error": {"message": "..."}}` |
+| `503` | El historial tardó más de 5 segundos o está caído, o el reenvío no salió | `{"error": "..."}` |
+| `502` | Falla interna | `{"error": "integration_unavailable", "message": "..."}` |
+
+El cuerpo del `404` es siempre el mismo texto genérico. No dice si lo que faltó fue la entrega, el webhook o el workspace.
+
+Trata los errores por el status, por `error.type` y por `error.details.reason`. El texto de `message` es para lectura humana y puede cambiar. Algunos mensajes están en portugués.
+
+<Tip>
+  Si la lista responde `503`, pide un período menor, con `from` y `to` más cercanos.
+</Tip>
+
+## Rutas
+
+<CardGroup cols={2}>
+  <Card title="Listar entregas" icon="list" href="/es/webhooks/list-deliveries">
+    Lista las entregas del workspace, con filtros.
+  </Card>
+  <Card title="Detallar entrega" icon="magnifying-glass" href="/es/webhooks/get-delivery">
+    Ve todos los intentos de una entrega.
+  </Card>
+  <Card title="Reenviar una entrega" icon="rotate-right" href="/es/webhooks/resend-delivery">
+    Haz un nuevo intento de una entrega.
+  </Card>
+  <Card title="Reenviar las entregas que fallaron" icon="arrows-rotate" href="/es/webhooks/resend-deliveries">
+    Reenvía en lote las entregas que fallaron en un webhook.
+  </Card>
+  <Card title="Ver la salud de los webhooks" icon="heart-pulse" href="/es/webhooks/webhooks-health">
+    Ve el estado de cada webhook del workspace.
+  </Card>
+  <Card title="Reactivar webhook" icon="play" href="/es/webhooks/reactivate-webhook">
+    Vuelve a enviar a un webhook suspendido.
+  </Card>
+</CardGroup>

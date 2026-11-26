@@ -7,7 +7,7 @@ import { projectName } from '/snippets/variables.mdx';
 
 Cuando un webhook tiene `signing: true`, cada petición que {projectName} envía a tu endpoint lleva una firma HMAC-SHA256. Esta página describe exactamente qué se firma, para que puedas reproducir el cálculo en tu servidor.
 
-Vale para los dos tipos de webhook: [de canal](/es/webhooks/channel-webhooks) y [de plantilla](/es/webhooks/template-webhooks).
+Vale para los tres tipos de webhook: [de canal](/es/webhooks/channel-webhooks), [de plantilla](/es/webhooks/template-webhooks) y [por defecto](/es/webhooks/default-webhooks).
 
 ## Headers que recibes
 
@@ -187,6 +187,8 @@ def verify_webhook_signature(
 ## Protección contra replay
 
 Compara `t` con la hora actual de tu servidor y rechaza las peticiones fuera de una ventana aceptable: 5 minutos es un valor razonable. Eso solo no basta: usa también el `x-webhook-delivery-id` para descartar reentregas de la misma entrega (consulta [Entrega y reintentos](/es/webhooks/delivery)).
+
+Un reenvío desde la [central de entregas](/es/webhooks/deliveries) llega con un `t` nuevo y con los mismos `topic`, `partition` y `offset` de la entrega original. La firma usa el `secret` actual del webhook.
 
 ## Rotación del secret
 

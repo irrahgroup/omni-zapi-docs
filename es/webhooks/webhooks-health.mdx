@@ -1,0 +1,42 @@
+---
+title: "Ver la salud de los webhooks"
+description: "Ve el estado de cada webhook del workspace y durante cuántos días se guardan las entregas"
+openapi: "/es/webhooks/openapi.json GET /v1/webhooks/health"
+---
+
+## Conceptos
+
+Devuelve el estado de cada webhook del workspace de la secret key: de canal, por defecto y de template. La respuesta no trae URL, secreto ni credencial.
+
+`retentionDays` es la cantidad de días que el historial guarda las entregas, según tu plan.
+
+### Estados
+
+| `state` | Qué significa |
+|---|---|
+| `ACTIVE` | El webhook está habilitado y no está en una secuencia de fallos con aviso |
+| `FAILING` | El webhook está en una secuencia de fallos, con aviso por correo enviado o pendiente. Consulta [Aviso por correo cuando el webhook falla](/es/webhooks/delivery#aviso-por-correo-cuando-el-webhook-falla) |
+| `SUSPENDED` | El webhook está suspendido. Usa [Reactivar webhook](/es/webhooks/reactivate-webhook) |
+| `DISABLED` | El webhook está con `status` `DISABLED` |
+| `NO_HISTORY` | El webhook usa el formato `CHATWOOT`, que no tiene historial |
+
+### Campos de cada webhook
+
+| Campo | Qué trae |
+|---|---|
+| `webhookId` | El id del webhook |
+| `channelId` | El canal del webhook. `null` en el webhook por defecto y en el de template |
+| `description` | La descripción del webhook |
+| `payloadFormat` | El formato del payload |
+| `state` | El estado, según la tabla de arriba |
+| `consecutiveFailures` | Fallos seguidos desde el último éxito. `null` en `NO_HISTORY` |
+| `failingSince` | Inicio de la secuencia de fallos, cuando hay aviso por correo enviado o pendiente |
+| `lastFailureAt` | El último fallo |
+| `lastSuccessAt` | El último éxito |
+| `alertsGiven` | Avisos por correo enviados en la secuencia de fallos actual. `null` en `NO_HISTORY` |
+| `alertPending` | `true` cuando un aviso por correo está por salir |
+| `suspendedAt` | Cuándo se suspendió el webhook |
+| `episodeStartedAt` | Inicio de la secuencia de fallos actual |
+| `retainedSince` | Después de una reactivación, el inicio de la secuencia de fallos que cerró |
+
+Los campos de fecha vienen `null` cuando no aplican.

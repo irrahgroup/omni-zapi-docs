@@ -1,0 +1,42 @@
+---
+title: "Ver a saúde dos webhooks"
+description: "Veja o estado de cada webhook do workspace e por quantos dias as entregas ficam guardadas"
+openapi: "/pt/webhooks/openapi.json GET /v1/webhooks/health"
+---
+
+## Conceituação
+
+Retorna o estado de cada webhook do workspace da secret key: de canal, padrão e de template. A resposta não traz URL, segredo nem credencial.
+
+`retentionDays` é o número de dias que o histórico guarda as entregas, conforme o seu plano.
+
+### Estados
+
+| `state` | O que significa |
+|---|---|
+| `ACTIVE` | O webhook está habilitado e não está numa sequência de falhas com aviso |
+| `FAILING` | O webhook está numa sequência de falhas, com aviso por e-mail enviado ou pendente. Veja [Aviso por e-mail quando o webhook falha](/webhooks/delivery#aviso-por-e-mail-quando-o-webhook-falha) |
+| `SUSPENDED` | O webhook está suspenso. Use [Reativar webhook](/webhooks/reactivate-webhook) |
+| `DISABLED` | O webhook está com `status` `DISABLED` |
+| `NO_HISTORY` | O webhook usa o formato `CHATWOOT`, que não tem histórico |
+
+### Campos de cada webhook
+
+| Campo | O que traz |
+|---|---|
+| `webhookId` | O id do webhook |
+| `channelId` | O canal do webhook. `null` no webhook padrão e no de template |
+| `description` | A descrição do webhook |
+| `payloadFormat` | O formato do payload |
+| `state` | O estado, conforme a tabela acima |
+| `consecutiveFailures` | Falhas seguidas desde o último sucesso. `null` em `NO_HISTORY` |
+| `failingSince` | Início da sequência de falhas, quando há aviso por e-mail enviado ou pendente |
+| `lastFailureAt` | A última falha |
+| `lastSuccessAt` | O último sucesso |
+| `alertsGiven` | Avisos por e-mail enviados na sequência de falhas atual. `null` em `NO_HISTORY` |
+| `alertPending` | `true` quando um aviso por e-mail está para sair |
+| `suspendedAt` | Quando o webhook foi suspenso |
+| `episodeStartedAt` | Início da sequência de falhas atual |
+| `retainedSince` | Depois de uma reativação, o início da sequência de falhas que ela encerrou |
+
+Os campos de data vêm `null` quando não se aplicam.
