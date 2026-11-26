@@ -1,17 +1,35 @@
 ---
-title: "Desconectar canal Meta WhatsApp"
-description: "Desconecte um canal META_WHATSAPP da API Oficial do WhatsApp"
-sidebarTitle: "Desconectar canal"
-keywords: ["PUT /v1/channels/{channelId}/disconnect", "META_WHATSAPP", "wabaId", "desconexão"]
-openapi: "/pt/channels/openapi-disconnect.json PUT /v1/channels/{channelId}/disconnect"
+title: "Desconectar canal"
+description: "Desconecte um canal da API Oficial do WhatsApp, do WhatsApp Web, do Instagram, do Messenger ou do Telegram, cada um pela sua rota"
+keywords: ["desconectar canal", "deactivate", "disconnect", "META_WHATSAPP", "Z_API_WHATSAPP"]
 ---
 
-## Conceituação
+Cada tipo de canal tem a sua rota de desconexão. Todas usam a Secret Key no header `Authorization: Bearer SUA_SECRET_KEY`. Chame sempre do backend. Veja [Autenticação](/authentication).
 
-Desconecta um canal **`META_WHATSAPP`** da API Oficial do WhatsApp e limpa todos os dados de conexão associados (WABA ID, phone ID, número conectado e coexistência).
+## Rotas
 
-Use este endpoint quando o usuário quiser desconectar intencionalmente o número — por exemplo, ao trocar de número ou encerrar o uso do canal.
+| Tipo do canal | Rota |
+|---|---|
+| `META_WHATSAPP` | [`PUT /v1/channels/{channelId}/disconnect`](/channels/disconnect-meta-whatsapp) |
+| `META_INSTAGRAM` | [`POST /v1/channels/{channelId}/deactivate-instagram`](/channels/deactivate-instagram) |
+| `META_MESSENGER` | [`POST /v1/channels/{channelId}/deactivate-messenger`](/channels/deactivate-messenger) |
+| `BOT_TELEGRAM` | [`POST /v1/channels/{channelId}/deactivate-telegram`](/channels/deactivate-telegram) |
+| `Z_API_WHATSAPP` (WhatsApp Web) | [`POST /v1/channels/{channelId}/zapi/disconnect`](/channels/disconnect-whatsapp-web) |
 
-<Warning>
-  Após a desconexão, o canal **não receberá mais mensagens**. Para voltar a funcionar, o canal precisará ser [reconectado](/channels/connect-channel).
-</Warning>
+As rotas de Instagram, Messenger, Telegram e WhatsApp Web usam `POST` e não têm corpo. As quatro respondem `200` com `true`. As rotas `deactivate-*` também marcam o canal como desconectado.
+
+## Para ligar de novo
+
+Para ligar de novo um canal Meta WhatsApp, veja [Conectar canal](/channels/connect-channel). Para Instagram, Messenger e Telegram, veja [Ativar canal](/channels/activate-channel). Para o WhatsApp Web, leia o QR Code de novo, como em [Conectar WhatsApp Web](/connect/whatsapp-web).
+
+## Erros
+
+As rotas de Instagram, Messenger, Telegram e WhatsApp Web respondem com estes erros:
+
+| Status | Corpo | Quando acontece |
+|---|---|---|
+| `401` | `{"error": "Authorization invalid", "message": "..."}` | A Secret Key foi recusada. Veja os motivos em [Autenticação](/authentication) |
+| `403` | `{"error": "ip_not_allowed", "message": "..."}` | O IP de origem está fora da lista. Veja [Restrição de IP](/security/ip-restriction) |
+| `404` | `{"error": "Instance not found"}` | O canal não existe ou é de outro workspace |
+| `422` | `{"error": { ... }}` ou `{"error": "..."}` | O provedor recusou a desconexão. O campo `error` traz o envelope do provedor ou, sem envelope, um texto genérico |
+| `502` | `{"error": "integration_unavailable", "message": "..."}` | Um serviço interno está indisponível. Tente de novo em alguns instantes |

@@ -45,7 +45,7 @@ The type comes from the channel, not from the call. You set the type in [Create 
     The returned object changes depending on the channel. See the table below.
   </Step>
   <Step title="You finish on the backend">
-    Send the result to [`POST /v1/channels/{channelId}/connect`](/en/channels/connect-channel) using the Secret Key.
+    With the Secret Key, call the route of the channel type: [`POST /v1/channels/{channelId}/connect`](/en/channels/connect-channel) for Meta WhatsApp and [`activate-instagram`, `activate-messenger` or `activate-telegram`](/en/channels/activate-channel) for the others. On WhatsApp Web, the connection ends when the QR code is scanned; check it through the [status](/en/channels/whatsapp-web-status).
   </Step>
 </Steps>
 
@@ -69,12 +69,13 @@ All of them return `success` and `channelId`. The rest depends on the type:
 | `wabaId` | ✅ | — | — | — | — |
 | `phoneId` | ✅ | — | — | — | — |
 | `coexistence` | ✅ | — | — | — | — |
+| `redirectUri` | — | — | ✅ | ✅ | — |
 | `accessToken` | — | — | ✅ | ✅ | — |
 | `pageId` | — | — | — | ✅ | — |
 | `botToken` | — | — | — | — | ✅ |
 
 <Note>
-  Do not handle these fields manually. Send the whole object to your backend and forward it as-is to the connect endpoint — it knows what to do with each type.
+  Send the whole object to your backend. There, build the body of the route for the channel type: Meta WhatsApp uses [`connect`](/en/channels/connect-channel), and Instagram, Messenger and Telegram use the [activation](/en/channels/activate-channel), which shows which fields to send.
 </Note>
 
 <Warning>

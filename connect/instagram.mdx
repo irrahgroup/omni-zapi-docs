@@ -19,7 +19,7 @@ O código é o mesmo de qualquer canal:
 ```javascript
 const client = OmniZapi.newClient({ publicKey: 'SUA_PUBLIC_KEY' });
 const response = await client.connect({ channelId: 'ID_DO_CANAL' });
-// response: { success, channelId, code, accessToken }
+// response: { success, channelId, code, redirectUri, accessToken }
 ```
 
 O SDK abre uma janela em `instagram.com/oauth/authorize` com estes escopos:
@@ -29,7 +29,7 @@ O SDK abre uma janela em `instagram.com/oauth/authorize` com estes escopos:
 | `instagram_business_basic` | Ler dados básicos da conta profissional |
 | `instagram_business_manage_messages` | Enviar e receber mensagens diretas |
 
-Depois que o usuário autoriza, o SDK devolve `code` e `accessToken`. Repasse o objeto inteiro para [finalizar a conexão](/channels/connect-channel).
+Depois que o usuário autoriza, o SDK devolve `code`, `redirectUri` e `accessToken`. Para finalizar a conexão, envie `code` e `redirectUri` do seu backend para [`POST /v1/channels/{channelId}/activate-instagram`](/channels/activate-channel). O `redirectUri` vem no resultado do SDK a partir da versão 1.1.1.
 
 ## O que muda no Instagram
 

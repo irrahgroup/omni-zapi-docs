@@ -12,6 +12,14 @@ Fuerza la sincronización de las plantillas con Meta, actualizando los estados (
 
 Resulta útil cuando has creado o editado una plantilla y quieres comprobar si Meta ya actualizó su estado de aprobación.
 
+### Respuesta
+
+La respuesta trae la lista actualizada en `data`, `synced: true`, `syncedCount` con la cantidad de plantillas en `data` y `syncedComplete`, que indica si la lectura en Meta llegó hasta el final.
+
+### Sincronización incompleta
+
+La sincronización lee las plantillas de Meta en páginas de 200. La lectura se detiene en 25 páginas o a los 20 segundos, y lo leído hasta ahí se guarda. En ese caso, la respuesta trae `syncedComplete: false`, y las plantillas eliminadas en Meta siguen en el snapshot hasta la próxima sincronización completa.
+
 ### Error `504`
 
 La sincronización busca los templates en Meta y puede tardar más de un minuto en WABAs con muchos templates. Si no termina a tiempo, la API responde `504` con el cuerpo de abajo. La sincronización continúa en segundo plano: lista los templates de nuevo en unos instantes, sin llamar a la sincronización otra vez.

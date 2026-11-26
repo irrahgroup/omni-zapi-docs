@@ -1,0 +1,62 @@
+---
+title: "Reenviar as entregas que falharam"
+description: "Reenvie em lote as entregas que falharam num webhook"
+openapi: "/pt/webhooks/openapi.json POST /v1/webhooks/deliveries/resend"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceituação
+
+Reenvia as entregas de um webhook que falharam desde a primeira falha da sequência atual. Use depois de corrigir o seu endpoint, para recuperar o que não chegou.
+
+Os dois campos do corpo são obrigatórios:
+
+```json
+{ "webhookId": "A1B2C3D4E5F6789012345678901234AB", "episode": "current" }
+```
+
+`episode` só aceita `current`.
+
+### O que entra no lote
+
+- As entregas do webhook com `status` `FAILED`, `NOT_SENT`, `EXPIRED` ou `UNKNOWN`.
+- Só as que tiveram a última tentativa a partir da primeira falha da sequência de falhas atual.
+- Só as que estão no período guardado pelo seu plano.
+- Uma entrega com reenvio em andamento fica de fora.
+
+Se o webhook não tem uma sequência de falhas, a resposta é `202` sem nada reenviado: os contadores vêm em zero, `dailyRemaining` traz quantos reenvios ainda cabem hoje e `oldestExpiresAt` vem `null`.
+
+```json
+{ "queued": 0, "remaining": 0, "skippedTruncated": 0, "skippedNotResendable": 0, "dailyRemaining": 50000, "oldestExpiresAt": null }
+```
+
+Cada entrega do lote é reenviada como em [Reenviar uma entrega](/webhooks/resend-delivery): uma tentativa, com a URL, a autenticação e o segredo atuais do webhook e o corpo guardado. Se ela falhar, o {projectName} não tenta de novo.
+
+### Resposta
+
+| Campo | O que traz |
+|---|---|
+| `queued` | Quantas entregas foram reenviadas neste lote |
+| `remaining` | Quantas ainda faltam. Peça outro lote depois de 2 minutos |
+| `skippedTruncated` | Quantas ficaram de fora porque o corpo passou do limite guardado. Elas não podem ser reenviadas |
+| `skippedNotResendable` | Quantas ficaram de fora porque o corpo guardado não pode ser lido ou porque outro reenvio da mesma entrega começou ao mesmo tempo |
+| `dailyRemaining` | Quantos reenvios ainda cabem hoje neste webhook |
+| `oldestExpiresAt` | Quando a entrega mais antiga que falta sai do histórico. Depois disso, ela não pode mais ser reenviada |
+
+### Limites
+
+- Até 1.000 entregas por lote.
+- 1 lote por webhook a cada 2 minutos.
+- 50.000 reenvios por webhook por dia (dia UTC), somando os individuais e os de lote.
+
+Acima disso, a resposta é `429`.
+
+### Erros
+
+| Status | Quando |
+|---|---|
+| `400` | Falta `webhookId`, ou `episode` não é `current` |
+| `404` | O webhook não existe ou é de outro workspace |
+| `422` | O webhook está suspenso ou desabilitado. O motivo vem em `error.details.reason`: `WEBHOOK_SUSPENDED` ou `WEBHOOK_DISABLED` |
+| `429` | Limite de lotes ou de reenvios do dia |

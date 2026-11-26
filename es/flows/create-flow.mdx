@@ -12,10 +12,58 @@ Crea un flow en la WABA. El `flow_json` es la definición de las pantallas, envi
 
 Con `publish: true` el flow nace publicado. Si no, queda en `DRAFT`, que es el único estado en el que todavía puedes cambiar el `flow_json`.
 
+La respuesta es `200`, con el `id` del flow, `success` y los `validation_errors` que Meta señaló.
+
 <Warning>
   Si alguna pantalla usa la acción `data_exchange`, el campo `endpoint_uri` es obligatorio.
 </Warning>
 
 <Note>
-  La estructura del `flow_json` está en la [Introducción](/es/flows/introduction). Lo que Meta valida antes de publicar (ID de pantalla sin números, `SUCCESS` reservado, nombre de campo en minúsculas, pantalla final obligatoria) está en [Componentes y reglas](/es/flows/components).
+  La estructura del `flow_json` está en la [Introducción](/es/flows/introduction). Las reglas de las pantallas y de los campos están en [Componentes y reglas](/es/flows/components). La plataforma comprueba una parte de ellas antes de enviar a Meta, como muestra la sección de abajo.
+</Note>
+
+## Validación de la plataforma
+
+Antes de llamar a Meta, la plataforma comprueba el cuerpo y el `flow_json`. Si algo está fuera de la regla, el flow no se crea, y la respuesta es `422`, con el envelope del error en `error`:
+
+```json
+{
+  "error": {
+    "timestamp": "2026-10-19T12:00:00Z",
+    "status": 400,
+    "errors": [
+      {
+        "code": "372",
+        "name": "META_WHATSAPP_FLOW_JSON_SCREEN_ID_INVALID",
+        "message": "Invalid flow screen id",
+        "description": "screens[1].id: screen id 'TELA_2' is invalid: only letters and underscore are allowed"
+      }
+    ]
+  }
+}
+```
+
+El `description` empieza por el campo rechazado, como `screens[1].id`. La comprobación se detiene en el primer error.
+
+| Código | `message` | Cuándo ocurre |
+|---|---|---|
+| `365` | Flow name required | Creación sin `name` |
+| `366` | Flow categories required | Creación sin `categories`, o con la lista vacía |
+| `367` | Flow update is empty | Actualización sin `name`, `categories`, `endpoint_uri` ni `flow_json` |
+| `382` | Invalid flow category | Categoría fuera de `SIGN_UP`, `SIGN_IN`, `APPOINTMENT_BOOKING`, `LEAD_GENERATION`, `CONTACT_US`, `CUSTOMER_SUPPORT`, `SURVEY`, `OTHER` |
+| `370` | Invalid flow JSON | `flow_json` que no es JSON válido, o que no es un objeto |
+| `371` | Flow JSON screens required | `screens` ausente o vacío |
+| `372` | Invalid flow screen id | Pantalla sin `id`, o con un `id` que tiene algo distinto de letras y guion bajo |
+| `383` | Duplicated flow screen id | Dos pantallas con el mismo `id` |
+| `384` | Reserved flow screen id | Pantalla con el `id` `SUCCESS` |
+| `385` | Footer required on terminal screen | Pantalla con `terminal: true` sin componente `Footer` |
+| `373` | Unknown screen in routing model | `routing_model` menciona una pantalla que no está en `screens` |
+| `386` | Screen routes to itself | Ruta del `routing_model` que apunta a su propia pantalla |
+| `374` | Terminal screen required | Ninguna pantalla con `terminal: true` |
+| `387` | data_channel_uri not supported | `data_channel_uri` en un `flow_json` de la versión 3.0 en adelante |
+
+Las reglas del `flow_json` valen solo cuando se envía. Pasarlas no garantiza la aprobación: Meta todavía puede señalar `validation_errors` o rechazar el flow.
+
+<Note>
+  El rechazo de Meta y la WABA no encontrada también llegan como `422`, en el mismo envelope. El `400` queda para la validación hecha antes del servicio de flows. Un cuerpo ausente, o que no es un JSON válido, responde `{"error": "Required request body is missing"}`.
 </Note>

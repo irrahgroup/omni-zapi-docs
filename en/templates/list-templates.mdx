@@ -8,7 +8,17 @@ openapi: "/en/templates/openapi.json GET /whatsapp/businesses/{wabaId}/templates
 
 ## Overview
 
-Returns all templates registered in a WABA. The `components` structure returned varies according to each template's category and configuration.
+Returns all templates in the WABA as `{"data": [...]}`. The `components` structure returned varies according to each template's category and configuration.
+
+The list comes from the platform snapshot, the copy of the templates that the sync with Meta keeps. To fetch the current state from Meta, use [Sync templates](/en/templates/sync-templates).
+
+<Warning>
+  This route has no filter or pagination. Query string parameters, such as `limit` or `status`, are ignored, and the response brings every template at once. To filter, filter the list on your side.
+</Warning>
+
+### Empty snapshot
+
+When the WABA snapshot is empty, the listing syncs with Meta before responding. In that case, the response also brings `synced`, `syncedComplete` and `syncedCount`, with the same meaning as in [Sync templates](/en/templates/sync-templates).
 
 <Note>
   The `wabaId` is obtained from the [List WABAs](/en/templates/list-businesses) endpoint.

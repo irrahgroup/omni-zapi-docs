@@ -17,7 +17,7 @@ Canal do tipo `META_MESSENGER`. É o único fluxo com **duas etapas de autoriza�
 ```javascript
 const client = OmniZapi.newClient({ publicKey: 'SUA_PUBLIC_KEY' });
 const response = await client.connect({ channelId: 'ID_DO_CANAL' });
-// response: { success, channelId, code, pageId, accessToken }
+// response: { success, channelId, code, redirectUri, pageId, accessToken }
 ```
 
 O SDK abre `facebook.com/dialog/oauth` com estes escopos:
@@ -40,7 +40,9 @@ const pages = await client.getListMessengerPages(channelId, response.code);
 // { data: [{ id, name, accessToken }, ...] }
 ```
 
-Esse método chama [`POST /v1/channels/{channelId}/list-messenger-pages`](/channels/sdk-info), autenticado com a **Public Key**. Mostre a lista, deixe o usuário escolher, e envie o `pageId` escolhido junto ao [endpoint de conexão](/channels/connect-channel).
+Esse método chama [`POST /v1/channels/{channelId}/list-messenger-pages`](/channels/sdk-info), autenticado com a **Public Key**. Mostre a lista e deixe o usuário escolher.
+
+Para finalizar a conexão, envie do seu backend `code`, `redirectUri` e o `pageId` escolhido para [`POST /v1/channels/{channelId}/activate-messenger`](/channels/activate-channel). Com mais de uma página e sem `pageId`, a ativação é recusada com `422`.
 
 <Note>
   Se o usuário administra só uma página, o SDK já devolve o `pageId` preenchido e você pode pular essa etapa.

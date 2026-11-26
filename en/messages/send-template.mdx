@@ -27,5 +27,18 @@ The `content.type` field must be `TEMPLATE` and the template is sent within `att
 </Note>
 
 <Note>
+  Templates go out only on Meta Cloud API (`META_WHATSAPP`) or Messenger (`META_MESSENGER`) channels. On any other channel, `POST /v1/channels/{channelId}/messages` responds `422` with `code` `BUSINESS_RULE_VIOLATION` and `subCode` `TEMPLATE_NOT_SUPPORTED`, and the message is not sent:
+
+  ```json
+  {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "code": "BUSINESS_RULE_VIOLATION",
+    "subCode": "TEMPLATE_NOT_SUPPORTED",
+    "message": "TEMPLATE messages are only supported on META_WHATSAPP and META_MESSENGER channels"
+  }
+  ```
+</Note>
+
+<Note>
   The `POST /v1/channels/{channelId}/send-template` route takes the same body as this page and gives the same response. On it, `content.type` is optional and, if you send it, it must be `TEMPLATE`. With any other value, the API responds `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be TEMPLATE on /send-template; leave it out, or send other types with POST /v1/channels/{id}/messages"}`. The route accepts only Meta Cloud API (WhatsApp Official) channels: on any other channel, the API responds `422` `{"error": "operation not supported for this instance"}`. In both cases, the message is not sent. See [Routes by type](/en/messages/introduction#routes-by-type).
 </Note>

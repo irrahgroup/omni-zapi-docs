@@ -11,11 +11,14 @@ import { ChannelBadges, ChannelSupport } from '/snippets/channel-support.mdx';
 <ChannelBadges type="CONTACT" lang="es" />
 
 <Warning>
-  **En implementación.** Hoy solo funciona **un contacto por mensaje**: `attachments` acepta una lista, pero del segundo ítem en adelante no se envía nada.
+  **En implementación.** Se envían todos los contactos de `attachments`, y cada canal los entrega a su manera:
 
-  Además solo llevamos `name` y `phones`. [Meta acepta](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/contacts-messages) hasta **257 contactos** en un mismo envío, y en cada uno también correo, dirección, organización, cumpleaños y sitio web.
+  - **WhatsApp Oficial y WhatsApp Web:** todos los contactos llegan en un solo mensaje.
+  - **Telegram:** cada teléfono de cada contacto se convierte en un mensaje.
+  - **Instagram:** la API rechaza el envío en el acto, con `422`.
+  - **Messenger:** el canal no tiene tarjeta de contacto. La API responde `200`, pero el mensaje no llega.
 
-  Estamos ampliando el endpoint. Hasta entonces, manda un contacto por petición.
+  De cada contacto, solo llevamos `name` y `phones`. [Meta acepta](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/contacts-messages) también correo, dirección, organización, cumpleaños y sitio web. Para enviar varios contactos, consulta también [Enviar varios contactos](/es/messages/send-contacts).
 </Warning>
 
 ## Conceptos

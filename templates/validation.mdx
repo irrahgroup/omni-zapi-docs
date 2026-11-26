@@ -3,15 +3,64 @@ title: "Validações"
 description: "O que a Meta cobra em cada campo, e o que ela recusa"
 ---
 
-A Meta revisa o template depois de criado, mas **recusa na hora** o que estiver
-fora de forma. As regras abaixo são as que mais aparecem, com o código de erro
-que cada uma gera.
+A Meta revisa o template depois de criado, mas o que estiver fora de forma é
+recusado na hora: parte pela própria plataforma, antes de chegar à Meta, e parte
+pela Meta. As regras abaixo são as que mais aparecem, com o código de erro que
+cada uma gera.
 
 <Note>
   O que a estrutura do payload já diz (limite de caractere, tipos aceitos,
   quantidade) está declarado no schema de [Referência da API](/templates/create-template):
   o playground mostra campo por campo. Esta página é para as regras que o
   schema não expressa.
+</Note>
+
+## Validação da plataforma
+
+Antes de enviar o template à Meta, a plataforma confere as regras que a Meta
+documenta. Isso vale na criação e na edição. Se algo estiver fora da regra, o
+template não chega à Meta, e a resposta é `422`, com o envelope do erro em
+`error`:
+
+```json
+{
+  "error": {
+    "timestamp": "2026-10-19T12:00:00Z",
+    "status": 400,
+    "errors": [
+      {
+        "code": "390",
+        "name": "META_WHATSAPP_TEMPLATE_VARIABLE_INVALID",
+        "message": "Invalid template variable",
+        "description": "components[0].text: the text cannot start or end with a variable"
+      }
+    ]
+  }
+}
+```
+
+O `description` começa pelo campo recusado, como `components[0].text`. A
+conferência para no primeiro erro. Passar por ela não garante a aprovação: a
+Meta ainda revisa o template e pode recusar.
+
+| Código | `message` | Quando acontece |
+|---|---|---|
+| `388` | Invalid template name | Nome com mais de 512 caracteres, ou com algo além de minúsculas, números e sublinhado |
+| `389` | Template text too long | Texto acima do limite do campo: cabeçalho 60, mensagem 1024 (600 na oferta por tempo limitado), rodapé 60, texto de botão 25, endereço 2000, telefone 20, código de cupom 20 (15 na oferta), texto da oferta 16, texto de cartão 160 |
+| `390` | Invalid template variable | Variável no início ou no fim do texto; numeração posicional fora de sequência a partir de `{{1}}`; mais de uma variável no cabeçalho ou no endereço do botão; variável fora do fim do endereço; nome repetido nos exemplos nomeados |
+| `391` | Template example required | Variável sem exemplo |
+| `392` | Invalid template buttons | Mais de 10 botões; fora do carrossel, mais de 2 de link ou mais de 1 de telefone; respostas rápidas intercaladas com os outros botões (um bloco de respostas rápidas seguido dos outros botões passa); endereço sem `http` ou `https`; telefone fora do formato com código do país e só dígitos, de 8 a 15 (o `+` no início é opcional; espaço, hífen e parênteses são recusados); código de cupom com algo além de letras, números, `_` e `-`; botão de flow com mais de um entre `flow_id`, `flow_name` e `flow_json` |
+| `393` | Invalid limited time offer template | Oferta por tempo limitado com rodapé, com cabeçalho que não é `IMAGE` nem `VIDEO`, ou sem exatamente um botão `COPY_CODE` e um `URL` |
+| `394` | Invalid carousel template | Carrossel de mídia fora de 2 a 10 cartões, cartão sem cabeçalho `IMAGE` ou `VIDEO`, mais de 2 botões no cartão ou cartões com componentes diferentes; carrossel de produto sem exatamente 2 cartões, cartão com corpo ou cartão sem exatamente um botão |
+| `395` | Invalid authentication template | `code_expiration_minutes` fora de 1 a 90; `ONE_TAP` ou `ZERO_TAP` sem `package_name`, ou com `signature_hash` sem exatamente 11 caracteres; `ZERO_TAP` sem `zero_tap_terms_accepted: true` |
+| `396` | Invalid template time-to-live | `message_send_ttl_seconds` fora da faixa da categoria, em [Validade do envio](#validade-do-envio) |
+
+O `name` de cada erro segue o código: `388` é `META_WHATSAPP_TEMPLATE_NAME_INVALID`,
+`389` é `META_WHATSAPP_TEMPLATE_TEXT_TOO_LONG`, e assim por diante.
+
+<Note>
+  Template criado a partir da [Biblioteca da Meta](/templates/template-library),
+  sem `components`, passa só pelas regras de nome e de validade do envio.
 </Note>
 
 ## Limites de caractere
@@ -249,7 +298,7 @@ somem no aparelho do cliente.
 | Utility | 30 a 43200 segundos |
 | Marketing | 43200 a 2592000 segundos |
 
-O valor `-1` é atalho de 30 dias. Em autenticação, a validade do envio não pode
+O valor `-1` é atalho de 30 dias, e a plataforma só o aceita em autenticação e utility. Em autenticação, a validade do envio não pode
 ser menor que a do código: se a mensagem para de ser entregue antes, o cliente
 perde as duas coisas.
 
@@ -287,6 +336,9 @@ porque excluir reserva o nome por esse período.
 - Excluir um template aprovado **reserva o nome dele por 30 dias**.
 
 ## Erros da Meta, e o que cada um quer dizer
+
+A recusa da Meta também chega como `422`, no mesmo envelope da validação da
+plataforma, com os códigos da Meta em `code` e `subCode`.
 
 | Código | Mensagem | O que corrigir |
 |---|---|---|

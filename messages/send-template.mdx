@@ -27,5 +27,18 @@ O campo `content.type` deve ser `TEMPLATE` e o template é enviado dentro de `at
 </Note>
 
 <Note>
+  Template só sai por canal Meta Cloud API (`META_WHATSAPP`) ou Messenger (`META_MESSENGER`). Em outro canal, `POST /v1/channels/{channelId}/messages` responde `422` com `code` `BUSINESS_RULE_VIOLATION` e `subCode` `TEMPLATE_NOT_SUPPORTED`, e a mensagem não é enviada:
+
+  ```json
+  {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "code": "BUSINESS_RULE_VIOLATION",
+    "subCode": "TEMPLATE_NOT_SUPPORTED",
+    "message": "TEMPLATE messages are only supported on META_WHATSAPP and META_MESSENGER channels"
+  }
+  ```
+</Note>
+
+<Note>
   A rota `POST /v1/channels/{channelId}/send-template` aceita o mesmo corpo desta página e dá a mesma resposta. Nela, `content.type` é opcional e, se vier, tem de ser `TEMPLATE`. Com outro valor, a API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be TEMPLATE on /send-template; leave it out, or send other types with POST /v1/channels/{id}/messages"}`. A rota só aceita canal Meta Cloud API (WhatsApp Oficial): em outro canal, a API responde `422` `{"error": "operation not supported for this instance"}`. Nos dois casos, a mensagem não é enviada. Veja [Rotas por tipo](/messages/introduction#rotas-por-tipo).
 </Note>

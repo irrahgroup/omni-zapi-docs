@@ -62,6 +62,10 @@ esta página es el mapa de ellos, para que lo descubras ahora y no en medio de u
 | Contacto | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Reacción (emoji) | ✅ | ✅ | ✅ | 🔍 | ❌ |
 
+Una ubicación o un contacto enviados a un canal Instagram se rechazan en el acto: la API responde `422` con
+`[UNSUPPORTED_CHANNEL_TYPE]` en el `message`, y no se crea mensaje ni webhook. Lo mismo vale para varios
+contactos en un mensaje (`CONTACT_ARRAY`).
+
 Texto y multimedia son el terreno común: funcionan en los cinco, con el mismo cuerpo. La excepción es el
 documento, que en Instagram y Telegram tiene condición. Es de ahí para arriba que los canales empiezan a discrepar.
 
@@ -74,6 +78,7 @@ documento, que en Instagram y Telegram tiene condición. Es de ahí para arriba 
 | Lista de opciones | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Pedir ubicación | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 | Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Carrusel | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 El botón rápido es el que vuelve como respuesta del cliente, y existe en todos los canales. El botón de
 acción es el que ejecuta el dispositivo: abrir un enlace o llamar. El enlace funciona en todos;
@@ -85,6 +90,10 @@ se crea mensaje ni webhook. El teclado de Telegram no tiene secciones, descripci
 que abre la lista. Envía las opciones como botones rápidos (`INTERACTIVE_BUTTON`).
 
 Un Flow enviado a un canal que no es Meta Cloud API se acepta con `200`, pero no llega al cliente.
+
+Un carrusel enviado a un canal que no es Meta Cloud API se rechaza en el acto: la API responde `422` con
+`[UNSUPPORTED_CHANNEL_TYPE]` en el `message`, y no se crea mensaje ni webhook. Vale también para la ruta
+`send-carousel`. Consulta [Enviar carrusel](/es/messages/send-carousel).
 
 ## Tienda y pedidos
 
@@ -111,6 +120,9 @@ Los detalles y el estado del pedido todavía no existen en la API, en ningún ca
 La plantilla es el mensaje que Meta aprueba antes para que puedas escribir primero, fuera de la
 ventana. Solo existe donde hay ventana: Meta Cloud API y Messenger. En los otros canales escribes
 cuando quieras, así que no haría falta.
+
+Una plantilla enviada a un canal que no es Meta Cloud API ni Messenger se rechaza en el acto: la API responde
+`422` con `subCode` `TEMPLATE_NOT_SUPPORTED`. Consulta [Enviar plantilla](/es/messages/send-template).
 
 ## Las reservas, una por una
 
@@ -234,22 +246,28 @@ están en [Responder citando un mensaje](/es/messages/introduction#responder-cit
 | Recurso | `content.type` | Endpoint |
 |---|---|---|
 | Texto | `TEXT` | [Enviar texto](/es/messages/send-text) |
+| Enlace con vista previa | `LINK` | [Enviar enlace con vista previa](/es/messages/send-link) |
 | Imagen | `IMAGE` | [Enviar imagen](/es/messages/send-image) |
 | Audio | `AUDIO` | [Enviar audio](/es/messages/send-audio) |
 | Video | `VIDEO` | [Enviar video](/es/messages/send-video) |
+| Video circular | `PTV` | [Enviar video circular (PTV)](/es/messages/send-ptv) |
+| GIF | `GIF` | [Enviar GIF](/es/messages/send-gif) |
 | Documento | `DOCUMENT` | [Enviar documento](/es/messages/send-document) |
 | Sticker | `STICKER` | [Enviar sticker](/es/messages/send-sticker) |
 | Ubicación | `LOCATION` | [Enviar ubicación](/es/messages/send-location) |
 | Pedir ubicación | `LOCATION_REQUEST` | [Pedir ubicación](/es/messages/send-location-request) |
 | Contacto | `CONTACT` | [Enviar contacto](/es/messages/send-contact) |
+| Varios contactos | `CONTACT_ARRAY` | [Enviar varios contactos](/es/messages/send-contacts) |
 | Reacción | `REACTION` | [Reaccionar a un mensaje](/es/messages/send-reaction) |
 | Botones rápidos | `INTERACTIVE_BUTTON` | [Enviar texto con botones](/es/messages/send-interactive-button) |
 | Botones de acción | `INTERACTIVE_ACTION` | [Enviar botones de acción](/es/messages/send-interactive-action) |
 | Lista de opciones | `INTERACTIVE_LIST` | [Enviar lista de opciones](/es/messages/send-interactive-list) |
 | Flow | `INTERACTIVE_FLOW` | [Enviar formulario](/es/messages/send-flow) |
-| Catálogo | `CATALOG` | [Enviar catálogo](/es/messages/send-catalog) |
-| Producto | `PRODUCT` | [Enviar producto](/es/messages/send-product) |
-| Multiproducto | `PRODUCT_LIST` | [Enviar multiproducto](/es/messages/send-product-list) |
+| Carrusel | `INTERACTIVE_CAROUSEL` | [Enviar carrusel](/es/messages/send-carousel) |
+| Código con botón | `INTERACTIVE_OTP` | [Enviar código con botón (OTP)](/es/messages/send-button-otp) |
+| Catálogo | `INTERACTIVE_CATALOG` | [Enviar catálogo](/es/messages/send-catalog) |
+| Producto | `INTERACTIVE_SINGLE_PRODUCT` | [Enviar producto](/es/messages/send-product) |
+| Multiproducto | `INTERACTIVE_MULTI_PRODUCT` | [Enviar multiproducto](/es/messages/send-product-list) |
 | Detalles del pedido | `ORDER_DETAILS` | [Detalles del pedido](/es/messages/send-order-details) |
 | Estado del pedido | `ORDER_STATUS` | [Estado del pedido](/es/messages/send-order-status) |
 | Plantilla | `TEMPLATE` | [Enviar plantilla](/es/messages/send-template) |

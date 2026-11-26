@@ -1,0 +1,132 @@
+---
+title: "Enviar carrossel"
+description: "Envie cartões com mídia e botões, lado a lado"
+openapi: "/pt/messages/openapi-carousel.json POST /v1/channels/{channelId}/messages"
+---
+
+import { WindowRule } from '/snippets/window-rule.mdx';
+import { ChannelSupport } from '/snippets/channel-support.mdx';
+
+## Conceituação
+
+Envia um texto seguido de cartões que o cliente passa para o lado. Cada item de `content.attachments` vira um cartão, na ordem do array, com mídia, texto e botões.
+
+O campo `content.type` deve ser `INTERACTIVE_CAROUSEL`.
+
+<WindowRule lang="pt" template="de carrossel de mídia" href="/templates/models/media-card-carousel" />
+
+<ChannelSupport type="INTERACTIVE_CAROUSEL" lang="pt" />
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "INTERACTIVE_CAROUSEL",
+    "body": {
+      "message": "Separamos duas ofertas para você."
+    },
+    "attachments": [
+      {
+        "url": "https://exemplo.com/tenis.jpg",
+        "mimeType": "image/jpeg",
+        "message": "Tênis de corrida, de R$ 399 por R$ 299",
+        "list": [
+          {
+            "id": "ver-tenis",
+            "title": "Ver na loja",
+            "name": "URL",
+            "url": "https://exemplo.com/tenis"
+          },
+          {
+            "id": "quero-tenis",
+            "title": "Quero este",
+            "name": "REPLY"
+          }
+        ]
+      },
+      {
+        "url": "https://exemplo.com/mochila.jpg",
+        "mimeType": "image/jpeg",
+        "message": "Mochila impermeável, de R$ 249 por R$ 189",
+        "list": [
+          {
+            "id": "ver-mochila",
+            "title": "Ver na loja",
+            "name": "URL",
+            "url": "https://exemplo.com/mochila"
+          },
+          {
+            "id": "quero-mochila",
+            "title": "Quero esta",
+            "name": "REPLY"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Campos
+
+| Campo | Obrigatório | Descrição |
+|---|:---:|---|
+| `content.body` | sim | Texto que vem antes dos cartões |
+| `content.body.message` | não | Texto da mensagem. A Meta exige |
+| `content.attachments` | sim | Os cartões, na ordem em que aparecem |
+| `content.attachments[].url` | não | URL da mídia do cartão |
+| `content.attachments[].mimeType` | não | Tipo da mídia, como `image/jpeg` ou `video/mp4` |
+| `content.attachments[].message` | não | Texto do cartão |
+| `content.attachments[].list` | não | Botões do cartão |
+| `content.attachments[].list[].id` | não | Identificador do botão |
+| `content.attachments[].list[].title` | não | Texto do botão |
+| `content.attachments[].list[].name` | sim | Tipo do botão: `URL` abre um link e `REPLY` volta como resposta do cliente. Maiúsculas e minúsculas não importam |
+| `content.attachments[].list[].url` | não | Destino do botão `URL`. Nos botões `REPLY`, é ignorado |
+
+<Note>
+  Sem `content.body`, a API responde `400` com `code` `VALIDATION_ERROR` e `message` `"Field 'content.body': is required for message type INTERACTIVE_CAROUSEL"`, e a mensagem não é enviada.
+</Note>
+
+<Note>
+  Sem `content.attachments`, a API responde `400` com `code` `VALIDATION_ERROR` e `message` `"Field 'content.attachments': is required for message type INTERACTIVE_CAROUSEL"`, e a mensagem não é enviada.
+</Note>
+
+<Note>
+  Cada botão precisa de `name` `URL` ou `REPLY`. Com outro valor, ou sem `name`, a API responde `422` com `code` `BUSINESS_RULE_VIOLATION` e o motivo no `message`, e a mensagem não é enviada:
+
+  ```json
+  {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "code": "BUSINESS_RULE_VIOLATION",
+    "message": "[UNSUPPORTED_CAROUSEL_BUTTON] O botao 1 do cartao 2 do carrossel tem tipo CALL; o carrossel aceita URL ou REPLY"
+  }
+  ```
+</Note>
+
+<Note>
+  Fora da Meta Cloud API (`META_WHATSAPP`), a API recusa o carrossel na hora, também pela rota `send-carousel`: responde `422` com `[UNSUPPORTED_CHANNEL_TYPE]` no `message`, e a mensagem não é criada.
+</Note>
+
+<Note>
+  A API não confere os limites da Meta antes do envio, como número de cartões e de botões ou tamanho dos textos. Quando a Meta recusa, o erro chega depois do `200`, no status da mensagem.
+</Note>
+
+<Note>
+  Detalhes da regra da Meta Cloud API em [janela de conversa](/conversation-window). Veja [o que cada canal aceita](/channels/message-support) para todos os canais.
+</Note>
+
+<Note>
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
+</Note>
+
+<Note>
+  Quando o envio é aceito, a API responde `200` com o `messageId`. Veja [Resposta da API](/messages/introduction#resposta-da-api).
+</Note>
+
+<Note>
+  A rota `POST /v1/channels/{channelId}/send-carousel` aceita o mesmo corpo desta página e dá a mesma resposta. Nela, `content.type` é opcional e, se vier, tem de ser `INTERACTIVE_CAROUSEL`. Com outro valor, a API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be INTERACTIVE_CAROUSEL on /send-carousel; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, e a mensagem não é enviada. Veja [Rotas por tipo](/messages/introduction#rotas-por-tipo).
+</Note>

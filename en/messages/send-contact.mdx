@@ -11,11 +11,14 @@ import { ChannelBadges, ChannelSupport } from '/snippets/channel-support.mdx';
 <ChannelBadges type="CONTACT" lang="en" />
 
 <Warning>
-  **Being implemented.** Only **one contact per message** works today: `attachments` accepts a list, but nothing from the second item on is sent.
+  **Being implemented.** Every contact in `attachments` is sent, and each channel delivers it its own way:
 
-  We also carry only `name` and `phones`. [Meta accepts](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/contacts-messages) up to **257 contacts** in one send, and on each one also email, address, organization, birthday and website.
+  - **WhatsApp Official and WhatsApp Web:** all contacts arrive in a single message.
+  - **Telegram:** each phone number of each contact becomes one message.
+  - **Instagram:** the API refuses the send right away, with `422`.
+  - **Messenger:** the channel has no contact card. The API responds `200`, but the message does not arrive.
 
-  We are extending the endpoint. Until then, send one contact per request.
+  From each contact, we carry only `name` and `phones`. [Meta also accepts](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/contacts-messages) email, address, organization, birthday and website. To send several contacts, see also [Send several contacts](/en/messages/send-contacts).
 </Warning>
 
 ## Overview

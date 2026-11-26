@@ -2,24 +2,20 @@
 title: "Enviar multiproducto"
 description: "Arma una vitrina con secciones y hasta 30 productos"
 sidebarTitle: "Enviar multiproducto"
-tag: "En desarrollo"
 keywords: ["POST /v1/channels/{channelId}/messages", "PRODUCT_LIST", "multi-product message", "MPM", "vitrina de productos", "carrito"]
+openapi: "/es/messages/openapi-product-list.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
-import { ChannelSupport } from '/snippets/channel-support.mdx';
+import { ChannelBadges, ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **En desarrollo.** Este endpoint todavía no existe. La página está publicada para que conozcas el
-  formato y planifiques la integración — el cuerpo de abajo es el que valdrá cuando suba.
-</Warning>
+<ChannelBadges type="PRODUCT_LIST" lang="es" />
 
 ## Conceptos
 
-Envía una vitrina con productos del catálogo, agrupados en secciones. El cliente navega, arma el carrito y
-manda el pedido de vuelta.
+Envía una vitrina con productos del catálogo, agrupados en secciones. Cada ítem de `content.attachments` es una sección, y cada ítem de su `list` es un producto.
 
-El campo `content.type` será `PRODUCT_LIST`.
+El campo `content.type` debe ser `INTERACTIVE_MULTI_PRODUCT`.
 
 <WindowRule lang="es" template="de multiproducto" href="/es/templates/models/mpm" />
 
@@ -29,19 +25,41 @@ El campo `content.type` será `PRODUCT_LIST`.
 
 ```json
 {
-  "recipient": { "identifier": "5511999999999" },
+  "recipient": {
+    "identifier": "5511999999999"
+  },
   "content": {
-    "type": "PRODUCT_LIST",
-    "header": "Selección de la semana",
-    "message": "Separamos algunos productos para ti.",
-    "footer": "Enviamos a todo el país",
-    "catalogId": "1234567890",
-    "sections": [
+    "type": "INTERACTIVE_MULTI_PRODUCT",
+    "header": {
+      "message": "Seleção da semana"
+    },
+    "body": {
+      "message": "Separamos alguns produtos para você."
+    },
+    "footer": {
+      "message": "Entrega em todo o Brasil"
+    },
+    "action": {
+      "catalogId": "1234567890"
+    },
+    "attachments": [
       {
         "title": "Camisetas",
-        "products": [
-          { "productRetailerId": "SKU-1042" },
-          { "productRetailerId": "SKU-1043" }
+        "list": [
+          {
+            "id": "SKU-1042"
+          },
+          {
+            "id": "SKU-1043"
+          }
+        ]
+      },
+      {
+        "title": "Bermudas",
+        "list": [
+          {
+            "id": "SKU-2001"
+          }
         ]
       }
     ]
@@ -49,13 +67,48 @@ El campo `content.type` será `PRODUCT_LIST`.
 }
 ```
 
+## Campos
+
+| Campo | Obligatorio | Descripción |
+|---|:---:|---|
+| `content.header.message` | no | Encabezado, solo texto. Meta lo exige |
+| `content.body` | sí | Cuerpo del mensaje |
+| `content.body.message` | no | Texto del mensaje |
+| `content.footer.message` | no | Pie |
+| `content.action.catalogId` | no | Id del catálogo en Commerce Manager. Meta lo exige |
+| `content.attachments` | no | Las secciones de la vitrina |
+| `content.attachments[].title` | no | Título de la sección |
+| `content.attachments[].list` | no | Productos de la sección. Envíala siempre, aunque tenga un solo producto |
+| `content.attachments[].list[].id` | no | SKU (`retailer_id`) del producto |
+
 ## Reglas
 
 | Regla | Valor |
 |---|---|
-| Productos | hasta **30** sumando todas las secciones |
-| Encabezado | solo texto |
-| Productos válidos | al menos un SKU tiene que existir en el catálogo |
+| Productos | Meta acepta hasta **30**, sumando todas las secciones |
+| Productos válidos | al menos un SKU debe existir en el catálogo |
+| Revisión | la API no revisa secciones, productos ni límites antes del envío; el rechazo de Meta llega después del `200` |
 
-El pedido que arma el cliente llega a tu webhook como mensaje de pedido. El pago es el paso siguiente:
-responde con [detalles del pedido](/es/messages/send-order-details) o con un enlace.
+<Note>
+  Sin `content.body`, la API responde `400` con `code` `VALIDATION_ERROR` y `message` `"Field 'content.body': is required for message type INTERACTIVE_MULTI_PRODUCT"`, y el mensaje no se envía.
+</Note>
+
+<Note>
+  En los demás canales, la API no rechaza este tipo antes del envío: responde `200`, pero el mensaje no llega al cliente.
+</Note>
+
+<Note>
+  Detalles de la regla de Meta Cloud API en [ventana de conversación](/es/conversation-window). Consulta [qué acepta cada canal](/es/channels/message-support) para todos los canales.
+</Note>
+
+<Note>
+  Con el canal desconectado, la API rechaza el envío con `422` y `subCode` `CHANNEL_DISCONNECTED`, y el mensaje no se envía. Consulta [Errores al enviar](/es/messages/introduction#errores-al-enviar).
+</Note>
+
+<Note>
+  Cuando el envío es aceptado, la API responde `200` con el `messageId`. Consulta [Respuesta de la API](/es/messages/introduction#respuesta-de-la-api).
+</Note>
+
+<Note>
+  Este tipo no tiene ruta `send-*` propia. Envíalo por `POST /v1/channels/{channelId}/messages`.
+</Note>

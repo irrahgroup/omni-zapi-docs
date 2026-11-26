@@ -2,23 +2,20 @@
 title: "Enviar produto"
 description: "Mande um produto do catálogo, com foto, nome e preço"
 sidebarTitle: "Enviar produto"
-tag: "Em desenvolvimento"
 keywords: ["POST /v1/channels/{channelId}/messages", "PRODUCT", "single product message", "SPM", "produto único", "catálogo"]
+openapi: "/pt/messages/openapi-product.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
-import { ChannelSupport } from '/snippets/channel-support.mdx';
+import { ChannelBadges, ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
-  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
-</Warning>
+<ChannelBadges type="PRODUCT" lang="pt" />
 
 ## Conceituação
 
 Envia um único produto do catálogo. A foto, o nome e o preço vêm do Commerce Manager.
 
-O campo `content.type` será `PRODUCT`.
+O campo `content.type` deve ser `INTERACTIVE_SINGLE_PRODUCT`.
 
 <WindowRule lang="pt" template="de produto único" href="/templates/models/spm" />
 
@@ -28,21 +25,61 @@ O campo `content.type` será `PRODUCT`.
 
 ```json
 {
-  "recipient": { "identifier": "5511999999999" },
+  "recipient": {
+    "identifier": "5511999999999"
+  },
   "content": {
-    "type": "PRODUCT",
-    "message": "Este é o produto que você perguntou.",
-    "footer": "Estoque limitado",
-    "catalogId": "1234567890",
-    "productRetailerId": "SKU-1042"
+    "type": "INTERACTIVE_SINGLE_PRODUCT",
+    "body": {
+      "message": "Este é o produto que você perguntou."
+    },
+    "footer": {
+      "message": "Estoque limitado"
+    },
+    "action": {
+      "catalogId": "1234567890",
+      "productRetailerId": "SKU-1042"
+    }
   }
 }
 ```
+
+## Campos
+
+| Campo | Obrigatório | Descrição |
+|---|:---:|---|
+| `content.body` | sim | Corpo da mensagem. Pode ir vazio (`{}`) |
+| `content.body.message` | não | Texto da mensagem |
+| `content.footer.message` | não | Rodapé |
+| `content.action.catalogId` | não | Id do catálogo no Commerce Manager. A Meta exige |
+| `content.action.productRetailerId` | não | SKU (`retailer_id`) do produto. A Meta exige |
 
 ## Regras
 
 | Regra | Valor |
 |---|---|
-| `catalogId` e `productRetailerId` | os dois obrigatórios |
-| Mensagem e rodapé | opcionais |
-| SKU inexistente | a Meta recusa e não entrega a mensagem |
+| `catalogId` e `productRetailerId` | a API não confere antes do envio: sem eles, ou com um SKU que não existe, a Meta recusa depois do `200` e a mensagem não chega |
+
+<Note>
+  Sem `content.body`, a API responde `400` com `code` `VALIDATION_ERROR` e `message` `"Field 'content.body': is required for message type INTERACTIVE_SINGLE_PRODUCT"`, e a mensagem não é enviada.
+</Note>
+
+<Note>
+  Nos outros canais, a API não recusa este tipo antes do envio: responde `200`, mas a mensagem não chega ao cliente.
+</Note>
+
+<Note>
+  Detalhes da regra da Meta Cloud API em [janela de conversa](/conversation-window). Veja [o que cada canal aceita](/channels/message-support) para todos os canais.
+</Note>
+
+<Note>
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
+</Note>
+
+<Note>
+  Quando o envio é aceito, a API responde `200` com o `messageId`. Veja [Resposta da API](/messages/introduction#resposta-da-api).
+</Note>
+
+<Note>
+  Este tipo não tem rota `send-*` própria: `send-product` responde `422` `send_route_not_supported`. Envie por `POST /v1/channels/{channelId}/messages`.
+</Note>

@@ -1,0 +1,73 @@
+---
+title: "Resend a delivery"
+description: "Make a new attempt of a delivery, now"
+openapi: "/en/webhooks/openapi.json POST /v1/webhooks/deliveries/{deliveryId}/resend"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Overview
+
+Makes a new attempt of the delivery, now. The route has no body.
+
+- The attempt uses the webhook's **current** URL, authentication and secret, with the delivery's stored body.
+- Any delivery within the kept period can be resent, including one that was already delivered.
+- It is a single attempt. If it fails, {projectName} does not try again.
+
+### What your endpoint receives
+
+| Header | Value |
+|---|---|
+| `x-webhook-delivery-id` | The same as the original delivery |
+| `x-webhook-event-id` | The same as the original delivery |
+| `x-webhook-attempt` | A new number, higher than every previous attempt. It is the `attemptNumber` in the response |
+| `x-idempotency-key` | The same as the original delivery |
+| `x-webhook-signature` | Computed again, with a new `t`. The other signed fields do not change |
+
+<Warning>
+  If your system discards `x-webhook-delivery-id` values it already processed, it also discards the resend of a delivery you already processed. See [Deduplicate by `x-webhook-delivery-id`](/en/webhooks/delivery#deduplicate-by-x-webhook-delivery-id).
+</Warning>
+
+### Response
+
+The `202` response has the `deliveryId` and the `attemptNumber` of the new attempt.
+
+When the response has `message`, {projectName} did not get confirmation in time that the resend went out. It may have gone out: check the result in [Get delivery](/en/webhooks/get-delivery) in a few minutes.
+
+Until the result arrives, the delivery shows `status` `RESENT`, for up to 1 hour.
+
+### Limits
+
+- 1 resend per delivery per minute.
+- 50,000 resends per webhook per day (UTC day).
+
+Above that, or with another resend of the same delivery in progress, the response is `429`.
+
+### When the delivery cannot be resent
+
+The response is `422`, with `error.type` `WEBHOOK_DELIVERY_NOT_RESENDABLE` and the reason in `error.details.reason`:
+
+| `reason` | Reason |
+|---|---|
+| `TRUNCATED` | The delivery body went over the stored limit |
+| `WEBHOOK_SUSPENDED` | The webhook is suspended. [Reactivate the webhook](/en/webhooks/reactivate-webhook) first |
+| `WEBHOOK_DISABLED` | The webhook is disabled. Enable the webhook first |
+| `UNREADABLE_BODY` | The stored body cannot be read |
+
+```json
+{
+  "error": {
+    "type": "WEBHOOK_DELIVERY_NOT_RESENDABLE",
+    "message": "O webhook esta desabilitado. Habilite o webhook antes de reenviar.",
+    "details": { "reason": "WEBHOOK_DISABLED" }
+  }
+}
+```
+
+### Other errors
+
+| Status | When |
+|---|---|
+| `400` | `deliveryId` is not a UUID |
+| `404` | The delivery does not exist, is older than the kept period, belongs to another workspace, is to a connected app (`source: "APP"`), or the webhook was deleted. The body is the [delivery center](/en/webhooks/deliveries#errors) generic text |
+| `503` | The resend did not go out: `{"error": "O reenvio nao foi enviado; tente de novo."}`. Nothing was sent to your endpoint, and the request does not count toward the per-minute limit |

@@ -1,0 +1,34 @@
+---
+title: "Get delivery"
+description: "See every attempt of a delivery, with what was sent and what your endpoint responded"
+openapi: "/en/webhooks/openapi.json GET /v1/webhooks/deliveries/{deliveryId}"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Overview
+
+Returns a delivery with the same fields as the [list](/en/webhooks/list-deliveries) and every attempt, in `attempts`.
+
+The `deliveryId` is the UUID in the `x-webhook-delivery-id` header, or the `deliveryId` of a list item.
+
+### What each attempt has
+
+- The attempt number and the origin: `AUTOMATIC` (an attempt by {projectName}), `MANUAL_RESEND` (a resend you requested) or `SYSTEM`.
+- The time, the outcome, the HTTP status, the latency and the error class.
+- The URL and the headers sent, with sensitive parts hidden.
+- The body sent and the body of your endpoint's response. A body that is too large is cut, and `requestBodyTruncated` or `responseBodyTruncated` is `true`.
+
+### Hidden bodies
+
+With the secret key, the bodies come in the response. When they do not, `bodyHidden` is `true` and the body fields are `null`.
+
+Deliveries to a connected app (`source: "APP"`) always come with `bodyHidden: true`, without URL, headers or bodies.
+
+### Errors
+
+| Status | When |
+|---|---|
+| `400` | `deliveryId` is not a UUID |
+| `404` | The delivery does not exist, is older than the period your plan keeps, or belongs to another workspace |
+| `503` | The history took more than 5 seconds or is down. Try again in a moment |

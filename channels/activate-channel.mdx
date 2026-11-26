@@ -1,0 +1,209 @@
+---
+title: "Ativar canal Instagram, Messenger ou Telegram"
+description: "Finalize no backend a conexão de canais Instagram, Messenger e Telegram com os dados do SDK"
+---
+
+Depois do `client.connect()` do SDK, a conexão de um canal Instagram, Messenger ou Telegram termina no **seu backend**, com uma chamada de ativação. Cada tipo de canal tem a sua rota:
+
+| Tipo do canal | Rota | Conexão no SDK |
+|---|---|---|
+| `META_INSTAGRAM` | `POST /v1/channels/{channelId}/activate-instagram` | [Instagram](/connect/instagram) |
+| `META_MESSENGER` | `POST /v1/channels/{channelId}/activate-messenger` | [Messenger](/connect/messenger) |
+| `BOT_TELEGRAM` | `POST /v1/channels/{channelId}/activate-telegram` | [Telegram](/connect/telegram) |
+
+<Warning>
+  O [`POST /v1/channels/{channelId}/connect`](/channels/connect-channel) vale só para `META_WHATSAPP`. Sem `wabaId`, ele recusa a chamada com `400` `{"error": "wabaId is required"}`. Para Instagram, Messenger e Telegram, use a rota de ativação do tipo do canal.
+</Warning>
+
+As três rotas usam a Secret Key no header `Authorization: Bearer SUA_SECRET_KEY`. Chame sempre do backend. Veja [Autenticação](/authentication).
+
+## Do SDK para o corpo
+
+O `client.connect()` devolve `code`, `redirectUri`, `pageId` ou `botToken`, conforme o canal. Cada rota de ativação espera um corpo diferente:
+
+| Campo do SDK | Instagram | Messenger | Telegram |
+|---|---|---|---|
+| `code` | `code` | `code` | — |
+| `redirectUri` | `redirectUri` | `redirectUri` | — |
+| `pageId` | — | `pageId`, quando o usuário administra mais de uma página | — |
+| `botToken` | — | — | `token` |
+
+<Note>
+  O `redirectUri` vem no resultado do [`@omnizapi/connect`](https://www.npmjs.com/package/@omnizapi/connect) 1.1.1 ou superior.
+</Note>
+
+Um jeito de montar a chamada no backend, a partir do tipo do canal e do objeto que o frontend recebeu do SDK:
+
+```javascript
+function activation(channelType, response) {
+  switch (channelType) {
+    case 'META_INSTAGRAM':
+      return {
+        path: 'activate-instagram',
+        body: { code: response.code, redirectUri: response.redirectUri },
+      };
+    case 'META_MESSENGER':
+      return {
+        path: 'activate-messenger',
+        // pageId: o que o SDK devolveu ou o que o usuário escolheu na lista de páginas
+        body: { code: response.code, redirectUri: response.redirectUri, pageId: response.pageId },
+      };
+    case 'BOT_TELEGRAM':
+      return {
+        path: 'activate-telegram',
+        body: { token: response.botToken },
+      };
+    default:
+      throw new Error(`Tipo sem ativação: ${channelType}`);
+  }
+}
+
+const { path, body } = activation(channelType, response);
+const res = await fetch(
+  `https://api.omni.z-api.io/v1/channels/${encodeURIComponent(channelId)}/${path}`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OMNI_SECRET_KEY}`,
+    },
+    body: JSON.stringify(body),
+  },
+);
+```
+
+## Instagram
+
+`POST /v1/channels/{channelId}/activate-instagram`, para canais `META_INSTAGRAM`.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `code` | string | `code` devolvido pelo SDK. Obrigatório |
+| `redirectUri` | string | `redirectUri` devolvido pelo SDK. Obrigatório |
+
+Sem `code` ou sem `redirectUri`, a API responde `422`.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-instagram \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{
+    "code": "CODE_DO_SDK",
+    "redirectUri": "REDIRECT_URI_DO_SDK"
+  }'
+```
+
+Resposta `200`:
+
+```json
+{
+  "id": "17841400000000000",
+  "connected": true,
+  "username": "minhaloja",
+  "name": "Minha Loja",
+  "displayName": "Minha Loja"
+}
+```
+
+## Messenger
+
+`POST /v1/channels/{channelId}/activate-messenger`, para canais `META_MESSENGER`.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `code` | string | `code` devolvido pelo SDK. Obrigatório |
+| `redirectUri` | string | `redirectUri` devolvido pelo SDK |
+| `pageId` | string | Página a vincular. Obrigatório quando o usuário administra mais de uma página |
+
+O `pageId` vem do SDK, quando o usuário administra uma página só, ou da [lista de páginas](/connect/messenger) de `list-messenger-pages`, quando ele escolhe uma entre várias.
+
+- Com mais de uma página e sem `pageId`, a API responde `422`.
+- Um `pageId` que não está entre as páginas da conta também é recusado.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-messenger \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{
+    "code": "CODE_DO_SDK",
+    "redirectUri": "REDIRECT_URI_DO_SDK",
+    "pageId": "102938475601234"
+  }'
+```
+
+Resposta `200`:
+
+```json
+{
+  "pageId": "102938475601234",
+  "connected": true,
+  "pageName": "Minha Loja",
+  "pageCategory": "Shopping & retail",
+  "displayName": "Minha Loja"
+}
+```
+
+## Telegram
+
+`POST /v1/channels/{channelId}/activate-telegram`, para canais `BOT_TELEGRAM`.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `token` | string | Token do bot. É o `botToken` que o SDK devolve |
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-telegram \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{
+    "token": "123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"
+  }'
+```
+
+Resposta `200`:
+
+```json
+{
+  "externalId": "123456789",
+  "connected": true,
+  "displayName": "minhaloja_bot"
+}
+```
+
+## Canal já ativo
+
+Ativar um canal que já está ativo no provedor responde `422`, com o erro do provedor no campo `error`. O nome do erro depende do canal:
+
+| Canal | Erro |
+|---|---|
+| Instagram | `INSTAGRAM_META_IS_ALREADY_ACTIVATED` |
+| Messenger | `MESSENGER_META_IS_ALREADY_ACTIVATED` |
+| Telegram | `TELEGRAM_IS_ALREADY_ACTIVATED` |
+
+Há uma exceção. Se o canal está ativo no provedor, mas desconectado na plataforma e com assinatura ativa, a API desativa e ativa o canal de novo, uma vez, sem você precisar fazer nada.
+
+## Erros
+
+| Status | Corpo | Quando acontece |
+|---|---|---|
+| `401` | `{"error": "Authorization invalid", "message": "..."}` | A Secret Key foi recusada. Veja os motivos em [Autenticação](/authentication) |
+| `403` | `{"error": "ip_not_allowed", "message": "..."}` | O IP de origem está fora da lista. Veja [Restrição de IP](/security/ip-restriction) |
+| `404` | `{"error": "Instance not found"}` | O canal não existe ou é de outro workspace |
+| `422` | `{"error": { ... }}` ou `{"error": "..."}` | O provedor recusou a ativação, ou o tipo do canal não é o da rota |
+| `502` | `{"error": "integration_unavailable", "message": "..."}` | Um serviço interno está indisponível. Tente de novo em alguns instantes |
+| `504` | `{"error": "integration_timeout", "message": "..."}` | A ativação demorou demais. Pode repetir a chamada |
+| `504` | `{"error": "outcome_unknown", "message": "..."}` | A ativação não terminou no prazo e ainda pode ser concluída. Confira o resultado antes de repetir |
+
+No `422` do provedor, o campo `error` traz o envelope do provedor, no mesmo formato da [recusa do QR Code do WhatsApp Web](/connect/whatsapp-web). O nome do erro fica em `error.errors[0].name`. Quando o provedor recusa sem esse envelope, o `error` vem como texto genérico: `{"error": "The operation could not be completed right now. Try again in a few moments."}`.
+
+<Note>
+  A API não valida o corpo antes de chamar o provedor. Em geral, um campo faltando volta como `422` do provedor, e não como `400`. No Telegram, `token` vazio (`""`) volta `422`, mas sem o campo `token` a resposta pode ser `502` `integration_unavailable`. Envie sempre o campo.
+</Note>
+
+<Warning>
+  A API só começa um novo passo da ativação dentro de **50 segundos**, mas um passo que já começou vai até o fim, e o gateway encerra a requisição em **60 segundos**. Configure o timeout do seu cliente HTTP acima de 60 segundos, para receber a resposta da API.
+</Warning>
+
+## Depois da ativação
+
+Com o canal ativo, use o `channelId` nos endpoints de [mensagens livres](/messages/introduction). Para desligar o canal, veja [Desconectar canal](/channels/disconnect).

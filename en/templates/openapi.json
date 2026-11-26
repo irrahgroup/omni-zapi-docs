@@ -63,7 +63,7 @@
     "/whatsapp/businesses/{wabaId}/templates": {
       "get": {
         "summary": "List templates",
-        "description": "Returns the list of templates for a WABA. The structure of `components` varies depending on the category and configuration of each template.",
+        "description": "Returns all templates in the WABA, read from the platform snapshot, as `{\"data\": [...]}`. There is no filter or pagination: the query string is ignored. When the snapshot is empty, the listing triggers a full sync with Meta and also returns `synced`, `syncedComplete` and `syncedCount`.",
         "operationId": "listTemplates",
         "tags": [
           "Templates"
@@ -78,56 +78,11 @@
               "type": "string",
               "example": "428083093730937"
             }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "description": "Number of templates per page (Meta cursor pagination)",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "example": 25
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "description": "Filter by approval status",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "PENDING",
-                "APPROVED",
-                "REJECTED"
-              ],
-              "example": "APPROVED"
-            }
-          },
-          {
-            "name": "before",
-            "in": "query",
-            "required": false,
-            "description": "Previous page cursor, returned in `paging.cursors.before`",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "after",
-            "in": "query",
-            "required": false,
-            "description": "Next page cursor, returned in `paging.cursors.after`",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of templates",
+            "description": "Template list",
             "content": {
               "application/json": {
                 "schema": {
@@ -138,6 +93,18 @@
                       "items": {
                         "$ref": "#/components/schemas/Template"
                       }
+                    },
+                    "synced": {
+                      "type": "boolean",
+                      "description": "Only present when the snapshot was empty and the listing triggered the sync. Always `true`."
+                    },
+                    "syncedComplete": {
+                      "type": "boolean",
+                      "description": "Only present when the listing triggered the sync. See `syncedComplete` in Sync templates."
+                    },
+                    "syncedCount": {
+                      "type": "integer",
+                      "description": "Only present when the listing triggered the sync. Number of templates in the response."
                     }
                   }
                 },
@@ -186,6 +153,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -241,7 +211,7 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/MetaError"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -259,6 +229,99 @@
       }
     },
     "/whatsapp/businesses/{wabaId}/templates/{templateId}": {
+      "get": {
+        "summary": "Get template",
+        "description": "Returns one template from the WABA, read from the platform snapshot. A template that is not in the snapshot returns `404`: sync first.",
+        "operationId": "getTemplate",
+        "tags": [
+          "Templates"
+        ],
+        "parameters": [
+          {
+            "name": "wabaId",
+            "in": "path",
+            "required": true,
+            "description": "WABA ID (obtained via List WABAs)",
+            "schema": {
+              "type": "string",
+              "example": "428083093730937"
+            }
+          },
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "description": "Template ID (obtained via List templates)",
+            "schema": {
+              "type": "string",
+              "example": "1900296177408890"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Template"
+                },
+                "example": {
+                  "id": "1900296177408890",
+                  "name": "confirm_account",
+                  "status": "APPROVED",
+                  "category": "AUTHENTICATION",
+                  "language": "en_US",
+                  "parameter_format": "POSITIONAL",
+                  "message_send_ttl_seconds": 600,
+                  "components": [
+                    {
+                      "type": "BODY",
+                      "text": "Your verification code is *{{1}}*. For your security, do not share it.",
+                      "add_security_recommendation": true,
+                      "example": {
+                        "body_text": [
+                          [
+                            "123456"
+                          ]
+                        ]
+                      }
+                    },
+                    {
+                      "type": "BUTTONS",
+                      "buttons": [
+                        {
+                          "type": "URL",
+                          "text": "Copy code",
+                          "url": "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp{{1}}",
+                          "example": [
+                            "https://www.whatsapp.com/otp/code/?otp_type=COPY_CODE&code=otp123456"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "502": {
+            "$ref": "#/components/responses/IntegrationUnavailable"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
+          }
+        }
+      },
       "put": {
         "summary": "Edit template",
         "description": "Edits an existing template and resubmits it for Meta approval.",
@@ -333,7 +396,7 @@
             }
           },
           "400": {
-            "$ref": "#/components/responses/MetaError"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -390,20 +453,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Template deleted successfully",
+            "description": "Template deleted. The body is `true`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse"
+                  "type": "boolean"
                 },
-                "example": {
-                  "success": true
-                }
+                "example": true
               }
             }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -469,13 +533,17 @@
                     }
                   ],
                   "syncedCount": 2,
-                  "synced": true
+                  "synced": true,
+                  "syncedComplete": true
                 }
               }
             }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
           },
           "502": {
             "$ref": "#/components/responses/IntegrationUnavailable"
@@ -668,64 +736,6 @@
           }
         }
       }
-    },
-    "/whatsapp/businesses/{wabaId}/template-library": {
-      "get": {
-        "summary": "List template library",
-        "description": "Returns the ready-made templates from Meta's library, which can be created without going through review.",
-        "operationId": "listTemplateLibrary",
-        "tags": [
-          "Templates"
-        ],
-        "parameters": [
-          {
-            "name": "wabaId",
-            "in": "path",
-            "required": true,
-            "description": "WABA ID (obtained via List WABAs)",
-            "schema": {
-              "type": "string",
-              "example": "428083093730937"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Library templates",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TemplateLibraryResponse"
-                },
-                "example": {
-                  "data": [
-                    {
-                      "name": "order_confirmation_1",
-                      "category": "UTILITY",
-                      "languages": [
-                        "pt_BR",
-                        "en_US",
-                        "es_ES"
-                      ],
-                      "body": "Ola {{1}}, seu pedido {{2}} foi confirmado."
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid or missing token.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -740,30 +750,6 @@
             "example": {
               "error": 405,
               "message": "Method not allowed"
-            }
-          }
-        }
-      },
-      "MetaError": {
-        "description": "Error returned by Meta when processing the request.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/MetaError"
-            },
-            "example": {
-              "error": {
-                "timestamp": "2026-10-19T12:00:00Z",
-                "status": 422,
-                "errors": [
-                  {
-                    "description": "",
-                    "name": "META_WHATSAPP_ERROR",
-                    "message": "Your message could not be sent because it contains content that other people on Facebook have reported as abusive.",
-                    "code": "368"
-                  }
-                ]
-              }
             }
           }
         }
@@ -783,23 +769,45 @@
         }
       },
       "UnprocessableEntity": {
-        "description": "The request could not be processed due to a validation error.",
+        "description": "Refusal from the template service. Every 4xx from this service arrives as `422`, with the error envelope in `error`. On create and update, this includes platform validation (codes `388` to `396`), run before Meta, and refusals from Meta itself.",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/UnprocessableEntity"
+              "$ref": "#/components/schemas/MetaError"
             },
-            "example": {
-              "error": {
-                "errors": [
-                  {
-                    "code": "100",
-                    "name": "META_WHATSAPP_ERROR",
-                    "subCode": "2388024",
-                    "message": "Invalid parameter",
-                    "description": "There is already English (US) content for this template. You can create a new template and try again."
+            "examples": {
+              "platform": {
+                "summary": "Platform validation, before Meta",
+                "value": {
+                  "error": {
+                    "timestamp": "2026-10-19T12:00:00Z",
+                    "status": 400,
+                    "errors": [
+                      {
+                        "code": "390",
+                        "name": "META_WHATSAPP_TEMPLATE_VARIABLE_INVALID",
+                        "message": "Invalid template variable",
+                        "description": "components[0].text: the text cannot start or end with a variable"
+                      }
+                    ]
                   }
-                ]
+                }
+              },
+              "meta": {
+                "summary": "Meta refusal",
+                "value": {
+                  "error": {
+                    "errors": [
+                      {
+                        "code": "100",
+                        "name": "META_WHATSAPP_ERROR",
+                        "subCode": "2388024",
+                        "message": "Invalid parameter",
+                        "description": "There is already Portuguese (BR) content for this template. You can create a new template and try again."
+                      }
+                    ]
+                  }
+                }
               }
             }
           }
@@ -857,6 +865,32 @@
             "example": {
               "error": "template_sync_timeout",
               "message": "Template synchronization with Meta is still in progress. List the templates again in a few moments."
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Request refused by the platform's own validation, before the template service. For example, a missing body or one that is not valid JSON.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Required request body is missing"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "WABA or template not found. A template outside the snapshot also returns `404`: run Sync templates and try again.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Resource not found"
             }
           }
         }
@@ -1062,11 +1096,15 @@
           },
           "syncedCount": {
             "type": "integer",
-            "description": "Number of synced templates"
+            "description": "Number of templates in `data`"
           },
           "synced": {
             "type": "boolean",
             "description": "Indicates whether the synchronization was successful"
+          },
+          "syncedComplete": {
+            "type": "boolean",
+            "description": "Whether the sync read every page from Meta. Reading stops at 25 pages of 200 templates or after 20 seconds. With `false`, templates deleted on Meta stay in the snapshot until a complete sync."
           }
         }
       },
@@ -1083,12 +1121,7 @@
           },
           "status": {
             "type": "string",
-            "description": "Approval status",
-            "enum": [
-              "PENDING",
-              "APPROVED",
-              "REJECTED"
-            ]
+            "description": "Template status, as Meta returns it, with no normalization. `PENDING`, `APPROVED` and `REJECTED` are the review cycle statuses, but other Meta values may come."
           },
           "category": {
             "type": "string",
@@ -1110,6 +1143,28 @@
           "message_send_ttl_seconds": {
             "type": "integer",
             "description": "Message time-to-live in seconds"
+          },
+          "allow_category_change": {
+            "type": "boolean",
+            "description": "Lets Meta recategorize the template during review. Only present when Meta returns the field."
+          },
+          "library_template_name": {
+            "type": "string",
+            "description": "Name of the Meta library model used at creation. Only present on templates created from the library."
+          },
+          "library_template_body_inputs": {
+            "type": "array",
+            "description": "Body inputs of the library model. Only present on templates created from the library.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "library_template_button_inputs": {
+            "type": "array",
+            "description": "Button data of the library model. Only present on templates created from the library.",
+            "items": {
+              "type": "object"
+            }
           },
           "components": {
             "type": "array",
@@ -1134,33 +1189,39 @@
         "properties": {
           "error": {
             "type": "object",
-            "description": "Meta refusal, in the `errors` envelope forwarded by the templates service.",
+            "description": "Error envelope from the template service.",
             "properties": {
               "timestamp": {
                 "type": "string"
               },
               "status": {
-                "type": "integer"
+                "type": "integer",
+                "description": "Status returned by the template service. The API response is always `422`."
               },
               "errors": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "description": {
-                      "type": "string"
+                    "code": {
+                      "type": "string",
+                      "description": "Error code. `388` to `396` is platform validation; otherwise, the Meta code."
                     },
                     "name": {
                       "type": "string",
-                      "description": "Error type (e.g. META_WHATSAPP_ERROR)"
+                      "description": "Error name, such as `META_WHATSAPP_TEMPLATE_VARIABLE_INVALID` or `META_WHATSAPP_ERROR`."
+                    },
+                    "subCode": {
+                      "type": "string",
+                      "description": "Meta subcode, when there is one."
                     },
                     "message": {
                       "type": "string",
-                      "description": "Meta error message"
+                      "description": "Error summary."
                     },
-                    "code": {
+                    "description": {
                       "type": "string",
-                      "description": "Meta error code"
+                      "description": "Error detail. In platform validation, it starts with the refused field, such as `components[0].text`."
                     }
                   }
                 }
@@ -1182,77 +1243,12 @@
           }
         }
       },
-      "UnprocessableEntity": {
-        "type": "object",
-        "properties": {
-          "errors": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "subCode": {
-                  "type": "string"
-                },
-                "message": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      },
       "TemplateMediaResponse": {
         "type": "object",
         "properties": {
           "h": {
             "type": "string",
             "description": "Handle to use as the HEADER component `example` when creating the template"
-          }
-        }
-      },
-      "TemplateLibraryResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "Template name in the library"
-                },
-                "category": {
-                  "type": "string",
-                  "enum": [
-                    "UTILITY",
-                    "MARKETING",
-                    "AUTHENTICATION"
-                  ],
-                  "description": "Category"
-                },
-                "languages": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  },
-                  "description": "Available languages"
-                },
-                "body": {
-                  "type": "string",
-                  "description": "Template body preview"
-                }
-              }
-            }
           }
         }
       },

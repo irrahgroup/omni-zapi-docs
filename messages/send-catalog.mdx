@@ -2,23 +2,20 @@
 title: "Enviar catálogo"
 description: "Abra o catálogo completo da conta na conversa"
 sidebarTitle: "Enviar catálogo"
-tag: "Em desenvolvimento"
 keywords: ["POST /v1/channels/{channelId}/messages", "CATALOG", "catalog message", "Commerce Manager", "catálogo da conta"]
+openapi: "/pt/messages/openapi-catalog.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
-import { ChannelSupport } from '/snippets/channel-support.mdx';
+import { ChannelBadges, ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **Em desenvolvimento.** Este endpoint ainda não existe. A página está publicada para você conhecer o
-  formato e planejar a integração — o corpo abaixo é o que valerá quando ele subir.
-</Warning>
+<ChannelBadges type="CATALOG" lang="pt" />
 
 ## Conceituação
 
 Manda uma mensagem que abre o catálogo conectado à sua conta no Commerce Manager.
 
-O campo `content.type` será `CATALOG`.
+O campo `content.type` deve ser `INTERACTIVE_CATALOG`.
 
 <WindowRule lang="pt" template="de catálogo" href="/templates/models/catalog" />
 
@@ -28,21 +25,60 @@ O campo `content.type` será `CATALOG`.
 
 ```json
 {
-  "recipient": { "identifier": "5511999999999" },
+  "recipient": {
+    "identifier": "5511999999999"
+  },
   "content": {
-    "type": "CATALOG",
-    "message": "Chegaram novidades na loja. Toque para ver o catálogo completo.",
-    "footer": "Preços válidos enquanto durar o estoque",
-    "thumbnailProductRetailerId": "SKU-1042"
+    "type": "INTERACTIVE_CATALOG",
+    "body": {
+      "message": "Chegaram novidades na loja. Toque para ver o catálogo completo."
+    },
+    "footer": {
+      "message": "Preços válidos enquanto durar o estoque"
+    },
+    "action": {
+      "id": "SKU-1042"
+    }
   }
 }
 ```
+
+## Campos
+
+| Campo | Obrigatório | Descrição |
+|---|:---:|---|
+| `content.body` | sim | Corpo da mensagem |
+| `content.body.message` | não | Texto da mensagem. A Meta exige o texto e aceita até 1024 caracteres |
+| `content.footer.message` | não | Rodapé. A Meta aceita até 60 caracteres |
+| `content.action.id` | não | SKU (`retailer_id`) do produto que aparece na capa. Sem ele, a Meta usa o primeiro item do catálogo |
 
 ## Regras
 
 | Regra | Valor |
 |---|---|
-| Mensagem | obrigatória, até 1024 caracteres |
-| Rodapé | opcional, até 60 caracteres |
-| Produto da capa | opcional; sem ele a Meta usa o primeiro item da conta |
-| Catálogo | precisa estar conectado no Commerce Manager |
+| Catálogo | precisa estar conectado à conta no Commerce Manager |
+| Limites da Meta | a API não confere os tamanhos antes do envio; a recusa da Meta chega depois do `200` |
+
+<Note>
+  Sem `content.body`, a API responde `400` com `code` `VALIDATION_ERROR` e `message` `"Field 'content.body': is required for message type INTERACTIVE_CATALOG"`, e a mensagem não é enviada.
+</Note>
+
+<Note>
+  Nos outros canais, a API não recusa este tipo antes do envio: responde `200`, mas a mensagem não chega ao cliente.
+</Note>
+
+<Note>
+  Detalhes da regra da Meta Cloud API em [janela de conversa](/conversation-window). Veja [o que cada canal aceita](/channels/message-support) para todos os canais.
+</Note>
+
+<Note>
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
+</Note>
+
+<Note>
+  Quando o envio é aceito, a API responde `200` com o `messageId`. Veja [Resposta da API](/messages/introduction#resposta-da-api).
+</Note>
+
+<Note>
+  Este tipo não tem rota `send-*` própria: `send-catalog` responde `422` `send_route_not_supported`. Envie por `POST /v1/channels/{channelId}/messages`.
+</Note>

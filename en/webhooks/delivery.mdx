@@ -21,7 +21,8 @@ Receive the event, store it and respond. Do the heavy processing later, outside 
 |---|---|
 | `2xx` | Delivered. No retry. |
 | No response within 5 s, connection error, `408`, `429` or `5xx` | Retry, following the table below. |
-| Any other `4xx`, or `3xx` | No retry: your endpoint rejected the event. |
+| Any other `4xx` | No retry: your endpoint rejected the event. |
+| `3xx` | {projectName} follows the redirect. See [Redirects](#redirects). |
 
 Each wait counts from the previous attempt:
 
@@ -41,20 +42,55 @@ That is up to 7 attempts, within **23 hours** of the event. After that, the even
   If your endpoint keeps failing, {projectName} pauses deliveries to your address for a while and then resumes them. Events from that pause are not lost: they follow the same attempts, within the 23-hour window.
 </Note>
 
+## Redirects
+
+{projectName} follows your endpoint's redirects, up to 10, and the response from the last address is the one that counts.
+
+- On `301`, `302` and `303`, the next request is a `GET`, **without the body**. If the new address responds `2xx`, the delivery counts as delivered, but the event does not reach your system.
+- On `307` and `308`, the next request repeats the `POST`, with the same body.
+- When the redirect leads to another domain, the {projectName} HTTP client does not forward the `Authorization` header. So `BEARER` and `BASIC` authentication does not reach the new address.
+- After 10 redirects, the attempt fails as a connection error and follows the retries.
+- A `3xx` that does not lead to another address, such as a `304` or a response without the `Location` header, has no retry.
+
+Register your endpoint's final URL, without redirects.
+
 ## Headers on each delivery
 
 | Header | What it identifies |
 |---|---|
 | `x-webhook-event-id` | The event. It is the same on every webhook that receives this event. |
-| `x-webhook-delivery-id` | The delivery of this event to this webhook. It is the same on every attempt. |
+| `x-webhook-delivery-id` | The delivery of this event to this webhook. It is the same on every attempt, including resends from the [delivery center](/en/webhooks/deliveries). |
 | `x-webhook-attempt` | The attempt number: `1`, `2`, `3`... |
 | `x-idempotency-key` | The same value on every attempt. It is part of the [HMAC signature](/en/webhooks/signature). |
+
+Each delivery also carries `content-type: application/json`, the authentication header configured on the webhook (see [Webhook authentication](/en/webhooks/introduction)) and this browser `user-agent`:
+
+```
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36
+```
+
+If the webhook uses `CUSTOM_HEADER` authentication with the name `User-Agent`, the value you configured goes instead of this one.
+
+If you use a WAF or an allowlist, allow this `user-agent`. Do not use the `user-agent` to tell whether the request came from {projectName}: use the [HMAC signature](/en/webhooks/signature).
 
 ## Deduplicate by `x-webhook-delivery-id`
 
 The same delivery can arrive more than once. This happens, for example, when your endpoint processed the event but took more than 5 seconds to respond.
 
-Keep the `x-webhook-delivery-id` values you already processed for at least 24 hours, and discard repeats.
+Keep the `x-webhook-delivery-id` after you process the event, for at least 24 hours, and discard repeats.
+
+### Resends from the delivery center
+
+A resend from the [delivery center](/en/webhooks/deliveries) arrives with the same `x-webhook-delivery-id` and the same `x-idempotency-key` as the original delivery, and with a new `x-webhook-attempt`.
+
+- If you did not process the delivery, it is not among the stored ones, and the resend is processed normally.
+- If you already processed the delivery and want to process it again, remove its `x-webhook-delivery-id` from the stored ones before you request the resend. Otherwise, the resend is discarded.
+
+### In the `Z_API` format, one event can produce more than one delivery
+
+Usually, each event becomes one delivery per webhook. In the `Z_API` format, the same event can become more than one delivery to the same webhook. Each delivery has its own `x-webhook-delivery-id`, and all of them have the same `x-webhook-event-id`.
+
+Do not deduplicate by `x-webhook-event-id` alone: you lose deliveries.
 
 ## Arrival order is not guaranteed
 
@@ -66,6 +102,8 @@ Events are sent in the order they happen. But an event that failed is sent again
 ## When your endpoint is down
 
 Events are not lost: they follow the attempts above for up to 23 hours. When your endpoint comes back, the delayed events arrive together with the new ones. Prepare your endpoint for a higher volume for a few minutes.
+
+To recover what did not arrive within that window, use [Resend failed deliveries](/en/webhooks/resend-deliveries).
 
 ## Email notice when the webhook fails
 

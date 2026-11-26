@@ -8,7 +8,17 @@ openapi: "/es/templates/openapi.json GET /whatsapp/businesses/{wabaId}/templates
 
 ## Conceptos
 
-Devuelve todas las plantillas registradas en una WABA. La estructura de los `components` devueltos varía según la categoría y la configuración de cada plantilla.
+Devuelve todas las plantillas de la WABA en `{"data": [...]}`. La estructura de los `components` devueltos varía según la categoría y la configuración de cada plantilla.
+
+La lista viene del snapshot de la plataforma, la copia de las plantillas que mantiene la sincronización con Meta. Para obtener el estado actual en Meta, usa [Sincronizar plantillas](/es/templates/sync-templates).
+
+<Warning>
+  Esta ruta no tiene filtro ni paginación. Los parámetros de la query string, como `limit` o `status`, se ignoran, y la respuesta trae todas las plantillas de una vez. Para filtrar, filtra la lista de tu lado.
+</Warning>
+
+### Snapshot vacío
+
+Si el snapshot de la WABA está vacío, el listado sincroniza con Meta antes de responder. En ese caso, la respuesta también trae `synced`, `syncedComplete` y `syncedCount`, con el mismo significado que en [Sincronizar plantillas](/es/templates/sync-templates).
 
 <Note>
   El `wabaId` se obtiene a través del endpoint [Listar WABAs](/es/templates/list-businesses).

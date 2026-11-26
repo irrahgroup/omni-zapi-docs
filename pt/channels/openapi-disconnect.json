@@ -4,22 +4,35 @@
     "title": "Omni Z-API - Desconectar Canal",
     "version": "1.0.0"
   },
-  "servers": [{ "url": "https://api.omni.z-api.io" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/v1/channels/{channelId}/disconnect": {
       "put": {
         "summary": "Desconectar canal Meta WhatsApp",
         "description": "Desconecta um canal **META_WHATSAPP** da API Oficial do WhatsApp. Limpa todos os dados de conexão (WABA, phone ID, coexistência) e marca o canal como desconectado.",
         "operationId": "disconnectMetaChannel",
-        "tags": ["Canais"],
+        "tags": [
+          "Canais"
+        ],
         "parameters": [
           {
             "name": "channelId",
             "in": "path",
             "required": true,
             "description": "ID do canal",
-            "schema": { "type": "string", "example": "019E4C54B1B375A28970B605CA9B03C3" }
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
           }
         ],
         "responses": {
@@ -27,27 +40,40 @@
             "description": "Canal desconectado com sucesso",
             "content": {
               "application/json": {
-                "schema": { "type": "boolean" },
+                "schema": {
+                  "type": "boolean"
+                },
                 "example": true
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "404": {
-            "description": "Canal não encontrado",
+            "description": "Canal inexistente ou de outro workspace",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 404, "message": "Channel not found" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
               }
             }
           },
           "502": {
-            "description": "Erro de integração com o serviço externo",
+            "description": "Serviço interno indisponível. Tente de novo em alguns instantes.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Error" },
-                "example": { "error": 502, "message": "Integration error" }
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
               }
             }
           }
@@ -58,11 +84,24 @@
   "components": {
     "responses": {
       "Unauthorized": {
-        "description": "Token inválido ou ausente.",
+        "description": "Secret Key recusada. Veja os motivos em Autenticação.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        },
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/Error" },
-            "example": { "error": 401, "message": "Unauthorized" }
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+            }
           }
         }
       }
@@ -70,9 +109,16 @@
     "schemas": {
       "Error": {
         "type": "object",
+        "required": [
+          "error"
+        ],
         "properties": {
-          "error": { "type": "integer" },
-          "message": { "type": "string" }
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       }
     },

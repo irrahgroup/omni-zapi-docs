@@ -1,0 +1,42 @@
+---
+title: "Get webhook health"
+description: "See the state of each webhook in the workspace and how many days deliveries are kept"
+openapi: "/en/webhooks/openapi.json GET /v1/webhooks/health"
+---
+
+## Overview
+
+Returns the state of each webhook in the secret key's workspace: channel, default and template webhooks. The response has no URL, secret or credential.
+
+`retentionDays` is the number of days the history keeps deliveries, according to your plan.
+
+### States
+
+| `state` | What it means |
+|---|---|
+| `ACTIVE` | The webhook is enabled and is not in a failure sequence with a notice |
+| `FAILING` | The webhook is in a failure sequence, with an email notice sent or pending. See [Email notice when the webhook fails](/en/webhooks/delivery#email-notice-when-the-webhook-fails) |
+| `SUSPENDED` | The webhook is suspended. Use [Reactivate webhook](/en/webhooks/reactivate-webhook) |
+| `DISABLED` | The webhook has `status` `DISABLED` |
+| `NO_HISTORY` | The webhook uses the `CHATWOOT` format, which has no history |
+
+### Fields for each webhook
+
+| Field | What it has |
+|---|---|
+| `webhookId` | The webhook id |
+| `channelId` | The webhook's channel. `null` for the default and template webhooks |
+| `description` | The webhook description |
+| `payloadFormat` | The payload format |
+| `state` | The state, as in the table above |
+| `consecutiveFailures` | Consecutive failures since the last success. `null` in `NO_HISTORY` |
+| `failingSince` | Start of the failure sequence, when an email notice was sent or is pending |
+| `lastFailureAt` | The last failure |
+| `lastSuccessAt` | The last success |
+| `alertsGiven` | Email notices sent in the current failure sequence. `null` in `NO_HISTORY` |
+| `alertPending` | `true` when an email notice is about to be sent |
+| `suspendedAt` | When the webhook was suspended |
+| `episodeStartedAt` | Start of the current failure sequence |
+| `retainedSince` | After a reactivation, the start of the failure sequence it ended |
+
+Date fields are `null` when they do not apply.

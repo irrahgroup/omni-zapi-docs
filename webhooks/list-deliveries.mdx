@@ -1,0 +1,49 @@
+---
+title: "Listar entregas"
+description: "Liste as entregas dos webhooks do workspace, com filtros"
+openapi: "/pt/webhooks/openapi.json GET /v1/webhooks/deliveries"
+---
+
+## Conceituação
+
+Retorna as entregas dos webhooks do workspace da secret key, da mais nova para a mais antiga, pelo horário do evento. Cada item traz o status e o resumo da última tentativa. A lista não traz corpo, URL, segredo nem credencial: para ver as tentativas, use [Detalhar entrega](/webhooks/get-delivery).
+
+Veja os status possíveis em [Central de entregas](/webhooks/deliveries#status-de-uma-entrega).
+
+### Período
+
+- Sem `from`, a lista começa 24 horas antes da chamada. Sem `to`, ela vai até a hora da chamada.
+- `from` precisa ser anterior a `to`.
+- Se `from` for anterior ao período guardado pelo seu plano, a lista começa no início desse período e responde `fromAdjusted: true`.
+
+Se a resposta for `503`, o histórico demorou mais de 5 segundos. Peça um período menor.
+
+### Filtros
+
+| Parâmetro | O que filtra |
+|---|---|
+| `webhookId` | Um webhook |
+| `status` | Um status: `SUCCEEDED`, `RETRYING`, `FAILED`, `NOT_SENT`, `EXPIRED`, `UNKNOWN` ou `RESENT` |
+| `eventType` | Um tipo de evento, como `MESSAGE_RECEIVED` ou `UPDATE_TEMPLATE_STATUS` |
+| `eventId` | Um evento, pelo UUID do `x-webhook-event-id` |
+| `from`, `to` | O período, em ISO-8601 (por exemplo, `2026-11-24T00:00:00Z`) |
+| `destination` | Um endereço de destino, de 1 a 2048 caracteres, que não começa com `#` |
+| `destinationUnavailable` | Só `true`: as entregas sem endereço de destino legível. Não combina com `destination` |
+
+`status` e `eventType` aceitam maiúsculas ou minúsculas. Uma entrega com reenvio em andamento só aparece em `status=RESENT`.
+
+`destination` é o endereço com as partes sensíveis ocultas, sem query e sem fragmento, com esquema e host em minúsculas, sem a porta padrão e sem a barra final.
+
+### Paginação
+
+`limit` vai de 1 a 100, e o padrão é 50. A resposta não traz o total.
+
+Para a próxima página, repita a chamada com os mesmos filtros e com `cursor` igual ao `nextCursor` recebido. Quando `nextCursor` vem `null`, não há mais páginas. O cursor é opaco: não monte nem altere o valor.
+
+### Erros
+
+Filtro inválido responde `400`, com o motivo em `error.message`. Por exemplo, `{"error": {"message": "from deve ser anterior a to"}}`.
+
+### Entregas para apps conectados
+
+As entregas para um app conectado trazem `source: "APP"` e o nome do app em `appName`. Elas não podem ser reenviadas.

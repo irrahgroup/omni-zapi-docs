@@ -1,0 +1,34 @@
+---
+title: "Detalhar entrega"
+description: "Veja todas as tentativas de uma entrega, com o que foi enviado e o que o seu endpoint respondeu"
+openapi: "/pt/webhooks/openapi.json GET /v1/webhooks/deliveries/{deliveryId}"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+
+## Conceituação
+
+Retorna uma entrega com os mesmos campos da [lista](/webhooks/list-deliveries) e todas as tentativas, em `attempts`.
+
+O `deliveryId` é o UUID do header `x-webhook-delivery-id`, ou o `deliveryId` de um item da lista.
+
+### O que cada tentativa traz
+
+- O número da tentativa e a origem: `AUTOMATIC` (tentativa do {projectName}), `MANUAL_RESEND` (reenvio pedido por você) ou `SYSTEM`.
+- O horário, o resultado, o status HTTP, a latência e a classe do erro.
+- A URL e os headers enviados, com as partes sensíveis ocultas.
+- O corpo enviado e o corpo da resposta do seu endpoint. Um corpo grande demais é cortado, e `requestBodyTruncated` ou `responseBodyTruncated` vem `true`.
+
+### Corpos ocultos
+
+Com a secret key, os corpos vêm na resposta. Quando eles não vêm, `bodyHidden` é `true` e os campos de corpo vêm `null`.
+
+As entregas para um app conectado (`source: "APP"`) sempre vêm com `bodyHidden: true`, sem URL, headers nem corpos.
+
+### Erros
+
+| Status | Quando |
+|---|---|
+| `400` | `deliveryId` não é um UUID |
+| `404` | A entrega não existe, saiu do período guardado pelo seu plano ou é de outro workspace |
+| `503` | O histórico demorou mais de 5 segundos ou está fora do ar. Tente de novo em instantes |

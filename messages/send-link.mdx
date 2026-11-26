@@ -1,0 +1,63 @@
+---
+title: "Enviar link com prévia"
+description: "Envie um texto com a prévia de um link"
+openapi: "/pt/messages/openapi-link.json POST /v1/channels/{channelId}/messages"
+---
+
+## Conceituação
+
+Envia um texto com a prévia de um link: título, descrição e imagem. Os dados vão no objeto `content.body`.
+
+O campo `content.type` deve ser `LINK`.
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "LINK",
+    "body": {
+      "message": "Veja a nossa nova coleção: https://exemplo.com/colecao",
+      "url": "https://exemplo.com/colecao",
+      "title": "Coleção de verão",
+      "description": "Peças novas toda semana",
+      "thumbnail": "https://exemplo.com/capa.jpg"
+    }
+  }
+}
+```
+
+## Campos
+
+| Campo | Obrigatório | Descrição |
+|---|:---:|---|
+| `content.body` | sim | Dados da mensagem |
+| `content.body.message` | não | Texto da mensagem |
+| `content.body.url` | não | URL do link |
+| `content.body.title` | não | Título da prévia |
+| `content.body.description` | não | Descrição da prévia |
+| `content.body.thumbnail` | não | URL da imagem da prévia |
+| `content.body.linkType` | não | Formato da prévia. A API repassa o valor ao canal sem conferir |
+
+<Note>
+  Sem `content.body`, a API responde `400` com `code` `VALIDATION_ERROR` e `message` `"Field 'content.body': is required for message type LINK"`, e a mensagem não é enviada.
+</Note>
+
+<Note>
+  A API não recusa este tipo por canal antes do envio. O `200` confirma que a API aceitou a mensagem, não que o canal a entregou: acompanhe o status pelo [webhook](/webhooks/payloads). Veja [o que cada canal aceita](/channels/message-support).
+</Note>
+
+<Note>
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
+</Note>
+
+<Note>
+  Quando o envio é aceito, a API responde `200` com o `messageId`. Veja [Resposta da API](/messages/introduction#resposta-da-api).
+</Note>
+
+<Note>
+  A rota `POST /v1/channels/{channelId}/send-link` aceita o mesmo corpo desta página e dá a mesma resposta. Nela, `content.type` é opcional e, se vier, tem de ser `LINK`. Com outro valor, a API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be LINK on /send-link; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, e a mensagem não é enviada. Veja [Rotas por tipo](/messages/introduction#rotas-por-tipo).
+</Note>

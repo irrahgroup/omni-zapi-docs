@@ -63,6 +63,10 @@ página é o mapa deles, para você descobrir agora e não no meio do teste.
 | Contato | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Reação (emoji) | ✅ | ✅ | ✅ | 🔍 | ❌ |
 
+Localização e contato enviados a um canal Instagram são recusados na hora: a API responde `422` com
+`[UNSUPPORTED_CHANNEL_TYPE]` no `message` e não cria mensagem nem dispara webhook. O mesmo vale para
+vários contatos numa mensagem (`CONTACT_ARRAY`).
+
 Texto e mídia são o chão comum: funcionam nos cinco, com o mesmo corpo. A exceção é o documento, que no
 Instagram e no Telegram tem condição. É daí para cima que os canais começam a discordar.
 
@@ -75,6 +79,7 @@ Instagram e no Telegram tem condição. É daí para cima que os canais começam
 | Lista de opções | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Pedir localização | 🚧 | 🚧 | 🚧 | 🚧 | 🚧 |
 | Flows | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Carrossel | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 Botão rápido é o que volta como resposta do cliente, e existe em todo canal. Botão de ação é o que o
 aparelho executa: abrir um link ou ligar. O link funciona em todos; **ligar, só onde a plataforma tem
@@ -86,6 +91,10 @@ mensagem nem dispara webhook. O teclado do Telegram não tem seção, descriçã
 abre a lista. Mande as opções como botões rápidos (`INTERACTIVE_BUTTON`).
 
 Flow enviado a um canal que não é a Meta Cloud API é aceito com `200`, mas não chega ao cliente.
+
+Carrossel enviado a um canal que não é a Meta Cloud API é recusado na hora: a API responde `422` com
+`[UNSUPPORTED_CHANNEL_TYPE]` no `message` e não cria mensagem nem dispara webhook. Vale também para a rota
+`send-carousel`. Veja [Enviar carrossel](/messages/send-carousel).
 
 ## Loja e pedido
 
@@ -112,6 +121,9 @@ Detalhes e status do pedido ainda não existem na API, em nenhum canal.
 Template é a mensagem que a Meta aprova antes para você poder escrever primeiro, fora da janela. Só
 existe onde existe janela: Meta Cloud API e Messenger. Nos outros canais você escreve quando quiser,
 então ele não faria falta.
+
+Template enviado a um canal que não é Meta Cloud API nem Messenger é recusado na hora: a API responde
+`422` com `subCode` `TEMPLATE_NOT_SUPPORTED`. Veja [Enviar template](/messages/send-template).
 
 ## As ressalvas, uma por uma
 
@@ -234,22 +246,28 @@ em [Responder citando uma mensagem](/messages/introduction#responder-citando-uma
 | Recurso | `content.type` | Endpoint |
 |---|---|---|
 | Texto | `TEXT` | [Enviar texto](/messages/send-text) |
+| Link com prévia | `LINK` | [Enviar link com prévia](/messages/send-link) |
 | Imagem | `IMAGE` | [Enviar imagem](/messages/send-image) |
 | Áudio | `AUDIO` | [Enviar áudio](/messages/send-audio) |
 | Vídeo | `VIDEO` | [Enviar vídeo](/messages/send-video) |
+| Vídeo em círculo | `PTV` | [Enviar vídeo em círculo (PTV)](/messages/send-ptv) |
+| GIF | `GIF` | [Enviar GIF](/messages/send-gif) |
 | Documento | `DOCUMENT` | [Enviar documento](/messages/send-document) |
 | Sticker | `STICKER` | [Enviar sticker](/messages/send-sticker) |
 | Localização | `LOCATION` | [Enviar localização](/messages/send-location) |
 | Pedir localização | `LOCATION_REQUEST` | [Pedir localização](/messages/send-location-request) |
 | Contato | `CONTACT` | [Enviar contato](/messages/send-contact) |
+| Vários contatos | `CONTACT_ARRAY` | [Enviar vários contatos](/messages/send-contacts) |
 | Reação | `REACTION` | [Reagir a mensagem](/messages/send-reaction) |
 | Botões rápidos | `INTERACTIVE_BUTTON` | [Enviar texto com botões](/messages/send-interactive-button) |
 | Botões de ação | `INTERACTIVE_ACTION` | [Enviar botões de ação](/messages/send-interactive-action) |
 | Lista de opções | `INTERACTIVE_LIST` | [Enviar lista de opções](/messages/send-interactive-list) |
 | Flow | `INTERACTIVE_FLOW` | [Enviar formulário](/messages/send-flow) |
-| Catálogo | `CATALOG` | [Enviar catálogo](/messages/send-catalog) |
-| Produto | `PRODUCT` | [Enviar produto](/messages/send-product) |
-| Multi-produto | `PRODUCT_LIST` | [Enviar multi-produto](/messages/send-product-list) |
+| Carrossel | `INTERACTIVE_CAROUSEL` | [Enviar carrossel](/messages/send-carousel) |
+| Código com botão | `INTERACTIVE_OTP` | [Enviar código com botão (OTP)](/messages/send-button-otp) |
+| Catálogo | `INTERACTIVE_CATALOG` | [Enviar catálogo](/messages/send-catalog) |
+| Produto | `INTERACTIVE_SINGLE_PRODUCT` | [Enviar produto](/messages/send-product) |
+| Multi-produto | `INTERACTIVE_MULTI_PRODUCT` | [Enviar multi-produto](/messages/send-product-list) |
 | Detalhes do pedido | `ORDER_DETAILS` | [Detalhes do pedido](/messages/send-order-details) |
 | Status do pedido | `ORDER_STATUS` | [Status do pedido](/messages/send-order-status) |
 | Template | `TEMPLATE` | [Enviar template](/messages/send-template) |

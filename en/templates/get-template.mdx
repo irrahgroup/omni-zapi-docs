@@ -1,0 +1,27 @@
+---
+title: "Get template"
+description: "Fetch a template from the WABA by ID"
+openapi: "/en/templates/openapi.json GET /whatsapp/businesses/{wabaId}/templates/{templateId}"
+---
+
+## Overview
+
+Returns one template from the WABA by ID, with the same fields as each item in [List templates](/en/templates/list-templates).
+
+The template comes from the platform snapshot, not straight from Meta. A template that is not in the snapshot returns `404`, even if it exists on Meta:
+
+```json
+{ "error": "Resource not found" }
+```
+
+The same `404` applies to a WABA that does not belong to your account.
+
+If the WABA snapshot is empty, the detail syncs with Meta before responding, like the [listing](/en/templates/list-templates#empty-snapshot). In that case, the response can be `422` or `504`, as in [Sync templates](/en/templates/sync-templates), instead of `404`.
+
+<Warning>
+  If the template returns `404`, run [Sync templates](/en/templates/sync-templates) and fetch it again.
+</Warning>
+
+<Note>
+  The `templateId` is obtained from the [List templates](/en/templates/list-templates) endpoint.
+</Note>
