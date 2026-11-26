@@ -1,0 +1,59 @@
+---
+title: "Enviar código com botão (OTP)"
+description: "Envie um código de uso único com botão"
+openapi: "/pt/messages/openapi-otp.json POST /v1/channels/{channelId}/messages"
+---
+
+## Conceituação
+
+Envia um texto com um código de uso único (OTP) e um botão. Os dados vão no objeto `content.body`.
+
+O campo `content.type` deve ser `INTERACTIVE_OTP`.
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "INTERACTIVE_OTP",
+    "body": {
+      "message": "Seu código de acesso é 482913. Ele vale por 10 minutos.",
+      "code": "482913",
+      "buttonText": "Copiar código"
+    }
+  }
+}
+```
+
+## Campos
+
+| Campo | Obrigatório | Descrição |
+|---|:---:|---|
+| `content.body` | sim | Dados da mensagem |
+| `content.body.message` | não | Texto da mensagem |
+| `content.body.code` | não | O código enviado no botão |
+| `content.body.buttonText` | não | Texto do botão |
+| `content.body.url` | não | URL de uma imagem para a mensagem |
+
+<Note>
+  Sem `content.body`, a API responde `400` com `code` `VALIDATION_ERROR` e `message` `"Field 'content.body': is required for message type INTERACTIVE_OTP"`, e a mensagem não é enviada.
+</Note>
+
+<Note>
+  Só sai no **WhatsApp Web**. Nos outros canais, a API não recusa este tipo antes do envio: responde `200`, mas a mensagem não chega ao cliente. Mesmo no WhatsApp Web, o `200` confirma que a API aceitou a mensagem, não que o canal a entregou: acompanhe o status pelo [webhook](/webhooks/payloads). Veja [o que cada canal aceita](/channels/message-support).
+</Note>
+
+<Note>
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
+</Note>
+
+<Note>
+  Quando o envio é aceito, a API responde `200` com o `messageId`. Veja [Resposta da API](/messages/introduction#resposta-da-api).
+</Note>
+
+<Note>
+  A rota `POST /v1/channels/{channelId}/send-button-otp` aceita o mesmo corpo desta página e dá a mesma resposta. Nela, `content.type` é opcional e, se vier, tem de ser `INTERACTIVE_OTP`. Com outro valor, a API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be INTERACTIVE_OTP on /send-button-otp; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, e a mensagem não é enviada. Veja [Rotas por tipo](/messages/introduction#rotas-por-tipo).
+</Note>

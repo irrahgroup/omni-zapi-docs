@@ -1,0 +1,349 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Send carousel",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Send carousel",
+        "description": "Send cards with media and buttons, side by side.",
+        "operationId": "sendCarouselMessage",
+        "tags": [
+          "Messages"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "YOUR_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendInteractiveCarouselRequest"
+              },
+              "example": {
+                "recipient": {
+                  "identifier": "5511999999999"
+                },
+                "content": {
+                  "type": "INTERACTIVE_CAROUSEL",
+                  "body": {
+                    "message": "Separamos duas ofertas para você."
+                  },
+                  "attachments": [
+                    {
+                      "url": "https://exemplo.com/tenis.jpg",
+                      "mimeType": "image/jpeg",
+                      "message": "Tênis de corrida, de R$ 399 por R$ 299",
+                      "list": [
+                        {
+                          "id": "ver-tenis",
+                          "title": "Ver na loja",
+                          "name": "URL",
+                          "url": "https://exemplo.com/tenis"
+                        },
+                        {
+                          "id": "quero-tenis",
+                          "title": "Quero este",
+                          "name": "REPLY"
+                        }
+                      ]
+                    },
+                    {
+                      "url": "https://exemplo.com/mochila.jpg",
+                      "mimeType": "image/jpeg",
+                      "message": "Mochila impermeável, de R$ 249 por R$ 189",
+                      "list": [
+                        {
+                          "id": "ver-mochila",
+                          "title": "Ver na loja",
+                          "name": "URL",
+                          "url": "https://exemplo.com/mochila"
+                        },
+                        {
+                          "id": "quero-mochila",
+                          "title": "Quero esta",
+                          "name": "REPLY"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/SendRefused"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Message sent successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Invalid or missing token.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Body without the required field of the type",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "VALIDATION_ERROR",
+              "message": "Field 'content.body': is required for message type INTERACTIVE_CAROUSEL"
+            }
+          }
+        }
+      },
+      "SendRefused": {
+        "description": "Channel disconnected, or a type the channel does not accept. The message was not sent.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "examples": {
+              "channelDisconnected": {
+                "summary": "CHANNEL_DISCONNECTED",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "subCode": "CHANNEL_DISCONNECTED",
+                  "message": "Channel is disconnected"
+                }
+              },
+              "unsupportedChannel": {
+                "summary": "UNSUPPORTED_CHANNEL_TYPE",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "message": "[UNSUPPORTED_CHANNEL_TYPE] O canal TELEGRAM nao suporta mensagens do tipo INTERACTIVE_CAROUSEL"
+                }
+              },
+              "unsupportedButton": {
+                "summary": "UNSUPPORTED_CAROUSEL_BUTTON",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "BUSINESS_RULE_VIOLATION",
+                  "message": "[UNSUPPORTED_CAROUSEL_BUTTON] O botao 1 do cartao 2 do carrossel tem tipo CALL; o carrossel aceita URL ou REPLY"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendInteractiveCarouselRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Recipient phone number (country code + area code + number)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body",
+              "attachments"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Message type",
+                "enum": [
+                  "INTERACTIVE_CAROUSEL"
+                ]
+              },
+              "body": {
+                "type": "object",
+                "description": "Text that comes before the cards",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Message text. Meta requires it"
+                  }
+                }
+              },
+              "attachments": {
+                "type": "array",
+                "description": "The cards, in the order they show",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "URL of the card media"
+                    },
+                    "mimeType": {
+                      "type": "string",
+                      "description": "Media type, such as `image/jpeg` or `video/mp4`"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Card text"
+                    },
+                    "list": {
+                      "type": "array",
+                      "description": "Card buttons",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Button id"
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Button text"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Button type: `URL` opens a link and `REPLY` comes back as the customer reply. Case does not matter"
+                          },
+                          "url": {
+                            "type": "string",
+                            "description": "Target of the `URL` button. On `REPLY` buttons, it is ignored"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "Sent message ID — 32-character uppercase hexadecimal string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the refusal, in UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error category",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Case code. Present only when the case has its own code",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error description. The text may change: handle the error by `code` and `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in the Omni Z-API Security panel"
+      }
+    }
+  }
+}

@@ -1,0 +1,69 @@
+---
+title: "Enviar vários contatos"
+description: "Envie vários contatos numa mensagem"
+openapi: "/pt/messages/openapi-contacts.json POST /v1/channels/{channelId}/messages"
+---
+
+## Conceituação
+
+Envia vários contatos numa mensagem. Cada contato é um item do array `content.attachments`.
+
+O `CONTACT_ARRAY` passa pelo mesmo processamento do `CONTACT`: os dois viram a mesma mensagem de contatos. Veja também [Enviar contato](/messages/send-contact).
+
+O campo `content.type` deve ser `CONTACT_ARRAY`.
+
+## Corpo da requisição
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "CONTACT_ARRAY",
+    "attachments": [
+      {
+        "name": "Gutemberg Fernandes",
+        "phones": [
+          "5511888888888"
+        ]
+      },
+      {
+        "name": "Ana Souza",
+        "phones": [
+          "5511777777777",
+          "5511666666666"
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Campos
+
+| Campo | Obrigatório | Descrição |
+|---|:---:|---|
+| `content.attachments` | sim | Lista de contatos |
+| `content.attachments[].name` | não | Nome do contato. É repassado ao canal, que monta o nome do jeito dele |
+| `content.attachments[].phones` | não | Telefones do contato |
+
+<Note>
+  Sem `content.attachments`, a API responde `400` com `code` `VALIDATION_ERROR` e `message` `"Field 'content.attachments': is required for message type CONTACT_ARRAY"`, e a mensagem não é enviada.
+</Note>
+
+<Note>
+  No Instagram, a API recusa o envio na hora: responde `422` com `[UNSUPPORTED_CHANNEL_TYPE]` no `message`, e a mensagem não é criada. Nos outros canais, ela não recusa este tipo antes do envio. O `200` confirma que a API aceitou a mensagem, não que o canal a entregou: acompanhe o status pelo [webhook](/webhooks/payloads). Veja [o que cada canal aceita](/channels/message-support).
+</Note>
+
+<Note>
+  Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).
+</Note>
+
+<Note>
+  Quando o envio é aceito, a API responde `200` com o `messageId`. Veja [Resposta da API](/messages/introduction#resposta-da-api).
+</Note>
+
+<Note>
+  A rota `POST /v1/channels/{channelId}/send-contacts` aceita o mesmo corpo desta página e dá a mesma resposta. Nela, `content.type` é opcional e, se vier, tem de ser `CONTACT_ARRAY`. Com outro valor, a API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be CONTACT_ARRAY on /send-contacts; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, e a mensagem não é enviada. Veja [Rotas por tipo](/messages/introduction#rotas-por-tipo).
+</Note>

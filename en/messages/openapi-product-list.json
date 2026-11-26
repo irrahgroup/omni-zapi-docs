@@ -1,0 +1,323 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Send multi-product",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Send multi-product",
+        "description": "Build a showcase with sections and up to 30 products.",
+        "operationId": "sendMultiProductMessage",
+        "tags": [
+          "Messages"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "Channel ID",
+            "schema": {
+              "type": "string",
+              "example": "YOUR_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendInteractiveMultiProductRequest"
+              },
+              "example": {
+                "recipient": {
+                  "identifier": "5511999999999"
+                },
+                "content": {
+                  "type": "INTERACTIVE_MULTI_PRODUCT",
+                  "header": {
+                    "message": "Seleção da semana"
+                  },
+                  "body": {
+                    "message": "Separamos alguns produtos para você."
+                  },
+                  "footer": {
+                    "message": "Entrega em todo o Brasil"
+                  },
+                  "action": {
+                    "catalogId": "1234567890"
+                  },
+                  "attachments": [
+                    {
+                      "title": "Camisetas",
+                      "list": [
+                        {
+                          "id": "SKU-1042"
+                        },
+                        {
+                          "id": "SKU-1043"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "Bermudas",
+                      "list": [
+                        {
+                          "id": "SKU-2001"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Message sent successfully",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Invalid or missing token.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Channel disconnected. The message was not sent: reconnect the channel and send it again.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Body without the required field of the type",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "VALIDATION_ERROR",
+              "message": "Field 'content.body': is required for message type INTERACTIVE_MULTI_PRODUCT"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendInteractiveMultiProductRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Recipient phone number (country code + area code + number)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Message type",
+                "enum": [
+                  "INTERACTIVE_MULTI_PRODUCT"
+                ]
+              },
+              "header": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Header, text only. Meta requires it"
+                  }
+                }
+              },
+              "body": {
+                "type": "object",
+                "description": "Message body",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Message text"
+                  }
+                }
+              },
+              "footer": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Footer"
+                  }
+                }
+              },
+              "action": {
+                "type": "object",
+                "properties": {
+                  "catalogId": {
+                    "type": "string",
+                    "description": "Catalog id in Commerce Manager. Meta requires it"
+                  }
+                }
+              },
+              "attachments": {
+                "type": "array",
+                "description": "The showcase sections",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "description": "Section title"
+                    },
+                    "list": {
+                      "type": "array",
+                      "description": "Products of the section. Always send it, even with a single product",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Product SKU (`retailer_id`)"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "Sent message ID — 32-character uppercase hexadecimal string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the refusal, in UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error category",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Case code. Present only when the case has its own code",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error description. The text may change: handle the error by `code` and `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generated in the Omni Z-API Security panel"
+      }
+    }
+  }
+}

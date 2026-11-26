@@ -22,6 +22,28 @@ El `messageId` es el **id de Omni** — el mismo que vuelve en el envío (`POST 
   - `422` `CHAT_NOT_SUPPORTED`: la conversación del mensaje no es un teléfono de 8 a 15 dígitos, un grupo ni un `@lid`.
 </Note>
 
+## Rechazo del proveedor al fijar, desfijar y elegir opción
+
+Fijar, desfijar y elegir opción llaman al proveedor del canal en el momento. Cuando no confirma la acción, la API responde con el `subCode` del motivo:
+
+| Status | `subCode` | Cuándo | `message` |
+|---|---|---|---|
+| `422` | `PROVIDER_REJECTED` | El proveedor del canal rechazó la acción | `The channel provider refused the request` |
+| `502` | `PROVIDER_UNAVAILABLE` | El proveedor no respondió, o respondió algo que no es éxito ni rechazo conocido | El texto fijo de la acción: `Message pinning failed`, `Message unpinning failed` o `Option choice failed` |
+
+En el `422`, el `code` es `BUSINESS_RULE_VIOLATION`. En el `502`, el `code` es `INTEGRATION_ERROR`:
+
+```json
+{
+  "timestamp": "2026-10-22T14:00:00.123Z",
+  "code": "INTEGRATION_ERROR",
+  "subCode": "PROVIDER_UNAVAILABLE",
+  "message": "Message pinning failed"
+}
+```
+
+Trata el rechazo por el `subCode`: el `message` puede cambiar.
+
 ## Errores comunes
 
 Además de los anteriores, toda acción en mensaje puede responder, en la **API Omni**:

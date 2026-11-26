@@ -187,6 +187,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/ProviderRateLimited"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
           }
         }
       }
@@ -342,6 +348,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/ProviderRateLimited"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
           }
         }
       }
@@ -493,6 +505,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/ProviderRateLimited"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
           }
         }
       }
@@ -674,6 +692,12 @@
           },
           "404": {
             "$ref": "#/components/responses/InstanceNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/ProviderRateLimited"
+          },
+          "504": {
+            "$ref": "#/components/responses/IntegrationTimeout"
           }
         }
       }
@@ -922,6 +946,42 @@
             },
             "example": {
               "error": "instance not found"
+            }
+          }
+        }
+      },
+      "ProviderRateLimited": {
+        "description": "O canal pediu para esperar. O header `Retry-After` traz o tempo em segundos quando o canal o manda. Outras recusas do canal (`4xx`) chegam com o mesmo status que ele deu e o mesmo corpo",
+        "headers": {
+          "Retry-After": {
+            "description": "Segundos a esperar antes de repetir. Só vem quando o canal manda o tempo em segundos",
+            "schema": {
+              "type": "string"
+            },
+            "example": "30"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "provider_error"
+            }
+          }
+        }
+      },
+      "IntegrationTimeout": {
+        "description": "O canal passou do prazo para responder. A rota só lê dados: você pode repetir a chamada",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "integration_timeout",
+              "message": "The operation took too long to complete. Try again in a few moments."
             }
           }
         }

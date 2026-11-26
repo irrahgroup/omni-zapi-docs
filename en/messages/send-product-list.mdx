@@ -1,22 +1,17 @@
 ---
 title: "Send multi-product"
 description: "Build a showcase with sections and up to 30 products"
+openapi: "/en/messages/openapi-product-list.json POST /v1/channels/{channelId}/messages"
 ---
 
 import { WindowRule } from '/snippets/window-rule.mdx';
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
-<Warning>
-  **In development.** This endpoint does not exist yet. The page is published so you can get to know the
-  shape and plan the integration — the body below is what will apply when it ships.
-</Warning>
-
 ## Overview
 
-Sends a showcase with catalog products grouped into sections. The customer browses, fills a cart and sends
-the order back.
+Sends a showcase with catalog products, grouped into sections. Each item of `content.attachments` is a section, and each item of its `list` is a product.
 
-The `content.type` field will be `PRODUCT_LIST`.
+The `content.type` field must be `INTERACTIVE_MULTI_PRODUCT`.
 
 <WindowRule lang="en" template="for multi-product" href="/en/templates/models/mpm" />
 
@@ -26,19 +21,41 @@ The `content.type` field will be `PRODUCT_LIST`.
 
 ```json
 {
-  "recipient": { "identifier": "5511999999999" },
+  "recipient": {
+    "identifier": "5511999999999"
+  },
   "content": {
-    "type": "PRODUCT_LIST",
-    "header": "This week's picks",
-    "message": "We picked a few products for you.",
-    "footer": "We ship nationwide",
-    "catalogId": "1234567890",
-    "sections": [
+    "type": "INTERACTIVE_MULTI_PRODUCT",
+    "header": {
+      "message": "Seleção da semana"
+    },
+    "body": {
+      "message": "Separamos alguns produtos para você."
+    },
+    "footer": {
+      "message": "Entrega em todo o Brasil"
+    },
+    "action": {
+      "catalogId": "1234567890"
+    },
+    "attachments": [
       {
-        "title": "T-shirts",
-        "products": [
-          { "productRetailerId": "SKU-1042" },
-          { "productRetailerId": "SKU-1043" }
+        "title": "Camisetas",
+        "list": [
+          {
+            "id": "SKU-1042"
+          },
+          {
+            "id": "SKU-1043"
+          }
+        ]
+      },
+      {
+        "title": "Bermudas",
+        "list": [
+          {
+            "id": "SKU-2001"
+          }
         ]
       }
     ]
@@ -46,13 +63,48 @@ The `content.type` field will be `PRODUCT_LIST`.
 }
 ```
 
+## Fields
+
+| Field | Required | Description |
+|---|:---:|---|
+| `content.header.message` | no | Header, text only. Meta requires it |
+| `content.body` | yes | Message body |
+| `content.body.message` | no | Message text |
+| `content.footer.message` | no | Footer |
+| `content.action.catalogId` | no | Catalog id in Commerce Manager. Meta requires it |
+| `content.attachments` | no | The showcase sections |
+| `content.attachments[].title` | no | Section title |
+| `content.attachments[].list` | no | Products of the section. Always send it, even with a single product |
+| `content.attachments[].list[].id` | no | Product SKU (`retailer_id`) |
+
 ## Rules
 
 | Rule | Value |
 |---|---|
-| Products | up to **30** across all sections |
-| Header | text only |
+| Products | Meta accepts up to **30**, adding up all sections |
 | Valid products | at least one SKU must exist in the catalog |
+| Checks | the API does not check sections, products or limits before sending; the Meta refusal arrives after the `200` |
 
-The order the customer builds arrives on your webhook as an order message. Payment is the next step: reply
-with [order details](/en/messages/send-order-details) or with a link.
+<Note>
+  Without `content.body`, the API responds `400` with `code` `VALIDATION_ERROR` and `message` `"Field 'content.body': is required for message type INTERACTIVE_MULTI_PRODUCT"`, and the message is not sent.
+</Note>
+
+<Note>
+  On the other channels, the API does not refuse this type before sending: it responds `200`, but the message does not reach the customer.
+</Note>
+
+<Note>
+  Details of the Meta Cloud API rule in [conversation window](/en/conversation-window). See [what each channel accepts](/en/channels/message-support) for every channel.
+</Note>
+
+<Note>
+  If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
+</Note>
+
+<Note>
+  When the send is accepted, the API responds `200` with the `messageId`. See [API response](/en/messages/introduction#api-response).
+</Note>
+
+<Note>
+  This type has no `send-*` route of its own. Send it with `POST /v1/channels/{channelId}/messages`.
+</Note>

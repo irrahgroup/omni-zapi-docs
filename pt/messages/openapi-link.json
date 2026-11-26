@@ -1,0 +1,264 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Enviar link com prévia",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/messages": {
+      "post": {
+        "summary": "Enviar link com prévia",
+        "description": "Envie um texto com a prévia de um link.",
+        "operationId": "sendLinkMessage",
+        "tags": [
+          "Mensagens"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID do canal",
+            "schema": {
+              "type": "string",
+              "example": "SEU_CHANNEL_ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendLinkRequest"
+              },
+              "example": {
+                "recipient": {
+                  "identifier": "5511999999999"
+                },
+                "content": {
+                  "type": "LINK",
+                  "body": {
+                    "message": "Veja a nossa nova coleção: https://exemplo.com/colecao",
+                    "url": "https://exemplo.com/colecao",
+                    "title": "Coleção de verão",
+                    "description": "Peças novas toda semana",
+                    "thumbnail": "https://exemplo.com/capa.jpg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MessageSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ChannelDisconnected"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "MessageSuccess": {
+        "description": "Mensagem enviada com sucesso",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MessageResponse"
+            },
+            "example": {
+              "messageId": "01A0C92D0C957FE98B73C8BA0CACF741"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Token inválido ou ausente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": 401,
+              "message": "Unauthorized"
+            }
+          }
+        }
+      },
+      "ChannelDisconnected": {
+        "description": "Canal desconectado. A mensagem não foi enviada: conecte o canal de novo e repita o envio.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "BUSINESS_RULE_VIOLATION",
+              "subCode": "CHANNEL_DISCONNECTED",
+              "message": "Channel is disconnected"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Corpo sem o campo obrigatório do tipo",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SendError"
+            },
+            "example": {
+              "timestamp": "2026-10-22T14:00:00.123Z",
+              "code": "VALIDATION_ERROR",
+              "message": "Field 'content.body': is required for message type LINK"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SendLinkRequest": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "content"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "object",
+            "required": [
+              "identifier"
+            ],
+            "properties": {
+              "identifier": {
+                "type": "string",
+                "description": "Telefone do destinatário (DDI + DDD + número)",
+                "example": "5511999999999"
+              }
+            }
+          },
+          "content": {
+            "type": "object",
+            "required": [
+              "type",
+              "body"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Tipo da mensagem",
+                "enum": [
+                  "LINK"
+                ]
+              },
+              "body": {
+                "type": "object",
+                "description": "Dados da mensagem",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "Texto da mensagem"
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "URL do link"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Título da prévia"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Descrição da prévia"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "description": "URL da imagem da prévia"
+                  },
+                  "linkType": {
+                    "type": "string",
+                    "description": "Formato da prévia. A API repassa o valor ao canal sem conferir"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "ID da mensagem enviada — hexadecimal de 32 caracteres maiúsculos"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SendError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data e hora da recusa, em UTC"
+          },
+          "code": {
+            "type": "string",
+            "description": "Categoria do erro",
+            "example": "BUSINESS_RULE_VIOLATION"
+          },
+          "subCode": {
+            "type": "string",
+            "description": "Código do caso. Só vem quando o caso tem um código próprio",
+            "example": "CHANNEL_DISCONNECTED"
+          },
+          "message": {
+            "type": "string",
+            "description": "Descrição do erro. O texto pode mudar: trate o erro por `code` e `subCode`",
+            "example": "Channel is disconnected"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key gerada no painel de Segurança do Omni Z-API"
+      }
+    }
+  }
+}

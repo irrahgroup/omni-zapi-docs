@@ -1,0 +1,69 @@
+---
+title: "Send several contacts"
+description: "Send several contacts in one message"
+openapi: "/en/messages/openapi-contacts.json POST /v1/channels/{channelId}/messages"
+---
+
+## Overview
+
+Sends several contacts in one message. Each contact is an item of the `content.attachments` array.
+
+`CONTACT_ARRAY` goes through the same processing as `CONTACT`: both become the same contacts message. See also [Send contact](/en/messages/send-contact).
+
+The `content.type` field must be `CONTACT_ARRAY`.
+
+## Request body
+
+```json
+{
+  "recipient": {
+    "identifier": "5511999999999"
+  },
+  "content": {
+    "type": "CONTACT_ARRAY",
+    "attachments": [
+      {
+        "name": "Gutemberg Fernandes",
+        "phones": [
+          "5511888888888"
+        ]
+      },
+      {
+        "name": "Ana Souza",
+        "phones": [
+          "5511777777777",
+          "5511666666666"
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Fields
+
+| Field | Required | Description |
+|---|:---:|---|
+| `content.attachments` | yes | List of contacts |
+| `content.attachments[].name` | no | Contact name. It is passed on to the channel, which builds the name its own way |
+| `content.attachments[].phones` | no | Contact phone numbers |
+
+<Note>
+  Without `content.attachments`, the API responds `400` with `code` `VALIDATION_ERROR` and `message` `"Field 'content.attachments': is required for message type CONTACT_ARRAY"`, and the message is not sent.
+</Note>
+
+<Note>
+  On Instagram, the API refuses the send right away: it responds `422` with `[UNSUPPORTED_CHANNEL_TYPE]` in the `message`, and the message is not created. On the other channels, it does not refuse this type before sending. The `200` confirms that the API accepted the message, not that the channel delivered it: follow the status through the [webhook](/en/webhooks/payloads). See [what each channel accepts](/en/channels/message-support).
+</Note>
+
+<Note>
+  If the channel is disconnected, the API refuses the send with `422` and `subCode` `CHANNEL_DISCONNECTED`, and the message is not sent. See [Send errors](/en/messages/introduction#send-errors).
+</Note>
+
+<Note>
+  When the send is accepted, the API responds `200` with the `messageId`. See [API response](/en/messages/introduction#api-response).
+</Note>
+
+<Note>
+  The `POST /v1/channels/{channelId}/send-contacts` route takes the same body as this page and gives the same response. On it, `content.type` is optional and, if you send it, it must be `CONTACT_ARRAY`. With any other value, the API responds `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be CONTACT_ARRAY on /send-contacts; leave it out, or send other types with POST /v1/channels/{id}/messages"}`, and the message is not sent. See [Routes by type](/en/messages/introduction#routes-by-type).
+</Note>

@@ -7,11 +7,14 @@ openapi: "/pt/messages/openapi-contact.json POST /v1/channels/{channelId}/messag
 import { ChannelSupport } from '/snippets/channel-support.mdx';
 
 <Warning>
-  **Em implementação.** Hoje só **um contato por mensagem** funciona: o `attachments` aceita uma lista, mas do segundo item em diante nada é enviado.
+  **Em implementação.** Todos os contatos do `attachments` são enviados, e cada canal entrega de um jeito:
 
-  Também só levamos `name` e `phones`. A [Meta aceita](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/contacts-messages) até **257 contatos** no mesmo envio, e em cada um também e-mail, endereço, organização, aniversário e site.
+  - **WhatsApp Oficial e WhatsApp Web:** todos os contatos chegam numa mensagem só.
+  - **Telegram:** cada telefone de cada contato vira uma mensagem.
+  - **Instagram:** a API recusa o envio na hora, com `422`.
+  - **Messenger:** o canal não tem cartão de contato. A API responde `200`, mas a mensagem não chega.
 
-  Estamos ampliando o endpoint. Até lá, mande um contato por requisição.
+  De cada contato, só levamos `name` e `phones`. A [Meta aceita](https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/contacts-messages) também e-mail, endereço, organização, aniversário e site. Para mandar vários contatos, veja também [Enviar vários contatos](/messages/send-contacts).
 </Warning>
 
 ## Conceituação

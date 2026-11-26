@@ -26,3 +26,13 @@ En las rutas de datos (listar, consultar, foto y verificar), las verificaciones 
 <Note>
   El estado de bloqueado queda en caché hasta 4 horas: bloquear o desbloquear el workspace puede tardar ese tiempo en aplicarse.
 </Note>
+
+## Errores del canal
+
+En las rutas de listar, consultar, foto y verificar, la API reenvía el pedido al canal. Además de los errores anteriores, pueden responder:
+
+- **Rechazo del canal (`4xx`)**: el mismo status que dio el canal, con `{"error": "provider_error", "message": "<texto del canal>"}`. El `message` puede faltar.
+- **`429`**: el mismo cuerpo, con el header `Retry-After` cuando el canal envía el tiempo en segundos. Espera ese tiempo antes de repetir.
+- **`504`** `{"error": "integration_timeout", "message": "The operation took too long to complete. Try again in a few moments."}`: el canal superó el plazo para responder. La ruta solo lee datos, así que puedes repetir la llamada.
+- **`502`** `{"error": "integration_unavailable", ...}`: la conexión con el canal falló, el canal respondió `401`, `403`, `405` o `5xx`, o dio una respuesta fuera del formato esperado.
+- **`502`** `{"error": "provider_response_too_large", "message": "..."}`: la respuesta del canal superó el tamaño aceptado. En el listado, el `message` pide un `pageSize` menor (`The channel answer is too large. Use a smaller pageSize.`); en la verificación, menos contactos por petición (`Send fewer contacts per request.`).
