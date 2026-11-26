@@ -1,0 +1,48 @@
+---
+title: "Ativar canal Telegram"
+description: "Finalize no backend a conexão de um canal BOT_TELEGRAM com o token do bot"
+sidebarTitle: "Ativar Telegram"
+keywords: ["POST /v1/channels/{channelId}/activate-telegram", "BOT_TELEGRAM", "ativar canal", "Telegram"]
+openapi: "/pt/channels/openapi-activate-telegram.json POST /v1/channels/{channelId}/activate-telegram"
+---
+
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges scope="TELEGRAM_ONLY" lang="pt" />
+
+## Conceituação
+
+Finaliza a conexão de um canal `BOT_TELEGRAM` no seu backend, depois do `client.connect()` do SDK. Veja a [visão geral da ativação](/channels/activate-channel) para o fluxo completo, o corpo montado a partir do SDK, o timeout e os erros comuns às rotas de ativação.
+
+## Corpo da requisição
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `token` | string | Token do bot. É o `botToken` que o SDK devolve |
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-telegram \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{
+    "token": "123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"
+  }'
+```
+
+## Resposta
+
+Resposta `200`:
+
+```json
+{
+  "externalId": "123456789",
+  "connected": true,
+  "displayName": "minhaloja_bot"
+}
+```
+
+## Erros
+
+Os erros comuns às rotas de ativação (`401`, `403`, `404`, `422`, `502` e `504`) estão em [Erros](/channels/activate-channel#erros). Ativar um canal que já está ativo responde `422`, com `TELEGRAM_IS_ALREADY_ACTIVATED` no campo `error`: veja [Canal já ativo](/channels/activate-channel#canal-já-ativo).
+
+No Telegram, `token` vazio (`""`) volta `422`, mas sem o campo `token` a resposta pode ser `502` `integration_unavailable`. Envie sempre o campo.

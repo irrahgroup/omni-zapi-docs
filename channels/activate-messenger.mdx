@@ -1,0 +1,57 @@
+---
+title: "Ativar canal Messenger"
+description: "Finalize no backend a conexão de um canal META_MESSENGER com o code, o redirectUri e o pageId do SDK"
+sidebarTitle: "Ativar Messenger"
+keywords: ["POST /v1/channels/{channelId}/activate-messenger", "META_MESSENGER", "ativar canal", "Messenger"]
+openapi: "/pt/channels/openapi-activate-messenger.json POST /v1/channels/{channelId}/activate-messenger"
+---
+
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges scope="MESSENGER_ONLY" lang="pt" />
+
+## Conceituação
+
+Finaliza a conexão de um canal `META_MESSENGER` no seu backend, depois do `client.connect()` do SDK. Veja a [visão geral da ativação](/channels/activate-channel) para o fluxo completo, o corpo montado a partir do SDK, o timeout e os erros comuns às rotas de ativação.
+
+## Corpo da requisição
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `code` | string | `code` devolvido pelo SDK. Obrigatório |
+| `redirectUri` | string | `redirectUri` devolvido pelo SDK |
+| `pageId` | string | Página a vincular. Obrigatório quando o usuário administra mais de uma página |
+
+O `pageId` vem do SDK, quando o usuário administra uma página só, ou da [lista de páginas](/connect/messenger) de `list-messenger-pages`, quando ele escolhe uma entre várias.
+
+- Com mais de uma página e sem `pageId`, a API responde `422`.
+- Um `pageId` que não está entre as páginas da conta também é recusado.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-messenger \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{
+    "code": "CODE_DO_SDK",
+    "redirectUri": "REDIRECT_URI_DO_SDK",
+    "pageId": "102938475601234"
+  }'
+```
+
+## Resposta
+
+Resposta `200`:
+
+```json
+{
+  "pageId": "102938475601234",
+  "connected": true,
+  "pageName": "Minha Loja",
+  "pageCategory": "Shopping & retail",
+  "displayName": "Minha Loja"
+}
+```
+
+## Erros
+
+Os erros comuns às rotas de ativação (`401`, `403`, `404`, `422`, `502` e `504`) estão em [Erros](/channels/activate-channel#erros). Ativar um canal que já está ativo responde `422`, com `MESSENGER_META_IS_ALREADY_ACTIVATED` no campo `error`: veja [Canal já ativo](/channels/activate-channel#canal-já-ativo).
