@@ -69,5 +69,6 @@ La respuesta es `422`, con `error.type` `WEBHOOK_DELIVERY_NOT_RESENDABLE` y el m
 | Status | Cuándo |
 |---|---|
 | `400` | `deliveryId` no es un UUID |
+| `403` | La clave de API no tiene `webhooks:write`, con el cuerpo de `credential_scope_denied` (consulta [Clave de API con permisos](/es/webhooks/deliveries#clave-de-api-con-permisos)). O la entrega es de un evento de cobro o de la plataforma y la clave no tiene `billing:read`: en ese caso, el cuerpo es `{"error": {"type": "credential.scope.denied"}}` |
 | `404` | La entrega no existe, salió del período guardado, es de otro workspace, es de una app conectada (`source: "APP"`), o el webhook se eliminó. El cuerpo es el texto genérico de la [central](/es/webhooks/deliveries#errores) |
 | `503` | El reenvío no salió: `{"error": "O reenvio nao foi enviado; tente de novo."}`. No se envió nada a tu endpoint, y el pedido no cuenta en el límite por minuto |

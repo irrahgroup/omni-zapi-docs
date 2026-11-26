@@ -21,14 +21,19 @@ O `deliveryId` é o UUID do header `x-webhook-delivery-id`, ou o `deliveryId` de
 
 ### Corpos ocultos
 
-Com a secret key, os corpos vêm na resposta. Quando eles não vêm, `bodyHidden` é `true` e os campos de corpo vêm `null`.
+Com a chave principal do workspace, os corpos vêm na resposta. Quando eles não vêm, `bodyHidden` é `true` e os campos de corpo vêm `null`. Isso acontece:
 
-As entregas para um app conectado (`source: "APP"`) sempre vêm com `bodyHidden: true`, sem URL, headers nem corpos.
+- com uma chave de API sem `webhooks:write`;
+- numa entrega de evento de cobrança ou da plataforma, com uma chave de API sem `billing:read`;
+- nas entregas para um app conectado (`source: "APP"`), que sempre vêm sem URL, headers nem corpos.
+
+Veja [Chave de API com permissões](/webhooks/deliveries#chave-de-api-com-permissões).
 
 ### Erros
 
 | Status | Quando |
 |---|---|
 | `400` | `deliveryId` não é um UUID |
+| `403` | A chave de API não tem `webhooks:read`. Veja [Chave de API com permissões](/webhooks/deliveries#chave-de-api-com-permissões) |
 | `404` | A entrega não existe, saiu do período guardado pelo seu plano ou é de outro workspace |
 | `503` | O histórico demorou mais de 5 segundos ou está fora do ar. Tente de novo em instantes |

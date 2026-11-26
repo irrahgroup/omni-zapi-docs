@@ -43,6 +43,7 @@ Each delivery in the batch is resent as in [Resend a delivery](/en/webhooks/rese
 | `skippedNotResendable` | How many were left out because the stored body cannot be read, or because another resend of the same delivery started at the same time |
 | `dailyRemaining` | How many resends still fit today on this webhook |
 | `oldestExpiresAt` | When the oldest delivery left leaves the history. After that, it can no longer be resent |
+| `skippedScope` | How many were left out because they are billing or platform events and the API key does not have `billing:read`. Only present when greater than zero |
 
 ### Limits
 
@@ -57,6 +58,7 @@ Above that, the response is `429`.
 | Status | When |
 |---|---|
 | `400` | `webhookId` is missing, or `episode` is not `current` |
+| `403` | The API key does not have `webhooks:write`. See [API key with permissions](/en/webhooks/deliveries#api-key-with-permissions) |
 | `404` | The webhook does not exist or belongs to another workspace |
 | `422` | The webhook is suspended or disabled. The reason comes in `error.details.reason`: `WEBHOOK_SUSPENDED` or `WEBHOOK_DISABLED` |
 | `429` | Batch limit or daily resend limit |

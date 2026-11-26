@@ -25,6 +25,28 @@ Authorization: Bearer <secret-key>
 - El token OAuth de una app conectada no tiene acceso a estas rutas.
 - Si el workspace no está activo, la respuesta es `422` con `{"error": "Webhook management requires an active workspace"}`.
 
+### Clave de API con permisos
+
+La clave principal del workspace tiene acceso total a la central. Una clave de API con permisos elegidos solo alcanza las rutas que esos permisos cubren:
+
+| Permiso | Qué libera |
+|---|---|
+| `webhooks:read` | [Listar entregas](/es/webhooks/list-deliveries), [Detallar entrega](/es/webhooks/get-delivery) y [Ver la salud de los webhooks](/es/webhooks/webhooks-health) |
+| `webhooks:write` | [Reenviar una entrega](/es/webhooks/resend-delivery), [Reenviar las entregas que fallaron](/es/webhooks/resend-deliveries), [Reactivar webhook](/es/webhooks/reactivate-webhook) y los cuerpos en el detalle de la entrega |
+| `billing:read` | El cuerpo y el reenvío de las entregas de evento de cobro o de la plataforma |
+
+Sin el permiso de la ruta, la respuesta es `403`:
+
+```json
+{
+  "error": "credential_scope_denied",
+  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. ...",
+  "scope": "webhooks:read"
+}
+```
+
+`scope` trae el permiso que faltó. El Propietario del workspace cambia los permisos de la clave en el panel, en **Seguridad > Claves de API**.
+
 ## Por cuánto tiempo se guardan las entregas
 
 El historial guarda las entregas durante la cantidad de días de tu plan. El valor actual viene en `retentionDays`, en la ruta [Ver la salud de los webhooks](/es/webhooks/webhooks-health).
@@ -72,6 +94,7 @@ Los errores de la central llegan en el campo `error`:
 | Status | Cuándo | Cuerpo |
 |---|---|---|
 | `400` | Filtro, parámetro o cuerpo inválido | `{"error": {"message": "limit deve ser de 1 a 100"}}` |
+| `403` | Clave de API sin el permiso de la ruta. Consulta [Clave de API con permisos](#clave-de-api-con-permisos) | `{"error": "credential_scope_denied", "message": "...", "scope": "webhooks:read"}` |
 | `404` | Entrega o webhook que no existe, expiró o es de otro workspace | `{"error": "The operation could not be completed right now. Try again in a few moments."}` |
 | `422` | Regla de negocio, como una entrega que no se puede reenviar | `{"error": {"type": "...", "message": "...", "details": {...}}}` |
 | `429` | Límite de reenvío | `{"error": {"message": "..."}}` |

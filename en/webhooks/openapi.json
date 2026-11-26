@@ -983,6 +983,21 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "description": "The API key does not have the `webhooks:read` permission. The primary key, with full access, never gets this refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialScopeDenied"
+                },
+                "example": {
+                  "error": "credential_scope_denied",
+                  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. The workspace Owner can change the key permissions under Security > API keys in the panel at https://app.omni.z-api.io, or use a key that has it. See https://developer.omni.z-api.io/en/authentication",
+                  "scope": "webhooks:read"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Workspace without an active configuration",
             "content": {
@@ -1138,6 +1153,21 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "description": "The API key does not have the `webhooks:read` permission. The primary key, with full access, never gets this refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialScopeDenied"
+                },
+                "example": {
+                  "error": "credential_scope_denied",
+                  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. The workspace Owner can change the key permissions under Security > API keys in the panel at https://app.omni.z-api.io, or use a key that has it. See https://developer.omni.z-api.io/en/authentication",
+                  "scope": "webhooks:read"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Delivery does not exist, is outside the kept period or belongs to another workspace. The body is always the same generic text, which does not say whether the delivery, the webhook or the workspace was missing.",
             "content": {
@@ -1247,6 +1277,28 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "The API key does not have the `webhooks:write` permission, with the `credential_scope_denied` body. Or the delivery is for a billing or platform event and the key does not have `billing:read`: in that case the body is `{\"error\": {\"type\": \"credential.scope.denied\"}}`. The primary key, with full access, never gets this refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/CredentialScopeDenied"
+                    },
+                    {
+                      "$ref": "#/components/schemas/WebhookCentralError"
+                    }
+                  ]
+                },
+                "example": {
+                  "error": "credential_scope_denied",
+                  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. The workspace Owner can change the key permissions under Security > API keys in the panel at https://app.omni.z-api.io, or use a key that has it. See https://developer.omni.z-api.io/en/authentication",
+                  "scope": "webhooks:write"
+                }
+              }
+            }
           },
           "404": {
             "description": "Delivery does not exist, is outside the kept period, belongs to another workspace, is to a connected app (`source: \"APP\"`), or the webhook was deleted. The body is always the same generic text, which does not say whether the delivery, the webhook or the workspace was missing.",
@@ -1384,6 +1436,21 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "description": "The API key does not have the `webhooks:write` permission. The primary key, with full access, never gets this refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialScopeDenied"
+                },
+                "example": {
+                  "error": "credential_scope_denied",
+                  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. The workspace Owner can change the key permissions under Security > API keys in the panel at https://app.omni.z-api.io, or use a key that has it. See https://developer.omni.z-api.io/en/authentication",
+                  "scope": "webhooks:write"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Webhook does not exist or belongs to another workspace. The body is always the same generic text, which does not say whether the delivery, the webhook or the workspace was missing.",
             "content": {
@@ -1491,6 +1558,21 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "403": {
+            "description": "The API key does not have the `webhooks:read` permission. The primary key, with full access, never gets this refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialScopeDenied"
+                },
+                "example": {
+                  "error": "credential_scope_denied",
+                  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. The workspace Owner can change the key permissions under Security > API keys in the panel at https://app.omni.z-api.io, or use a key that has it. See https://developer.omni.z-api.io/en/authentication",
+                  "scope": "webhooks:read"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Workspace without an active configuration",
             "content": {
@@ -1570,6 +1652,21 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "The API key does not have the `webhooks:write` permission. The primary key, with full access, never gets this refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialScopeDenied"
+                },
+                "example": {
+                  "error": "credential_scope_denied",
+                  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. The workspace Owner can change the key permissions under Security > API keys in the panel at https://app.omni.z-api.io, or use a key that has it. See https://developer.omni.z-api.io/en/authentication",
+                  "scope": "webhooks:write"
+                }
+              }
+            }
           },
           "404": {
             "description": "Webhook does not exist or belongs to another workspace. The body is always the same generic text, which does not say whether the delivery, the webhook or the workspace was missing.",
@@ -2338,7 +2435,7 @@
           },
           "bodyHidden": {
             "type": "boolean",
-            "description": "`true` when the bodies are not in the response"
+            "description": "`true` when the bodies are not in the response: delivery to a connected app, API key without `webhooks:write`, or billing or platform event with an API key without `billing:read`"
           },
           "source": {
             "type": "string",
@@ -2422,6 +2519,10 @@
             ],
             "format": "date-time",
             "description": "When the oldest delivery left leaves the history. `null` when none is left"
+          },
+          "skippedScope": {
+            "type": "integer",
+            "description": "Billing or platform event deliveries left out because the API key does not have `billing:read`. Only present when greater than zero"
           }
         }
       },
@@ -2547,6 +2648,27 @@
               "$ref": "#/components/schemas/WebhookHealthEntry"
             },
             "description": "State of each webhook in the workspace"
+          }
+        }
+      },
+      "CredentialScopeDenied": {
+        "type": "object",
+        "description": "Refusal of an API key that lacks the permission the route requires.",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Always `credential_scope_denied`"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable text. It may change"
+          },
+          "scope": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The permission the key is missing"
           }
         }
       }

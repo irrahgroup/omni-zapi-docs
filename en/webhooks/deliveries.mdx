@@ -25,6 +25,28 @@ Authorization: Bearer <secret-key>
 - The OAuth token of a connected app has no access to these routes.
 - If the workspace is not active, the response is `422` with `{"error": "Webhook management requires an active workspace"}`.
 
+### API key with permissions
+
+The workspace primary key has full access to the delivery center. An API key with chosen permissions only reaches the routes those permissions cover:
+
+| Permission | What it unlocks |
+|---|---|
+| `webhooks:read` | [List deliveries](/en/webhooks/list-deliveries), [Get delivery](/en/webhooks/get-delivery) and [Get webhook health](/en/webhooks/webhooks-health) |
+| `webhooks:write` | [Resend a delivery](/en/webhooks/resend-delivery), [Resend failed deliveries](/en/webhooks/resend-deliveries), [Reactivate webhook](/en/webhooks/reactivate-webhook) and the bodies in the delivery detail |
+| `billing:read` | The body and the resend of billing or platform event deliveries |
+
+Without the route permission, the response is `403`:
+
+```json
+{
+  "error": "credential_scope_denied",
+  "message": "Secret key scope does not allow this route: this API key does not have the permission this route needs. ...",
+  "scope": "webhooks:read"
+}
+```
+
+`scope` brings the missing permission. The workspace Owner changes the key permissions in the panel, under **Security > API keys**.
+
 ## How long deliveries are kept
 
 The history keeps deliveries for the number of days in your plan. The current value comes in `retentionDays`, on the [Get webhook health](/en/webhooks/webhooks-health) route.
@@ -72,6 +94,7 @@ Delivery center errors come in the `error` field:
 | Status | When | Body |
 |---|---|---|
 | `400` | Invalid filter, parameter or body | `{"error": {"message": "limit deve ser de 1 a 100"}}` |
+| `403` | API key without the route permission. See [API key with permissions](#api-key-with-permissions) | `{"error": "credential_scope_denied", "message": "...", "scope": "webhooks:read"}` |
 | `404` | A delivery or webhook that does not exist, has expired or belongs to another workspace | `{"error": "The operation could not be completed right now. Try again in a few moments."}` |
 | `422` | Business rule, such as a delivery that cannot be resent | `{"error": {"type": "...", "message": "...", "details": {...}}}` |
 | `429` | Resend limit | `{"error": {"message": "..."}}` |
