@@ -2,7 +2,7 @@
 title: "Estrutura dos payloads de template"
 description: "Exemplos reais dos payloads recebidos no seu webhook para cada evento de template"
 sidebarTitle: "Payloads de template"
-keywords: ["payload", "UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"]
+keywords: ["payload", "UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY", "PENDING_DELETION"]
 ---
 
 import { projectName } from '/snippets/variables.mdx';
@@ -36,12 +36,18 @@ Disparado quando o status de um template muda (aprovado, rejeitado, etc.). O cam
 | `field` | string | Tipo do evento na Meta — `message_template_status_update` |
 | `identifier` | string | Identificador do evento |
 | `type` | string | Tipo interno — `TEMPLATE_STATUS` |
-| `value.event` | string | Novo status do template (ex.: `APPROVED`, `REJECTED`) |
+| `value.event` | string | Novo status do template (ex.: `APPROVED`, `REJECTED`, `PENDING_DELETION`) |
 | `value.message_template_id` | string | ID do template |
 | `value.message_template_name` | string | Nome do template |
 | `value.message_template_language` | string | Idioma do template (ex.: `pt_BR`) |
-| `value.reason` | string \| null | Motivo (preenchido em rejeições; `null` caso contrário) |
+| `value.reason` | string \| null | Motivo (preenchido em rejeições; `NONE` na exclusão; `null` nos outros casos) |
 | `waba_id` | string | ID da conta WhatsApp Business (WABA) |
+
+### Exclusão de template
+
+Quando um template é excluído pelo painel ou pela [API](/templates/delete-template), o webhook recebe um `UPDATE_TEMPLATE_STATUS` com `value.event` igual a `PENDING_DELETION`, seja qual for o status do template: aprovado, rejeitado, em análise ou outro. Nesse evento, `value.reason` vem como `NONE`.
+
+No template aprovado, esse aviso é o da própria Meta e pode chegar algumas horas depois da exclusão.
 
 ## `UPDATE_TEMPLATE_CATEGORY` — Atualização de categoria
 
