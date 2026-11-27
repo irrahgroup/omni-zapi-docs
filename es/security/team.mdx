@@ -1,117 +1,131 @@
 ---
-title: "Equipo y roles"
-description: "Invita personas al workspace y entiende qué puede hacer cada rol"
+title: "Equipo y funciones"
+description: "Invita personas al workspace y entiende qué puede hacer cada función"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
-En {projectName}, cada persona del equipo tiene un **rol** en el workspace. El rol define qué ve y qué puede cambiar en el panel. El equipo está en **Administración → Equipo**.
+En {projectName}, cada persona del equipo tiene una **función** en el workspace. La función define qué ve y qué puede cambiar en el panel. El equipo está en **Administración → Equipo**.
 
-## Roles
+## Funciones
 
-### Owner
+| Función | Qué hace |
+|---|---|
+| **Propietario** | Dueño del workspace. Puede todo, incluso eliminar el workspace y transferir la propiedad. |
+| **Administrador** | Puede todo, menos eliminar el workspace y transferir la propiedad. |
+| **Admin de acceso** | Se ocupa de las personas y de la seguridad: invita y quita personas, da la función Visualización, ve la Auditoría y la Seguridad y cambia la restricción de IP. No ve canales ni facturación. |
+| **Desarrollador** | Se ocupa de las integraciones: ve canales, el token de los canales, plantillas y webhooks, cambia webhooks, apps conectadas e IAs, y ve la Seguridad. No cambia canales. |
+| **Operador de canales** | Opera los canales y las plantillas: ve y cambia canales y plantillas, y ve el token de los canales, los webhooks y las apps conectadas. |
+| **Finanzas** | Ve y cambia la facturación. |
+| **Visualización** | Solo consulta: canales, plantillas, webhooks, apps conectadas, equipo, facturación, Auditoría y Seguridad. No cambia nada y no ve el token de los canales. |
 
-Dueño del workspace. Tiene acceso a **todo**, incluso lo que ningún otro rol puede hacer:
+Cada workspace tiene un único Propietario. Nadie da esta función: solo pasa a otra persona con la [transferencia de la propiedad](#transferir-la-propiedad).
 
-- Gestionar la facturación: suscribir canales, pagar facturas y cambiar la forma de pago.
-- Acceder al menú [Seguridad](/es/security/introduction): credenciales de la API, restricción de IP y configuración del SDK.
-- Promover un Miembro a Manager o degradar un Manager a Miembro.
-- Invitar personas directamente como Manager.
-- Transferir la propiedad del workspace a otra persona del equipo.
+### Gerente y Miembro
 
-Cada workspace tiene un único Owner. No se lo puede quitar del workspace, y su rol solo cambia con la [transferencia de la propiedad](#transferir-la-propiedad).
+Quien ya formaba parte del equipo antes de las funciones aparece como **Gerente** o **Miembro**:
 
-### Manager
+- **Gerente:** ve y cambia canales, plantillas y webhooks, ve el token de los canales y las apps conectadas, invita y quita Miembros, y ve la facturación y la Auditoría.
+- **Miembro:** ve canales, el token de los canales, plantillas, webhooks y apps conectadas. No cambia nada.
 
-Gestiona la operación diaria, sin acceso a facturación ni seguridad:
+Gerente y Miembro no se pueden dar a otras personas. Cuando alguien [edita el acceso](#editar-el-acceso) de un Gerente o de un Miembro, la persona queda con la función elegida.
 
-- Crea, edita y elimina canales y plantillas.
-- Invita personas como Miembro, reenvía y cancela invitaciones.
-- Elimina **solo Miembros**. No elimina a otro Manager ni al Owner.
-- Ve la facturación, sin cambiarla, y consulta la [Auditoría](/es/security/audit).
+### Resumen de los permisos
 
-### Miembro
+| Área | Propietario | Administrador | Admin de acceso | Desarrollador | Operador de canales | Finanzas | Visualización | Gerente | Miembro |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Canales | Cambia | Cambia | — | Ve | Cambia | — | Ve | Cambia | Ve |
+| Token de los canales | Ve | Ve | — | Ve | Ve | — | — | Ve | Ve |
+| Plantillas y flows | Cambia | Cambia | — | Ve | Cambia | — | Ve | Cambia | Ve |
+| Webhooks | Cambia | Cambia | — | Cambia | Ve | — | Ve | Cambia | Ve |
+| Apps conectadas e IAs | Cambia | Cambia | — | Cambia | Ve | — | Ve | Ve | Ve |
+| Facturación | Cambia | Cambia | — | — | — | Cambia | Ve | Ve | — |
+| Equipo | Cambia | Cambia | Cambia | — | — | — | Ve | Cambia¹ | — |
+| Funciones de las personas | Cambia | Cambia | Cambia² | — | — | — | — | — | — |
+| Credenciales de la API y SDK | Cambia | Cambia | Ve | Ve | — | — | Ve | — | — |
+| Restricción de IP | Cambia | Cambia | Cambia | Ve | — | — | Ve | — | — |
+| Auditoría | Ve | Ve | Ve | — | — | — | Ve | Ve | — |
+| Eliminar el workspace y transferir la propiedad | ✅ | — | — | — | — | — | — | — | — |
 
-Acompaña la operación, sin cambiar nada:
+¹ El Gerente invita y quita solo Miembros.
+² El Admin de acceso solo da la función Visualización.
 
-- Ve canales y plantillas.
-- No accede a Equipo, facturación, Auditoría ni Seguridad.
+## Invitar personas
 
-### Resumen de permisos
+Invitan el **Propietario**, el **Administrador**, el **Admin de acceso** y el **Gerente**.
 
-| Acción | Owner | Manager | Miembro |
-|---|:---:|:---:|:---:|
-| Ver canales y plantillas | ✅ | ✅ | ✅ |
-| Crear, editar y eliminar canales y plantillas | ✅ | ✅ | ❌ |
-| Ver el equipo y las invitaciones | ✅ | ✅ | ❌ |
-| Invitar como Miembro, reenviar y cancelar invitaciones | ✅ | ✅ | ❌ |
-| Invitar como Manager | ✅ | ❌ | ❌ |
-| Eliminar miembros | ✅ | Solo Miembros | ❌ |
-| Promover y degradar roles | ✅ | ❌ | ❌ |
-| Transferir la propiedad del workspace | ✅ | ❌ | ❌ |
-| Ver la facturación | ✅ | ✅ | ❌ |
-| Gestionar la facturación | ✅ | ❌ | ❌ |
-| Ver la Auditoría | ✅ | ✅ | ❌ |
-| Acceder a Seguridad | ✅ | ❌ | ❌ |
+1. En el panel, abre **Administración → Equipo** y haz clic en **Invitar personas**.
+2. Ingresa los correos. Sepáralos con comas para invitar a varias personas a la vez.
+3. En **En este workspace**, elige la función. Ninguna viene marcada. Al elegir, el panel muestra lo que la persona podrá ver y cambiar.
+4. Haz clic en **Continuar**, revisa la lista y la función y haz clic en **Enviar las invitaciones**.
+
+Solo das funciones cuyos permisos también tienes. Las demás aparecen atenuadas:
+
+- El Propietario y el Administrador dan cualquier función, menos Propietario.
+- El Admin de acceso da solo Visualización.
+- El Gerente invita solo como Miembro.
+
+Todos los correos del mismo envío reciben la misma función. Cada persona recibe su propio enlace por correo. La invitación:
+
+- **Vence en 7 días.** Después, envía una nueva.
+- Lleva la función elegida: la persona entra al workspace con ella.
+- No se envía a quien ya forma parte del workspace o ya tiene una invitación pendiente.
+- Deja de valer si, antes de que se acepte, quien invitó sale del equipo o pierde el derecho de dar esa función.
+
+## Editar el acceso
+
+Editan el acceso de otras personas el **Propietario**, el **Administrador** y el **Admin de acceso**. En **Administración → Equipo**, abre el menú de acciones (⋮) en la fila de la persona, haz clic en **Editar acceso**, elige la función y haz clic en **Guardar**.
+
+Solo editas a quien tiene funciones que alcanzas:
+
+- El Propietario y el Administrador editan a cualquier persona, menos al Propietario.
+- El Admin de acceso edita a quien es Desarrollador, Operador de canales, Finanzas, Visualización, Gerente o Miembro. No edita a un Administrador ni a otro Admin de acceso.
+
+Si la persona tiene una función que no puedes dar, esa función aparece marcada y no cambia.
+
+El cambio vale en cuanto guardas y queda registrado en la [Auditoría](/es/security/audit). El Propietario y la persona reciben un correo. Con el cambio:
+
+- Se cancelan las invitaciones pendientes que la persona envió y que la nueva función no permitiría enviar.
+- Si la nueva función no permite liberar escritura para apps, las apps conectadas que la persona autorizó con escritura la pierden.
+
+## Quitar a una persona
+
+En el menú de acciones (⋮) de la fila de la persona, haz clic en **Quitar** y confirma. Quitan el Propietario, el Administrador, el Admin de acceso y el Gerente, solo a quien alcanzan, con las mismas reglas de [Editar el acceso](#editar-el-acceso). El Gerente quita solo Miembros.
+
+La persona pierde el acceso al workspace. Se cancelan las invitaciones pendientes que envió, y las apps conectadas que autorizó en este workspace se desconectan.
 
 <Note>
-  Nadie puede eliminarse a sí mismo ni cambiar su propio rol. La excepción es el Owner, que pasa a Manager cuando transfiere la propiedad.
-</Note>
-
-## Cambiar el rol
-
-Solo el **Owner** cambia roles. En **Administración → Equipo**, abre el menú de acciones (⋮) en la fila de la persona:
-
-- **Ascender a manager:** convierte a un Miembro en Manager.
-- **Bajar a miembro:** convierte a un Manager en Miembro.
-
-Antes del cambio, el panel pide confirmación y muestra lo que la persona podrá hacer con el rol nuevo. El cambio vale en cuanto confirmas y queda registrado en la [Auditoría](/es/security/audit). Para sacar a la persona del workspace, usa **Quitar**, en el mismo menú.
-
-<Note>
-  La fila del Owner no tiene menú de acciones: nadie cambia su rol ni lo quita.
+  Nadie puede quitarse a sí mismo ni cambiar su propio acceso. La fila del Propietario no tiene menú de acciones: nadie cambia su función ni lo quita.
 </Note>
 
 ## Transferir la propiedad
 
-El Owner puede pasar la propiedad del workspace a un Manager o a un Miembro del equipo:
+Solo el **Propietario** transfiere la propiedad, a cualquier otra persona activa del equipo:
 
 1. En **Administración → Equipo**, abre el menú de acciones (⋮) en la fila de la persona y haz clic en **Transferir la propiedad**.
 2. Revisa lo que cambia y escribe el nombre del workspace para confirmar.
 
 Con la transferencia:
 
-- La persona elegida pasa a ser Owner del workspace, con acceso a la facturación y al equipo.
-- Tú pasas a Manager.
+- La persona elegida pasa a ser Propietaria del workspace.
+- Tú quedas con la función Administrador.
 - Las apps conectadas que autorizaste en este workspace con permiso de escritura o envío se desconectan.
 - Los dos reciben un correo.
 
-## Invitar personas
-
-1. En el panel, abre **Administración → Equipo** y haz clic en **Invitar personas**.
-2. Ingresa los correos. Sepáralos con comas para invitar a varias personas a la vez.
-3. Elige el **Rol**: **Miembro**, que ya viene marcado, o **Manager**. La opción Manager solo aparece para el Owner.
-4. Haz clic en **Continuar**, revisa la lista y el rol y haz clic en **Enviar las invitaciones**.
-
-Todos los correos del mismo envío reciben el mismo rol. Cada persona recibe su propio enlace por correo. La invitación:
-
-- **Vence en 7 días.** Después, envía una nueva.
-- Lleva el rol elegido: la persona entra al workspace con él.
-- No se envía a quien ya forma parte del workspace o ya tiene una invitación pendiente.
-
 ## Seguir las invitaciones
 
-En la pantalla **Equipo**, filtra la lista por estado (**Todos**, **Activos**, **Invitados** y **Vencidas**) o por rol. Cada invitación muestra el rol con que se envió y en cuántos días vence.
+En la pantalla **Equipo**, filtra la lista por estado (**Todos**, **Activos**, **Invitados** y **Vencidas**) o por **Función**. Cada invitación muestra la función con que se envió y en cuántos días vence.
 
 En el menú de acciones (⋮) de cada invitación:
 
-- **Reenviar invitación:** envía un enlace nuevo. El enlace anterior deja de valer.
+- **Reenviar invitación:** envía un enlace nuevo, válido por otros 7 días. El enlace anterior deja de valer. Solo aparece para quien podría enviar esa invitación.
 - **Cancelar invitación:** en una invitación pendiente, el enlace enviado deja de funcionar.
 - **Eliminar invitación:** en una invitación vencida, la saca de la lista.
 
 ## Aceptar una invitación
 
-La persona invitada abre el enlace del correo o, en el panel, el **menú del perfil → Invitaciones**, y hace clic en **Aceptar** o **Rechazar**. La invitación muestra el rol con que la persona va a entrar. Al aceptar, el workspace aparece en el selector de workspaces.
+La persona invitada abre el enlace del correo o, en el panel, el **menú del perfil → Invitaciones**, y hace clic en **Aceptar** o **Rechazar**. La invitación muestra la función con que la persona va a entrar. Al aceptar, el workspace aparece en el selector de workspaces.
 
 <Info>
-  La persona entra al workspace con el rol de la invitación. Si después necesita otro rol, el Owner lo cambia en [Cambiar el rol](#cambiar-el-rol).
+  La persona entra al workspace con la función de la invitación. Si después necesita otra función, quien puede editar el acceso la cambia en [Editar el acceso](#editar-el-acceso).
 </Info>

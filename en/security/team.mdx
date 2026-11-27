@@ -9,102 +9,116 @@ In {projectName}, each person on the team has a **role** in the workspace. The r
 
 ## Roles
 
-### Owner
+| Role | What it does |
+|---|---|
+| **Owner** | Owns the workspace. Can do everything, including deleting the workspace and transferring ownership. |
+| **Administrator** | Can do everything except deleting the workspace and transferring ownership. |
+| **Access admin** | Takes care of people and security: invites and removes people, gives the Viewer role, sees the Audit log and Security, and changes the IP restriction. Does not see channels or billing. |
+| **Developer** | Takes care of integrations: sees channels, the channel token, templates and webhooks, changes webhooks, connected apps and AIs, and sees Security. Does not change channels. |
+| **Channel operator** | Runs channels and templates: sees and changes channels and templates, and sees the channel token, webhooks and connected apps. |
+| **Finance** | Sees and changes billing. |
+| **Viewer** | Only looks: channels, templates, webhooks, connected apps, team, billing, Audit log and Security. Changes nothing and does not see the channel token. |
 
-Workspace owner. Has access to **everything**, including what no other role can do:
+Each workspace has a single Owner. Nobody gives this role: it only moves to another person through the [ownership transfer](#transfer-ownership).
 
-- Manage billing: subscribe to channels, pay invoices and change the payment method.
-- Access the [Security](/en/security/introduction) menu: API credentials, IP restriction and SDK configuration.
-- Promote a Member to Manager or demote a Manager to Member.
-- Invite people directly as Manager.
-- Transfer ownership of the workspace to another person on the team.
+### Manager and Member
 
-Each workspace has a single Owner. The Owner cannot be removed from the workspace, and their role only changes through an [ownership transfer](#transfer-ownership).
+People who were already on the team before roles appear as **Manager** or **Member**:
 
-### Manager
+- **Manager:** sees and changes channels, templates and webhooks, sees the channel token and connected apps, invites and removes Members, and sees billing and the Audit log.
+- **Member:** sees channels, the channel token, templates, webhooks and connected apps. Changes nothing.
 
-Runs the day-to-day operation, without access to billing and security:
-
-- Creates, edits and deletes channels and templates.
-- Invites people as Member, resends and cancels invitations.
-- Removes **only Members**. Cannot remove another Manager or the Owner.
-- Sees billing, without changing it, and checks the [Audit log](/en/security/audit).
-
-### Member
-
-Follows the operation, without changing anything:
-
-- Sees channels and templates.
-- Does not access Team, billing, Audit log or Security.
+Manager and Member cannot be given to other people. When someone [edits the access](#edit-access) of a Manager or a Member, the person gets the chosen role.
 
 ### Permissions summary
 
-| Action | Owner | Manager | Member |
-|---|:---:|:---:|:---:|
-| See channels and templates | ✅ | ✅ | ✅ |
-| Create, edit and delete channels and templates | ✅ | ✅ | ❌ |
-| See the team and invitations | ✅ | ✅ | ❌ |
-| Invite as Member, resend and cancel invitations | ✅ | ✅ | ❌ |
-| Invite as Manager | ✅ | ❌ | ❌ |
-| Remove members | ✅ | Members only | ❌ |
-| Promote and demote roles | ✅ | ❌ | ❌ |
-| Transfer ownership of the workspace | ✅ | ❌ | ❌ |
-| See billing | ✅ | ✅ | ❌ |
-| Manage billing | ✅ | ❌ | ❌ |
-| See the Audit log | ✅ | ✅ | ❌ |
-| Access Security | ✅ | ❌ | ❌ |
+| Area | Owner | Administrator | Access admin | Developer | Channel operator | Finance | Viewer | Manager | Member |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Channels | Changes | Changes | — | Sees | Changes | — | Sees | Changes | Sees |
+| Channel token | Sees | Sees | — | Sees | Sees | — | — | Sees | Sees |
+| Templates and flows | Changes | Changes | — | Sees | Changes | — | Sees | Changes | Sees |
+| Webhooks | Changes | Changes | — | Changes | Sees | — | Sees | Changes | Sees |
+| Connected apps and AIs | Changes | Changes | — | Changes | Sees | — | Sees | Sees | Sees |
+| Billing | Changes | Changes | — | — | — | Changes | Sees | Sees | — |
+| Team | Changes | Changes | Changes | — | — | — | Sees | Changes¹ | — |
+| People's roles | Changes | Changes | Changes² | — | — | — | — | — | — |
+| API credentials and SDK | Changes | Changes | Sees | Sees | — | — | Sees | — | — |
+| IP restriction | Changes | Changes | Changes | Sees | — | — | Sees | — | — |
+| Audit log | Sees | Sees | Sees | — | — | — | Sees | Sees | — |
+| Delete the workspace and transfer ownership | ✅ | — | — | — | — | — | — | — | — |
 
-<Note>
-  Nobody can remove themselves or change their own role. The exception is the Owner, who becomes a Manager when transferring ownership.
-</Note>
-
-## Change a role
-
-Only the **Owner** changes roles. In **Administration → Team**, open the actions menu (⋮) on the person's row:
-
-- **Promote to manager:** turns a Member into a Manager.
-- **Relegate to member:** turns a Manager into a Member.
-
-Before the change, the dashboard asks for confirmation and shows what the person will be able to do with the new role. The change takes effect as soon as you confirm and is recorded in the [Audit log](/en/security/audit). To take the person out of the workspace, use **Remove**, in the same menu.
-
-<Note>
-  The Owner's row has no actions menu: nobody changes their role or removes them.
-</Note>
-
-## Transfer ownership
-
-The Owner can hand the workspace over to a Manager or a Member of the team:
-
-1. In **Administration → Team**, open the actions menu (⋮) on the person's row and click **Transfer ownership**.
-2. Review what changes and type the workspace name to confirm.
-
-With the transfer:
-
-- The chosen person becomes the Owner of the workspace, with access to billing and the team.
-- You become a Manager.
-- The connected apps you authorized in this workspace with write or send permission are disconnected.
-- You both receive an email.
+¹ The Manager invites and removes Members only.
+² The Access admin only gives the Viewer role.
 
 ## Invite people
 
+The **Owner**, the **Administrator**, the **Access admin** and the **Manager** can invite.
+
 1. In the dashboard, open **Administration → Team** and click **Invite people**.
 2. Enter the emails. Separate them with commas to invite several people at once.
-3. Choose the **Role**: **Member**, selected by default, or **Manager**. The Manager option only appears for the Owner.
+3. Under **In this workspace**, choose the role. None is selected by default. When you choose one, the dashboard shows what the person will be able to see and change.
 4. Click **Continue**, review the list and the role, and click **Send invitations**.
+
+You only give roles whose permissions you also have. The others appear dimmed:
+
+- The Owner and the Administrator give any role except Owner.
+- The Access admin gives only Viewer.
+- The Manager invites only as Member.
 
 All emails in the same batch get the same role. Each person receives their own link by email. The invitation:
 
 - **Expires in 7 days.** After that, send a new one.
 - Carries the chosen role: the person joins the workspace with it.
 - Is not sent to people who are already in the workspace or already have a pending invitation.
+- Stops being valid if, before it is accepted, the person who sent it leaves the team or loses the right to give that role.
+
+## Edit access
+
+The **Owner**, the **Administrator** and the **Access admin** edit other people's access. In **Administration → Team**, open the actions menu (⋮) on the person's row, click **Edit access**, choose the role and click **Save**.
+
+You only edit people whose roles you reach:
+
+- The Owner and the Administrator edit anyone except the Owner.
+- The Access admin edits Developers, Channel operators, Finance, Viewers, Managers and Members. They don't edit an Administrator or another Access admin.
+
+If the person has a role you can't give, that role appears selected and doesn't change.
+
+The change takes effect as soon as you save and is recorded in the [Audit log](/en/security/audit). The Owner and the person receive an email. With the change:
+
+- Pending invitations the person sent that the new role would not allow are canceled.
+- If the new role doesn't allow granting write access to apps, the connected apps the person authorized with write access lose it.
+
+## Remove a person
+
+In the actions menu (⋮) on the person's row, click **Remove** and confirm. The Owner, the Administrator, the Access admin and the Manager can remove people, but only those they reach, with the same rules as [Edit access](#edit-access). The Manager removes Members only.
+
+The person loses access to the workspace. Pending invitations they sent are canceled, and the connected apps they authorized in this workspace are disconnected.
+
+<Note>
+  Nobody can remove themselves or change their own access. The Owner's row has no actions menu: nobody changes their role or removes them.
+</Note>
+
+## Transfer ownership
+
+Only the **Owner** transfers ownership, to any other active person on the team:
+
+1. In **Administration → Team**, open the actions menu (⋮) on the person's row and click **Transfer ownership**.
+2. Review what changes and type the workspace name to confirm.
+
+With the transfer:
+
+- The chosen person becomes the Owner of the workspace.
+- You get the Administrator role.
+- The connected apps you authorized in this workspace with write or send permission are disconnected.
+- You both receive an email.
 
 ## Track invitations
 
-On the **Team** screen, filter the list by status (**All**, **Active**, **Invited** and **Expired**) or by role. Each invitation shows the role it was sent with and how many days are left before it expires.
+On the **Team** screen, filter the list by status (**All**, **Active**, **Invited** and **Expired**) or by **Role**. Each invitation shows the role it was sent with and how many days are left before it expires.
 
 In the actions menu (⋮) of each invitation:
 
-- **Resend invite:** sends a new link. The previous link stops working.
+- **Resend invite:** sends a new link, valid for another 7 days. The previous link stops working. It only appears for people who could send that invitation.
 - **Cancel invite:** on a pending invitation, the link that was sent stops working.
 - **Delete invite:** on an expired invitation, removes it from the list.
 
@@ -113,5 +127,5 @@ In the actions menu (⋮) of each invitation:
 The invited person opens the link in the email or, in the dashboard, the **profile menu → Invitations**, and clicks **Accept** or **Decline**. The invitation shows the role the person will join with. After accepting, the workspace appears in the workspace selector.
 
 <Info>
-  The person joins the workspace with the role in the invitation. If they need a different role later, the Owner changes it in [Change a role](#change-a-role).
+  The person joins the workspace with the role in the invitation. If they need a different role later, someone who can edit access changes it in [Edit access](#edit-access).
 </Info>
