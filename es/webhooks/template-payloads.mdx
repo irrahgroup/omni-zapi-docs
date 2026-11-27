@@ -2,7 +2,7 @@
 title: "Estructura de los payloads de plantilla"
 description: "Ejemplos reales de los payloads que recibes en tu webhook para cada evento de plantilla"
 sidebarTitle: "Payloads de plantilla"
-keywords: ["payload", "UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"]
+keywords: ["payload", "UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY", "PENDING_DELETION"]
 ---
 
 import { projectName } from '/snippets/variables.mdx';
@@ -36,12 +36,18 @@ Se dispara cuando cambia el estado de una plantilla (aprobada, rechazada, etc.).
 | `field` | string | Tipo de evento en Meta: `message_template_status_update` |
 | `identifier` | string | Identificador del evento |
 | `type` | string | Tipo interno: `TEMPLATE_STATUS` |
-| `value.event` | string | Nuevo estado de la plantilla (p. ej.: `APPROVED`, `REJECTED`) |
+| `value.event` | string | Nuevo estado de la plantilla (p. ej.: `APPROVED`, `REJECTED`, `PENDING_DELETION`) |
 | `value.message_template_id` | string | ID de la plantilla |
 | `value.message_template_name` | string | Nombre de la plantilla |
 | `value.message_template_language` | string | Idioma de la plantilla (p. ej.: `es_ES`) |
-| `value.reason` | string \| null | Motivo (se rellena en los rechazos; en caso contrario, `null`) |
+| `value.reason` | string \| null | Motivo (se rellena en los rechazos; `NONE` en la eliminación; `null` en los demás casos) |
 | `waba_id` | string | ID de la cuenta de WhatsApp Business (WABA) |
+
+### Eliminación de plantilla
+
+Cuando una plantilla se elimina desde el panel o por la [API](/es/templates/delete-template), el webhook recibe un `UPDATE_TEMPLATE_STATUS` con `value.event` igual a `PENDING_DELETION`, sea cual sea el estado de la plantilla: aprobada, rechazada, en revisión u otro. En este evento, `value.reason` llega como `NONE`.
+
+En una plantilla aprobada, este aviso es el de la propia Meta y puede llegar algunas horas después de la eliminación.
 
 ## `UPDATE_TEMPLATE_CATEGORY` — Actualización de categoría
 

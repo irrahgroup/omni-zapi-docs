@@ -2,7 +2,7 @@
 title: "Template payload structure"
 description: "Real payload examples received in your webhook for each template event"
 sidebarTitle: "Template payloads"
-keywords: ["payload", "UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY"]
+keywords: ["payload", "UPDATE_TEMPLATE_STATUS", "UPDATE_TEMPLATE_CATEGORY", "PENDING_DELETION"]
 ---
 
 import { projectName } from '/snippets/variables.mdx';
@@ -36,12 +36,18 @@ Triggered when a template's status changes (approved, rejected, etc.). The `fiel
 | `field` | string | Meta event type — `message_template_status_update` |
 | `identifier` | string | Event identifier |
 | `type` | string | Internal type — `TEMPLATE_STATUS` |
-| `value.event` | string | New template status (e.g. `APPROVED`, `REJECTED`) |
+| `value.event` | string | New template status (e.g. `APPROVED`, `REJECTED`, `PENDING_DELETION`) |
 | `value.message_template_id` | string | Template ID |
 | `value.message_template_name` | string | Template name |
 | `value.message_template_language` | string | Template language (e.g. `pt_BR`) |
-| `value.reason` | string \| null | Reason (set on rejections; `null` otherwise) |
+| `value.reason` | string \| null | Reason (set on rejections; `NONE` on deletion; `null` in other cases) |
 | `waba_id` | string | WhatsApp Business Account (WABA) ID |
+
+### Template deletion
+
+When a template is deleted from the panel or through the [API](/en/templates/delete-template), the webhook receives an `UPDATE_TEMPLATE_STATUS` with `value.event` set to `PENDING_DELETION`, whatever the template status was: approved, rejected, under review or any other. In this event, `value.reason` is `NONE`.
+
+For an approved template, this notice is Meta's own and can arrive a few hours after the deletion.
 
 ## `UPDATE_TEMPLATE_CATEGORY` — Category update
 
