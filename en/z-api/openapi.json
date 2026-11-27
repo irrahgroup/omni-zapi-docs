@@ -2329,19 +2329,32 @@
         ],
         "responses": {
           "200": {
-            "description": "Success.",
+            "description": "Success. If the number does not exist on WhatsApp or is not in the address book of the channel phone, the response is still HTTP `200`, with `statusCode` `400` in the body.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContactMetadataResponse"
                 },
-                "example": {
-                  "name": "Nome e sobrenome do contato",
-                  "phone": "551199999999",
-                  "notify": "Nome do contato no WhatsApp",
-                  "short": "Nome do contato",
-                  "imgUrl": "https://...",
-                  "about": "Recado do perfil do contato"
+                "examples": {
+                  "found": {
+                    "summary": "Contact found",
+                    "value": {
+                      "name": "Nome e sobrenome do contato",
+                      "phone": "551199999999",
+                      "notify": "Nome do contato no WhatsApp",
+                      "short": "Nome do contato",
+                      "imgUrl": "https://...",
+                      "about": "Recado do perfil do contato"
+                    }
+                  },
+                  "phoneNotExists": {
+                    "summary": "Number without WhatsApp or not in the address book of the channel phone",
+                    "value": {
+                      "message": "Phone not exists",
+                      "error": "Bad Request",
+                      "statusCode": 400
+                    }
+                  }
                 }
               }
             }
@@ -6083,27 +6096,50 @@
         ],
         "responses": {
           "200": {
-            "description": "Success.",
+            "description": "Success. On WhatsApp Web, the response is an array; on WhatsApp Official, it is `{\"messages\": []}`, always empty.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QueueListResponse"
-                },
-                "example": {
-                  "messages": [
+                  "oneOf": [
                     {
-                      "_id": "39BB1684570F00E91090F6BBC7EE7646",
-                      "DelayMessage": -1,
-                      "Message": "Mensagem da fila 1",
-                      "IsTrial": false,
-                      "InstanceId": "3A5D07856DC26A1C9E2E08E691E63271",
-                      "Phone": "5511999999999",
-                      "ZaapId": "39BB1684570F00E91090F6BBC7EE7646",
-                      "DelayTyping": 0,
-                      "MessageId": "7AD29EAA5EF34C301F0B",
-                      "Created": 1624977905648
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QueueMessage"
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/QueueListResponse"
                     }
                   ]
+                },
+                "examples": {
+                  "whatsappWeb": {
+                    "summary": "WhatsApp Web, with queued messages",
+                    "value": [
+                      {
+                        "_id": "39BB1684570F00E91090F6BBC7EE7646",
+                        "DelayMessage": -1,
+                        "Message": "Mensagem da fila 1",
+                        "IsTrial": false,
+                        "InstanceId": "3A5D07856DC26A1C9E2E08E691E63271",
+                        "Phone": "5511999999999",
+                        "ZaapId": "39BB1684570F00E91090F6BBC7EE7646",
+                        "DelayTyping": 0,
+                        "MessageId": "7AD29EAA5EF34C301F0B",
+                        "Created": 1624977905648
+                      }
+                    ]
+                  },
+                  "whatsappWebEmpty": {
+                    "summary": "WhatsApp Web, empty queue",
+                    "value": []
+                  },
+                  "whatsappOfficial": {
+                    "summary": "WhatsApp Official (always empty)",
+                    "value": {
+                      "messages": []
+                    }
+                  }
                 }
               }
             }

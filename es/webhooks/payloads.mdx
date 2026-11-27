@@ -835,6 +835,59 @@ En el formato `Z_API`, la respuesta llega en el callback de mensaje recibido con
 }
 ```
 
+### UNSUPPORTED: Mensaje que Meta no entrega (Meta Cloud API)
+
+Los mensajes interactivos (botones, listas, botones de acción y botón de copiar código) enviados desde otro WhatsApp a un canal Meta Cloud API llegan al webhook de mensaje recibido (`MESSAGE_RECEIVED`) con `type: "UNSUPPORTED"`. Quien no entrega esos tipos es Meta: avisa con el error `131051` ("Message type is currently not supported"), y la API reenvía el aviso en lugar del contenido.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `type` | string | Siempre `UNSUPPORTED` |
+| `is_unsupported` | boolean | Siempre `true` |
+| `message` | string | Texto del error que Meta informó |
+| `unsupported_body` | string | Tipo que Meta informó como no soportado. Han aparecido `interactive`, `list` y `document` |
+| `identifier` | string | Identificador del contenido |
+| `internal_information.integration_id` | string | Id del mensaje en Meta (`wamid`) |
+| `external_information.error_code` | string | Código del error de Meta, como `131051` |
+| `external_information.error_title` | string | Título del error de Meta |
+| `external_information.error_details` | string | Detalle del error de Meta, cuando exista |
+
+```json
+"contents": [
+  {
+    "type": "UNSUPPORTED",
+    "is_unsupported": true,
+    "message": "Message type unknown",
+    "unsupported_body": "interactive",
+    "identifier": "01A0C92D0C957FE98B73C8BA0CACF741",
+    "internal_information": {
+      "integration_id": "wamid.HBgNNTUxMTk5OTk5OTk5ORUCABIYFjNFQjA"
+    },
+    "external_information": {
+      "error_code": "131051",
+      "error_title": "Message type unknown",
+      "error_details": "Message type is currently not supported."
+    }
+  }
+]
+```
+
+Cuando Meta no consigue descargar el medio recibido, el canal oficial envía un `MESSAGE_DELIVERY` con el error `131052` ("Media download error") en `contents[0].external_information.errors`.
+
+```json
+"external_information": {
+  "errors": [
+    {
+      "code": "131052",
+      "title": "Media download error",
+      "message": "Media download error",
+      "error_data": {
+        "details": "Incoming media file validation failed or the received media is in incorrect format, please ask the sender to resend the media message."
+      }
+    }
+  ]
+}
+```
+
 ---
 
 ## Callbacks de estado
@@ -911,3 +964,4 @@ En un webhook de canal con `payloadFormat` `Z_API`, la falla de un mensaje que l
 | `INTERACTIVE_BUTTON` | `contents[0]` | `message`, `buttons[]`, `thumbnail` (si `mediaButtonType: "IMAGE"`) |
 | `INTERACTIVE_ACTION` | `contents[0]` | `message`, `buttons[]` con `type: "URL"\|"CALL"`, `header`, `footer` |
 | `FORM_RESPONSE` | `contents[0]` | `message`, `answers[]` con `field_id`, `label` y `values` |
+| `UNSUPPORTED` | `contents[0]` | `message`, `is_unsupported`, `external_information.error_code` |

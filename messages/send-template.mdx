@@ -40,5 +40,29 @@ O campo `content.type` deve ser `TEMPLATE` e o template é enviado dentro de `at
 </Note>
 
 <Note>
+  Na Meta Cloud API, antes do envio a API valida o template. Nestes dois casos, responde `422` com `code` `BUSINESS_RULE_VIOLATION`, sem `subCode`, e a mensagem não é enviada: o template não existe no idioma enviado, ou a quantidade de parâmetros do corpo é diferente da do template.
+
+  Corpo do 422 quando o template não existe no idioma:
+
+  ```json
+  {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "code": "BUSINESS_RULE_VIOLATION",
+    "message": "Template 'atualizacao_pedido_v1' does not exist in language 'pt_BR'"
+  }
+  ```
+
+  Corpo do 422 quando a quantidade de parâmetros do corpo é diferente:
+
+  ```json
+  {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "code": "BUSINESS_RULE_VIOLATION",
+    "message": "Template 'atualizacao_pedido_v1' expects 3 body parameter(s) but 1 was provided"
+  }
+  ```
+</Note>
+
+<Note>
   A rota `POST /v1/channels/{channelId}/send-template` aceita o mesmo corpo desta página e dá a mesma resposta. Nela, `content.type` é opcional e, se vier, tem de ser `TEMPLATE`. Com outro valor, a API responde `400` `{"error": "invalid_request", "field": "content.type", "message": "content.type must be TEMPLATE on /send-template; leave it out, or send other types with POST /v1/channels/{id}/messages"}`. A rota só aceita canal Meta Cloud API (WhatsApp Oficial): em outro canal, a API responde `422` `{"error": "operation not supported for this instance"}`. Nos dois casos, a mensagem não é enviada. Veja [Rotas por tipo](/messages/introduction#rotas-por-tipo).
 </Note>

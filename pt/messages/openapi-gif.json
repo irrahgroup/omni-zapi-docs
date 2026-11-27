@@ -122,16 +122,30 @@
         }
       },
       "BadRequest": {
-        "description": "Corpo sem o campo obrigatório do tipo",
+        "description": "Corpo sem o campo obrigatório do tipo, ou, na Meta Cloud API, tipo de mídia não permitido para GIF",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/SendError"
             },
-            "example": {
-              "timestamp": "2026-10-22T14:00:00.123Z",
-              "code": "VALIDATION_ERROR",
-              "message": "Field 'content.attachments': is required for message type GIF"
+            "examples": {
+              "missingAttachments": {
+                "summary": "Campo obrigatório ausente",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Field 'content.attachments': is required for message type GIF"
+                }
+              },
+              "mediaMimeNotAllowed": {
+                "summary": "Meta Cloud API: tipo de mídia não permitido para GIF",
+                "value": {
+                  "timestamp": "2026-10-22T14:00:00.123Z",
+                  "code": "VALIDATION_ERROR",
+                  "subCode": "MEDIA_MIME_NOT_ALLOWED",
+                  "message": "Tipo de mídia não permitido para GIF: application/octet-stream"
+                }
+              }
             }
           }
         }

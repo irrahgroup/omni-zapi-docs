@@ -66,7 +66,7 @@
             }
           },
           "422": {
-            "description": "El proveedor rechazó la consulta. El campo `error` trae el envoltorio del proveedor, con el nombre del error en `error.errors[0].name`, o, sin envoltorio, un texto genérico.",
+            "description": "Consulta rechazada. Si `error.errors[0].code` es `\"413\"` (`IS_NOT_Z_API_WHATSAPP_CHANNEL`), el canal no es WhatsApp Web; el `status` dentro del cuerpo viene `400`, pero vale el `422` de la respuesta. En los demás casos, el proveedor rechazó la consulta y el campo `error` trae el envoltorio del proveedor, con el nombre del error en `error.errors[0].name`, o, sin envoltorio, un texto genérico.",
             "content": {
               "application/json": {
                 "schema": {
@@ -88,6 +88,25 @@
                       }
                     }
                   ]
+                },
+                "examples": {
+                  "notZapiWhatsappChannel": {
+                    "summary": "Canal que no es WhatsApp Web",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-10-22T14:00:00.123Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "413",
+                            "name": "IS_NOT_Z_API_WHATSAPP_CHANNEL",
+                            "message": "Not a Z-API WhatsApp channel",
+                            "description": "The channel is not of type Z_API_WHATSAPP"
+                          }
+                        ]
+                      }
+                    }
+                  }
                 }
               }
             }

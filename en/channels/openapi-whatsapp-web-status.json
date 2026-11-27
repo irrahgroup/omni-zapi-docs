@@ -73,7 +73,7 @@
             }
           },
           "422": {
-            "description": "The provider refused the request. The `error` field carries the provider envelope, with the error name in `error.errors[0].name`, or, without an envelope, a generic text.",
+            "description": "Request refused. If `error.errors[0].code` is `\"413\"` (`IS_NOT_Z_API_WHATSAPP_CHANNEL`), the channel is not WhatsApp Web; the `status` inside the body is `400`, but the `422` of the response is the one that counts. In other cases, the provider refused the request and the `error` field carries the provider envelope, with the error name in `error.errors[0].name`, or, without an envelope, a generic text.",
             "content": {
               "application/json": {
                 "schema": {
@@ -95,6 +95,25 @@
                       }
                     }
                   ]
+                },
+                "examples": {
+                  "notZapiWhatsappChannel": {
+                    "summary": "Channel that is not WhatsApp Web",
+                    "value": {
+                      "error": {
+                        "timestamp": "2026-10-22T14:00:00.123Z",
+                        "status": 400,
+                        "errors": [
+                          {
+                            "code": "413",
+                            "name": "IS_NOT_Z_API_WHATSAPP_CHANNEL",
+                            "message": "Not a Z-API WhatsApp channel",
+                            "description": "The channel is not of type Z_API_WHATSAPP"
+                          }
+                        ]
+                      }
+                    }
+                  }
                 }
               }
             }
