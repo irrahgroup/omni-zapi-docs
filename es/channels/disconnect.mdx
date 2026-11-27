@@ -1,38 +1,30 @@
 ---
 title: "Desconectar canal"
-description: "Desconecta un canal META_WHATSAPP de la API Oficial de WhatsApp o un canal de otro tipo por la ruta del canal"
-openapi: "/es/channels/openapi-disconnect.json PUT /v1/channels/{channelId}/disconnect"
+description: "Desconecta un canal de la API Oficial de WhatsApp, de WhatsApp Web, de Instagram, de Messenger o de Telegram, cada uno por su ruta"
+keywords: ["desconectar canal", "deactivate", "disconnect", "META_WHATSAPP", "Z_API_WHATSAPP"]
 ---
 
-## Conceptos
+Cada tipo de canal tiene su propia ruta de desconexión. Todas usan la Secret Key en el header `Authorization: Bearer SU_SECRET_KEY`. Llámalas siempre desde el backend. Consulta [Autenticación](/es/authentication).
 
-Desconecta un canal **`META_WHATSAPP`** de la API Oficial de WhatsApp y borra todos los datos de conexión asociados (WABA ID, phone ID, número conectado y coexistencia).
-
-Usa este endpoint cuando el usuario quiera desconectar el número de forma intencionada, por ejemplo al cambiar de número o al dejar de usar el canal.
-
-Para Instagram, Messenger, Telegram y WhatsApp Web, consulta [Otros tipos de canal](#otros-tipos-de-canal).
-
-<Warning>
-  Tras la desconexión, el canal **dejará de recibir mensajes**. Para volver a funcionar, habrá que [reconectar el canal](/es/channels/connect-channel).
-</Warning>
-
-## Otros tipos de canal
-
-Los otros tipos de canal tienen su propia ruta. Todas usan `POST`, no llevan cuerpo y usan la Secret Key en el header `Authorization: Bearer SU_SECRET_KEY`.
+## Rutas
 
 | Tipo de canal | Ruta |
 |---|---|
-| `META_INSTAGRAM` | `POST /v1/channels/{channelId}/deactivate-instagram` |
-| `META_MESSENGER` | `POST /v1/channels/{channelId}/deactivate-messenger` |
-| `BOT_TELEGRAM` | `POST /v1/channels/{channelId}/deactivate-telegram` |
-| `Z_API_WHATSAPP` (WhatsApp Web) | `POST /v1/channels/{channelId}/zapi/disconnect` |
+| `META_WHATSAPP` | [`PUT /v1/channels/{channelId}/disconnect`](/es/channels/disconnect-meta-whatsapp) |
+| `META_INSTAGRAM` | [`POST /v1/channels/{channelId}/deactivate-instagram`](/es/channels/deactivate-instagram) |
+| `META_MESSENGER` | [`POST /v1/channels/{channelId}/deactivate-messenger`](/es/channels/deactivate-messenger) |
+| `BOT_TELEGRAM` | [`POST /v1/channels/{channelId}/deactivate-telegram`](/es/channels/deactivate-telegram) |
+| `Z_API_WHATSAPP` (WhatsApp Web) | [`POST /v1/channels/{channelId}/zapi/disconnect`](/es/channels/disconnect-whatsapp-web) |
 
-```bash
-curl -X POST https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/deactivate-instagram \
-  -H "Authorization: Bearer SU_SECRET_KEY"
-```
+Las rutas de Instagram, Messenger, Telegram y WhatsApp Web usan `POST` y no llevan cuerpo. Las cuatro responden `200` con `true`. Las rutas `deactivate-*` también marcan el canal como desconectado.
 
-Las cuatro responden `200` con `true`. Las rutas `deactivate-*` también marcan el canal como desconectado. Para volver a encender un canal Instagram, Messenger o Telegram, consulta [Activar canal](/es/channels/activate-channel). Para WhatsApp Web, escanea el código QR de nuevo, como en [Conectar WhatsApp Web](/es/connect/whatsapp-web).
+## Para volver a encender
+
+Para conectar de nuevo un canal Meta WhatsApp, consulta [Conectar canal](/es/channels/connect-channel). Para Instagram, Messenger y Telegram, consulta [Activar canal](/es/channels/activate-channel). Para WhatsApp Web, escanea el código QR de nuevo, como en [Conectar WhatsApp Web](/es/connect/whatsapp-web).
+
+## Errores
+
+Las rutas de Instagram, Messenger, Telegram y WhatsApp Web responden con estos errores:
 
 | Status | Cuerpo | Cuándo ocurre |
 |---|---|---|

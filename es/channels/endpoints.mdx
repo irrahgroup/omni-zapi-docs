@@ -1,0 +1,40 @@
+---
+title: "Introducción a la API de canales"
+description: "Crear, listar, conectar, suscribir y eliminar canales por la API, y quién puede llamar a cada ruta"
+keywords: ["/v1/channels", "channelId", "canal", "channel", "META_WHATSAPP", "BOT_TELEGRAM"]
+---
+
+## Conceptualización
+
+Los endpoints de esta sección gestionan el ciclo de vida de los canales de tu workspace: crear, consultar, conectar, desconectar, suscribir y eliminar. El `id` que devuelve la creación es el `channelId`, usado en todas las demás llamadas de la API, como mensajes, plantillas y webhooks.
+
+Para entender qué es un canal y los pasos para empezar, consulta la [Introducción a los canales](/es/channels/introduction). Para conectar cada tipo de canal, consulta [Conectar un canal](/es/connect/introduction).
+
+## Rutas
+
+| Página | Ruta | Qué hace | Quién llama |
+|---|---|---|---|
+| [Crear canal](/es/channels/create-channel) | `POST /v1/channels` | Crea el canal y devuelve el `channelId` | Secret Key o token OAuth de una app autorizada |
+| [Listar canales](/es/channels/list-channels) | `GET /v1/channels` | Lista los canales del workspace, con filtro por `type` | Secret Key, rol ENTERPRISE |
+| [Consultar canal](/es/channels/get-channel) | `GET /v1/channels/{channelId}` | Devuelve los datos del canal y los webhooks registrados en él | Secret Key, rol ENTERPRISE |
+| [Conectar canal](/es/channels/connect-channel) | `POST /v1/channels/{channelId}/connect` | Finaliza la conexión en el backend, con los datos que devolvió el SDK | Secret Key |
+| [Activar canal Instagram](/es/channels/activate-instagram) | `POST /v1/channels/{channelId}/activate-instagram` | Finaliza la conexión del canal `META_INSTAGRAM` en el backend | Secret Key |
+| [Activar canal Messenger](/es/channels/activate-messenger) | `POST /v1/channels/{channelId}/activate-messenger` | Finaliza la conexión del canal `META_MESSENGER` en el backend | Secret Key |
+| [Activar canal Telegram](/es/channels/activate-telegram) | `POST /v1/channels/{channelId}/activate-telegram` | Finaliza la conexión del canal `BOT_TELEGRAM` en el backend | Secret Key |
+| [Consultar estado de WhatsApp Web](/es/channels/get-whatsapp-web-status) | `GET /v1/channels/{channelId}/zapi/status` | Indica si se leyó el código QR y si el número está conectado | Secret Key |
+| [Consultar dispositivo de WhatsApp Web](/es/channels/get-whatsapp-web-device) | `GET /v1/channels/{channelId}/zapi/device` | Devuelve el número y el dispositivo vinculados al canal | Secret Key |
+| [Consultar orígenes del SDK](/es/channels/sdk-info) | `GET /instances/{channelId}/sdk-info` | Muestra los dominios permitidos para el SDK de conexión | Public Key |
+| [Desconectar canal Meta WhatsApp](/es/channels/disconnect-meta-whatsapp) | `PUT /v1/channels/{channelId}/disconnect` | Desconecta el canal y borra los datos de la conexión | Secret Key |
+| [Desconectar canal Instagram](/es/channels/deactivate-instagram) | `POST /v1/channels/{channelId}/deactivate-instagram` | Desconecta el canal Instagram | Secret Key |
+| [Desconectar canal Messenger](/es/channels/deactivate-messenger) | `POST /v1/channels/{channelId}/deactivate-messenger` | Desconecta el canal Messenger | Secret Key |
+| [Desconectar canal Telegram](/es/channels/deactivate-telegram) | `POST /v1/channels/{channelId}/deactivate-telegram` | Desconecta el canal Telegram | Secret Key |
+| [Desconectar canal WhatsApp Web](/es/channels/disconnect-whatsapp-web) | `POST /v1/channels/{channelId}/zapi/disconnect` | Desconecta el número de WhatsApp Web | Secret Key |
+| [Suscribir canal](/es/channels/subscribe-channel) | `GET /v1/channels/{channelId}/subscribe` | Agrega el canal a la suscripción después del pago en el panel | Secret Key, rol ENTERPRISE |
+| [Cancelar suscripción](/es/channels/cancel-subscription) | `DELETE /v1/channels/{channelId}/cancel` | Solicita la cancelación de la suscripción del canal | Secret Key, rol ENTERPRISE |
+| [Eliminar canal](/es/channels/delete-channel) | `DELETE /v1/channels/{channelId}` | Elimina el canal | Secret Key, rol ENTERPRISE |
+
+La Secret Key es la de tu workspace, usada en el backend. Consulta [Autenticación](/es/authentication).
+
+## Tipos de canal
+
+En [Crear canal](/es/channels/create-channel), el campo de tipo acepta `META_WHATSAPP`, `Z_API_WHATSAPP`, `META_INSTAGRAM`, `META_MESSENGER` y `BOT_TELEGRAM`. Las páginas [Conectar canal](/es/channels/connect-channel) y [Desconectar canal](/es/channels/disconnect-meta-whatsapp) describen el flujo de `META_WHATSAPP`.

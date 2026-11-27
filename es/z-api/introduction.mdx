@@ -1,6 +1,6 @@
 ---
 title: "Compatibilidad con Z-API"
-description: "Migra de Z-API a Omni Z-API sin romper tus integraciones"
+description: "Cambia solo la base URL y el header de autenticación para migrar de Z-API a Omni Z-API, y revisa los canales atendidos"
 ---
 
 import { projectName, zapiBaseUrl, zapiOriginalUrl, frontendUrl, supportEmail } from '/snippets/variables.mdx';
@@ -14,17 +14,17 @@ Sabemos que cambiar de proveedor de API puede ser un proceso laborioso, sobre to
 ## ¿Qué cambia en la práctica?
 
 <Note>
-  Los únicos cambios necesarios en tu aplicación son la **base URL** y el **header de autenticación**. Además, al utilizar la API oficial de WhatsApp, algunas funcionalidades de Z-API no están disponibles. Consulta la página de [Limitaciones de la API Oficial](/es/z-api/limitations) para más detalles.
+  Los únicos cambios necesarios en tu aplicación son la **base URL** y el **header de autenticación**. Además, no todas las rutas de Z-API están disponibles en todos los canales. Consulta la página de [Compatibilidad por canal](/es/z-api/limitations) para ver qué hace cada canal.
 </Note>
 
 <Warning>
-  La versión Compatibilidad con Z-API envía por canales **WhatsApp Oficial** (API oficial de Meta) y **WhatsApp Web**. Un envío a un canal de otro tipo, como Instagram, Messenger o Telegram, se rechaza con `422`:
+  La versión Compatibilidad con Z-API atiende canales **WhatsApp Oficial** (API oficial de Meta) y **WhatsApp Web**. Un envío a un canal de otro tipo, como Instagram, Messenger o Telegram, se rechaza con `422`:
 
   ```json
   { "error": "instance middleware is not META_WHATSAPP" }
   ```
 
-  Para enviar por esos canales, usa las [rutas de mensajes de {projectName}](/es/messages/introduction).
+  Las demás rutas de Z-API también responden `422` en esos canales. Para usar esos canales, usa las [rutas de mensajes de {projectName}](/es/messages/introduction).
 </Warning>
 
 |  | Z-API | Omni Z-API |
@@ -64,15 +64,42 @@ curl -X POST https://zapi.omni.z-api.io/channels/SU_CANAL/token/SU_TOKEN/send-te
 
 Fíjate en que **solo han cambiado la base URL y el header de autenticación**: el path y el body son idénticos.
 
-El secret del header `Authorization` se genera en el panel de Omni Z-API al crear tu instancia. Los payloads de envío y los bodies de los webhooks mantienen exactamente la misma estructura, lo que garantiza que tus integraciones sigan funcionando sin roturas.
+La Secret Key del header `Authorization` es la clave del workspace: está en **Seguridad** en el panel ([Seguridad](https://app.omni.z-api.io/app/security)) y vale para todos los canales. Los payloads de envío y los bodies de los webhooks mantienen exactamente la misma estructura, lo que garantiza que tus integraciones sigan funcionando sin roturas.
+
+## Canales atendidos
+
+### WhatsApp Oficial
+
+En un canal WhatsApp Oficial, la compatibilidad atiende:
+
+- **Envío de mensajes**: texto, multimedia, contactos, ubicación, enlaces, botones, reacciones, catálogo y carrusel. Producto, botón PIX, lista de opciones, encuesta, pedido y lista de enlaces responden `422`.
+- **Marcar mensaje como leído** (`read-message`).
+- **[Grupos](/es/z-api/groups/introduction)**: 12 de las 19 rutas. Exige una cuenta oficial verificada (OBA), no funciona en un número en coexistencia, el grupo tiene como máximo 8 participantes y al crearlo no se añade a nadie (la entrada es solo por el enlace de invitación).
+- **[Perfil](/es/z-api/profile/introduction)**: perfil de la empresa, estado y foto del perfil, con límites. Las categorías y el horario de atención responden `422`, el cambio del nombre del perfil exige revisión de Meta y la foto solo acepta una URL `http` o `https` y no se puede quitar.
+- **[Instancia](/es/z-api/instance/introduction)**: estado, datos de la instancia y datos del dispositivo.
+- **[Cola](/es/z-api/queue/introduction)**: las consultas devuelven vacío, porque los mensajes no quedan en cola, y las rutas de eliminación responden `422`.
+
+Contactos, acciones sobre mensajes (eliminar, reenviar, fijar y responder a un botón o lista), gestión de catálogo y chats no se atienden en este canal y responden `422`.
+
+### WhatsApp Web
+
+En un canal WhatsApp Web, la compatibilidad atiende:
+
+- **Envío de mensajes**: las rutas listadas en la sección **Envío en canal WhatsApp Web**, más abajo.
+- **Acciones sobre mensajes**: eliminar, reenviar, fijar, responder a un botón, lista o botón de plantilla, y marcar como leído.
+- **[Contactos](/es/z-api/contacts/introduction)**, **[grupos](/es/z-api/groups/introduction)** (las 19 rutas), **[catálogo y productos](/es/z-api/catalog/introduction)**, **[perfil](/es/z-api/profile/introduction)**, **[cola](/es/z-api/queue/introduction)** y **[chats](/es/z-api/chats/introduction)**.
+
+El estado y los datos de la instancia aún responden `422` en este canal.
+
+La ruta `update-name` cambia el nombre del canal y funciona en cualquier tipo de canal. La tabla completa, ruta por ruta, está en [Compatibilidad por canal](/es/z-api/limitations).
 
 ## Envío en canal WhatsApp Web
 
-En un canal WhatsApp Web, con WhatsApp Web habilitado en el workspace, estas rutas envían con la misma estructura y la misma respuesta de WhatsApp Oficial:
+En un canal WhatsApp Web, estas rutas envían con la misma estructura y la misma respuesta de WhatsApp Oficial:
 
 - `send-text`, `send-image`, `send-video`, `send-audio`, `send-document/{extension}`, `send-sticker`, `send-contact`, `send-contacts`, `send-location`, `send-link`, `send-button-list`, `send-button-actions`, `send-button-otp`, `send-reaction`, `send-remove-reaction`
 
-Las demás rutas de envío, el envío con `editMessageId` o `editDocumentMessageId` y el cuerpo con `template`, `gif`, `gifUrl`, `ptv`, `carousel` o `carouselCards` responden `422` `instance middleware is not META_WHATSAPP`. Un workspace sin WhatsApp Web habilitado responde `422` `Z-API (WhatsApp Web) instances are not enabled for this workspace`.
+Las demás rutas de envío, el envío con `editMessageId` o `editDocumentMessageId` y el cuerpo con `template`, `gif`, `gifUrl`, `ptv`, `carousel` o `carouselCards` responden `422` `instance middleware is not META_WHATSAPP`.
 
 Diferencias con la Z-API directa:
 

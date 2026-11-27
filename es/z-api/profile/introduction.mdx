@@ -1,0 +1,34 @@
+---
+title: "Introducción al perfil"
+description: "Rutas de perfil comercial, de perfil del número y de renombrar el canal: qué cambia en WhatsApp Oficial y en otros canales"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Conceptos
+
+Esta sección reúne las rutas que consultan y cambian el perfil comercial de WhatsApp Business (descripción, dirección, correo electrónico, sitios web, categorías y horario de atención), el perfil del número de WhatsApp conectado (nombre, descripción e imagen) y la ruta que renombra el canal. Las rutas, los cuerpos y las respuestas son los de Z-API.
+
+El comportamiento depende del tipo de canal. En **WhatsApp Web**, las rutas funcionan como en Z-API. En **WhatsApp Oficial**, usan el perfil comercial de la API oficial de Meta, con respuestas y límites propios descritos en cada página.
+
+## Disponibilidad por canal
+
+<ZapiChannelMatrix family="profile" lang="es" />
+
+La ruta `update-name` renombra el canal en {projectName} y vale en cualquier tipo de canal.
+
+Otros canales son Instagram, Messenger y Telegram. El rechazo trae el tipo del canal en el texto del error.
+
+## Errores comunes
+
+| Status | `error` | Cuándo |
+|---|---|---|
+| 400 | `invalid request body` | En WhatsApp Oficial y en `update-name`: el cuerpo no es un JSON con el campo de la ruta, como `value` en texto o `websites` en lista. |
+| 400 | `request body is too large` | El cuerpo supera 1 MiB (10 MiB en `profile-picture`). |
+| 422 | `instance subscription is not active` | La suscripción del canal no está activa. |
+| 422 | `the channel provider refused the request` | En WhatsApp Oficial, Meta rechazó el cambio, por ejemplo por un valor por encima del límite. |
+| 422 | `business profile route is not available for BOT_TELEGRAM channels; available only on Z-API (WhatsApp Web) instances` | El canal es de otro tipo, como Telegram. Las rutas `/business/*` usan `business profile` en el texto y las `profile-*`, `instance settings`. |
+| 502 | `failed to read the business profile`, `failed to update the business profile` o `failed to rename the channel` | Falla al consultar o cambiar. Puedes llamar de nuevo. |
+
+Los errores de autenticación están en [Autenticación](/es/z-api/authentication).

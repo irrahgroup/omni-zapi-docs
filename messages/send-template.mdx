@@ -1,10 +1,14 @@
 ---
 title: "Enviar template"
 description: "Envie templates aprovados pela Meta"
+sidebarTitle: "Enviar template"
+keywords: ["POST /v1/channels/{channelId}/messages", "TEMPLATE", "template message", "message_templates", "template aprovado", "fora da janela de 24 horas"]
 openapi: "/pt/messages/openapi-template.json POST /v1/channels/{channelId}/messages"
 ---
 
-import { ChannelSupport } from '/snippets/channel-support.mdx';
+import { ChannelBadges, ChannelSupport } from '/snippets/channel-support.mdx';
+
+<ChannelBadges type="TEMPLATE" lang="pt" />
 
 ## Conceituação
 
@@ -15,11 +19,7 @@ O campo `content.type` deve ser `TEMPLATE` e o template é enviado dentro de `at
 <ChannelSupport type="TEMPLATE" lang="pt" />
 
 <Warning>
-  Template é um recurso **exclusivo da Meta Cloud API**. Nos outros canais ele não existe — e não é necessário, porque não há janela para reabrir. Veja [o que cada canal aceita](/channels/message-support).
-</Warning>
-
-<Warning>
-  O template precisa estar com status `APPROVED` para funcionar. Use os endpoints de [Templates](/templates/introduction) para criar e gerenciar seus templates.
+  Na Meta Cloud API, o template precisa estar com status `APPROVED` para funcionar. No Messenger não há aprovação por nome e idioma: o `TEMPLATE` vai como template genérico do Messenger. Use os endpoints de [Templates](/templates/introduction) para criar e gerenciar seus templates.
 </Warning>
 
 <Note>
@@ -35,6 +35,30 @@ O campo `content.type` deve ser `TEMPLATE` e o template é enviado dentro de `at
     "code": "BUSINESS_RULE_VIOLATION",
     "subCode": "TEMPLATE_NOT_SUPPORTED",
     "message": "TEMPLATE messages are only supported on META_WHATSAPP and META_MESSENGER channels"
+  }
+  ```
+</Note>
+
+<Note>
+  Na Meta Cloud API, antes do envio a API valida o template. Nestes dois casos, responde `422` com `code` `BUSINESS_RULE_VIOLATION`, sem `subCode`, e a mensagem não é enviada: o template não existe no idioma enviado, ou a quantidade de parâmetros do corpo é diferente da do template.
+
+  Corpo do 422 quando o template não existe no idioma:
+
+  ```json
+  {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "code": "BUSINESS_RULE_VIOLATION",
+    "message": "Template 'atualizacao_pedido_v1' does not exist in language 'pt_BR'"
+  }
+  ```
+
+  Corpo do 422 quando a quantidade de parâmetros do corpo é diferente:
+
+  ```json
+  {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "code": "BUSINESS_RULE_VIOLATION",
+    "message": "Template 'atualizacao_pedido_v1' expects 3 body parameter(s) but 1 was provided"
   }
   ```
 </Note>

@@ -1,0 +1,42 @@
+---
+title: "Enviar localização"
+description: "Envie uma localização fixa via WhatsApp"
+sidebarTitle: "Enviar localização"
+keywords: ["send-location"]
+openapi: "/pt/z-api/openapi.json POST /send-location"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+import { ZapiChannels } from '/snippets/zapi-channels.mdx';
+
+<ZapiChannels route="send-location" lang="pt" />
+
+## Conceituação
+
+Método para envio de uma localização fixa. Funciona em canal **WhatsApp Oficial** e em canal **WhatsApp Web**.
+
+## Campos
+
+| Campo | Uso |
+|---|---|
+| `phone` | Obrigatório. Telefone do destinatário. |
+| `latitude` | Obrigatório. Número decimal de -90 a 90, enviado como número ou como texto. |
+| `longitude` | Obrigatório. Número decimal de -180 a 180, enviado como número ou como texto. |
+| `title` | Título da localização. |
+| `address` | Endereço da localização. |
+
+Na Z-API, `title` e `address` são obrigatórios. Aqui a API aceita o envio sem eles, mas informe os dois, como na Z-API.
+
+## Erros
+
+Uma localização fora das regras é recusada com `400` e a mensagem não é enviada:
+
+| Situação | `error` |
+|---|---|
+| `latitude` ou `longitude` ausente ou vazia | `latitude and longitude are required` |
+| `latitude` que não é um decimal de -90 a 90 | `latitude must be a decimal number between -90 and 90` |
+| `longitude` que não é um decimal de -180 a 180 | `longitude must be a decimal number between -180 and 180` |
+
+<Note>
+  <ZapiResponseText lang="pt" />
+</Note>

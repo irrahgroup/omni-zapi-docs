@@ -95,6 +95,8 @@ Un carrusel enviado a un canal que no es Meta Cloud API se rechaza en el acto: l
 `[UNSUPPORTED_CHANNEL_TYPE]` en el `message`, y no se crea mensaje ni webhook. Vale también para la ruta
 `send-carousel`. Consulta [Enviar carrusel](/es/messages/send-carousel).
 
+Un mensaje interactivo recibido desde otro WhatsApp (botones, listas, botones de acción y botón de copiar código) en un canal Meta Cloud API llega como `UNSUPPORTED`, porque Meta no entrega esos tipos. Consulta [Estructura de los payloads de canal](/es/webhooks/payloads).
+
 ## Tienda y pedidos
 
 | Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
@@ -115,11 +117,14 @@ Los detalles y el estado del pedido todavía no existen en la API, en ningún ca
 
 | Recurso | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
 |---|:---:|:---:|:---:|:---:|:---:|
-| Plantilla preaprobada | ✅ WABA | ❌ | ❌ | ✅ Utility | ❌ |
+| Plantilla preaprobada | ✅ WABA | ❌ | ❌ | ⚠️ Genérica | ❌ |
 
 La plantilla es el mensaje que Meta aprueba antes para que puedas escribir primero, fuera de la
 ventana. Solo existe donde hay ventana: Meta Cloud API y Messenger. En los otros canales escribes
 cuando quieras, así que no haría falta.
+
+En Messenger, `TEMPLATE` se acepta y sale como plantilla genérica de Messenger (estructura libre de
+elementos, como imagen y botones), no como plantilla aprobada por Meta por nombre e idioma.
 
 Una plantilla enviada a un canal que no es Meta Cloud API ni Messenger se rechaza en el acto: la API responde
 `422` con `subCode` `TEMPLATE_NOT_SUPPORTED`. Consulta [Enviar plantilla](/es/messages/send-template).

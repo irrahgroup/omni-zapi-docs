@@ -1,0 +1,39 @@
+---
+title: "Contacts introduction"
+description: "The 9 Z-API contact routes: list contacts, check a number, block and report, on WhatsApp Web only"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Overview
+
+This section documents the 9 Z-API contact routes that {projectName} serves in Z-API Compatibility: query contacts and pictures, check whether a number has WhatsApp, add and remove contacts, report and block. The path (`/instances/` or `/channels/`, followed by `/{id}/token/{token}/` and the route), the body fields and the response format are the Z-API ones. The only change in your application is still the base URL and the authentication header.
+
+The contacts are those of the number connected to WhatsApp Web. The **WhatsApp Official** channel (Meta's official API) does not have these routes and answers `422` to all of them.
+
+## Availability by channel
+
+<ZapiChannelMatrix family="contacts" lang="en" />
+
+- **WhatsApp Web:** all 9 routes are available.
+- **WhatsApp Official:** all 9 routes answer `422` with the reason.
+- **Other channels** (Telegram, Instagram, Messenger and others): all routes answer `422`.
+
+The `error` texts of these refusals:
+
+| Channel | `error` |
+|---|---|
+| WhatsApp Official, on the first eight routes of the table | `<route> is not available for META_WHATSAPP channels: <reason>; available only on Z-API (WhatsApp Web) instances`, where `<route>` is the route name without the leading slash, such as `contacts/add` |
+| WhatsApp Official, on `POST /contacts/modify-blocked` | `contact route is not available for META_WHATSAPP channels; available only on Z-API (WhatsApp Web) instances` |
+| Other channels | `contact route is not available for <TYPE> channels; available only on Z-API (WhatsApp Web) instances`, where `<TYPE>` is the channel type. A channel with no type gets `contact route is not available for this channel type; available only on Z-API (WhatsApp Web) instances` |
+
+## Common errors
+
+All errors have the format `{"error": "<message>"}`. The ones that apply to the contact routes:
+
+| Status | `error` | When |
+|---|---|---|
+| `422` | `instance subscription is not active` | The channel subscription is not active. |
+| `400` | `invalid path parameter` | Phone in the path is empty, longer than 128 characters or has an invalid character. |
+| `400` | `request body is too large` | The body is over the route limit: 10 MiB on `phone-exists-batch` and 1 MiB on the other routes with a body. |

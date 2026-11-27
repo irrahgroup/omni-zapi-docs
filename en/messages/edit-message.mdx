@@ -1,21 +1,24 @@
 ---
 title: "Edit message"
 description: "Fix the text of a message you already sent, on channels that allow editing"
+sidebarTitle: "Edit message"
+keywords: ["PUT /v1/channels/{channelId}/messages/{messageId}", "EDIT", "edit message", "fix a sent text", "EDIT_NOT_SUPPORTED"]
+openapi: "/en/messages/openapi-edit.json PUT /v1/channels/{channelId}/messages/{messageId}"
 ---
+
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges type="EDIT" lang="en" />
 
 ## Overview
 
 Replaces the text of a text message your channel already sent. The recipient sees the new text in place of the old one, with the app's edited mark. No new message is sent.
 
-```
-PUT /v1/channels/{channelId}/messages/{messageId}
-```
-
 - `channelId`: the channel that sent the message.
 - `messageId`: the `messageId` returned by the send. The `contents[].identifier` received in the webhook is also accepted.
 
 <Warning>
-  **Only WhatsApp Web and Telegram allow editing.** On WhatsApp Meta, Instagram and Messenger, the API refuses the request with `422` and `subCode` `EDIT_NOT_SUPPORTED`, and nothing is sent to the contact. See [Limitations by channel](#limitations-by-channel).
+  On channels that do not allow editing, the API refuses the request with `422` and `subCode` `EDIT_NOT_SUPPORTED`, and nothing is sent to the contact. See [Limitations by channel](#limitations-by-channel).
 </Warning>
 
 ## Request body

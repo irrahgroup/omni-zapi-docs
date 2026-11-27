@@ -7,17 +7,21 @@ import { projectName } from '/snippets/variables.mdx';
 
 ## About compatibility
 
-What a Z-API route does in {projectName} depends on the **channel type**:
+The Z-API compatibility serves **WhatsApp Official** (Meta's official API) and **WhatsApp Web** channels. What a Z-API route does in {projectName} depends on the channel type:
 
-- **WhatsApp Web** (`Z_API_WHATSAPP`): through the compatibility route, the response is the same Z-API would give.
-- **Official WhatsApp** (`META_WHATSAPP`): the official Meta API applies, which serves some routes and has no equivalent for others.
+- **WhatsApp Web** (`Z_API_WHATSAPP`): serves most routes, with the same response structure Z-API would give.
+- **WhatsApp Official** (`META_WHATSAPP`): Meta's official API applies, which serves some routes and has no equivalent for others.
+
+Channels of other types, such as Instagram, Messenger and Telegram, are not served by the Z-API routes and answer `422`. For those channels, use the [{projectName} message routes](/en/messages/introduction).
+
+A Z-API route that the channel does not serve answers `422` with a message saying the route is not available. A route that does not exist answers `404`, and a wrong HTTP method answers `405`.
 
 The tables below show, per feature, what each channel does:
 
 | Term | Meaning |
 |---|---|
 | Yes | The route works on the channel. On WhatsApp Web, the response is the same Z-API would give. |
-| Partly | The route works with limits, described in the cell itself. |
+| Partial | The route works with limits, described in the cell itself. |
 | Not yet | The route is not yet released on this channel through the compatibility route. It is rolling out gradually. |
 | No | The route does not work on the channel, usually because the channel has no equivalent. Any further detail is in the cell itself. |
 
@@ -25,116 +29,178 @@ The tables below show, per feature, what each channel does:
 
 ## Messages
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+<Info>
+  In sends, the fields `messageId` (quoted reply), `mentioned` (mentions), `delayMessage`, `viewOnce` and `stickerAuthor` do not reach the message on either channel: the send responds `200` and the field is ignored. With a private reply (`privateAnswer`), the message goes to the `phone` sent; in a group, to the whole group. `mentioned` with a `phone` that is not a group responds `400` `mentions are only allowed in groups`. See [Reply to message](/en/z-api/messages/reply-message). The differences of sending through WhatsApp Web are in [Z-API Compatibility](/en/z-api/introduction).
+</Info>
+
+### Sending messages
+
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
-| Delete message | [`DELETE /messages`](https://developer.z-api.io/en/message/delete-message) | Yes | No |
-| Edit message | `editMessageId` attribute in send endpoints | Not yet | No |
-| Forward message | [`POST /forward-message`](https://developer.z-api.io/en/message/forward-message) | Yes | No |
-| Send GIF | [`POST /send-gif`](https://developer.z-api.io/en/message/send-message-gif) | Not yet | Partly (sent as an image) |
-| Send PTV (circular video) | [`POST /send-ptv`](https://developer.z-api.io/en/message/send-message-ptv) | Not yet | Partly (sent as a regular video) |
-| Edit document description | `editDocumentMessageId` attribute in send-document | Not yet | No |
-| Send OTP via button | [`POST /send-button-otp`](https://developer.z-api.io/en/message/send-button-otp) | Yes | No (the route responds `200`, but the message is not sent) |
-| Reply to message (quote) | `messageId` attribute in sends ([reply-message](/en/z-api/messages/reply-message)) | Partly (sent without the quote) | Partly (sent without the quote) |
-| Private reply in group | `privateAnswer` attribute in reply-message | Partly (sent without the private reply) | Partly (sent without the private reply) |
+| Send text | [`POST /send-text`](/en/z-api/messages/send-text) | Yes | Yes |
+| Send image | [`POST /send-image`](/en/z-api/messages/send-image) | Yes | Yes |
+| Send video | [`POST /send-video`](/en/z-api/messages/send-video) | Yes | Yes |
+| Send audio | [`POST /send-audio`](/en/z-api/messages/send-audio) | Yes | Yes |
+| Send document | [`POST /send-document/{extension}`](/en/z-api/messages/send-document) | Yes | Yes |
+| Send sticker | [`POST /send-sticker`](/en/z-api/messages/send-sticker) | Yes | Yes |
+| Send link | [`POST /send-link`](/en/z-api/messages/send-link) | Yes | Yes |
+| Send contact | [`POST /send-contact`](/en/z-api/messages/send-contact) | Yes | Yes |
+| Send multiple contacts | [`POST /send-contacts`](/en/z-api/messages/send-contacts) | Yes | Yes |
+| Send location | [`POST /send-location`](/en/z-api/messages/send-location) | Yes | Yes |
+| Send button list | [`POST /send-button-list`](/en/z-api/messages/send-button-list) | Yes | Yes |
+| Send action buttons | [`POST /send-button-actions`](/en/z-api/messages/send-button-actions) | Yes | Yes |
+| Send OTP via button | [`POST /send-button-otp`](/en/z-api/messages/send-button-otp) | Yes | No (the route responds `200`, but the message is not sent) |
+| Send reaction | [`POST /send-reaction`](/en/z-api/messages/send-reaction) | Yes | Yes |
+| Remove reaction | [`POST /send-remove-reaction`](/en/z-api/messages/send-remove-reaction) | Yes | Yes |
+| Send carousel | [`POST /send-carousel`](/en/z-api/messages/send-carousel) | Not yet | Yes |
+| Send catalog | [`POST /send-catalog`](/en/z-api/messages/send-catalog) | Not yet | Yes |
+| Send product | [`POST /send-product`](/en/z-api/messages/send-product) | Not yet | Not yet |
+| Send option list | `POST /send-option-list` | Not yet | Not yet |
+| Send multi-section option list | `POST /send-option-multi-list` | Not yet | Not yet |
+| Send PIX button | [`POST /send-button-pix`](/en/z-api/messages/send-button-pix) | Not yet | No |
 | Send poll / vote | [`POST /send-poll`](https://developer.z-api.io/en/message/send-poll) | Not yet | No |
-| Pin message | [`POST /pin-message`](https://developer.z-api.io/en/message/send-pin-message) | Yes | No |
-| Send / edit / reply event | [`POST /send-event`](https://developer.z-api.io/en/message/send-event) | Not yet | No |
+| Send order | `POST /send-order` | Not yet | No |
+| Send link list | `POST /send-link-list` | Not yet | No |
+| Send GIF | [`POST /send-gif`](https://developer.z-api.io/en/message/send-message-gif) | Not yet | Partial (sent as an image) |
+| Send PTV (round video) | [`POST /send-ptv`](https://developer.z-api.io/en/message/send-message-ptv) | Not yet | Partial (sent as a regular video) |
+| Send template | `template` field in sends | Not yet | Yes |
+| Edit message | `editMessageId` attribute in sends | Not yet | No |
+| Edit document description | `editDocumentMessageId` attribute in send-document | Not yet | No |
+| Send / edit / reply to event | [`POST /send-event`](https://developer.z-api.io/en/message/send-event) | Not yet | No |
 | Channel admin invite | [`POST /send-newsletter-admin-invite`](https://developer.z-api.io/en/message/send-newsletter-admin-invite) | Not yet | No |
-| Send location | [`POST /send-location`](https://developer.z-api.io/en/message/send-message-location) | Yes | Yes |
-| Send multiple contacts | [`POST /send-contacts`](https://developer.z-api.io/en/message/send-message-multiple-contacts) | Yes | Yes |
-| Click a received button | [`POST /reply-button`](https://developer.z-api.io/en/message/reply-button) | Yes | No |
-| Pick an option from a received list | [`POST /reply-option-list`](https://developer.z-api.io/en/message/reply-option-list) | Yes | No |
-| Click a received action button | [`POST /reply-template-button`](https://developer.z-api.io/en/message/reply-template-button) | Yes | No |
-| Mark message as read | [`POST /read-message`](/en/z-api/messages/read-message) | Yes | Yes |
+| Reply to message (quote) | `messageId` attribute in sends ([reply-message](/en/z-api/messages/reply-message)) | Partial (sent without the quote) | Partial (sent without the quote) |
+| Private reply in group | `privateAnswer` attribute in reply-message | Partial (sent without the private reply) | Partial (sent without the private reply) |
+
+### Message actions
 
 <Info>
-  Quote (`messageId`), private reply (`privateAnswer`) and mentions (`mentioned`) do not reach the message, on both channels: the send responds `200` and the field is ignored. With a private reply, the message goes to the `phone` sent; in a group, to the whole group. `mentioned` with a `phone` that is not a group responds `400` `mentions are only allowed in groups`.
+  Message actions (delete, forward, pin and reply to button or list) work only on WhatsApp Web and answer `422` on WhatsApp Official. Marking as read works on both channels.
 </Info>
+
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
+|---|---|---|---|
+| Delete message | [`DELETE /messages`](/en/z-api/messages/delete-message) | Yes | No |
+| Forward message | [`POST /forward-message`](/en/z-api/messages/forward-message) | Yes | No |
+| Pin message | [`POST /pin-message`](/en/z-api/messages/pin-message) | Yes | No |
+| Reply to button | [`POST /reply-button`](/en/z-api/messages/reply-button) | Yes | No |
+| Reply to option list | [`POST /reply-option-list`](/en/z-api/messages/reply-option-list) | Yes | No |
+| Reply to template button | [`POST /reply-template-button`](/en/z-api/messages/reply-template-button) | Yes | No |
+| Mark message as read | [`POST /read-message`](/en/z-api/messages/read-message) | Yes | Yes |
 
 ## Contacts
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+<Info>
+  See the [contacts introduction](/en/z-api/contacts/introduction). The contact routes and contact blocking work only on WhatsApp Web. On WhatsApp Official, Meta's official API has no equivalent and they answer `422`.
+</Info>
+
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
-| List contacts | [`GET /contacts?page=&pageSize=`](https://developer.z-api.io/en/contacts/get-contacts) | Yes | No |
-| Add contacts | [`POST /contacts/add`](https://developer.z-api.io/en/contacts/add-contacts) | Yes | No |
-| Remove contacts | [`DELETE /contacts/remove`](https://developer.z-api.io/en/contacts/remove-contacts) | Yes | No |
-| Contact metadata | [`GET /contacts/{phone}`](https://developer.z-api.io/en/contacts/get-metadata-contact) | Yes | No |
-| Profile picture | [`GET /profile-picture?phone={phone}`](https://developer.z-api.io/en/contacts/get-profile-picture) | Yes | No |
-| Check WhatsApp number | [`GET /phone-exists/{phone}`](https://developer.z-api.io/en/contacts/get-iswhatsapp) | Yes | No |
-| Check numbers in batch | [`POST /phone-exists-batch`](https://developer.z-api.io/en/contacts/get-iswhatsapp-batch) | Yes | No |
-| Block / unblock contact | [`POST /contacts/modify-blocked`](https://developer.z-api.io/en/contacts/block-contact) | Yes | No |
-| Report contact | [`POST /contacts/{phone}/report`](https://developer.z-api.io/en/contacts/report-contact) | Yes | No |
+| List contacts | [`GET /contacts?page=&pageSize=`](/en/z-api/contacts/get-contacts) | Yes | No |
+| Add contacts | [`POST /contacts/add`](/en/z-api/contacts/add-contacts) | Yes | No |
+| Remove contacts | [`DELETE /contacts/remove`](/en/z-api/contacts/remove-contacts) | Yes | No |
+| Contact metadata | [`GET /contacts/{phone}`](/en/z-api/contacts/get-metadata-contact) | Yes | No |
+| Profile picture | [`GET /profile-picture?phone={phone}`](/en/z-api/contacts/get-profile-picture) | Yes | No |
+| Check number on WhatsApp | [`GET /phone-exists/{phone}`](/en/z-api/contacts/get-iswhatsapp) | Yes | No |
+| Check numbers in batch | [`POST /phone-exists-batch`](/en/z-api/contacts/get-iswhatsapp-batch) | Yes | No |
+| Block / unblock contact | [`POST /contacts/modify-blocked`](/en/z-api/contacts/block-contact) | Yes | No |
+| Report contact | [`POST /contacts/{phone}/report`](/en/z-api/contacts/report-contact) | Yes | No |
 
 ## Groups
 
 <Info>
-  On the official WhatsApp (Meta) channel, groups use the Groups API and require a verified Official Business Account (OBA). Group routes respond `422` on a number without OBA and on a coexistence number, which uses the WhatsApp Business app on the same number. When a group is created on Meta, no one is added: every phone comes back in `phonesNotAdded` and `autoInvite` is ignored. People join through the invite link or an approved join request. On the WhatsApp Web channel, all of them respond as Z-API.
+  See the [groups introduction](/en/z-api/groups/introduction). On WhatsApp Web, all 19 group routes work as in Z-API. On WhatsApp Official, groups use Meta's Groups API, which serves 12 of these routes, under these conditions:
+
+  - requires a verified Official Business Account (OBA);
+  - does not work on a coexistence number (with the WhatsApp Business app on the same number);
+  - the group has at most 8 participants;
+  - when the group is created, no one is added: every phone comes back in `phonesNotAdded` and `autoInvite` is ignored. People join through the invite link or an approved join request.
+
+  Without these conditions, or on the 7 routes with no equivalent, the route answers `422`.
 </Info>
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
-| Create group | [`POST /create-group`](/en/z-api/groups/create-group) | Yes | Partly (no one is added on creation) |
+| List groups | [`GET /groups`](/en/z-api/groups/get-groups) | Yes | Yes |
 | Group metadata | [`GET /group-metadata/{phone}`](/en/z-api/groups/group-metadata) | Yes | Yes |
+| Group metadata (light) | [`GET /light-group-metadata/{phone}`](/en/z-api/groups/light-group-metadata) | Yes | Yes |
+| Metadata by invite | [`GET /group-invitation-metadata?url=`](/en/z-api/groups/group-invitation-metadata) | Yes | No |
+| Get invite link | [`GET /group-invitation-link/{id}`](/en/z-api/groups/group-invitation-link) | Yes | Yes |
+| Reset invite link | [`POST /redefine-invitation-link/{id}`](/en/z-api/groups/redefine-invitation-link) | Yes | Yes |
+| Accept invite | [`GET /accept-invite-group?url=`](/en/z-api/groups/accept-invite-group) | Yes | No |
+| Create group | [`POST /create-group`](/en/z-api/groups/create-group) | Yes | Partial (no one is added on creation) |
+| Update group name | [`POST /update-group-name`](/en/z-api/groups/update-group-name) | Yes | Yes |
+| Update description | [`POST /update-group-description`](/en/z-api/groups/update-group-description) | Yes | Yes |
+| Update group image | [`POST /update-group-photo`](/en/z-api/groups/update-group-photo) | Yes | Yes |
+| Group settings | [`POST /update-group-settings`](/en/z-api/groups/update-group-settings) | Yes | No |
+| Leave group | [`POST /leave-group`](/en/z-api/groups/leave-group) | Yes | No |
+| Add participants | [`POST /add-participant`](/en/z-api/groups/add-participant) | Yes | No |
 | Remove participants | [`POST /remove-participant`](/en/z-api/groups/remove-participant) | Yes | Yes |
 | Approve participants | [`POST /approve-participant`](/en/z-api/groups/approve-participant) | Yes | Yes |
 | Reject participants | [`POST /reject-participant`](/en/z-api/groups/reject-participant) | Yes | Yes |
-| Get invite link | [`GET /group-invitation-link/{id}`](/en/z-api/groups/group-invitation-link) | Yes | Yes |
-| Redefine invite link | [`POST /redefine-invitation-link/{id}`](/en/z-api/groups/redefine-invitation-link) | Yes | Yes |
-| Update description | [`POST /update-group-description`](/en/z-api/groups/update-group-description) | Yes | Yes |
-| Update group name | [`POST /update-group-name`](/en/z-api/groups/update-group-name) | Yes | Yes |
-| Update group photo | [`POST /update-group-photo`](/en/z-api/groups/update-group-photo) | Yes | Yes |
-| List groups | [`GET /groups`](/en/z-api/groups/get-groups) | Yes | Yes |
-| Group metadata (light) | [`GET /light-group-metadata/{phone}`](/en/z-api/groups/light-group-metadata) | Yes | Yes |
-| Group settings | [`POST /update-group-settings`](/en/z-api/groups/update-group-settings) | Yes | No |
-| Add participants | [`POST /add-participant`](/en/z-api/groups/add-participant) | Yes | No |
 | Promote admin | [`POST /add-admin`](/en/z-api/groups/add-admin) | Yes | No |
 | Remove admin | [`POST /remove-admin`](/en/z-api/groups/remove-admin) | Yes | No |
-| Leave group | [`POST /leave-group`](/en/z-api/groups/leave-group) | Yes | No |
-| Mention member | [`POST /send-text`](https://developer.z-api.io/en/group/mention-participant) | Partly (sent without the mention) | Partly (sent without the mention) |
-| Mention group | [`POST /send-text`](https://developer.z-api.io/en/group/mention-group) | Partly (sent without the mention) | Partly (sent without the mention) |
-| Metadata by invite | [`GET /group-invitation-metadata?url=`](/en/z-api/groups/group-invitation-metadata) | Yes | No |
-| Accept invite | [`GET /accept-invite-group?url=`](/en/z-api/groups/accept-invite-group) | Yes | No |
+| Mention member | [`POST /send-text`](https://developer.z-api.io/en/group/mention-participant) | Partial (sent without the mention) | Partial (sent without the mention) |
+| Mention group | [`POST /send-text`](https://developer.z-api.io/en/group/mention-group) | Partial (sent without the mention) | Partial (sent without the mention) |
 
 ## Business
 
 ### Company profile
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+<Info>
+  See the [profile introduction](/en/z-api/profile/introduction). On WhatsApp Official, the profile queried is always the one of the channel's own number: you cannot query the profile of another number. Categories and business hours answer `422`.
+</Info>
+
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
-| Business profile data | [`GET /business/profile`](https://developer.z-api.io/en/business/profile) | Yes | Yes |
-| Update company description | [`POST /business/company-description`](https://developer.z-api.io/en/business/company-description) | Yes | Yes |
-| Update company email | [`POST /business/company-email`](https://developer.z-api.io/en/business/company-email) | Yes | Yes |
-| Update business address | [`POST /business/company-address`](https://developer.z-api.io/en/business/company-address) | Yes | Yes |
-| Update company websites | [`POST /business/company-websites`](https://developer.z-api.io/en/business/company-websites) | Yes | Yes |
-| Assign categories | [`POST /business/categories`](https://developer.z-api.io/en/business/company-categories) | Yes | No |
+| Business account data | [`GET /business/profile`](/en/z-api/profile/business-profile) | Yes | Yes |
+| Update company description | [`POST /business/company-description`](/en/z-api/profile/company-description) | Yes | Yes |
+| Update company email | [`POST /business/company-email`](/en/z-api/profile/company-email) | Yes | Yes |
+| Update business address | [`POST /business/company-address`](/en/z-api/profile/company-address) | Yes | Yes |
+| Update company websites | [`POST /business/company-websites`](/en/z-api/profile/company-websites) | Yes | Yes |
+| Assign categories | [`POST /business/categories`](/en/z-api/profile/company-categories) | Yes | No |
+| List categories | [`GET /business/available-categories`](/en/z-api/profile/available-categories) | Yes | No |
+| Update business hours | [`POST /business/hours`](/en/z-api/profile/business-hours) | Yes | No |
+
+### Channel profile
+
+<Info>
+  On WhatsApp Official, changing the profile name requires Meta review and answers `422` `profile name changes on META_WHATSAPP channels require Meta review: use WhatsApp Manager`. The picture accepts only an `http` or `https` URL and cannot be removed. Renaming the channel works on any channel type.
+</Info>
+
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
+|---|---|---|---|
+| Update profile name | [`PUT /profile-name`](/en/z-api/profile/profile-name) | Yes | No (responds `422`: a name change requires Meta review, through WhatsApp Manager) |
+| Update profile about text | [`PUT /profile-description`](/en/z-api/profile/profile-description) | Yes | Yes |
+| Update profile picture | [`PUT /profile-picture`](/en/z-api/profile/profile-picture) | Yes | Partial (only by http or https URL; it cannot be removed) |
+| Rename the channel | [`PUT /update-name`](/en/z-api/profile/update-name) | Yes | Yes |
 
 ### Catalog and products
 
 <Info>
-  On the official WhatsApp (Meta) channel, catalog management over the compatibility route is not in production yet: catalog routes respond `422`. Only sending a catalog (`send-catalog`) works on Meta.
+  See the [catalog introduction](/en/z-api/catalog/introduction). Catalog and product management works on WhatsApp Web. On WhatsApp Official, catalog management through the compatibility route is not in production yet: the 15 management routes answer `422`. Only catalog sending (`send-catalog`) works there.
 </Info>
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
-| Create/edit product | [`POST /products`](https://developer.z-api.io/en/business/edit-product) | Yes | Not yet |
-| List products | [`GET /catalogs`](https://developer.z-api.io/en/business/get-products) | Yes | Not yet |
-| Get product by ID | [`GET /products/{productId}`](https://developer.z-api.io/en/business/get-product-id) | Yes | Not yet |
-| Delete product | [`DELETE /products/{productId}`](https://developer.z-api.io/en/business/delete-product) | Yes | Not yet |
-| Catalog config | [`POST /catalogs/config`](https://developer.z-api.io/en/business/save-catalog-config) | Yes | Not yet |
-| Create collection | [`POST /catalogs/collection`](https://developer.z-api.io/en/business/create-collection) | Yes | No |
-| List collections | [`GET /catalogs/collection`](https://developer.z-api.io/en/business/list-collections) | Yes | No |
-| Delete collection | [`DELETE /catalogs/collection/{id}`](https://developer.z-api.io/en/business/delete-collection) | Yes | No |
-| Edit collection | [`POST /catalogs/collection-edit/{id}`](https://developer.z-api.io/en/business/edit-collection) | Yes | No |
-| List collection products | [`GET /catalogs/collection-products/{phone}`](https://developer.z-api.io/en/business/list-collection-products) | Yes | No |
-| Add product to collection | [`POST /catalogs/collection/add-product`](https://developer.z-api.io/en/business/add-product-to-collection) | Yes | No |
-| Remove product from collection | [`POST /catalogs/collection/remove-product`](https://developer.z-api.io/en/business/remove-product-from-collection) | Yes | No |
-| List products (phone) | [`GET /catalogs/{phone}`](https://developer.z-api.io/en/business/get-products-phone) | Yes | Not yet |
-| List products V2 | [`POST /catalogs`](https://developer.z-api.io/en/business/get-products-v2) | Yes | Not yet |
-| List products V2 (phone) | [`POST /catalogs/{phone}`](https://developer.z-api.io/en/business/get-products-phone-v2) | Yes | Not yet |
+| Create/edit product | [`POST /products`](/en/z-api/catalog/edit-product) | Yes | Not yet |
+| List products | [`GET /catalogs`](/en/z-api/catalog/get-products) | Yes | Not yet |
+| Get product by ID | [`GET /products/{productId}`](/en/z-api/catalog/get-product-id) | Yes | Not yet |
+| Delete product | [`DELETE /products/{productId}`](/en/z-api/catalog/delete-product) | Yes | Not yet |
+| Catalog settings | [`POST /catalogs/config`](/en/z-api/catalog/save-catalog-config) | Yes | Not yet |
+| Create collection | [`POST /catalogs/collection`](/en/z-api/catalog/create-collection) | Yes | No |
+| List collections | [`GET /catalogs/collection`](/en/z-api/catalog/list-collections) | Yes | No |
+| Delete collection | [`DELETE /catalogs/collection/{id}`](/en/z-api/catalog/delete-collection) | Yes | No |
+| Edit collection | [`POST /catalogs/collection-edit/{id}`](/en/z-api/catalog/edit-collection) | Yes | No |
+| List collection products | [`GET /catalogs/collection-products/{phone}`](/en/z-api/catalog/list-collection-products) | Yes | No |
+| Add product to collection | [`POST /catalogs/collection/add-product`](/en/z-api/catalog/add-product-to-collection) | Yes | No |
+| Remove product from collection | [`POST /catalogs/collection/remove-product`](/en/z-api/catalog/remove-product-from-collection) | Yes | No |
+| List products (phone) | [`GET /catalogs/{phone}`](/en/z-api/catalog/get-products-phone) | Yes | Not yet |
+| List products V2 | [`POST /catalogs`](/en/z-api/catalog/get-products-v2) | Yes | Not yet |
+| List products V2 (phone) | [`POST /catalogs/{phone}`](/en/z-api/catalog/get-products-phone-v2) | Yes | Not yet |
 
 ### Labels
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
 | List tags | [`GET /tags`](https://developer.z-api.io/en/business/tags) | Not yet | No |
 | Create tag | [`POST /business/create-tag`](https://developer.z-api.io/en/business/create-tag) | Not yet | No |
@@ -146,15 +212,39 @@ The tables below show, per feature, what each channel does:
 
 ### Other
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
 | Chat notes | [`POST /chats/{phone}/notes`](https://developer.z-api.io/en/business/chats-notes) | Not yet | No |
-| Update business hours | [`POST /business/hours`](https://developer.z-api.io/en/business/business-hours) | Yes | No |
-| List categories | [`GET /business/available-categories`](https://developer.z-api.io/en/business/available-categories) | Yes | No |
+
+## Instance
+
+<Info>
+  See the [instance introduction](/en/z-api/instance/introduction). Instance status and data work on WhatsApp Official and not yet on WhatsApp Web, where they answer `422`. Device data works only on WhatsApp Official. On WhatsApp Official, instance and device data come reduced: `/me` returns only `id`, `token`, `name`, `due`, `connected`, `paymentStatus` and `created`, and `/device` returns only `phone` and `isBusiness`.
+</Info>
+
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
+|---|---|---|---|
+| Instance status | [`GET /status`](/en/z-api/instance/status) | Not yet | Yes |
+| Instance data | [`GET /me`](/en/z-api/instance/me) | Not yet | Partial (only `id`, `token`, `name`, `due`, `connected`, `paymentStatus` and `created`) |
+| Device data | [`GET /device`](/en/z-api/instance/device) | Not yet | Partial (only `phone` and `isBusiness`) |
+
+## Message queue
+
+<Info>
+  See the [queue introduction](/en/z-api/queue/introduction). On WhatsApp Official, messages are not queued: they are handed to the official API when sent and cannot be removed. Queue queries return empty and the removal routes answer `422`.
+</Info>
+
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
+|---|---|---|---|
+| List queue | [`GET /queue`](/en/z-api/queue/get-queue) | Yes | Partial (always empty) |
+| List queue (paginated) | [`POST /queue`](/en/z-api/queue/post-queue) | Yes | Partial (always empty) |
+| Count queued messages | [`GET /queue/count`](/en/z-api/queue/get-queue-count) | Yes | Partial (always `0`) |
+| Clear queue | [`DELETE /queue`](/en/z-api/queue/delete-queue) | Yes | No (responds `422`) |
+| Remove message from queue | [`DELETE /queue/{zaapId}`](/en/z-api/queue/delete-queue-id) | Partial (the `zaapId` returned by the send is not in the queue) | No (responds `422`) |
 
 ## Status
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
 | Send text status | [`POST /send-text-status`](https://developer.z-api.io/en/status/send-text-status) | Not yet | No |
 | Send image status | [`POST /send-image-status`](https://developer.z-api.io/en/status/send-image-status) | Not yet | No |
@@ -165,7 +255,7 @@ The tables below show, per feature, what each channel does:
 
 ## Channels (Newsletter)
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
 | Create channel | [`POST /create-newsletter`](https://developer.z-api.io/en/newsletter/create-newsletter) | Not yet | No |
 | Update channel picture | [`POST /update-newsletter-picture`](https://developer.z-api.io/en/newsletter/update-newsletter-picture) | Not yet | No |
@@ -187,10 +277,14 @@ The tables below show, per feature, what each channel does:
 
 ## Chats
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+<Info>
+  See the [chats introduction](/en/z-api/chats/introduction). Listing chats and querying chat metadata work only on WhatsApp Web and answer `422` on WhatsApp Official.
+</Info>
+
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
-| List chats | [`GET /chats`](https://developer.z-api.io/en/chats/get-chats) | Yes | No |
-| Chat metadata | [`GET /chats/{phone}`](https://developer.z-api.io/en/chats/get-metadata-chat) | Yes | No |
+| List chats | [`GET /chats`](/en/z-api/chats/get-chats) | Yes | No |
+| Chat metadata | [`GET /chats/{phone}`](/en/z-api/chats/get-chat-metadata) | Yes | No |
 | Read chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/read-chat) | Not yet | No |
 | Archive chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/archive-chat) | Not yet | No |
 | Pin chat | [`POST /modify-chat`](https://developer.z-api.io/en/chats/pin-chat) | Not yet | No |
@@ -201,7 +295,7 @@ The tables below show, per feature, what each channel does:
 
 ## Communities
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
 | Create community | [`POST /communities`](https://developer.z-api.io/en/communities/create-community) | Not yet | No |
 | List communities | [`GET /communities`](https://developer.z-api.io/en/communities/list-communities) | Not yet | No |
@@ -219,14 +313,14 @@ The tables below show, per feature, what each channel does:
 
 ## Calls
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
 | Make call | [`POST /send-call`](https://developer.z-api.io/en/calls/send-call) | Not yet | No |
 | Generate call token | [`GET /call-token`](https://developer.z-api.io/en/calls/call-token) | Not yet | No |
 
 ## Privacy
 
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
+| Feature | Z-API Route | WhatsApp Web | WhatsApp Official |
 |---|---|---|---|
 | Disallowed contacts | [`GET /privacy/disallowed-contacts`](https://developer.z-api.io/en/privacy/get-disallowed-contacts) | Not yet | No |
 | Last seen | [`POST /privacy/last-seen`](https://developer.z-api.io/en/privacy/set-last-seen) | Not yet | No |
@@ -237,39 +331,8 @@ The tables below show, per feature, what each channel does:
 | Read receipts | [`POST /privacy/read-receipts`](https://developer.z-api.io/en/privacy/set-read-receipts) | Not yet | No |
 | Messages duration | [`POST /privacy/messages-duration`](https://developer.z-api.io/en/privacy/set-messages-duration) | Not yet | No |
 
-## Channel profile
-
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
-|---|---|---|---|
-| Update profile name | [`PUT /profile-name`](https://developer.z-api.io/en/instance/profile-name) | Yes | No (responds `422`: a name change requires Meta review, through WhatsApp Manager) |
-| Update profile description | [`PUT /profile-description`](https://developer.z-api.io/en/instance/profile-description) | Yes | Yes |
-| Update profile picture | [`PUT /profile-picture`](https://developer.z-api.io/en/instance/profile-picture) | Yes | Partly (only an http or https URL is accepted, and the picture cannot be removed) |
-| Rename instance | [`PUT /update-name`](https://developer.z-api.io/en/instance/rename-instance) | Yes | Yes |
-
-## Instance
-
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
-|---|---|---|---|
-| Instance status | [`GET /status`](https://developer.z-api.io/en/instance/status) | Not yet | Yes |
-| Instance data | [`GET /me`](https://developer.z-api.io/en/instance/me) | Not yet | Partly (only `id`, `token`, `name`, `due`, `connected`, `paymentStatus` and `created`) |
-| Device data | [`GET /device`](https://developer.z-api.io/en/instance/device) | Not yet | Partly (only `phone` and `isBusiness`) |
-
-## Queue
-
-<Info>
-  On the official WhatsApp (Meta) channel, messages are not queued: they go to Meta's official API when sent. So the queue is always empty, and deleting the queue or a message in it responds `422`: the message has already left and cannot be removed.
-</Info>
-
-| Feature | Z-API Route | WhatsApp Web | Official Meta |
-|---|---|---|---|
-| Count queued messages | [`GET /queue/count`](https://developer.z-api.io/en/queue/get-queue) | Yes | Partly (always `0`) |
-| List queue | [`POST /queue`](https://developer.z-api.io/en/queue/post-queue) | Yes | Partly (always empty) |
-| List queue (deprecated) | [`GET /queue`](https://developer.z-api.io/en/queue/get-queue) | Yes | Partly (always empty) |
-| Delete queue | [`DELETE /queue`](https://developer.z-api.io/en/queue/delete-queue) | Yes | No (responds `422`) |
-| Delete queued message | [`DELETE /queue/{zaapId}`](https://developer.z-api.io/en/queue/delete-queue-id) | Partly (the `zaapId` returned by the send is not in the queue) | No (responds `422`) |
-
 ---
 
 <Info>
-  On the official WhatsApp channel, some limitations come from Meta's official API and others are {projectName}'s, such as the quote and the mention that do not arrive, the reduced fields of `me` and `device`, and the queue that is always empty. On the WhatsApp Web channel, what shows as "Not yet" is released gradually through the compatibility route.
+  On the WhatsApp Official channel, some limitations come from Meta's official API and others are {projectName}'s, such as the quote and the mention that do not arrive, the reduced fields of `me` and `device`, and the queue that is always empty. On the WhatsApp Web channel, what shows as "Not yet" is released gradually through the compatibility route.
 </Info>

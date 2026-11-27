@@ -145,17 +145,38 @@
             }
           },
           "422": {
-            "description": "Canal desconectado. El mensaje no se envió: conecta el canal de nuevo y repite el envío.",
+            "description": "Rechazo antes del envío: canal desconectado y, en la Meta Cloud API, template inexistente en el idioma o cantidad de parámetros del cuerpo distinta de la del template. El mensaje no se envió.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SendError"
                 },
-                "example": {
-                  "timestamp": "2026-10-22T14:00:00.123Z",
-                  "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "CHANNEL_DISCONNECTED",
-                  "message": "Channel is disconnected"
+                "examples": {
+                  "channelDisconnected": {
+                    "summary": "Canal desconectado",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHANNEL_DISCONNECTED",
+                      "message": "Channel is disconnected"
+                    }
+                  },
+                  "templateNotInLanguage": {
+                    "summary": "El template no existe en el idioma",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "message": "Template 'atualizacao_pedido_v1' does not exist in language 'pt_BR'"
+                    }
+                  },
+                  "bodyParamsMismatch": {
+                    "summary": "Cantidad de parámetros del cuerpo distinta de la del template",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "message": "Template 'atualizacao_pedido_v1' expects 3 body parameter(s) but 1 was provided"
+                    }
+                  }
                 }
               }
             }

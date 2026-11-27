@@ -4,10 +4,14 @@ description: "A group's data"
 openapi: "/en/groups/openapi.json GET /v1/channels/{channelId}/groups/{groupId}"
 ---
 
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges scope="WEB_ONLY" lang="en" />
+
 ## Overview
 
 A group's data.
 
 <Note>
-  A group that does not exist responds `404` `provider_error`; a channel that does not exist responds `404` `instance not found`; an id out of format responds `400` `invalid_request`.
+  A group that does not exist responds `404` `provider_error`; when the channel is no longer a member of the group (it left or was removed), the response is `404` `{"error":"provider_error","message":"GROUP_FORBIDDEN"}`, and a temporary lookup failure at the provider can return the same error for up to 5 minutes; a channel that does not exist responds `404` `instance not found`; an id out of format responds `400` `invalid_request`.
 </Note>

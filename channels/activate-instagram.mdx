@@ -1,0 +1,52 @@
+---
+title: "Ativar canal Instagram"
+description: "Finalize no backend a conexão de um canal META_INSTAGRAM com o code e o redirectUri do SDK"
+sidebarTitle: "Ativar Instagram"
+keywords: ["POST /v1/channels/{channelId}/activate-instagram", "META_INSTAGRAM", "ativar canal", "Instagram"]
+openapi: "/pt/channels/openapi-activate-instagram.json POST /v1/channels/{channelId}/activate-instagram"
+---
+
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges scope="INSTAGRAM_ONLY" lang="pt" />
+
+## Conceituação
+
+Finaliza a conexão de um canal `META_INSTAGRAM` no seu backend, depois do `client.connect()` do SDK. Veja a [visão geral da ativação](/channels/activate-channel) para o fluxo completo, o corpo montado a partir do SDK, o timeout e os erros comuns às rotas de ativação.
+
+## Corpo da requisição
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `code` | string | `code` devolvido pelo SDK. Obrigatório |
+| `redirectUri` | string | `redirectUri` devolvido pelo SDK. Obrigatório |
+
+Sem `code` ou sem `redirectUri`, a API responde `422`.
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-instagram \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_SECRET_KEY" \
+  -d '{
+    "code": "CODE_DO_SDK",
+    "redirectUri": "REDIRECT_URI_DO_SDK"
+  }'
+```
+
+## Resposta
+
+Resposta `200`:
+
+```json
+{
+  "id": "17841400000000000",
+  "connected": true,
+  "username": "minhaloja",
+  "name": "Minha Loja",
+  "displayName": "Minha Loja"
+}
+```
+
+## Erros
+
+Os erros comuns às rotas de ativação (`401`, `403`, `404`, `422`, `502` e `504`) estão em [Erros](/channels/activate-channel#erros). Ativar um canal que já está ativo responde `422`, com `INSTAGRAM_META_IS_ALREADY_ACTIVATED` no campo `error`: veja [Canal já ativo](/channels/activate-channel#canal-já-ativo).

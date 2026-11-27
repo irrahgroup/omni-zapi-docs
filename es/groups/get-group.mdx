@@ -4,10 +4,14 @@ description: "Datos de un grupo"
 openapi: "/es/groups/openapi.json GET /v1/channels/{channelId}/groups/{groupId}"
 ---
 
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges scope="WEB_ONLY" lang="es" />
+
 ## Concepto
 
 Datos de un grupo.
 
 <Note>
-  Un grupo que no existe responde `404` `provider_error`; un canal que no existe responde `404` `instance not found`; un id fuera de formato responde `400` `invalid_request`.
+  Un grupo que no existe responde `404` `provider_error`; cuando el canal ya no es miembro del grupo (salió o fue removido), la respuesta es `404` `{"error":"provider_error","message":"GROUP_FORBIDDEN"}`, y una falla temporal de consulta en el proveedor puede dar el mismo error por hasta 5 minutos; un canal que no existe responde `404` `instance not found`; un id fuera de formato responde `400` `invalid_request`.
 </Note>

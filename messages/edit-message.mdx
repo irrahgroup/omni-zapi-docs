@@ -1,21 +1,24 @@
 ---
 title: "Editar mensagem"
 description: "Corrija o texto de uma mensagem já enviada, nos canais que permitem edição"
+sidebarTitle: "Editar mensagem"
+keywords: ["PUT /v1/channels/{channelId}/messages/{messageId}", "EDIT", "edit message", "corrigir texto enviado", "EDIT_NOT_SUPPORTED"]
+openapi: "/pt/messages/openapi-edit.json PUT /v1/channels/{channelId}/messages/{messageId}"
 ---
+
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges type="EDIT" lang="pt" />
 
 ## Conceituação
 
 Troca o texto de uma mensagem de texto que o seu canal já enviou. O destinatário vê o texto novo no lugar do antigo, com a marca de editada do aplicativo. Nenhuma mensagem nova é enviada.
 
-```
-PUT /v1/channels/{channelId}/messages/{messageId}
-```
-
 - `channelId`: o canal que enviou a mensagem.
 - `messageId`: o `messageId` que o envio devolveu. O `contents[].identifier` recebido no webhook também é aceito.
 
 <Warning>
-  **Só o WhatsApp Web e o Telegram permitem edição.** Em WhatsApp Meta, Instagram e Messenger, a API recusa o pedido com `422` e `subCode` `EDIT_NOT_SUPPORTED`, e nada é enviado ao contato. Veja [Limitações por canal](#limitações-por-canal).
+  Nos canais que não permitem edição, a API recusa o pedido com `422` e `subCode` `EDIT_NOT_SUPPORTED`, e nada é enviado ao contato. Veja [Limitações por canal](#limitações-por-canal).
 </Warning>
 
 ## Corpo da requisição

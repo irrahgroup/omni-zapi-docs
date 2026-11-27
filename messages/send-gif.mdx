@@ -4,6 +4,10 @@ description: "Envie um GIF animado"
 openapi: "/pt/messages/openapi-gif.json POST /v1/channels/{channelId}/messages"
 ---
 
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges scope="SEND_GIF" lang="pt" />
+
 ## Conceituação
 
 Envia um GIF animado. O arquivo vai por URL no array `content.attachments`.
@@ -44,8 +48,18 @@ O campo `content.type` deve ser `GIF`.
 </Note>
 
 <Note>
-  Só sai no **WhatsApp Web** e no **Telegram**. Nos outros canais, a API não recusa este tipo antes do envio: responde `200`, mas a mensagem não chega ao cliente. Mesmo nesses dois canais, o `200` confirma que a API aceitou a mensagem, não que o canal a entregou: acompanhe o status pelo [webhook](/webhooks/payloads). Veja [o que cada canal aceita](/channels/message-support).
+  Só sai no **WhatsApp Web** e no **Telegram**. Na Meta Cloud API, a API recusa na hora com `400` `VALIDATION_ERROR` e `subCode` `MEDIA_MIME_NOT_ALLOWED`; para animação, envie como `VIDEO` em mp4. No Instagram e no Messenger, a API responde `200`, mas a mensagem não chega ao cliente. Mesmo nesses dois canais, o `200` confirma que a API aceitou a mensagem, não que o canal a entregou: acompanhe o status pelo [webhook](/webhooks/payloads). Veja [o que cada canal aceita](/channels/message-support).
 </Note>
+
+Exemplo de erro na Meta Cloud API:
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "subCode": "MEDIA_MIME_NOT_ALLOWED",
+  "message": "Tipo de mídia não permitido para GIF: application/octet-stream"
+}
+```
 
 <Note>
   Com o canal desconectado, a API recusa o envio com `422` e `subCode` `CHANNEL_DISCONNECTED`, e a mensagem não é enviada. Veja [Erros no envio](/messages/introduction#erros-no-envio).

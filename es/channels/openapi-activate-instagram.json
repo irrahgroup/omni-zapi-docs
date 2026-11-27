@@ -1,0 +1,298 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Omni Z-API - Activar canal Instagram",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.omni.z-api.io"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/channels/{channelId}/activate-instagram": {
+      "post": {
+        "summary": "Activar canal Instagram",
+        "description": "Activa un canal **META_INSTAGRAM** con el `code` y el `redirectUri` devueltos por el SDK `@omnizapi/connect`. Llama siempre desde el backend. Configura el timeout de tu cliente HTTP por encima de 60 segundos: la API solo inicia un nuevo paso de la activación dentro de 50 segundos, pero un paso que ya empezó llega hasta el final, y el gateway corta la solicitud a los 60 segundos. Consulta [Activar canal](/es/channels/activate-channel).",
+        "operationId": "activateInstagramChannel",
+        "tags": [
+          "Canales"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "description": "ID del canal `META_INSTAGRAM`",
+            "schema": {
+              "type": "string",
+              "example": "019E4C54B1B375A28970B605CA9B03C3"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateInstagramRequest"
+              },
+              "example": {
+                "code": "CODE_DEL_SDK",
+                "redirectUri": "REDIRECT_URI_DEL_SDK"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Canal activado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivateInstagramResponse"
+                },
+                "example": {
+                  "id": "17841400000000000",
+                  "connected": true,
+                  "username": "mitienda",
+                  "name": "Mi Tienda",
+                  "displayName": "Mi Tienda"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "El canal no existe o pertenece a otro workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Instance not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El proveedor rechazó la activación, o el tipo de canal no es el de la ruta. Sin `code` o sin `redirectUri`, la API responde `422`. Si el canal ya está activo en el proveedor, el `error` es `INSTAGRAM_META_IS_ALREADY_ACTIVATED`. En general, el campo `error` trae el envoltorio del proveedor, con el nombre del error en `error.errors[0].name`; cuando el proveedor rechaza sin ese envoltorio, viene como texto genérico.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ProviderError"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Texto genérico, cuando el rechazo del proveedor viene sin envoltorio",
+                          "example": "The operation could not be completed right now. Try again in a few moments."
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Servicio interno no disponible. Inténtalo de nuevo en unos instantes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "integration_unavailable",
+                  "message": "The operation could not be completed right now. Try again in a few moments."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "La activación tardó demasiado (`integration_timeout`): puedes repetir la llamada. O la activación no terminó a tiempo y todavía puede completarse (`outcome_unknown`): comprueba el resultado antes de repetir.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "timeout": {
+                    "summary": "La activación tardó demasiado",
+                    "value": {
+                      "error": "integration_timeout"
+                    }
+                  },
+                  "outcomeUnknown": {
+                    "summary": "Resultado desconocido",
+                    "value": {
+                      "error": "outcome_unknown"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Unauthorized": {
+        "description": "Secret Key rechazada. Consulta los motivos en Autenticación.",
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Authorization invalid",
+              "message": "Authorization invalid: this Secret Key does not exist or is no longer valid. Copy the current Secret Key under Security in the panel and send it as \"Authorization: Bearer <secret-key>\". See https://developer.omni.z-api.io/en/authentication"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "IP fuera de la lista del workspace (ver [Restricción de IP](/es/security/ip-restriction))",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "ip_not_allowed",
+              "message": "203.0.113.10 not allowed: this workspace only accepts API calls from the IPs on its allow list. The workspace Owner can add this IP under Administration > Security > IP Restriction in the panel (changes take up to 10 minutes to apply), or call from an allowed IP. See https://developer.omni.z-api.io/en/security/ip-restriction"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ProviderError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "description": "Envoltorio de error del proveedor",
+            "properties": {
+              "timestamp": {
+                "type": "string"
+              },
+              "status": {
+                "type": "integer"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ActivateInstagramRequest": {
+        "type": "object",
+        "required": [
+          "code",
+          "redirectUri"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "`code` devuelto por el SDK"
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "`redirectUri` devuelto por el SDK"
+          }
+        }
+      },
+      "ActivateInstagramResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "username": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret Key generada en el panel de Seguridad de Omni Z-API"
+      }
+    }
+  }
+}

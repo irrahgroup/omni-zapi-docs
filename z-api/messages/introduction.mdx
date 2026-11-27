@@ -1,29 +1,39 @@
 ---
-title: "Introdução"
-description: "Conceitos básicos sobre envio de mensagens na API do Omni Z-API"
+title: "Introdução às mensagens"
+description: "Rotas de envio e de ação sobre mensagem da Z-API: janela de conversa, formato da resposta e disponibilidade por canal"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
 
 ## Conceituação
 
-Os endpoints de mensagens desta seção permitem enviar mensagens **somente quando a janela de conversa do WhatsApp estiver aberta** (dentro do período de 24 horas). Isso é uma regra da API oficial do WhatsApp Business.
+Os endpoints de mensagens desta seção enviam pelos canais **WhatsApp Oficial** e **WhatsApp Web**, e a regra de envio muda conforme o canal:
+
+- **WhatsApp Oficial**: só é possível enviar mensagens **quando a janela de conversa do WhatsApp estiver aberta** (dentro do período de 24 horas). Isso é uma regra da API oficial do WhatsApp Business.
+- **WhatsApp Web**: não existe janela de conversa. Você pode enviar a qualquer momento.
+
+Nem todas as rotas funcionam nos dois canais. Veja a página [Compatibilidade por canal](/z-api/limitations).
 
 <Warning>
-  A janela de conversa de 24 horas é aberta quando o **cliente envia uma mensagem para você**. Fora dessa janela, só é possível enviar mensagens utilizando **templates aprovados pela Meta**. As mensagens desta seção **não funcionam** fora da janela de conversa.
+  No canal WhatsApp Oficial, a janela de conversa de 24 horas é aberta quando o **cliente envia uma mensagem para você**. Fora dessa janela, só é possível enviar mensagens utilizando **templates aprovados pela Meta**. As mensagens desta seção **não funcionam** fora da janela de conversa.
 </Warning>
 
 ### Dentro da janela (24h)
 
-O cliente enviou uma mensagem para você? Ótimo, a janela está aberta. Você pode usar qualquer endpoint desta seção para responder com texto, imagem, áudio, vídeo, documento, etc.
+No WhatsApp Oficial, o cliente enviou uma mensagem para você? Ótimo, a janela está aberta. Você pode usar qualquer endpoint desta seção para responder com texto, imagem, áudio, vídeo, documento, etc.
 
 ### Fora da janela (após 24h)
 
-Se o cliente **não** enviou uma mensagem nas últimas 24 horas, a única forma de iniciar uma conversa é enviando um **template de mensagem** previamente aprovado pela Meta. Templates são mensagens pré-definidas que você cria e submete para aprovação no painel da Meta.
+No WhatsApp Oficial, se o cliente **não** enviou uma mensagem nas últimas 24 horas, a única forma de iniciar uma conversa é enviando um **template de mensagem** previamente aprovado pela Meta. Templates são mensagens pré-definidas que você cria e submete para aprovação no painel da Meta.
 
 <Info>
   Na Z-API (conexão não oficial) essa limitação não existia — você podia enviar mensagens a qualquer momento. Na API oficial, essa regra é obrigatória e não pode ser contornada.
 </Info>
+
+## Disponibilidade por canal
+
+<ZapiChannelMatrix family="messages" lang="pt" />
 
 ---
 

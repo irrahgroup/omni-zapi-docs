@@ -1,0 +1,39 @@
+---
+title: "Introducción a los contactos"
+description: "Las 9 rutas de contactos de Z-API: consultar contactos, verificar un número, bloquear y denunciar, solo en WhatsApp Web"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Conceptos
+
+Esta sección documenta las 9 rutas de contactos de Z-API que {projectName} atiende en la Compatibilidad con Z-API: consultar contactos y fotos, verificar si un número tiene WhatsApp, agregar y eliminar contactos, denunciar y bloquear. La ruta (`/instances/` o `/channels/`, seguida de `/{id}/token/{token}/` y de la ruta), los campos del cuerpo y el formato de la respuesta son los de Z-API. El único cambio en tu aplicación sigue siendo la base URL y el header de autenticación.
+
+Los contactos son los del número conectado a WhatsApp Web. El canal **WhatsApp Oficial** (API oficial de Meta) no tiene estas rutas y responde `422` a todas.
+
+## Disponibilidad por canal
+
+<ZapiChannelMatrix family="contacts" lang="es" />
+
+- **WhatsApp Web:** las 9 rutas están disponibles.
+- **WhatsApp Oficial:** las 9 rutas responden `422` con el motivo.
+- **Demás canales** (Telegram, Instagram, Messenger y otros): todas las rutas responden `422`.
+
+Los textos de `error` de estas negativas:
+
+| Canal | `error` |
+|---|---|
+| WhatsApp Oficial, en las ocho primeras rutas de la tabla | `<ruta> is not available for META_WHATSAPP channels: <motivo>; available only on Z-API (WhatsApp Web) instances`, donde `<ruta>` es el nombre de la ruta sin la barra inicial, como `contacts/add` |
+| WhatsApp Oficial, en `POST /contacts/modify-blocked` | `contact route is not available for META_WHATSAPP channels; available only on Z-API (WhatsApp Web) instances` |
+| Demás canales | `contact route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances`, donde `<TIPO>` es el tipo del canal. Un canal sin tipo recibe `contact route is not available for this channel type; available only on Z-API (WhatsApp Web) instances` |
+
+## Errores comunes
+
+Todos los errores tienen el formato `{"error": "<mensaje>"}`. Los que valen para las rutas de contactos:
+
+| Status | `error` | Cuándo |
+|---|---|---|
+| `422` | `instance subscription is not active` | La suscripción del canal no está activa. |
+| `400` | `invalid path parameter` | Teléfono en la ruta vacío, con más de 128 caracteres o con un carácter inválido. |
+| `400` | `request body is too large` | El cuerpo supera el límite de la ruta: 10 MiB en `phone-exists-batch` y 1 MiB en las demás rutas con cuerpo. |

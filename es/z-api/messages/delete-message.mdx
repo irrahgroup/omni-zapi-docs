@@ -1,0 +1,25 @@
+---
+title: "Eliminar mensaje"
+description: "Elimina un mensaje enviado o recibido en un chat"
+sidebarTitle: "Eliminar mensaje"
+tag: "Web"
+keywords: ["messages", "delete-message"]
+openapi: "/es/z-api/openapi.json DELETE /messages"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+import { ZapiChannels } from '/snippets/zapi-channels.mdx';
+
+<ZapiChannels route="delete-message" lang="es" />
+
+## Conceptos
+
+Método para eliminar un mensaje de un chat, ya sea uno que el canal envió o uno recibido del contacto. Solo necesitas el `messageId` del mensaje, que es su id en Omni Z-API: el mismo que llega en el webhook (en el formato por defecto, `message._id`).
+
+El mensaje siempre se elimina para todos. Si `deleteForMe` es `true` ("eliminar para mí"), la API responde `422`: envía `deleteForMe=false` u omite el parámetro. `phone` es obligatorio, como en Z-API, pero no se usa: el mensaje se encuentra por el `messageId`. El parámetro `owner` se acepta y tampoco se usa.
+
+Un `200` indica que la solicitud fue aceptada. La eliminación en WhatsApp se hace a continuación.
+
+<Note>
+  <ZapiResponseText lang="es" />
+</Note>

@@ -95,6 +95,8 @@ A carousel sent to a channel other than Meta Cloud API is refused right away: th
 `[UNSUPPORTED_CHANNEL_TYPE]` in the `message`, and no message or webhook is created. This also applies to the
 `send-carousel` route. See [Send carousel](/en/messages/send-carousel).
 
+An interactive message received from another WhatsApp (buttons, lists, action buttons, and the copy code button) on a Meta Cloud API channel arrives as `UNSUPPORTED`, because Meta does not deliver these types. See [Channel payload structure](/en/webhooks/payloads).
+
 ## Store and orders
 
 | Feature | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
@@ -115,11 +117,14 @@ Order details and order status do not exist in the API yet, on any channel.
 
 | Feature | Meta Cloud API | WhatsApp Web | Instagram | Messenger | Telegram |
 |---|:---:|:---:|:---:|:---:|:---:|
-| Pre-approved template | ✅ WABA | ❌ | ❌ | ✅ Utility | ❌ |
+| Pre-approved template | ✅ WABA | ❌ | ❌ | ⚠️ Generic | ❌ |
 
 A template is the message Meta approves in advance so you can write first, outside the window. It only
 exists where there is a window: Meta Cloud API and Messenger. On the other channels you write
 whenever you want, so it would not be missed.
+
+On Messenger, `TEMPLATE` is accepted and goes out as a generic Messenger template (free structure of
+elements, such as image and buttons), not as a template approved by Meta by name and language.
 
 A template sent to a channel other than Meta Cloud API or Messenger is refused right away: the API answers
 `422` with `subCode` `TEMPLATE_NOT_SUPPORTED`. See [Send template](/en/messages/send-template).

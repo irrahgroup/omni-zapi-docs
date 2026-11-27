@@ -134,17 +134,38 @@
             }
           },
           "422": {
-            "description": "Canal desconectado. A mensagem não foi enviada: conecte o canal de novo e repita o envio.",
+            "description": "Recusa antes do envio: canal desconectado e, na Meta Cloud API, template inexistente no idioma ou quantidade de parâmetros do corpo diferente da do template. A mensagem não foi enviada.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SendError"
                 },
-                "example": {
-                  "timestamp": "2026-10-22T14:00:00.123Z",
-                  "code": "BUSINESS_RULE_VIOLATION",
-                  "subCode": "CHANNEL_DISCONNECTED",
-                  "message": "Channel is disconnected"
+                "examples": {
+                  "channelDisconnected": {
+                    "summary": "Canal desconectado",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHANNEL_DISCONNECTED",
+                      "message": "Channel is disconnected"
+                    }
+                  },
+                  "templateNotInLanguage": {
+                    "summary": "Template não existe no idioma",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "message": "Template 'atualizacao_pedido_v1' does not exist in language 'pt_BR'"
+                    }
+                  },
+                  "bodyParamsMismatch": {
+                    "summary": "Quantidade de parâmetros do corpo diferente da do template",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "message": "Template 'atualizacao_pedido_v1' expects 3 body parameter(s) but 1 was provided"
+                    }
+                  }
                 }
               }
             }

@@ -1,0 +1,48 @@
+---
+title: "Consultar estado de WhatsApp Web"
+description: "Consulta si se leyó el código QR del canal y si el número está conectado"
+sidebarTitle: "Estado de la conexión"
+keywords: ["GET /v1/channels/{channelId}/zapi/status", "Z_API_WHATSAPP", "WhatsApp Web"]
+openapi: "/es/channels/openapi-whatsapp-web-status.json GET /v1/channels/{channelId}/zapi/status"
+---
+
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges scope="WEB_ONLY" lang="es" />
+
+## Conceptualización
+
+Usa esta ruta para saber si se leyó el código QR y si el número está conectado.
+
+## Ejemplo
+
+```bash
+curl https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/zapi/status \
+  -H "Authorization: Bearer SU_SECRET_KEY"
+```
+
+## Respuesta
+
+Respuesta `200`:
+
+```json
+{
+  "connected": true,
+  "session": true,
+  "created": 1764064800000,
+  "error": "",
+  "smartphoneConnected": true
+}
+```
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `connected` | boolean | `true` cuando se leyó el código QR y el número está conectado |
+| `session` | boolean | Si existe una sesión de WhatsApp Web |
+| `created` | number o `null` | Momento de creación de la sesión, cuando la hay |
+| `error` | string | Texto del error, cuando lo hay |
+| `smartphoneConnected` | boolean | Si el móvil del número está conectado |
+
+## Errores
+
+Los errores (`401`, `403`, `404`, `422` y `502`) son los mismos de las dos rutas y están en [Errores](/es/channels/whatsapp-web-status#errores).

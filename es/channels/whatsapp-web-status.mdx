@@ -7,60 +7,12 @@ Dos rutas de lectura para canales `Z_API_WHATSAPP` (WhatsApp Web). Las dos usan 
 
 El flujo del código QR está en [Conectar WhatsApp Web](/es/connect/whatsapp-web).
 
-## Estado de la conexión
+## Rutas
 
-`GET /v1/channels/{channelId}/zapi/status`
-
-Usa esta ruta para saber si se leyó el código QR y si el número está conectado.
-
-```bash
-curl https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/zapi/status \
-  -H "Authorization: Bearer SU_SECRET_KEY"
-```
-
-Respuesta `200`:
-
-```json
-{
-  "connected": true,
-  "session": true,
-  "created": 1764064800000,
-  "error": "",
-  "smartphoneConnected": true
-}
-```
-
-| Campo | Tipo | Descripción |
+| Página | Ruta | Para qué sirve |
 |---|---|---|
-| `connected` | boolean | `true` cuando se leyó el código QR y el número está conectado |
-| `session` | boolean | Si existe una sesión de WhatsApp Web |
-| `created` | number o `null` | Momento de creación de la sesión, cuando la hay |
-| `error` | string | Texto del error, cuando lo hay |
-| `smartphoneConnected` | boolean | Si el móvil del número está conectado |
-
-## Dispositivo conectado
-
-`GET /v1/channels/{channelId}/zapi/device`
-
-Usa esta ruta para saber qué número y qué dispositivo están vinculados al canal.
-
-```bash
-curl https://api.omni.z-api.io/v1/channels/ID_DEL_CANAL/zapi/device \
-  -H "Authorization: Bearer SU_SECRET_KEY"
-```
-
-La respuesta `200` trae estos campos:
-
-| Campo | Descripción |
-|---|---|
-| `phone` | Número conectado |
-| `imgUrl` | URL de la foto de perfil |
-| `name` | Nombre del perfil |
-| `device.sessionName` | Nombre de la sesión |
-| `device.deviceModel` | Modelo del dispositivo |
-| `originalDevice` | Dispositivo original |
-| `sessionId` | ID de la sesión |
-| `isBusiness` | Si la cuenta es de WhatsApp Business |
+| [Consultar estado de WhatsApp Web](/es/channels/get-whatsapp-web-status) | `GET /v1/channels/{channelId}/zapi/status` | Saber si se leyó el código QR y si el número está conectado |
+| [Consultar dispositivo de WhatsApp Web](/es/channels/get-whatsapp-web-device) | `GET /v1/channels/{channelId}/zapi/device` | Saber qué número y qué dispositivo están vinculados al canal |
 
 ## Errores
 
@@ -71,7 +23,27 @@ Las dos rutas responden con los mismos errores:
 | `401` | `{"error": "Authorization invalid", "message": "..."}` | La Secret Key fue rechazada. Consulta los motivos en [Autenticación](/es/authentication) |
 | `403` | `{"error": "ip_not_allowed", "message": "..."}` | La IP de origen está fuera de la lista. Consulta [Restricción de IP](/es/security/ip-restriction) |
 | `404` | `{"error": "Instance not found"}` | El canal no existe o pertenece a otro workspace |
-| `422` | `{"error": { ... }}` o `{"error": "..."}` | El proveedor rechazó la consulta. El campo `error` trae el envoltorio del proveedor o, sin envoltorio, un texto genérico |
+| `422` | `{"error": {"errors": [{"code": "413", ...}]}}` | El canal no es WhatsApp Web (`error.errors[0].code` `"413"`, `name` `IS_NOT_Z_API_WHATSAPP_CHANNEL`). El `status` dentro del cuerpo viene `400`, pero vale el `422` de la respuesta |
+| `422` | `{"error": { ... }}` o `{"error": "..."}` | Otro caso: el proveedor rechazó la consulta. El campo `error` trae el envoltorio del proveedor o, sin envoltorio, un texto genérico |
 | `502` | `{"error": "integration_unavailable", "message": "..."}` | Un servicio interno no está disponible. Inténtalo de nuevo en unos instantes |
+
+Ejemplo del `422` cuando el canal no es WhatsApp Web:
+
+```json
+{
+  "error": {
+    "timestamp": "2026-10-22T14:00:00.123Z",
+    "status": 400,
+    "errors": [
+      {
+        "code": "413",
+        "name": "IS_NOT_Z_API_WHATSAPP_CHANNEL",
+        "message": "Not a Z-API WhatsApp channel",
+        "description": "The channel is not of type Z_API_WHATSAPP"
+      }
+    ]
+  }
+}
+```
 
 Para desconectar el número, consulta [Desconectar canal](/es/channels/disconnect).

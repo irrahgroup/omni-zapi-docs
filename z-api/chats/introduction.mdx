@@ -1,0 +1,45 @@
+---
+title: "Introdução aos chats"
+description: "As 2 rotas de chats da Z-API: listar os chats e consultar o metadata de um chat, só no WhatsApp Web"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Conceituação
+
+Esta seção documenta as 2 rotas de chats da Z-API que o {projectName} atende na Z-API Compatibilidade: listar os chats e buscar o metadata de um chat. O caminho (`/instances/` ou `/channels/`, seguido de `/{id}/token/{token}/` e da rota), os parâmetros e o formato da resposta são os da Z-API. Para consultar os chats, a única mudança na sua aplicação continua sendo a base URL e o header de autenticação.
+
+As rotas de chats funcionam só em canais **WhatsApp Web**. Nos demais canais, incluindo o **WhatsApp Oficial** (API oficial da Meta), respondem `422`.
+
+## Disponibilidade por canal
+
+<ZapiChannelMatrix family="chats" lang="pt" />
+
+Nos canais que não são WhatsApp Web, as 2 rotas respondem:
+
+```json
+{ "error": "chat route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances" }
+```
+
+`<TIPO>` é o tipo do canal, como `META_WHATSAPP`. Um canal sem tipo recebe `chat route is not available for this channel type; available only on Z-API (WhatsApp Web) instances`.
+
+## ID do chat
+
+O ID do chat é o valor que a rota recebe em `phone`: o número do contato, como `5511999999999`, ou o ID de um grupo, como `120363019502650977-group`.
+
+- Obtenha o ID em [Pegar chats](/z-api/chats/get-chats) e use o valor como recebeu.
+- O `phone` tem de 1 a 128 caracteres visíveis, sem `/`, `\`, `?`, `#` nem `%`. Fora disso, a rota responde `400` com `invalid path parameter`.
+
+## Erros comuns
+
+Todos os erros têm o formato `{"error": "<mensagem>"}`. Os que valem para as rotas de chats:
+
+| Status | `error` | Quando |
+|---|---|---|
+| `404` | `instance not found` | Id ou token do canal errados. A autenticação está em [Autenticação](/z-api/authentication). |
+| `422` | `instance subscription is not active` | A assinatura do canal não está ativa. |
+| `400` | `invalid path parameter` | `phone` vazio, com mais de 128 caracteres ou com caractere inválido. |
+| `422` | `chat route is not available for <TIPO> channels; available only on Z-API (WhatsApp Web) instances` | Canal que não é WhatsApp Web. |
+| `502` | `failed to reach the Z-API instance` | O canal WhatsApp Web não respondeu. |
+| `502` | `the Z-API instance answer is too large: use page and pageSize` | A resposta é grande demais. Use `page` e `pageSize`. |

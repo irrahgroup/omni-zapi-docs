@@ -7,9 +7,9 @@ Depois do `client.connect()` do SDK, a conexão de um canal Instagram, Messenger
 
 | Tipo do canal | Rota | Conexão no SDK |
 |---|---|---|
-| `META_INSTAGRAM` | `POST /v1/channels/{channelId}/activate-instagram` | [Instagram](/connect/instagram) |
-| `META_MESSENGER` | `POST /v1/channels/{channelId}/activate-messenger` | [Messenger](/connect/messenger) |
-| `BOT_TELEGRAM` | `POST /v1/channels/{channelId}/activate-telegram` | [Telegram](/connect/telegram) |
+| `META_INSTAGRAM` | [`POST /v1/channels/{channelId}/activate-instagram`](/channels/activate-instagram) | [Instagram](/connect/instagram) |
+| `META_MESSENGER` | [`POST /v1/channels/{channelId}/activate-messenger`](/channels/activate-messenger) | [Messenger](/connect/messenger) |
+| `BOT_TELEGRAM` | [`POST /v1/channels/{channelId}/activate-telegram`](/channels/activate-telegram) | [Telegram](/connect/telegram) |
 
 <Warning>
   O [`POST /v1/channels/{channelId}/connect`](/channels/connect-channel) vale só para `META_WHATSAPP`. Sem `wabaId`, ele recusa a chamada com `400` `{"error": "wabaId is required"}`. Para Instagram, Messenger e Telegram, use a rota de ativação do tipo do canal.
@@ -70,104 +70,6 @@ const res = await fetch(
     body: JSON.stringify(body),
   },
 );
-```
-
-## Instagram
-
-`POST /v1/channels/{channelId}/activate-instagram`, para canais `META_INSTAGRAM`.
-
-| Campo | Tipo | Descrição |
-|---|---|---|
-| `code` | string | `code` devolvido pelo SDK. Obrigatório |
-| `redirectUri` | string | `redirectUri` devolvido pelo SDK. Obrigatório |
-
-Sem `code` ou sem `redirectUri`, a API responde `422`.
-
-```bash
-curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-instagram \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer SUA_SECRET_KEY" \
-  -d '{
-    "code": "CODE_DO_SDK",
-    "redirectUri": "REDIRECT_URI_DO_SDK"
-  }'
-```
-
-Resposta `200`:
-
-```json
-{
-  "id": "17841400000000000",
-  "connected": true,
-  "username": "minhaloja",
-  "name": "Minha Loja",
-  "displayName": "Minha Loja"
-}
-```
-
-## Messenger
-
-`POST /v1/channels/{channelId}/activate-messenger`, para canais `META_MESSENGER`.
-
-| Campo | Tipo | Descrição |
-|---|---|---|
-| `code` | string | `code` devolvido pelo SDK. Obrigatório |
-| `redirectUri` | string | `redirectUri` devolvido pelo SDK |
-| `pageId` | string | Página a vincular. Obrigatório quando o usuário administra mais de uma página |
-
-O `pageId` vem do SDK, quando o usuário administra uma página só, ou da [lista de páginas](/connect/messenger) de `list-messenger-pages`, quando ele escolhe uma entre várias.
-
-- Com mais de uma página e sem `pageId`, a API responde `422`.
-- Um `pageId` que não está entre as páginas da conta também é recusado.
-
-```bash
-curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-messenger \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer SUA_SECRET_KEY" \
-  -d '{
-    "code": "CODE_DO_SDK",
-    "redirectUri": "REDIRECT_URI_DO_SDK",
-    "pageId": "102938475601234"
-  }'
-```
-
-Resposta `200`:
-
-```json
-{
-  "pageId": "102938475601234",
-  "connected": true,
-  "pageName": "Minha Loja",
-  "pageCategory": "Shopping & retail",
-  "displayName": "Minha Loja"
-}
-```
-
-## Telegram
-
-`POST /v1/channels/{channelId}/activate-telegram`, para canais `BOT_TELEGRAM`.
-
-| Campo | Tipo | Descrição |
-|---|---|---|
-| `token` | string | Token do bot. É o `botToken` que o SDK devolve |
-
-```bash
-curl -X POST https://api.omni.z-api.io/v1/channels/ID_DO_CANAL/activate-telegram \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer SUA_SECRET_KEY" \
-  -d '{
-    "token": "123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"
-  }'
-```
-
-Resposta `200`:
-
-```json
-{
-  "externalId": "123456789",
-  "connected": true,
-  "displayName": "minhaloja_bot"
-}
 ```
 
 ## Canal já ativo

@@ -1,0 +1,48 @@
+---
+title: "Activate Telegram channel"
+description: "Finish in your backend the connection of a BOT_TELEGRAM channel with the bot token"
+sidebarTitle: "Activate Telegram"
+keywords: ["POST /v1/channels/{channelId}/activate-telegram", "BOT_TELEGRAM", "activate", "Telegram"]
+openapi: "/en/channels/openapi-activate-telegram.json POST /v1/channels/{channelId}/activate-telegram"
+---
+
+import { ChannelBadges } from '/snippets/channel-support.mdx';
+
+<ChannelBadges scope="TELEGRAM_ONLY" lang="en" />
+
+## Overview
+
+Finishes the connection of a `BOT_TELEGRAM` channel in your backend, after the SDK's `client.connect()`. See the [activation overview](/en/channels/activate-channel) for the full flow, the body built from the SDK, the timeout and the errors common to the activation routes.
+
+## Request body
+
+| Field | Type | Description |
+|---|---|---|
+| `token` | string | Bot token. It is the `botToken` the SDK returns |
+
+```bash
+curl -X POST https://api.omni.z-api.io/v1/channels/CHANNEL_ID/activate-telegram \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_SECRET_KEY" \
+  -d '{
+    "token": "123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw"
+  }'
+```
+
+## Response
+
+`200` response:
+
+```json
+{
+  "externalId": "123456789",
+  "connected": true,
+  "displayName": "mystore_bot"
+}
+```
+
+## Errors
+
+The errors common to the activation routes (`401`, `403`, `404`, `422`, `502` and `504`) are in [Errors](/en/channels/activate-channel#errors). Activating a channel that is already active responds `422`, with `TELEGRAM_IS_ALREADY_ACTIVATED` in the `error` field: see [Channel already active](/en/channels/activate-channel#channel-already-active).
+
+On Telegram, an empty `token` (`""`) comes back as `422`, but without the `token` field the response can be `502` `integration_unavailable`. Always send the field.

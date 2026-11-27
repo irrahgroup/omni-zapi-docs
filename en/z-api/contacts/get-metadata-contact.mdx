@@ -1,0 +1,37 @@
+---
+title: "Contact metadata"
+description: "Returns the contact metadata information"
+sidebarTitle: "Get contact metadata"
+tag: "Web"
+keywords: ["contacts", "get-metadata-contact"]
+openapi: "/en/z-api/openapi.json GET /contacts/{phone}"
+---
+
+import { ZapiResponseText } from '/snippets/notes.mdx';
+import { ZapiChannels } from '/snippets/zapi-channels.mdx';
+
+<ZapiChannels route="get-metadata-contact" lang="en" />
+
+## Overview
+
+Method that returns the metadata information of a contact: name, WhatsApp name, photo and profile about. Send the phone in the path, in the DDI DDD NUMBER format, such as `551199999999`.
+
+The photo URL (`imgUrl`) is available for only 48 hours, per WhatsApp policy. To get the updated photo, use [Get contact picture](/en/z-api/contacts/get-profile-picture).
+
+<Note>
+  <ZapiResponseText lang="en" />
+</Note>
+
+<Note>
+  When the number does not exist on WhatsApp or is not in the address book of the channel's phone, the response is HTTP `200` with the body below, not an HTTP error. This behavior is inherited from Z-API: check the `statusCode` in the body.
+
+  ```json
+  {
+    "message": "Phone not exists",
+    "error": "Bad Request",
+    "statusCode": 400
+  }
+  ```
+
+  To check whether a number has WhatsApp, use [Number on WhatsApp?](/en/z-api/contacts/get-iswhatsapp) (`phone-exists`).
+</Note>

@@ -54,6 +54,17 @@ curl -X POST https://zapi.omni.z-api.io/channels/YOUR_CHANNEL/token/YOUR_TOKEN/s
   -d '{"phone": "5511999999999", "message": "Hello!"}'
 ```
 
+## Authentication errors
+
+On the Z-API compatibility, the Secret Key and the channel token in the URL are validated like this:
+
+| Situation | Response |
+|---|---|
+| No `Authorization` header | `400` `{"error": "Authorization invalid"}` |
+| Malformed or nonexistent Secret Key | `422` |
+| Only the Z-API `Client-Token` header | `400`, as if there were no `Authorization`. The `Client-Token` is not accepted |
+| Wrong channel token in the URL | `404` `{"error": "instance not found"}` |
+
 ---
 
 ## Summary

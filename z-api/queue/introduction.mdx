@@ -1,0 +1,39 @@
+---
+title: "Introdução à fila"
+description: "As 5 rotas de fila da Z-API: consultar e apagar a fila no WhatsApp Web e o que volta nos demais canais"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Conceituação
+
+Esta seção documenta as 5 rotas de fila da Z-API que o {projectName} atende na Z-API Compatibilidade. O caminho (`/instances/` ou `/channels/`, seguido de `/{id}/token/{token}/` e da rota), os campos do corpo e o formato da resposta são os da Z-API. Para consultar e apagar a fila, a única mudança na sua aplicação continua sendo a base URL e o header de autenticação.
+
+A fila existe no **WhatsApp Web**, onde as mensagens aguardam até serem entregues ao WhatsApp. Nos demais canais, incluindo o **WhatsApp Oficial** (API oficial da Meta), as mensagens não ficam em fila: elas vão direto à API do canal quando são enviadas. As rotas de consulta respondem no formato da Z-API, sempre vazias, e as de apagar respondem `422`.
+
+## Disponibilidade por canal
+
+<ZapiChannelMatrix family="queue" lang="pt" />
+
+Nos canais que não são WhatsApp Web, as rotas de apagar respondem:
+
+```json
+{ "error": "messages are not queued on <TIPO> channels: they are handed to the official API when sent and cannot be removed" }
+```
+
+`<TIPO>` é o tipo do canal, como `META_WHATSAPP`. Uma mensagem já enviada pelo canal não pode ser cancelada.
+
+## Erros comuns
+
+Todos os erros têm o formato `{"error": "<mensagem>"}`. Os que valem para as rotas de fila:
+
+| Status | `error` | Quando |
+|---|---|---|
+| `404` | `instance not found` | Id ou token do canal errados. A autenticação está em [Autenticação](/z-api/authentication). |
+| `422` | `instance subscription is not active` | A assinatura do canal WhatsApp Web não está ativa. |
+| `400` | `invalid path parameter` | `zaapId` vazio, com mais de 128 caracteres ou com caractere inválido. |
+| `400` | `request body is too large` | O corpo de `POST /queue` é grande demais. |
+| `422` | `messages are not queued on <TIPO> channels: they are handed to the official API when sent and cannot be removed` | Apagar a fila, ou uma mensagem, em canal que não é WhatsApp Web. |
+| `502` | `failed to reach the Z-API instance` | O canal WhatsApp Web não respondeu. |
+| `502` | `the Z-API instance answer is too large: use page and pageSize` | A resposta é grande demais. Use `page` e `pageSize`. |

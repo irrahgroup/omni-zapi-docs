@@ -1,6 +1,8 @@
 ---
-title: "Payload structure"
+title: "Channel payload structure"
 description: "Real payload examples received at your webhook for each message type"
+sidebarTitle: "Channel payloads"
+keywords: ["payload", "MESSAGE_RECEIVED", "MESSAGE_STATUS", "metadata.middleware"]
 ---
 
 import { projectName } from '/snippets/variables.mdx';
@@ -833,6 +835,59 @@ In the `Z_API` format, the answer arrives in the received message callback with 
 }
 ```
 
+### UNSUPPORTED: Message that Meta does not deliver (Meta Cloud API)
+
+Interactive messages (buttons, lists, action buttons, and the copy code button) sent from another WhatsApp to a Meta Cloud API channel arrive in the received message webhook (`MESSAGE_RECEIVED`) with `type: "UNSUPPORTED"`. It is Meta that does not deliver these types: it warns with error `131051` ("Message type is currently not supported"), and the API passes the warning on in place of the content.
+
+| Field | Type | Description |
+|---|---|---|
+| `type` | string | Always `UNSUPPORTED` |
+| `is_unsupported` | boolean | Always `true` |
+| `message` | string | Error text that Meta reported |
+| `unsupported_body` | string | Type that Meta reported as unsupported. `interactive`, `list` and `document` have been seen |
+| `identifier` | string | Content identifier |
+| `internal_information.integration_id` | string | Message id at Meta (`wamid`) |
+| `external_information.error_code` | string | Meta error code, such as `131051` |
+| `external_information.error_title` | string | Meta error title |
+| `external_information.error_details` | string | Meta error detail, when present |
+
+```json
+"contents": [
+  {
+    "type": "UNSUPPORTED",
+    "is_unsupported": true,
+    "message": "Message type unknown",
+    "unsupported_body": "interactive",
+    "identifier": "01A0C92D0C957FE98B73C8BA0CACF741",
+    "internal_information": {
+      "integration_id": "wamid.HBgNNTUxMTk5OTk5OTk5ORUCABIYFjNFQjA"
+    },
+    "external_information": {
+      "error_code": "131051",
+      "error_title": "Message type unknown",
+      "error_details": "Message type is currently not supported."
+    }
+  }
+]
+```
+
+When Meta cannot download the received media, the official channel sends a `MESSAGE_DELIVERY` with error `131052` ("Media download error") in `contents[0].external_information.errors`.
+
+```json
+"external_information": {
+  "errors": [
+    {
+      "code": "131052",
+      "title": "Media download error",
+      "message": "Media download error",
+      "error_data": {
+        "details": "Incoming media file validation failed or the received media is in incorrect format, please ask the sender to resend the media message."
+      }
+    }
+  ]
+}
+```
+
 ---
 
 ## Status callbacks
@@ -909,3 +964,4 @@ On a channel webhook with `payloadFormat` `Z_API`, the failure of a message the 
 | `INTERACTIVE_BUTTON` | `contents[0]` | `message`, `buttons[]`, `thumbnail` (when `mediaButtonType: "IMAGE"`) |
 | `INTERACTIVE_ACTION` | `contents[0]` | `message`, `buttons[]` with `type: "URL"\|"CALL"`, `header`, `footer` |
 | `FORM_RESPONSE` | `contents[0]` | `message`, `answers[]` with `field_id`, `label` and `values` |
+| `UNSUPPORTED` | `contents[0]` | `message`, `is_unsupported`, `external_information.error_code` |

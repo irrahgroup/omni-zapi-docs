@@ -1,0 +1,39 @@
+---
+title: "Queue introduction"
+description: "The 5 Z-API queue routes: query and clear the queue on WhatsApp Web and what comes back on other channels"
+---
+
+import { projectName } from '/snippets/variables.mdx';
+import { ZapiChannelMatrix } from '/snippets/zapi-channels.mdx';
+
+## Overview
+
+This section documents the 5 Z-API queue routes that {projectName} serves in Z-API Compatibility. The path (`/instances/` or `/channels/`, followed by `/{id}/token/{token}/` and the route), the body fields and the response format are the Z-API ones. To query and delete the queue, the only change in your application is still the base URL and the authentication header.
+
+The queue exists on **WhatsApp Web**, where messages wait until they are delivered to WhatsApp. On other channels, including **WhatsApp Official** (Meta's official API), messages are not queued: they go straight to the channel API when sent. The query routes answer in the Z-API format, always empty, and the delete routes answer `422`.
+
+## Availability by channel
+
+<ZapiChannelMatrix family="queue" lang="en" />
+
+On channels that are not WhatsApp Web, the delete routes answer:
+
+```json
+{ "error": "messages are not queued on <TYPE> channels: they are handed to the official API when sent and cannot be removed" }
+```
+
+`<TYPE>` is the channel type, such as `META_WHATSAPP`. A message that the channel already sent cannot be cancelled.
+
+## Common errors
+
+Every error has the format `{"error": "<message>"}`. The ones that apply to the queue routes:
+
+| Status | `error` | When |
+|---|---|---|
+| `404` | `instance not found` | Wrong channel ID or token. Authentication is described in [Authentication](/en/z-api/authentication). |
+| `422` | `instance subscription is not active` | The subscription of the WhatsApp Web channel is not active. |
+| `400` | `invalid path parameter` | `zaapId` is empty, over 128 characters or has an invalid character. |
+| `400` | `request body is too large` | The body of `POST /queue` is too large. |
+| `422` | `messages are not queued on <TYPE> channels: they are handed to the official API when sent and cannot be removed` | Deleting the queue, or a message, on a channel that is not WhatsApp Web. |
+| `502` | `failed to reach the Z-API instance` | The WhatsApp Web channel did not answer. |
+| `502` | `the Z-API instance answer is too large: use page and pageSize` | The response is too large. Use `page` and `pageSize`. |

@@ -97,11 +97,37 @@
             }
           },
           "422": {
-            "description": "Channel disconnected. The message was not sent: reconnect the channel and send it again.",
+            "description": "Refused before sending: channel disconnected and, on the Meta Cloud API, template missing in the language, or number of body parameters different from the template's. The message was not sent.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/SendError" },
-                "example": { "timestamp": "2026-10-22T14:00:00.123Z", "code": "BUSINESS_RULE_VIOLATION", "subCode": "CHANNEL_DISCONNECTED", "message": "Channel is disconnected" }
+                "examples": {
+                  "channelDisconnected": {
+                    "summary": "Channel disconnected",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "subCode": "CHANNEL_DISCONNECTED",
+                      "message": "Channel is disconnected"
+                    }
+                  },
+                  "templateNotInLanguage": {
+                    "summary": "Template does not exist in the language",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "message": "Template 'atualizacao_pedido_v1' does not exist in language 'pt_BR'"
+                    }
+                  },
+                  "bodyParamsMismatch": {
+                    "summary": "Number of body parameters differs from the template",
+                    "value": {
+                      "timestamp": "2026-10-22T14:00:00.123Z",
+                      "code": "BUSINESS_RULE_VIOLATION",
+                      "message": "Template 'atualizacao_pedido_v1' expects 3 body parameter(s) but 1 was provided"
+                    }
+                  }
+                }
               }
             }
           }

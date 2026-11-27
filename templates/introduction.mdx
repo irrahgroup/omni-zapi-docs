@@ -1,15 +1,37 @@
 ---
-title: "Introdução"
-description: "Entenda como funcionam os templates de mensagem no Omni Z-API"
+title: "Introdução aos templates"
+description: "Modelos aprovados pela Meta para falar com o cliente fora da janela: categorias, status, rotas e canais atendidos"
+keywords: ["message_templates", "WABA", "template de mensagem", "wabaId"]
 ---
 
 import { projectName } from '/snippets/variables.mdx';
+import { ChannelMatrix } from '/snippets/channel-support.mdx';
 
 <Warning>
   Os **três canais da Meta têm template pré-aprovado**: Meta Cloud API, Instagram e Messenger. O que muda é o escopo, o endpoint e a categoria.
 
   Hoje os endpoints desta seção cobrem **apenas a Meta Cloud API** (escopo WABA). O suporte a Instagram e Messenger está **em implementação**.
 </Warning>
+
+## Disponibilidade por canal
+
+Os endpoints de criar e gerenciar cobrem hoje só a Meta Cloud API. Veja [O que cada canal aceita](/channels/message-support) para o envio em cada canal.
+
+<ChannelMatrix family="templates" lang="pt" />
+
+## Rotas
+
+| Página | Rota | O que faz |
+|---|---|---|
+| [Listar WABAs](/templates/list-businesses) | `GET /whatsapp/businesses` | Lista as WABAs disponíveis para o seu token |
+| [Criar template](/templates/create-template) | `POST /whatsapp/businesses/{wabaId}/templates` | Cria o template e o envia para aprovação |
+| [Listar templates](/templates/list-templates) | `GET /whatsapp/businesses/{wabaId}/templates` | Lista os templates da WABA, com o status |
+| [Atualizar template](/templates/update-template) | `PUT /whatsapp/businesses/{wabaId}/templates/{templateId}` | Atualiza o template e reenvia para aprovação |
+| [Remover template](/templates/delete-template) | `DELETE /whatsapp/businesses/{wabaId}/templates/{templateId}` | Remove o template |
+| [Sincronizar templates](/templates/sync-templates) | `POST /whatsapp/businesses/{wabaId}/templates/sync` | Força a atualização dos status com a Meta |
+| [Subir mídia](/templates/upload-media) | `POST /whatsapp/businesses/{wabaId}/templates/media` | Gera o `header_handle` para cabeçalho de imagem, vídeo ou documento |
+| [Consultar biblioteca](/templates/template-library) | `GET /whatsapp/businesses/{wabaId}/template-library` | Lista os modelos prontos da biblioteca da Meta |
+| [Enviar template](/messages/send-template) | `POST /v1/channels/{channelId}/messages` | Envia o template aprovado, com `content.type` `TEMPLATE` |
 
 ## Três coisas se chamam "template"
 
