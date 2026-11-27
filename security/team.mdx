@@ -1,117 +1,131 @@
 ---
-title: "Time e papéis"
-description: "Convide pessoas para o workspace e entenda o que cada papel pode fazer"
+title: "Time e funções"
+description: "Convide pessoas para o workspace e entenda o que cada função pode fazer"
 ---
 
 import { projectName } from '/snippets/variables.mdx';
 
-No {projectName}, cada pessoa do time tem um **papel** no workspace. O papel define o que ela vê e o que pode alterar no painel. O time fica em **Administração → Time**.
+No {projectName}, cada pessoa do time tem uma **função** no workspace. A função define o que ela vê e o que pode alterar no painel. O time fica em **Administração → Time**.
 
-## Papéis
+## Funções
 
-### Owner
+| Função | O que faz |
+|---|---|
+| **Proprietário** | Dono do workspace. Pode tudo, inclusive excluir o workspace e transferir a posse. |
+| **Administrador** | Pode tudo, menos excluir o workspace e transferir a posse. |
+| **Admin de acesso** | Cuida das pessoas e da segurança: convida e remove pessoas, dá a função Visualização, vê a Auditoria e a Segurança e altera a restrição de IP. Não vê canais nem cobrança. |
+| **Desenvolvedor** | Cuida das integrações: vê canais, o token dos canais, templates e webhooks, altera webhooks, apps conectados e IAs, e vê a Segurança. Não altera canais. |
+| **Operador de canais** | Opera os canais e os templates: vê e altera canais e templates, e vê o token dos canais, os webhooks e os apps conectados. |
+| **Financeiro** | Vê e altera a cobrança. |
+| **Visualização** | Só consulta: canais, templates, webhooks, apps conectados, time, cobrança, Auditoria e Segurança. Não altera nada e não vê o token dos canais. |
 
-Dono do workspace. Tem acesso a **tudo**, inclusive o que nenhum outro papel faz:
+Cada workspace tem um único Proprietário. Ninguém dá essa função: ela só muda de pessoa pela [transferência de posse](#transferir-a-posse).
 
-- Gerenciar a cobrança: assinar canais, pagar faturas e trocar a forma de pagamento.
-- Acessar o menu [Segurança](/security/introduction): credenciais da API, restrição de IP e configurações da SDK.
-- Promover um Membro a Manager ou rebaixar um Manager a Membro.
-- Convidar pessoas já como Manager.
-- Transferir a posse do workspace para outra pessoa do time.
+### Gerente e Membro
 
-Cada workspace tem um único Owner. Ele não pode ser removido do workspace, e o papel dele só muda pela [transferência de posse](#transferir-a-posse).
+Quem já fazia parte do time antes das funções aparece como **Gerente** ou **Membro**:
 
-### Manager
+- **Gerente:** vê e altera canais, templates e webhooks, vê o token dos canais e os apps conectados, convida e remove Membros, e vê a cobrança e a Auditoria.
+- **Membro:** vê canais, o token dos canais, templates, webhooks e apps conectados. Não altera nada.
 
-Administra a operação do dia a dia, sem acesso a cobrança e segurança:
-
-- Cria, edita e exclui canais e templates.
-- Convida pessoas como Membro, reenvia e cancela convites.
-- Remove **apenas Membros**. Não remove outro Manager nem o Owner.
-- Vê a cobrança, sem alterar, e consulta a [Auditoria](/security/audit).
-
-### Membro
-
-Acompanha a operação, sem alterar nada:
-
-- Vê canais e templates.
-- Não acessa o Time, a cobrança, a Auditoria nem a Segurança.
+Gerente e Membro não podem ser dados a outras pessoas. Quando alguém [edita o acesso](#editar-o-acesso) de um Gerente ou de um Membro, a pessoa fica com a função escolhida.
 
 ### Resumo das permissões
 
-| Ação | Owner | Manager | Membro |
-|---|:---:|:---:|:---:|
-| Ver canais e templates | ✅ | ✅ | ✅ |
-| Criar, editar e excluir canais e templates | ✅ | ✅ | ❌ |
-| Ver o time e os convites | ✅ | ✅ | ❌ |
-| Convidar como Membro, reenviar e cancelar convites | ✅ | ✅ | ❌ |
-| Convidar como Manager | ✅ | ❌ | ❌ |
-| Remover membros | ✅ | Só Membros | ❌ |
-| Promover e rebaixar papéis | ✅ | ❌ | ❌ |
-| Transferir a posse do workspace | ✅ | ❌ | ❌ |
-| Ver a cobrança | ✅ | ✅ | ❌ |
-| Gerenciar a cobrança | ✅ | ❌ | ❌ |
-| Ver a Auditoria | ✅ | ✅ | ❌ |
-| Acessar Segurança | ✅ | ❌ | ❌ |
+| Área | Proprietário | Administrador | Admin de acesso | Desenvolvedor | Operador de canais | Financeiro | Visualização | Gerente | Membro |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Canais | Altera | Altera | — | Vê | Altera | — | Vê | Altera | Vê |
+| Token dos canais | Vê | Vê | — | Vê | Vê | — | — | Vê | Vê |
+| Templates e flows | Altera | Altera | — | Vê | Altera | — | Vê | Altera | Vê |
+| Webhooks | Altera | Altera | — | Altera | Vê | — | Vê | Altera | Vê |
+| Apps conectados e IAs | Altera | Altera | — | Altera | Vê | — | Vê | Vê | Vê |
+| Cobrança | Altera | Altera | — | — | — | Altera | Vê | Vê | — |
+| Time | Altera | Altera | Altera | — | — | — | Vê | Altera¹ | — |
+| Funções das pessoas | Altera | Altera | Altera² | — | — | — | — | — | — |
+| Credenciais da API e SDK | Altera | Altera | Vê | Vê | — | — | Vê | — | — |
+| Restrição de IP | Altera | Altera | Altera | Vê | — | — | Vê | — | — |
+| Auditoria | Vê | Vê | Vê | — | — | — | Vê | Vê | — |
+| Excluir o workspace e transferir a posse | ✅ | — | — | — | — | — | — | — | — |
+
+¹ O Gerente convida e remove só Membros.
+² O Admin de acesso só dá a função Visualização.
+
+## Convidar pessoas
+
+Convidam o **Proprietário**, o **Administrador**, o **Admin de acesso** e o **Gerente**.
+
+1. No painel, abra **Administração → Time** e clique em **Convidar pessoas**.
+2. Informe os e-mails. Separe por vírgula para convidar várias pessoas de uma vez.
+3. Em **Neste workspace**, escolha a função. Nenhuma vem marcada. Ao escolher, o painel mostra o que a pessoa vai poder ver e alterar.
+4. Clique em **Continuar**, revise a lista e a função e clique em **Enviar convites**.
+
+Você só dá funções cujas permissões você também tem. As outras aparecem apagadas:
+
+- O Proprietário e o Administrador dão qualquer função, menos Proprietário.
+- O Admin de acesso dá só Visualização.
+- O Gerente convida só como Membro.
+
+Todos os e-mails do mesmo envio recebem a mesma função. Cada pessoa recebe um link próprio por e-mail. O convite:
+
+- **Expira em 7 dias.** Depois disso, envie um novo.
+- Leva a função escolhida: a pessoa entra no workspace com ela.
+- Não é enviado para quem já faz parte do workspace ou já tem convite pendente.
+- Deixa de valer se, antes do aceite, quem convidou sai do time ou perde o direito de dar aquela função.
+
+## Editar o acesso
+
+Editam o acesso de outras pessoas o **Proprietário**, o **Administrador** e o **Admin de acesso**. Em **Administração → Time**, abra o menu de ações (⋮) na linha da pessoa, clique em **Editar acesso**, escolha a função e clique em **Salvar**.
+
+Você só edita quem tem funções que você alcança:
+
+- O Proprietário e o Administrador editam qualquer pessoa, menos o Proprietário.
+- O Admin de acesso edita quem é Desenvolvedor, Operador de canais, Financeiro, Visualização, Gerente ou Membro. Ele não edita um Administrador nem outro Admin de acesso.
+
+Se a pessoa tem uma função que você não pode dar, essa função aparece marcada e não muda.
+
+A troca vale assim que você salva e fica registrada na [Auditoria](/security/audit). O Proprietário e a pessoa recebem um e-mail. Com a troca:
+
+- Os convites pendentes que a pessoa enviou e que a nova função não permitiria enviar são cancelados.
+- Se a nova função não libera escrita para apps, os apps conectados que a pessoa autorizou com escrita perdem a escrita.
+
+## Remover uma pessoa
+
+No menu de ações (⋮) da linha da pessoa, clique em **Remover** e confirme. Removem o Proprietário, o Administrador, o Admin de acesso e o Gerente, só sobre quem eles alcançam, com as mesmas regras de [Editar o acesso](#editar-o-acesso). O Gerente remove só Membros.
+
+A pessoa perde o acesso ao workspace. Os convites pendentes que ela enviou são cancelados, e os apps conectados que ela autorizou neste workspace são desconectados.
 
 <Note>
-  Ninguém pode remover a si mesmo nem alterar o próprio papel. A exceção é o Owner, que passa a Manager quando transfere a posse.
-</Note>
-
-## Alterar o papel
-
-Só o **Owner** altera papéis. Em **Administração → Time**, abra o menu de ações (⋮) na linha da pessoa:
-
-- **Promover a manager:** transforma um Membro em Manager.
-- **Rebaixar para membro:** transforma um Manager em Membro.
-
-Antes da troca, o painel pede confirmação e mostra o que a pessoa passa a poder fazer com o papel novo. A troca vale assim que você confirma e fica registrada na [Auditoria](/security/audit). Para tirar a pessoa do workspace, use **Remover**, no mesmo menu.
-
-<Note>
-  A linha do Owner não tem menu de ações: ninguém altera o papel dele nem o remove.
+  Ninguém remove a si mesmo nem altera o próprio acesso. A linha do Proprietário não tem menu de ações: ninguém altera a função dele nem o remove.
 </Note>
 
 ## Transferir a posse
 
-O Owner pode passar a posse do workspace para um Manager ou um Membro do time:
+Só o **Proprietário** transfere a posse, para qualquer outra pessoa ativa do time:
 
 1. Em **Administração → Time**, abra o menu de ações (⋮) na linha da pessoa e clique em **Transferir posse**.
 2. Confira o que muda e digite o nome do workspace para confirmar.
 
 Com a transferência:
 
-- A pessoa escolhida passa a ser Owner do workspace, com acesso à cobrança e ao time.
-- Você passa a Manager.
+- A pessoa escolhida passa a ser a Proprietária do workspace.
+- Você fica com a função Administrador.
 - Os apps conectados que você autorizou neste workspace com permissão de escrita ou de envio são desconectados.
 - Vocês dois recebem um e-mail.
 
-## Convidar pessoas
-
-1. No painel, abra **Administração → Time** e clique em **Convidar pessoas**.
-2. Informe os e-mails. Separe por vírgula para convidar várias pessoas de uma vez.
-3. Escolha o **Papel**: **Membro**, que já vem marcado, ou **Manager**. A opção Manager só aparece para o Owner.
-4. Clique em **Continuar**, revise a lista e o papel e clique em **Enviar convites**.
-
-Todos os e-mails do mesmo envio recebem o mesmo papel. Cada pessoa recebe um link próprio por e-mail. O convite:
-
-- **Expira em 7 dias.** Depois disso, envie um novo.
-- Leva o papel escolhido: a pessoa entra no workspace com ele.
-- Não é enviado para quem já faz parte do workspace ou já tem convite pendente.
-
 ## Acompanhar os convites
 
-Na tela **Time**, filtre a lista pela situação (**Todos**, **Ativos**, **Convidados** e **Expirados**) ou pelo papel. Cada convite mostra o papel com que foi enviado e em quantos dias expira.
+Na tela **Time**, filtre a lista pela situação (**Todos**, **Ativos**, **Convidados** e **Expirados**) ou pela **Função**. Cada convite mostra a função com que foi enviado e em quantos dias expira.
 
 No menu de ações (⋮) de cada convite:
 
-- **Reenviar convite:** manda um link novo. O link anterior deixa de valer.
+- **Reenviar convite:** manda um link novo, com mais 7 dias. O link anterior deixa de valer. Só aparece para quem poderia enviar aquele convite.
 - **Cancelar convite:** no convite pendente, o link enviado deixa de funcionar.
 - **Apagar convite:** no convite expirado, tira o convite da lista.
 
 ## Aceitar um convite
 
-Quem foi convidado abre o link do e-mail ou, no painel, o **menu do perfil → Convites**, e clica em **Aceitar** ou **Recusar**. O convite mostra o papel com que a pessoa vai entrar. Ao aceitar, o workspace passa a aparecer no seletor de workspaces.
+Quem foi convidado abre o link do e-mail ou, no painel, o **menu do perfil → Convites**, e clica em **Aceitar** ou **Recusar**. O convite mostra a função com que a pessoa vai entrar. Ao aceitar, o workspace passa a aparecer no seletor de workspaces.
 
 <Info>
-  A pessoa entra no workspace com o papel do convite. Se precisar de outro papel depois, o Owner faz a troca em [Alterar o papel](#alterar-o-papel).
+  A pessoa entra no workspace com a função do convite. Se precisar de outra função depois, quem pode editar o acesso faz a troca em [Editar o acesso](#editar-o-acesso).
 </Info>
